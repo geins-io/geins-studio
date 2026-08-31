@@ -1,7 +1,9 @@
 <script setup lang="ts">
-const _props = withDefaults(
+withDefaults(
   defineProps<{
     placeholder?: string;
+    /** Optional per-chip class by channel id (e.g. mark a partial bulk selection). */
+    itemClass?: (id: string) => string | undefined;
   }>(),
   {
     placeholder: '',
@@ -21,6 +23,7 @@ const { channels } = storeToRefs(accountStore);
     v-model="model"
     :data-set="channels"
     :placeholder="placeholder"
+    :item-class="itemClass"
     entity-key="channel"
   />
 </template>

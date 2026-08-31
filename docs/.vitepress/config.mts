@@ -242,6 +242,10 @@ export default defineConfig({
                 link: '/components/asset/AssetWizardManage.md',
               },
               {
+                text: 'AssetWizardBulkPane',
+                link: '/components/asset/AssetWizardBulkPane.md',
+              },
+              {
                 text: 'AssetDetailPanel',
                 link: '/components/asset/AssetDetailPanel.md',
               },

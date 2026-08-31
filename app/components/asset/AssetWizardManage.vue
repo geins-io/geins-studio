@@ -178,19 +178,14 @@ const rowFolderName = (id: string): string | undefined => {
 
     <!-- Right: detail / bulk / empty -->
     <div class="flex min-h-0 min-w-0 flex-1 flex-col">
-      <!-- Bulk pane (STU-320) -->
-      <div
+      <!-- Bulk pane (multi-select) -->
+      <AssetWizardBulkPane
         v-if="bulkMode"
-        class="text-muted-foreground flex flex-1 items-center justify-center p-6 text-center text-sm"
-      >
-        {{
-          $t(
-            'asset_library.files_selected',
-            { count: checked.length },
-            checked.length,
-          )
-        }}
-      </div>
+        :ids="checked"
+        :tag-options="tagOptions"
+        @deselect="checked = []"
+        @removed="checked = []"
+      />
 
       <!-- Single-file fields -->
       <template v-else-if="active">

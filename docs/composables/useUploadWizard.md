@@ -53,6 +53,20 @@ interface WizardFileSettings {
 | `settingsOf(id)`           | `(string) => WizardFileSettings`                | Settings for one file (empty object if none).    |
 | `patchSettings(id, patch)` | `(string, Partial<WizardFileSettings>) => void` | Merges a partial patch into one file's settings. |
 
+## Bulk operations (step 2 bulk pane)
+
+Operate on a set of checked ids; the reconciliation lives here, not in the template.
+
+| Name                           | Type                                               | Description                                                                        |
+| ------------------------------ | -------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `bulkFolderId(ids)`            | `(string[]) => string \| null \| undefined`        | Shared folder id, or `undefined` when the selection is mixed.                      |
+| `setBulkFolder(ids, folderId)` | `(string[], string \| null) => void`               | Sets one folder on every file.                                                     |
+| `channelState(ids, channel)`   | `(string[], string) => 'on' \| 'partial' \| 'off'` | Whether every / some / no file has the channel (drives the dashed partial marker). |
+| `bulkChannelUnion(ids)`        | `(string[]) => string[]`                           | All channels present on any file — the chips the bulk selector shows.              |
+| `applyBulkChannels(ids, next)` | `(string[], string[]) => void`                     | Added channels go on all files, removed come off all.                              |
+| `bulkSharedTags(ids)`          | `(string[]) => string[]`                           | Tags common to every file.                                                         |
+| `applyBulkTags(ids, next)`     | `(string[], string[]) => void`                     | Diffs against the shared set: added tags append to all, removed strip from all.    |
+
 ## Sharing helpers
 
 - `uploadWizardKey` — the `InjectionKey` for the provided instance.

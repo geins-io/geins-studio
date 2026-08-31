@@ -18,6 +18,8 @@ const props = withDefaults(
     /** Restrict to a single selection: caps at one tag and hides the
      * search input (and its "Add …" placeholder) once one is selected. */
     singleSelect?: boolean;
+    /** Optional per-chip class by id (e.g. mark a partial bulk selection). */
+    itemClass?: (id: string) => string | undefined;
   }>(),
   {
     allowCustomTags: false,
@@ -134,7 +136,7 @@ const getItemFromDataSet = (id: string): T | undefined => {
             v-for="id in model"
             :key="id"
             :value="id"
-            :class="{ 'pl-1.5': $slots.tag }"
+            :class="[{ 'pl-1.5': $slots.tag }, props.itemClass?.(id)]"
           >
             <slot name="tag" :item="getItemFromDataSet(id)">
               <TagsInputItemText />

@@ -15,14 +15,19 @@ withDefaults(
   { placeholder: '' },
 );
 
-const model = defineModel<string | null>({ default: null });
+// `null` = uncategorised; `undefined` = no explicit value (bulk "mixed"), which
+// selects nothing so the placeholder shows.
+const model = defineModel<string | null | undefined>({ default: null });
 
 const { assetApi } = useGeinsRepository();
 const { folders, refresh: refreshFolders } = useFolders();
 const { geinsLogError } = useGeinsLog('components/AssetFolderPicker.vue');
 
-// Select needs a string value, so map null ↔ a sentinel.
+// Select needs a string value, so map null ↔ a sentinel (and mixed ↔ '').
 const NO_FOLDER = '__none__';
+const selectValue = computed(() =>
+  model.value === undefined ? '' : (model.value ?? NO_FOLDER),
+);
 
 const creating = ref(false);
 const newFolderName = ref('');
@@ -72,7 +77,7 @@ async function createFolder() {
   </div>
   <div v-else class="flex gap-2">
     <Select
-      :model-value="model ?? NO_FOLDER"
+      :model-value="selectValue"
       @update:model-value="
         (v) => (model = v === NO_FOLDER ? null : (v as string))
       "
