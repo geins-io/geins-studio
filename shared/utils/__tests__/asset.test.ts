@@ -6,6 +6,11 @@ describe('mimeToAssetType', () => {
     ['image/svg+xml', 'svg'],
     ['image/png', 'image'],
     ['image/jpeg', 'image'],
+    ['image/webp', 'image'],
+    // Non-renderable "image/*" formats must not become previewable images.
+    ['image/vnd.adobe.photoshop', 'other'],
+    ['image/x-photoshop', 'other'],
+    ['image/tiff', 'other'],
     ['application/pdf', 'pdf'],
     ['video/mp4', 'video'],
     ['audio/mpeg', 'audio'],

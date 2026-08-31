@@ -176,6 +176,7 @@ export default defineConfig({
             text: 'shadcn-vue primitives',
             link: '/components/shadcn-vue.md',
           },
+          { text: 'AppLoader', link: '/components/AppLoader.md' },
           {
             text: 'Buttons',
             collapsed: true,
@@ -244,6 +245,10 @@ export default defineConfig({
               {
                 text: 'AssetWizardBulkPane',
                 link: '/components/asset/AssetWizardBulkPane.md',
+              },
+              {
+                text: 'AssetWizardReview',
+                link: '/components/asset/AssetWizardReview.md',
               },
               {
                 text: 'AssetDetailPanel',
