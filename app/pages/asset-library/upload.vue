@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { AssetUploadMeta } from '#shared/types';
 import { entityListUrl } from '#shared/utils/entities';
 import { formatFileSize } from '#shared/utils/file';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,6 +10,7 @@ import {
   StepperTitle,
   StepperTrigger,
 } from '@/components/ui/stepper';
+import { useToast } from '@/components/ui/toast/use-toast';
 import {
   uploadWizardKey,
   useUploadWizard,
@@ -46,6 +48,67 @@ const steps = computed(() => [
 const canProceed = computed(
   () => currentStep.value !== 1 || files.value.length > 0,
 );
+
+const { assetApi } = useGeinsRepository();
+const { toast } = useToast();
+const { geinsLogError } = useGeinsLog('pages/asset-library/upload.vue');
+
+const uploading = ref(false);
+const done = ref(false);
+const uploadedCount = ref(0);
+
+// Per-file metadata sent alongside the files (same order); alt text is mapped
+// from the UI's LocalizedText to the wire `localizations` shape, dropping blanks.
+function buildMeta(): AssetUploadMeta[] {
+  return files.value.map((wf) => {
+    const s = wizard.settingsOf(wf.id);
+    const localizations = Object.fromEntries(
+      Object.entries(s.altText ?? {})
+        .filter(([, text]) => text?.trim())
+        .map(([loc, text]) => [loc, { altText: text }]),
+    );
+    const meta: AssetUploadMeta = {
+      name: s.name || wf.file.name,
+      folderId: s.folderId ?? null,
+      tags: s.tags ?? [],
+      channels: s.channels ?? [],
+    };
+    if (s.description?.trim()) meta.description = s.description.trim();
+    if (Object.keys(localizations).length) meta.localizations = localizations;
+    return meta;
+  });
+}
+
+async function submit() {
+  if (!files.value.length) return;
+  const total = files.value.length;
+  uploading.value = true;
+  const form = new FormData();
+  for (const wf of files.value) form.append('files', wf.file);
+  form.append('meta', JSON.stringify(buildMeta()));
+  try {
+    const created = await assetApi.upload(form);
+    await refreshNuxtData('asset-library-list');
+    uploadedCount.value = created.length;
+    // Partial success: the endpoint returns only the created subset. v0 still
+    // completes (the created assets are live) but flags the shortfall.
+    if (created.length < total) {
+      toast({
+        title: t('asset_library.upload_partial', {
+          created: created.length,
+          total,
+        }),
+        variant: 'warning',
+      });
+    }
+    done.value = true;
+  } catch (error) {
+    // Total failure flows to the global error toast; stay on the review step.
+    geinsLogError('submit', getErrorMessage(error));
+  } finally {
+    uploading.value = false;
+  }
+}
 
 function leave() {
   navigateTo(entityListUrl('asset'));
@@ -90,8 +153,54 @@ function leave() {
         </Stepper>
       </div>
 
+      <!-- Uploading -->
+      <Card v-if="uploading">
+        <CardContent class="flex flex-col items-center gap-3 py-16 text-center">
+          <AppLoader
+            :text="
+              $t(
+                'asset_library.uploading_files',
+                { count: files.length },
+                files.length,
+              )
+            "
+          />
+          <p class="text-muted-foreground text-sm">
+            {{ $t('asset_library.uploading_wait') }}
+          </p>
+        </CardContent>
+      </Card>
+
+      <!-- Success -->
+      <Card v-else-if="done">
+        <CardContent class="flex flex-col items-center gap-5 py-16 text-center">
+          <div
+            class="bg-positive/10 text-positive flex size-16 items-center justify-center rounded-full"
+          >
+            <LucideCircleCheck class="size-8" />
+          </div>
+          <div>
+            <p class="text-xl font-semibold">
+              {{
+                $t(
+                  'asset_library.uploaded_success',
+                  { count: uploadedCount },
+                  uploadedCount,
+                )
+              }}
+            </p>
+            <p class="text-muted-foreground mt-1 text-sm">
+              {{ $t('asset_library.uploaded_success_hint') }}
+            </p>
+          </div>
+          <Button @click="leave">
+            {{ $t('asset_library.go_to_library') }}
+          </Button>
+        </CardContent>
+      </Card>
+
       <!-- Step 2 — manage: header + split panel in a card that fills the middle. -->
-      <Card v-if="currentStep === 2" class="flex min-h-0 flex-1 flex-col">
+      <Card v-else-if="currentStep === 2" class="flex min-h-0 flex-1 flex-col">
         <CardContent class="flex min-h-0 flex-1 flex-col gap-5 p-6">
           <ContentCardHeader
             size="md"
@@ -166,16 +275,17 @@ function leave() {
                 :title="$t('asset_library.wizard_step_review')"
                 :description="$t('asset_library.wizard_review_hint')"
               />
-              <div class="text-muted-foreground py-12 text-center text-sm">
-                {{ $t('asset_library.wizard_step_review') }}
-              </div>
+              <AssetWizardReview />
             </template>
           </CardContent>
         </Card>
       </div>
 
       <!-- Pinned at the bottom; thin bar with even top/bottom padding. -->
-      <div class="flex shrink-0 items-center justify-between border-t py-4">
+      <div
+        v-if="!uploading && !done"
+        class="flex shrink-0 items-center justify-between border-t py-4"
+      >
         <ButtonIcon
           v-if="isFirstStep"
           icon="ChevronLeft"
@@ -202,7 +312,12 @@ function leave() {
               })
             }}
           </span>
-          <ButtonIcon v-if="isLastStep" icon="upload" :disabled="!files.length">
+          <ButtonIcon
+            v-if="isLastStep"
+            icon="upload"
+            :disabled="!files.length"
+            @click="submit"
+          >
             {{ $t('upload') }}
           </ButtonIcon>
           <Button v-else :disabled="!canProceed" @click="nextStep">

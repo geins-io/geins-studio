@@ -52,6 +52,22 @@ export interface AssetBase {
 export type AssetCreate = CreateEntity<AssetBase>;
 export type AssetUpdate = UpdateEntity<AssetBase>;
 
+/**
+ * Per-file metadata sent alongside a multipart upload (the upload wizard). The
+ * `POST /asset/upload` route reads a `meta` field — a JSON array of these, one
+ * per file part, in the same order — and persists it on each created asset.
+ * Everything is optional; omitted fields fall back to defaults (uncategorised,
+ * empty tags/channels, filename as name).
+ */
+export interface AssetUploadMeta {
+  name?: string;
+  folderId?: string | null;
+  description?: string | null;
+  tags?: string[];
+  channels?: string[];
+  localizations?: Localized<AssetLocalizations>;
+}
+
 /** Asset as returned by the API — base + identity + server-managed fields. */
 export interface Asset extends ResponseEntity<AssetBase> {
   /** Default-language alt text, derived server-side from `localizations`. */
