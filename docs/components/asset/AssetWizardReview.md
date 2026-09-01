@@ -13,7 +13,7 @@ No props — it renders from the shared wizard files + settings.
 ## Behaviour
 
 - A "{n} files total" count and a **group-by-folder** toggle (flat list vs. grouped, with "no folder" last).
-- Each row shows the type-tinted icon, the (possibly renamed) file name, its folder / tags / channels, size, an [`AssetTypeBadge`](/components/asset/AssetTypeBadge), and a per-row remove (drops the file from the upload via `removeFiles`).
+- Each row shows the type-tinted icon, the (possibly renamed) file name, its folder / tags / channels, size, and an [`AssetTypeBadge`](/components/asset/AssetTypeBadge). The list is read-only — removing files is done back in the manage step.
 - Channel ids are resolved to names via the account store.
 
 ## Dependencies
