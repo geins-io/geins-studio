@@ -207,13 +207,14 @@ const rowFolderName = (id: string): string | undefined => {
               {{ $t(activeMeta.labelKey) }}
             </p>
           </div>
-          <ButtonIcon
-            icon="Trash2"
+          <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             :aria-label="$t('remove')"
             @click="removeFile(active.id)"
-          />
+          >
+            <LucideTrash2 class="size-4" />
+          </Button>
         </div>
 
         <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">

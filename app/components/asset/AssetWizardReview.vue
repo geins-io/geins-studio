@@ -5,13 +5,14 @@ import { formatFileSize } from '#shared/utils/file';
 /**
  * Step 3 of the upload wizard — the review list. A read-only summary of every
  * file with its resolved metadata (folder, tags, channels), optionally grouped
- * by folder, with a per-row remove. Reads the shared wizard state via
- * {@link useUploadWizardContext}; the upload itself is triggered from the page.
+ * by folder. Read-only — files are removed back in the manage step. Reads the
+ * shared wizard state via {@link useUploadWizardContext}; the upload itself is
+ * triggered from the page.
  */
 const { meta } = useAssetType();
 const { resolveIcon } = useLucideIcon();
 const { folderName } = useFolders();
-const { files, settingsOf, removeFiles } = useUploadWizardContext();
+const { files, settingsOf } = useUploadWizardContext();
 const { channels } = storeToRefs(useAccountStore());
 
 const groupByFolder = ref(false);
@@ -78,34 +79,26 @@ const displayGroups = computed(() =>
         }}
       </span>
       <div class="flex-1" />
-      <div class="bg-card flex items-center rounded-md border p-0.5">
-        <button
-          type="button"
-          class="flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors"
-          :class="
-            !groupByFolder
-              ? 'bg-muted text-foreground'
-              : 'text-muted-foreground hover:text-foreground'
-          "
+      <ButtonGroup>
+        <Button
+          :variant="!groupByFolder ? 'default' : 'outline'"
+          size="sm"
+          class="gap-1.5"
           @click="groupByFolder = false"
         >
           <LucideList class="size-3.5" />
           {{ $t('asset_library.no_grouping') }}
-        </button>
-        <button
-          type="button"
-          class="flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors"
-          :class="
-            groupByFolder
-              ? 'bg-muted text-foreground'
-              : 'text-muted-foreground hover:text-foreground'
-          "
+        </Button>
+        <Button
+          :variant="groupByFolder ? 'default' : 'outline'"
+          size="sm"
+          class="gap-1.5"
           @click="groupByFolder = true"
         >
           <LucideFolder class="size-3.5" />
           {{ $t('asset_library.group_by_folder') }}
-        </button>
-      </div>
+        </Button>
+      </ButtonGroup>
     </div>
 
     <div class="overflow-hidden rounded-lg border">
@@ -131,7 +124,7 @@ const displayGroups = computed(() =>
         <div
           v-for="row in group.rows"
           :key="row.id"
-          class="group flex items-center gap-3 border-t px-5 py-3"
+          class="flex items-center gap-3 border-t px-5 py-3"
           :class="!groupByFolder && 'first:border-t-0'"
         >
           <div
@@ -178,14 +171,6 @@ const displayGroups = computed(() =>
             {{ formatFileSize(row.file.size) }}
           </span>
           <AssetTypeBadge :type="mimeToAssetType(row.file.type)" />
-          <ButtonIcon
-            icon="close"
-            variant="ghost"
-            size="sm"
-            class="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
-            :aria-label="$t('remove')"
-            @click="removeFiles([row.id])"
-          />
         </div>
       </template>
     </div>
