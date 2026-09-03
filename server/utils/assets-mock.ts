@@ -65,13 +65,20 @@ export interface FolderRow {
 }
 
 // ── Row → contract mappers ────────────────────────────────────────────────────
-export function toAsset(row: AssetRow): Asset {
+export function toAsset(
+  row: AssetRow,
+  folderPath: string | null = null,
+): Asset {
   return {
     _id: row.id,
-    _type: 'asset',
+    _type: 'geins.asset',
     name: row.name,
     type: row.type,
     folderId: row.folder_id,
+    // Path mirrors the real API: folder's full path + file name (just the name
+    // for a root asset). folderPath feeds the breadcrumb.
+    folderPath,
+    path: folderPath ? `${folderPath}/${row.name}` : row.name,
     description: row.description,
     localizations: row.localizations ?? {},
     // Default-language value surfaced inline (derived; source of truth is localizations).
@@ -88,7 +95,10 @@ export function toAsset(row: AssetRow): Asset {
   };
 }
 
-export function toFolder(row: FolderRow): Folder {
+export function toFolder(
+  row: FolderRow,
+  meta?: { fullPath: string; depth: number },
+): Folder {
   return {
     _id: row.id,
     _type: 'folder',
@@ -96,6 +106,9 @@ export function toFolder(row: FolderRow): Folder {
     parentId: row.parent_id,
     system: row.system,
     sortOrder: row.sort_order,
+    // Derived from the tree; default to a top-level folder when no map is given.
+    fullPath: meta?.fullPath ?? row.name,
+    depth: meta?.depth ?? 1,
     createdAt: row.created_at,
   };
 }
@@ -161,6 +174,60 @@ export function resolveAssetFolderFilter(
   if (!folderId) return 'none';
   if (folderId === UNCATEGORISED_FOLDER_ID) return 'null';
   return 'descendants';
+}
+
+/**
+ * Full path + depth per folder, built from the adjacency list: walk each
+ * folder's parent chain to the root and join the names. `fullPath` mirrors the
+ * real API's folder path (the leading part of an asset's `path`); `depth` is the
+ * segment count (1 = top level). Cycle-guarded, though seed data has none.
+ */
+export function folderPathIndex(
+  folders: Pick<FolderRow, 'id' | 'parent_id' | 'name'>[],
+): Map<string, { fullPath: string; depth: number }> {
+  const byId = new Map<string, Pick<FolderRow, 'id' | 'parent_id' | 'name'>>(
+    folders.map((f) => [f.id, f]),
+  );
+  const out = new Map<string, { fullPath: string; depth: number }>();
+  for (const folder of folders) {
+    const segments: string[] = [];
+    const seen = new Set<string>();
+    let cur: string | null = folder.id;
+    while (cur && !seen.has(cur)) {
+      seen.add(cur);
+      const node = byId.get(cur);
+      if (!node) break;
+      segments.unshift(node.name);
+      cur = node.parent_id;
+    }
+    out.set(folder.id, {
+      fullPath: segments.join('/'),
+      depth: segments.length,
+    });
+  }
+  return out;
+}
+
+/** An asset's folder path from a {@link folderPathIndex}; `null` at the root. */
+export function assetFolderPath(
+  paths: Map<string, { fullPath: string; depth: number }>,
+  folderId: string | null,
+): string | null {
+  return folderId ? (paths.get(folderId)?.fullPath ?? null) : null;
+}
+
+/**
+ * Fetch every folder and index it by path — the shared source for stamping
+ * `fullPath`/`depth` on folders and `folderPath`/`path` on assets in the route
+ * handlers (a single small query per request; the folder set is tiny).
+ */
+export async function loadFolderPaths(
+  sb: SupabaseClient,
+): Promise<Map<string, { fullPath: string; depth: number }>> {
+  const { data, error } = await sb.from('folder').select('id,parent_id,name');
+  if (error)
+    throw createError({ statusCode: 502, statusMessage: error.message });
+  return folderPathIndex(data ?? []);
 }
 
 /**

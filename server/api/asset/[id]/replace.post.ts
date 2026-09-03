@@ -7,7 +7,12 @@ import {
 } from 'h3';
 import type { Asset } from '#shared/types';
 import { mimeToAssetType } from '#shared/utils/asset';
-import { assetMockSupabase, toAsset } from '../../../utils/assets-mock';
+import {
+  assetFolderPath,
+  assetMockSupabase,
+  loadFolderPaths,
+  toAsset,
+} from '../../../utils/assets-mock';
 
 // POST /api/asset/:id/replace — repo `replace(id, formData)`. Uploads the new
 // file to the `assets` bucket and repoints the existing row's file columns
@@ -62,5 +67,6 @@ export default defineEventHandler(async (event): Promise<Asset> => {
   if (!data) {
     throw createError({ statusCode: 404, statusMessage: 'Asset not found' });
   }
-  return toAsset(data);
+  const paths = await loadFolderPaths(sb);
+  return toAsset(data, assetFolderPath(paths, data.folder_id));
 });

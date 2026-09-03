@@ -2,7 +2,12 @@ import { randomUUID } from 'node:crypto';
 import { defineEventHandler, readMultipartFormData, createError } from 'h3';
 import type { Asset, AssetUploadMeta } from '#shared/types';
 import { mimeToAssetType } from '#shared/utils/asset';
-import { assetMockSupabase, toAsset } from '../../utils/assets-mock';
+import {
+  assetFolderPath,
+  assetMockSupabase,
+  loadFolderPaths,
+  toAsset,
+} from '../../utils/assets-mock';
 
 // POST /api/asset/upload — repo `upload(formData)`. Stores each file in the
 // `assets` bucket and inserts the asset row; returns the created Asset[].
@@ -49,6 +54,7 @@ export default defineEventHandler(async (event): Promise<Asset[]> => {
   const bucket = sb.storage.from('assets');
   const created: Asset[] = [];
   const failed: string[] = [];
+  const paths = await loadFolderPaths(sb);
 
   for (const [i, file] of files.entries()) {
     const m = meta[i] ?? {};
@@ -86,7 +92,7 @@ export default defineEventHandler(async (event): Promise<Asset[]> => {
         .select('*')
         .single();
       if (error) throw new Error(error.message);
-      created.push(toAsset(data));
+      created.push(toAsset(data, assetFolderPath(paths, data.folder_id)));
     } catch {
       // Per-file failure: record and continue so one bad file doesn't sink the
       // whole batch (partial success is reconciled by the caller).

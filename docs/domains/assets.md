@@ -27,6 +27,8 @@ The Assets domain manages media files (images, SVGs, documents, PDFs, video, aud
 
 The contract is **camelCase + `_id`/`_type`** (via `ResponseEntity`), mirroring the rest of the Management API. It is independent of the storage backend — the mock maps to it (see below).
 
+> **Phase 8 alignment (STU-326).** Ahead of the real `Geins.Media` backend, the mock pre-emits its wire fields: `Asset._type` is `'geins.asset'`, each `Asset` carries `path` (= `folderPath`/`name`) and `folderPath` (owning folder's full path; `null` at root), and each `Folder` carries `fullPath` + `depth` (segment count; 1 = top level). Derived server-side in the mappers via `folderPathIndex` / `loadFolderPaths` ([assets-mock.ts](server/utils/assets-mock.ts)). Fields the real phase 1 drops (`sortOrder`, `system`, and the metadata group) still ship from the mock until cutover — see the Phase 8 milestone.
+
 | Method & path              | Repo call                           | Body / query                            | Returns    |
 | -------------------------- | ----------------------------------- | --------------------------------------- | ---------- |
 | `GET /asset/list`          | `assetApi.list(opts)`               | `?folderId`, `?search`                  | `Asset[]`  |

@@ -7,6 +7,8 @@ import {
   folderColumns,
   descendantFolderIds,
   distinctSortedTags,
+  folderPathIndex,
+  assetFolderPath,
   resolveAssetFolderFilter,
   UNCATEGORISED_FOLDER_ID,
 } from '../assets-mock';
@@ -44,7 +46,7 @@ describe('toAsset', () => {
     const asset = toAsset(assetRow);
     expect(asset).toMatchObject({
       _id: 'a1',
-      _type: 'asset',
+      _type: 'geins.asset',
       folderId: 'f1',
       sizeBytes: 1234,
       thumbUrl: 'https://cdn/hero-t.jpg',
@@ -52,6 +54,16 @@ describe('toAsset', () => {
       createdAt: '2026-08-17T00:00:00.000Z',
       updatedAt: '2026-08-18T00:00:00.000Z',
     });
+  });
+
+  it('builds path from folderPath + name; null folderPath = root', () => {
+    expect(toAsset(assetRow, 'marketing/campaigns')).toMatchObject({
+      folderPath: 'marketing/campaigns',
+      path: 'marketing/campaigns/hero.jpg',
+    });
+    const root = toAsset(assetRow);
+    expect(root.folderPath).toBeNull();
+    expect(root.path).toBe('hero.jpg');
   });
 
   it('derives default-language altText from localizations', () => {
@@ -73,7 +85,7 @@ describe('toAsset', () => {
 });
 
 describe('toFolder', () => {
-  it('maps folder columns to the contract', () => {
+  it('maps folder columns to the contract (defaults to a top-level path)', () => {
     expect(toFolder(folderRow)).toEqual({
       _id: 'f1',
       _type: 'folder',
@@ -81,8 +93,16 @@ describe('toFolder', () => {
       parentId: null,
       system: false,
       sortOrder: 2,
+      fullPath: 'Marketing',
+      depth: 1,
       createdAt: '2026-08-17T00:00:00.000Z',
     });
+  });
+
+  it('takes fullPath + depth from the supplied path meta', () => {
+    const folder = toFolder(folderRow, { fullPath: 'a/b/Marketing', depth: 3 });
+    expect(folder.fullPath).toBe('a/b/Marketing');
+    expect(folder.depth).toBe(3);
   });
 });
 
@@ -146,6 +166,35 @@ describe('distinctSortedTags', () => {
 
   it('is empty for no rows', () => {
     expect(distinctSortedTags([])).toEqual([]);
+  });
+});
+
+describe('folderPathIndex', () => {
+  // marketing ┬ campaigns
+  //           └ social
+  // brand (top-level)
+  const folders = [
+    { id: 'm', parent_id: null, name: 'marketing' },
+    { id: 'c', parent_id: 'm', name: 'campaigns' },
+    { id: 's', parent_id: 'm', name: 'social' },
+    { id: 'b', parent_id: null, name: 'brand' },
+  ];
+
+  it('builds full paths + depth by walking the parent chain', () => {
+    const idx = folderPathIndex(folders);
+    expect(idx.get('m')).toEqual({ fullPath: 'marketing', depth: 1 });
+    expect(idx.get('c')).toEqual({
+      fullPath: 'marketing/campaigns',
+      depth: 2,
+    });
+    expect(idx.get('b')).toEqual({ fullPath: 'brand', depth: 1 });
+  });
+
+  it('assetFolderPath resolves a folder id, null at the root', () => {
+    const idx = folderPathIndex(folders);
+    expect(assetFolderPath(idx, 'c')).toBe('marketing/campaigns');
+    expect(assetFolderPath(idx, null)).toBeNull();
+    expect(assetFolderPath(idx, 'missing')).toBeNull();
   });
 });
 

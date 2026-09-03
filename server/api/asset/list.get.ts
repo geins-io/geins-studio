@@ -1,7 +1,9 @@
 import { defineEventHandler, getQuery, createError } from 'h3';
 import {
+  assetFolderPath,
   assetMockSupabase,
   descendantFolderIds,
+  loadFolderPaths,
   resolveAssetFolderFilter,
   toAsset,
 } from '../../utils/assets-mock';
@@ -36,5 +38,9 @@ export default defineEventHandler(async (event) => {
   const { data, error } = await query;
   if (error)
     throw createError({ statusCode: 502, statusMessage: error.message });
-  return (data ?? []).map(toAsset);
+
+  const paths = await loadFolderPaths(sb);
+  return (data ?? []).map((row) =>
+    toAsset(row, assetFolderPath(paths, row.folder_id)),
+  );
 });

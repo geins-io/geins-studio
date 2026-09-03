@@ -1,7 +1,9 @@
 import { defineEventHandler, readBody, createError } from 'h3';
 import {
+  assetFolderPath,
   assetMockSupabase,
   assetColumns,
+  loadFolderPaths,
   toAsset,
 } from '../../utils/assets-mock';
 
@@ -16,5 +18,6 @@ export default defineEventHandler(async (event) => {
     .single();
   if (error)
     throw createError({ statusCode: 400, statusMessage: error.message });
-  return toAsset(data);
+  const paths = await loadFolderPaths(sb);
+  return toAsset(data, assetFolderPath(paths, data.folder_id));
 });
