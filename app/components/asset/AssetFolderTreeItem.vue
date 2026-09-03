@@ -9,7 +9,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   select: [id: string];
-  create: [payload: { parentId: string; name: string }];
+  create: [payload: { parentFolderId: string; name: string }];
   delete: [node: FolderNode];
 }>();
 
@@ -30,7 +30,7 @@ function startAddChild() {
   addingChild.value = true;
 }
 function onCreateChild(name: string) {
-  emit('create', { parentId: props.node._id, name });
+  emit('create', { parentFolderId: props.node._id, name });
   addingChild.value = false;
 }
 </script>

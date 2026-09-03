@@ -15,7 +15,7 @@ const { tree, systemFolders, folderName, loading, refresh } = useFolders();
 const name = folderName(asset.folderId);
 
 // after a folder mutation
-await assetApi.folder.create({ name: 'Campaigns', parentId: null });
+await assetApi.folder.create({ name: 'Campaigns', parentFolderId: null });
 await refresh();
 ```
 
@@ -44,7 +44,7 @@ Split on the `system` flag. System folders (`Uncategorised`, `Archived`) are ser
 tree: ComputedRef<FolderNode[]>;
 ```
 
-The **user** folders nested via `parentId`, sorted by `sortOrder` then name at each level. `FolderNode` is a `Folder` plus a `children: FolderNode[]` array.
+The **user** folders nested via `parentFolderId`, sorted by `sortOrder` then name at each level. `FolderNode` is a `Folder` plus a `children: FolderNode[]` array.
 
 ### `folderName`
 

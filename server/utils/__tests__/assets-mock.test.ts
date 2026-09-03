@@ -90,7 +90,7 @@ describe('toFolder', () => {
       _id: 'f1',
       _type: 'folder',
       name: 'Marketing',
-      parentId: null,
+      parentFolderId: null,
       system: false,
       sortOrder: 2,
       fullPath: 'Marketing',
@@ -121,7 +121,9 @@ describe('assetColumns', () => {
 
 describe('folderColumns', () => {
   it('maps provided keys only', () => {
-    expect(folderColumns({ name: 'A', parentId: 'p', sortOrder: 3 })).toEqual({
+    expect(
+      folderColumns({ name: 'A', parentFolderId: 'p', sortOrder: 3 }),
+    ).toEqual({
       name: 'A',
       parent_id: 'p',
       sort_order: 3,

@@ -98,8 +98,8 @@ export interface AssetApiOptions extends ApiOptions<keyof AssetBase> {
 
 export interface FolderBase {
   name: string;
-  /** Parent folder id; `null` = top-level. */
-  parentId: string | null;
+  /** Parent folder id; `null` = top-level. Named to match Geins.Media. */
+  parentFolderId: string | null;
   sortOrder: number;
 }
 

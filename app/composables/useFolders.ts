@@ -32,7 +32,9 @@ function buildTree(folders: Folder[]): FolderNode[] {
   );
   const roots: FolderNode[] = [];
   for (const node of nodes.values()) {
-    const parent = node.parentId ? nodes.get(node.parentId) : undefined;
+    const parent = node.parentFolderId
+      ? nodes.get(node.parentFolderId)
+      : undefined;
     if (parent) parent.children.push(node);
     else roots.push(node);
   }
@@ -75,9 +77,9 @@ export function useFolders(): UseFoldersReturnType {
   const descendantIds = (rootId: string): string[] => {
     const childrenByParent = new Map<string | null, string[]>();
     for (const f of folders.value) {
-      const siblings = childrenByParent.get(f.parentId) ?? [];
+      const siblings = childrenByParent.get(f.parentFolderId) ?? [];
       siblings.push(f._id);
-      childrenByParent.set(f.parentId, siblings);
+      childrenByParent.set(f.parentFolderId, siblings);
     }
     const out: string[] = [];
     const stack = [rootId];
