@@ -3,6 +3,7 @@ import type {
   AssetCreate,
   AssetUpdate,
   AssetApiOptions,
+  BatchQueryResult,
   Folder,
   FolderCreate,
   FolderUpdate,
@@ -30,9 +31,37 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     fetch,
   );
 
+  const { batchQueryMatchAll, batchQueryNoPagination } = useBatchQuery();
+
   return {
     ...assets,
     folder,
+
+    /**
+     * List assets via `POST /asset/query` (mirrors the real POST
+     * /media/assets/query `BatchQueryResult` shape + the product repo's batch
+     * convention). Fetches everything (no-pagination batch) so the grid + list
+     * sort / paginate / search client-side via TanStack — the app-wide pattern.
+     * Folder scope stays server-side. Returns the unwrapped items.
+     */
+    async list(
+      options?: AssetApiOptions,
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<Asset[]> {
+      const res = await fetch<BatchQueryResult<Asset>>(
+        `${ENTITIES.asset.endpoint}/query`,
+        {
+          method: 'POST',
+          body: {
+            ...batchQueryMatchAll.value,
+            ...batchQueryNoPagination.value,
+            ...(options?.folderId ? { folderId: options.folderId } : {}),
+          },
+          ...fetchOptions,
+        },
+      );
+      return res.items;
+    },
 
     /**
      * Distinct, sorted tag set across all assets — feeds the tag-input
