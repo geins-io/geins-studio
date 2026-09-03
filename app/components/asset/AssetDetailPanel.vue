@@ -26,6 +26,7 @@ const { assetApi } = useGeinsRepository();
 const { formatDate } = useDate();
 const { geinsLogError } = useGeinsLog('components/AssetDetailPanel.vue');
 const { copyUrl, download, deleteAsset } = useAssetActions();
+const caps = useAssetCapabilities();
 
 const entityKey = ENTITIES.asset.key;
 
@@ -35,7 +36,7 @@ const entityKey = ENTITIES.asset.key;
 const { data: allTags, refresh: refreshTags } = useAsyncData<string[]>(
   'asset-tags',
   () => assetApi.listTags(),
-  { default: () => [] },
+  { default: () => [], immediate: caps.tagAutocomplete },
 );
 const tagOptions = computed<EntityBaseWithName[]>(() =>
   (allTags.value ?? []).map((tag) => ({ _id: tag, name: tag })),
@@ -79,7 +80,7 @@ const altText = computed<LocalizedText>({
 });
 watch(open, (value) => {
   if (value && props.asset) {
-    refreshTags();
+    if (caps.tagAutocomplete) refreshTags();
     const values: AssetFormValues = {
       name: props.asset.name,
       folderId: props.asset.folderId,
@@ -148,7 +149,7 @@ async function handleDelete() {
     :entity-key="entityKey"
     :dirty="isDirty"
     :loading="loading"
-    :save-disabled="!isDirty"
+    :save-disabled="!isDirty || !caps.canEditMetadata"
     @save="handleSave"
   >
     <template v-if="asset">
@@ -187,6 +188,7 @@ async function handleDelete() {
           variant="outline"
           size="sm"
           class="flex-1 bg-transparent dark:bg-transparent"
+          :disabled="!caps.canReplaceFile"
           @click="replaceOpen = true"
         >
           {{ $t('replace') }}
@@ -196,91 +198,108 @@ async function handleDelete() {
       <div class="border-border -mx-3 mt-4 mb-6 border-b sm:-mx-6" />
 
       <form @submit.prevent>
-        <FormGridWrap>
-          <FormGrid design="1">
-            <FormField v-slot="{ componentField }" name="name" keep-value>
-              <FormItem>
-                <FormLabel>{{ $t('name', 1) }}</FormLabel>
-                <FormControl>
-                  <Input v-bind="componentField" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            </FormField>
+        <!-- The real Geins.Media phase 1 has no metadata-edit routes; disable
+             the whole form (fieldset gates every nested control) rather than
+             remove it — phase 2 restores editing. See useAssetCapabilities. -->
+        <fieldset
+          :disabled="!caps.canEditMetadata"
+          class="m-0 min-w-0 border-0 p-0"
+          :class="{ 'opacity-60': !caps.canEditMetadata }"
+        >
+          <FormGridWrap>
+            <FormGrid design="1">
+              <FormField v-slot="{ componentField }" name="name" keep-value>
+                <FormItem>
+                  <FormLabel>{{ $t('name', 1) }}</FormLabel>
+                  <FormControl>
+                    <Input v-bind="componentField" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
 
-            <FormField
-              v-slot="{ value, handleChange }"
-              name="folderId"
-              keep-value
-            >
-              <FormItem>
-                <FormLabel :optional="true">{{ $t('folder', 1) }}</FormLabel>
-                <AssetFolderPicker
-                  :model-value="value"
-                  @update:model-value="handleChange"
-                />
-              </FormItem>
-            </FormField>
-
-            <FormField
-              v-slot="{ componentField }"
-              name="description"
-              keep-value
-            >
-              <FormItem>
-                <FormLabel :optional="true">{{ $t('description') }}</FormLabel>
-                <FormControl>
-                  <Textarea v-bind="componentField" />
-                </FormControl>
-              </FormItem>
-            </FormField>
-
-            <FormField v-if="asset.type === 'image'" name="altText" keep-value>
-              <FormItem>
-                <FormLabel :optional="true">
-                  {{ $t('asset_library.alt_text') }}
-                </FormLabel>
-                <FormTranslatableField
-                  v-model="altText"
-                  :label="$t('asset_library.alt_text')"
-                  :placeholder="$t('asset_library.alt_text_placeholder')"
-                  :subject="asset.name"
-                />
-              </FormItem>
-            </FormField>
-
-            <FormField v-slot="{ componentField }" name="tags" keep-value>
-              <FormItem>
-                <FormLabel :optional="true">{{ $t('tag', 2) }}</FormLabel>
-                <FormControl>
-                  <FormInputTagsSearch
-                    :model-value="componentField.modelValue"
-                    entity-key="tag"
-                    :data-set="tagOptions"
-                    :allow-custom-tags="true"
-                    @update:model-value="componentField['onUpdate:modelValue']"
-                  />
-                </FormControl>
-              </FormItem>
-            </FormField>
-
-            <FormField
-              v-slot="{ value, handleChange }"
-              name="channels"
-              keep-value
-            >
-              <FormItem>
-                <FormLabel :optional="true">{{ $t('channel', 2) }}</FormLabel>
-                <FormControl>
-                  <FormInputChannels
+              <FormField
+                v-slot="{ value, handleChange }"
+                name="folderId"
+                keep-value
+              >
+                <FormItem>
+                  <FormLabel :optional="true">{{ $t('folder', 1) }}</FormLabel>
+                  <AssetFolderPicker
                     :model-value="value"
                     @update:model-value="handleChange"
                   />
-                </FormControl>
-              </FormItem>
-            </FormField>
-          </FormGrid>
-        </FormGridWrap>
+                </FormItem>
+              </FormField>
+
+              <FormField
+                v-slot="{ componentField }"
+                name="description"
+                keep-value
+              >
+                <FormItem>
+                  <FormLabel :optional="true">
+                    {{ $t('description') }}
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea v-bind="componentField" />
+                  </FormControl>
+                </FormItem>
+              </FormField>
+
+              <FormField
+                v-if="asset.type === 'image'"
+                name="altText"
+                keep-value
+              >
+                <FormItem>
+                  <FormLabel :optional="true">
+                    {{ $t('asset_library.alt_text') }}
+                  </FormLabel>
+                  <FormTranslatableField
+                    v-model="altText"
+                    :label="$t('asset_library.alt_text')"
+                    :placeholder="$t('asset_library.alt_text_placeholder')"
+                    :subject="asset.name"
+                  />
+                </FormItem>
+              </FormField>
+
+              <FormField v-slot="{ componentField }" name="tags" keep-value>
+                <FormItem>
+                  <FormLabel :optional="true">{{ $t('tag', 2) }}</FormLabel>
+                  <FormControl>
+                    <FormInputTagsSearch
+                      :model-value="componentField.modelValue"
+                      entity-key="tag"
+                      :data-set="tagOptions"
+                      :allow-custom-tags="true"
+                      @update:model-value="
+                        componentField['onUpdate:modelValue']
+                      "
+                    />
+                  </FormControl>
+                </FormItem>
+              </FormField>
+
+              <FormField
+                v-slot="{ value, handleChange }"
+                name="channels"
+                keep-value
+              >
+                <FormItem>
+                  <FormLabel :optional="true">{{ $t('channel', 2) }}</FormLabel>
+                  <FormControl>
+                    <FormInputChannels
+                      :model-value="value"
+                      @update:model-value="handleChange"
+                    />
+                  </FormControl>
+                </FormItem>
+              </FormField>
+            </FormGrid>
+          </FormGridWrap>
+        </fieldset>
       </form>
 
       <dl class="mt-6 space-y-2 border-t pt-4 text-sm">
@@ -317,7 +336,7 @@ async function handleDelete() {
           <Button
             size="sm"
             variant="destructive"
-            :disabled="deleting"
+            :disabled="deleting || !caps.canDeleteAsset"
             @click.stop="deleteOpen = true"
           >
             {{ $t('delete') }}

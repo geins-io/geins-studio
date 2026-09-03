@@ -167,6 +167,11 @@ export default defineNuxtConfig({
       debug: process.env.GEINS_DEBUG === 'true',
       appId: process.env.NUXT_PUBLIC_APP_ID || '',
       isVercel: !!process.env.VERCEL,
+      // cutover: remove with the mock — Which Assets Library backend the client
+      // targets. 'mock' (default) keeps every feature on; 'media-phase1' gates
+      // the controls Geins.Media phase 1 doesn't serve yet (metadata edit,
+      // delete, replace, tag autocomplete). See docs/domains/assets-cutover.md.
+      assetsBackend: process.env.NUXT_PUBLIC_ASSETS_BACKEND || 'mock',
     },
     private: {
       authSecret: process.env.AUTH_SECRET,

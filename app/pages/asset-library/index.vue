@@ -15,6 +15,7 @@ const { assetApi } = useGeinsRepository();
 const { getColumns, getBasicCellStyle, getBasicHeaderStyle } =
   useColumns<Asset>();
 const { folderName } = useFolders();
+const caps = useAssetCapabilities();
 const { resolveIcon } = useLucideIcon();
 const entityKey = ENTITIES.asset.key;
 const route = useRoute();
@@ -222,6 +223,7 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
         h(AssetActionsMenu, {
           asset: row.original,
           trigger: 'table',
+          canDelete: caps.canDeleteAsset,
           onOpen: () => openAsset(row.original),
           onDownload: () => download(row.original),
           onCopyUrl: () => copyUrl(row.original),

@@ -1,4 +1,31 @@
-import type { AssetType } from '#shared/types';
+import type {
+  AssetCapabilities,
+  AssetsBackend,
+  AssetType,
+} from '#shared/types';
+
+/**
+ * Feature availability for a given backend. Everything is on for the `mock`;
+ * `media-phase1` serves browse + upload only, so it gates the controls the real
+ * phase-1 API doesn't implement yet (they return in a later phase). Pure so it
+ * can be unit-tested and reused by the `useAssetCapabilities` composable.
+ *
+ * cutover: REVISIT@phase2 — the whole capability mechanism is temporary; remove
+ * it (+ its consumers) once phase 2 restores the gated features. Ledger:
+ * docs/domains/assets-cutover.md.
+ */
+export function assetCapabilities(backend: AssetsBackend): AssetCapabilities {
+  const mock = backend === 'mock';
+  return {
+    backend,
+    canEditMetadata: mock,
+    canMoveAsset: mock,
+    canDeleteAsset: mock,
+    canReplaceFile: mock,
+    tagAutocomplete: mock,
+    hasThumbnails: mock,
+  };
+}
 
 // Raster image mimes browsers can render inline. Only these become `image` (and
 // get an `<img>` preview) — an `image/*` prefix is too broad: formats like PSD
