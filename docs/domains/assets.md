@@ -13,7 +13,7 @@ The Assets domain manages media files (images, SVGs, documents, PDFs, video, aud
 
 ## Key Concepts
 
-**Folder = backend category filter** — Folders are an adjacency list (`parentId`, self-referential). A folder is not client-side tree math: selecting one sends a `folderId` filter to the API, which returns that folder **plus all descendants**. Two locked **system folders** (`Uncategorised`, `Archived`, `system: true`) are server-owned and not user-creatable; "All assets" is a UI concept (no filter), not a row.
+**Folder = backend category filter** — Folders are an adjacency list (`parentFolderId`, self-referential). A folder is not client-side tree math: selecting one sends a `folderId` filter to the API, which returns that folder **plus all descendants**. Two locked **system folders** (`Uncategorised`, `Archived`, `system: true`) are server-owned and not user-creatable; "All assets" is a UI concept (no filter), not a row.
 
 **Asset types** (`AssetType`) — `image | svg | doc | pdf | video | audio | other`. Drives the type badge and thumbnail rendering.
 
@@ -72,7 +72,7 @@ The mock lives entirely under `server/` and never reaches the client:
 | `sizeBytes`               | `size_bytes`                         |
 | `localizations`           | `localizations` (jsonb)              |
 | `altText` (derived)       | _(from `localizations[en].altText`)_ |
-| `parentId`                | `parent_id`                          |
+| `parentFolderId`          | `parent_id`                          |
 | `sortOrder`               | `sort_order`                         |
 | `createdAt` / `updatedAt` | `created_at` / `updated_at`          |
 

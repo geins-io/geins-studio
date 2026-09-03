@@ -46,7 +46,7 @@ async function createFolder() {
   try {
     const folder = await assetApi.folder.create({
       name,
-      parentId: null,
+      parentFolderId: null,
       sortOrder: 0,
     });
     await refreshFolders();

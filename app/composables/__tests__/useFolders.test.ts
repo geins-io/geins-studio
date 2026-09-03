@@ -12,13 +12,18 @@ mockNuxtImport('useGeinsRepository', () => () => ({
 // Derivations (tree, split, name lookup, descendants) are the logic under test,
 // so stub useAsyncData with a ready dataset instead of exercising the fetch.
 const folders: Folder[] = [
-  buildFolder({ _id: 'f1', name: 'Marketing', parentId: null, sortOrder: 1 }),
-  buildFolder({ _id: 'f2', name: 'Brand', parentId: 'f1', sortOrder: 2 }),
-  buildFolder({ _id: 'f3', name: 'Ads', parentId: 'f1', sortOrder: 1 }),
+  buildFolder({
+    _id: 'f1',
+    name: 'Marketing',
+    parentFolderId: null,
+    sortOrder: 1,
+  }),
+  buildFolder({ _id: 'f2', name: 'Brand', parentFolderId: 'f1', sortOrder: 2 }),
+  buildFolder({ _id: 'f3', name: 'Ads', parentFolderId: 'f1', sortOrder: 1 }),
   buildFolder({
     _id: 'sys1',
     name: 'Uncategorised',
-    parentId: null,
+    parentFolderId: null,
     system: true,
   }),
 ];

@@ -28,13 +28,13 @@ const allIcon = computed(() =>
 const addingTop = ref(false);
 
 async function createFolder(payload: {
-  parentId: string | null;
+  parentFolderId: string | null;
   name: string;
 }) {
   try {
     await assetApi.folder.create({
       name: payload.name,
-      parentId: payload.parentId,
+      parentFolderId: payload.parentFolderId,
       sortOrder: 0,
     });
     await refresh();
@@ -160,7 +160,7 @@ async function confirmDelete(assets: FolderDeleteAssets = 'move') {
 
           <AssetFolderCreateInput
             v-if="addingTop"
-            @create="(name) => createFolder({ parentId: null, name })"
+            @create="(name) => createFolder({ parentFolderId: null, name })"
             @cancel="addingTop = false"
           />
           <SidebarMenuItem>

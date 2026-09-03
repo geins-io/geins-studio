@@ -7,7 +7,7 @@ import {
 } from '../../../utils/assets-mock';
 
 // POST /api/asset/folder — repo `folder.create()`. `system` is never
-// user-settable (DB default false), so only name/parentId/sortOrder are mapped.
+// user-settable (DB default false), so only name/parentFolderId/sortOrder are mapped.
 export default defineEventHandler(async (event) => {
   const body = (await readBody<Record<string, unknown>>(event)) ?? {};
   const sb = assetMockSupabase();

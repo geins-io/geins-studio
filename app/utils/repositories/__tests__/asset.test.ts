@@ -111,7 +111,7 @@ describe('assetRepo', () => {
     });
 
     it('folder.create POSTs to /asset/folder with folder errorContext', async () => {
-      const body = { name: 'Marketing', parentId: null, sortOrder: 0 };
+      const body = { name: 'Marketing', parentFolderId: null, sortOrder: 0 };
       mockFetch.mockResolvedValue({ _id: 'f', _type: 'folder', ...body });
       await api.folder.create(body);
       expect(mockFetch).toHaveBeenCalledWith('/asset/folder', {

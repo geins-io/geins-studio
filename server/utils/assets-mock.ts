@@ -106,7 +106,7 @@ export function toFolder(
     _id: row.id,
     _type: 'folder',
     name: row.name,
-    parentId: row.parent_id,
+    parentFolderId: row.parent_id,
     system: row.system,
     sortOrder: row.sort_order,
     // Derived from the tree; default to a top-level folder when no map is given.
@@ -136,7 +136,7 @@ export function folderColumns(
 ): Record<string, unknown> {
   const row: Record<string, unknown> = {};
   if ('name' in body) row.name = body.name;
-  if ('parentId' in body) row.parent_id = body.parentId;
+  if ('parentFolderId' in body) row.parent_id = body.parentFolderId;
   if ('sortOrder' in body) row.sort_order = body.sortOrder;
   return row;
 }
