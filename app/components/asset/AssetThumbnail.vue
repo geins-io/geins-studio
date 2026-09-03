@@ -23,6 +23,18 @@ const info = computed(() => meta(props.type));
 const icon = computed(() => resolveIcon(info.value.icon));
 const isRow = computed(() => props.size === 'row');
 
+// Fall back to the type icon when there's no thumb OR the image fails to load
+// (phase-1 assets return `thumbUrl: null`; a stale/removed object 404s). Reset
+// on change since the panel banner reuses one instance across assets.
+const broken = ref(false);
+watch(
+  () => props.thumbUrl,
+  () => {
+    broken.value = false;
+  },
+);
+const showImage = computed(() => !!props.thumbUrl && !broken.value);
+
 const wrapperClass = computed(() => {
   switch (props.size) {
     case 'banner':
@@ -38,10 +50,11 @@ const wrapperClass = computed(() => {
 <template>
   <div :class="[wrapperClass, 'overflow-hidden rounded-md']">
     <img
-      v-if="thumbUrl"
-      :src="thumbUrl"
+      v-if="showImage"
+      :src="thumbUrl ?? ''"
       :alt="alt ?? ''"
       class="bg-muted h-full w-full object-cover"
+      @error="broken = true"
     />
     <div
       v-else
