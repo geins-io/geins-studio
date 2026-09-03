@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mimeToAssetType } from '../asset';
+import { assetCapabilities, mimeToAssetType } from '../asset';
 
 describe('mimeToAssetType', () => {
   it.each([
@@ -34,5 +34,31 @@ describe('mimeToAssetType', () => {
 
   it('prefers svg over the generic image/ prefix', () => {
     expect(mimeToAssetType('image/svg+xml')).toBe('svg');
+  });
+});
+
+describe('assetCapabilities', () => {
+  it('enables everything for the mock backend', () => {
+    const caps = assetCapabilities('mock');
+    expect(caps).toEqual({
+      backend: 'mock',
+      canEditMetadata: true,
+      canMoveAsset: true,
+      canDeleteAsset: true,
+      canReplaceFile: true,
+      tagAutocomplete: true,
+      hasThumbnails: true,
+    });
+  });
+
+  it('gates the phase-1-missing features for media-phase1', () => {
+    const caps = assetCapabilities('media-phase1');
+    expect(caps.backend).toBe('media-phase1');
+    expect(caps.canEditMetadata).toBe(false);
+    expect(caps.canMoveAsset).toBe(false);
+    expect(caps.canDeleteAsset).toBe(false);
+    expect(caps.canReplaceFile).toBe(false);
+    expect(caps.tagAutocomplete).toBe(false);
+    expect(caps.hasThumbnails).toBe(false);
   });
 });

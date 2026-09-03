@@ -21,6 +21,7 @@ const emit = defineEmits<{
 }>();
 
 const { formatDate } = useDate();
+const { canDeleteAsset } = useAssetCapabilities();
 const size = computed(() => formatFileSize(props.asset.sizeBytes));
 </script>
 
@@ -48,6 +49,7 @@ const size = computed(() => formatFileSize(props.asset.sizeBytes));
       >
         <AssetActionsMenu
           :asset="asset"
+          :can-delete="canDeleteAsset"
           @open="emit('open')"
           @download="emit('download')"
           @copy-url="emit('copyUrl')"

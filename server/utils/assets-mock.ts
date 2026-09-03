@@ -11,6 +11,9 @@ import { useRuntimeConfig } from '#imports';
  * routes NEVER return raw rows. When the real API serves `/asset`, delete
  * `server/api/asset/*` + this file and the catch-all proxy takes over with no
  * repo/UI change (see docs/domains/assets.md).
+ *
+ * cutover: REMOVE@cutover — the whole mock (this file + server/api/asset/**)
+ * and its Phase 8 additions die here. Ledger: docs/domains/assets-cutover.md.
  */
 
 // Default language for deriving the top-level `altText` from `localizations`

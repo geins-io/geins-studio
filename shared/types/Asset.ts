@@ -122,3 +122,34 @@ export interface Folder extends ResponseEntity<FolderBase> {
  * `delete` permanently removes them too.
  */
 export type FolderDeleteAssets = 'move' | 'delete';
+
+// =============================================================================
+// Backend capabilities
+// =============================================================================
+
+/**
+ * Which Assets Library backend the client targets. `mock` is the full Supabase
+ * mock; `media-phase1` is the real Geins.Media phase-1 API, which serves browse
+ * + upload only (see the Phase 8 milestone).
+ */
+export type AssetsBackend = 'mock' | 'media-phase1';
+
+/**
+ * Feature availability per backend — the shipped UI gates on these so controls
+ * the real phase-1 API can't fulfil (metadata edit, delete, replace, tag
+ * autocomplete, thumbnails) disable cleanly instead of erroring, while the mock
+ * keeps everything on. Derived from the backend via `assetCapabilities`.
+ */
+export interface AssetCapabilities {
+  backend: AssetsBackend;
+  /** Edit + save asset metadata (name, description, alt text, tags, channels). */
+  canEditMetadata: boolean;
+  /** Move an asset to another folder (change `folderId`). */
+  canMoveAsset: boolean;
+  canDeleteAsset: boolean;
+  canReplaceFile: boolean;
+  /** Suggest existing tags from the distinct-tags source. */
+  tagAutocomplete: boolean;
+  /** Backend produces real thumbnails (`thumbUrl`); phase 1 returns null. */
+  hasThumbnails: boolean;
+}
