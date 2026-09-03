@@ -13,19 +13,22 @@ describe('assetRepo', () => {
   const api = assetRepo(mockFetch);
 
   describe('assets → /asset', () => {
-    it('list calls GET /asset/list', async () => {
-      mockFetch.mockResolvedValue([]);
-      await api.list();
-      expect(mockFetch).toHaveBeenCalledWith('/asset/list', {
-        query: undefined,
+    it('list POSTs the no-pagination batch to /asset/query and unwraps items', async () => {
+      const items = [{ _id: 'a1', _type: 'geins.asset' }];
+      mockFetch.mockResolvedValue({ items });
+      await expect(api.list()).resolves.toEqual(items);
+      expect(mockFetch).toHaveBeenCalledWith('/asset/query', {
+        method: 'POST',
+        body: { all: true, page: 1, pageSize: 10000000 },
       });
     });
 
-    it('list forwards folder + search query options', async () => {
-      mockFetch.mockResolvedValue([]);
+    it('list scopes to a folder via the query body (search stays client-side)', async () => {
+      mockFetch.mockResolvedValue({ items: [] });
       await api.list({ folderId: 'f1', search: 'logo' });
-      expect(mockFetch).toHaveBeenCalledWith('/asset/list', {
-        query: { folderId: 'f1', search: 'logo' },
+      expect(mockFetch).toHaveBeenCalledWith('/asset/query', {
+        method: 'POST',
+        body: { all: true, page: 1, pageSize: 10000000, folderId: 'f1' },
       });
     });
 
