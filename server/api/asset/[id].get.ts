@@ -1,5 +1,10 @@
 import { defineEventHandler, getRouterParam, createError } from 'h3';
-import { assetMockSupabase, toAsset } from '../../utils/assets-mock';
+import {
+  assetFolderPath,
+  assetMockSupabase,
+  loadFolderPaths,
+  toAsset,
+} from '../../utils/assets-mock';
 
 // GET /api/asset/:id — repo `get(id)`.
 export default defineEventHandler(async (event) => {
@@ -16,5 +21,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 502, statusMessage: error.message });
   if (!data)
     throw createError({ statusCode: 404, statusMessage: 'Asset not found' });
-  return toAsset(data);
+  const paths = await loadFolderPaths(sb);
+  return toAsset(data, assetFolderPath(paths, data.folder_id));
 });

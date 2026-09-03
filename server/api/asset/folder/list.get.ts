@@ -1,5 +1,9 @@
 import { defineEventHandler, createError } from 'h3';
-import { assetMockSupabase, toFolder } from '../../../utils/assets-mock';
+import {
+  assetMockSupabase,
+  folderPathIndex,
+  toFolder,
+} from '../../../utils/assets-mock';
 
 // GET /api/asset/folder/list — repo `folder.list()`. Full tree (bare Folder[]).
 export default defineEventHandler(async () => {
@@ -11,5 +15,6 @@ export default defineEventHandler(async () => {
     .order('name', { ascending: true });
   if (error)
     throw createError({ statusCode: 502, statusMessage: error.message });
-  return (data ?? []).map(toFolder);
+  const paths = folderPathIndex(data ?? []);
+  return (data ?? []).map((row) => toFolder(row, paths.get(row.id)));
 });

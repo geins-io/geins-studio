@@ -70,6 +70,10 @@ export interface AssetUploadMeta {
 
 /** Asset as returned by the API — base + identity + server-managed fields. */
 export interface Asset extends ResponseEntity<AssetBase> {
+  /** Blob storage path: `folderPath`/`name`. Mirrors the real API's `path`. */
+  path: string;
+  /** Owning folder's full path (breadcrumb source); `null` for a root asset. */
+  folderPath: string | null;
   /** Default-language alt text, derived server-side from `localizations`. */
   altText: string | null;
   sizeBytes: number;
@@ -105,6 +109,10 @@ export type FolderUpdate = UpdateEntity<FolderBase>;
 export interface Folder extends ResponseEntity<FolderBase> {
   /** Locked system folder (Uncategorised / Archived) — server-owned, not creatable. */
   system: boolean;
+  /** Full path from the root to this folder, e.g. `marketing/campaigns`. */
+  fullPath: string;
+  /** Depth in the tree — segment count of `fullPath` (1 = top level). */
+  depth: number;
   createdAt: string;
 }
 

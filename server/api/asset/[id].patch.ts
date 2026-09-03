@@ -1,7 +1,9 @@
 import { defineEventHandler, getRouterParam, readBody, createError } from 'h3';
 import {
+  assetFolderPath,
   assetMockSupabase,
   assetColumns,
+  loadFolderPaths,
   toAsset,
 } from '../../utils/assets-mock';
 
@@ -22,5 +24,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: error.message });
   if (!data)
     throw createError({ statusCode: 404, statusMessage: 'Asset not found' });
-  return toAsset(data);
+  const paths = await loadFolderPaths(sb);
+  return toAsset(data, assetFolderPath(paths, data.folder_id));
 });
