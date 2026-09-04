@@ -151,4 +151,99 @@ describe('assetRepo', () => {
       });
     });
   });
+
+  describe('uploadViaTickets → /asset/tickets', () => {
+    it('claims a ticket, PUTs accepted bytes, completes, and merges outcomes', async () => {
+      const put = vi.fn().mockResolvedValue({ ok: true });
+      vi.stubGlobal('fetch', put);
+      mockFetch
+        .mockResolvedValueOnce({
+          ticketId: 't1',
+          expiresAt: 'x',
+          results: [
+            {
+              clientRef: 'a',
+              status: 'accepted',
+              assetId: 'id-a',
+              upload: { mode: 'single', url: '/api/asset/tickets/t1/blob/a' },
+            },
+            {
+              clientRef: 'b',
+              status: 'rejected',
+              code: 'FILE_TOO_LARGE',
+              message: 'too big',
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          results: [
+            { clientRef: 'a', status: 'completed', file: { _id: 'id-a' } },
+          ],
+        });
+
+      const fileA = new File(['x'], 'a.png', { type: 'image/png' });
+      const fileB = new File(['yy'], 'b.png', { type: 'image/png' });
+      const out = await api.uploadViaTickets([
+        { file: fileA, clientRef: 'a' },
+        { file: fileB, clientRef: 'b' },
+      ]);
+
+      // Step 1: ticket claim.
+      expect(mockFetch).toHaveBeenNthCalledWith(
+        1,
+        '/asset/tickets',
+        expect.objectContaining({ method: 'POST' }),
+      );
+      // Step 2: PUT only the accepted file, with both content-type headers.
+      expect(put).toHaveBeenCalledTimes(1);
+      expect(put).toHaveBeenCalledWith(
+        '/api/asset/tickets/t1/blob/a',
+        expect.objectContaining({
+          method: 'PUT',
+          headers: {
+            'content-type': 'image/png',
+            'x-ms-blob-content-type': 'image/png',
+          },
+        }),
+      );
+      // Step 3: complete with the accepted refs only.
+      expect(mockFetch).toHaveBeenNthCalledWith(
+        2,
+        '/asset/tickets/t1/complete',
+        expect.objectContaining({ method: 'POST', body: { files: ['a'] } }),
+      );
+      // Merged: completed 'a' + ticket-stage rejection 'b'.
+      expect(out).toEqual([
+        { clientRef: 'a', status: 'completed', file: { _id: 'id-a' } },
+        {
+          clientRef: 'b',
+          status: 'rejected',
+          code: 'FILE_TOO_LARGE',
+          message: 'too big',
+        },
+      ]);
+      vi.unstubAllGlobals();
+    });
+
+    it('throws on an unknown upload mode (server ahead of client)', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
+      mockFetch.mockResolvedValueOnce({
+        ticketId: 't',
+        expiresAt: 'x',
+        results: [
+          {
+            clientRef: 'a',
+            status: 'accepted',
+            assetId: 'id',
+            upload: { mode: 'parts', url: '/x' },
+          },
+        ],
+      });
+      const file = new File(['x'], 'a.png', { type: 'image/png' });
+      await expect(
+        api.uploadViaTickets([{ file, clientRef: 'a' }]),
+      ).rejects.toThrow(/Unsupported upload mode/);
+      vi.unstubAllGlobals();
+    });
+  });
 });
