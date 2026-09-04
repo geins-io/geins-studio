@@ -4,6 +4,42 @@ import type {
   AssetType,
 } from '#shared/types';
 
+// Extension → MIME for the upload path. The browser leaves `File.type` empty
+// for many types (e.g. `.svg`, some `.mp4`), and the ticket flow needs a
+// declared `mimeType`, so derive it from the name when the browser gives none.
+const EXT_MIME: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  svg: 'image/svg+xml',
+  pdf: 'application/pdf',
+  mp4: 'video/mp4',
+  webm: 'video/webm',
+  mov: 'video/quicktime',
+  mp3: 'audio/mpeg',
+  wav: 'audio/wav',
+  doc: 'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  txt: 'text/plain',
+  csv: 'text/csv',
+};
+
+/**
+ * Content type to declare for an upload: the browser's `File.type` when set,
+ * else derived from the file extension, else `application/octet-stream` (the
+ * server sniffs the real bytes on complete and rejects a mismatch).
+ */
+export function contentTypeForUpload(
+  name: string,
+  browserType?: string,
+): string {
+  if (browserType) return browserType;
+  const ext = name.toLowerCase().split('.').pop() ?? '';
+  return EXT_MIME[ext] ?? 'application/octet-stream';
+}
+
 /**
  * Feature availability for a given backend. Everything is on for the `mock`;
  * `media-phase1` serves browse + upload only, so it gates the controls the real

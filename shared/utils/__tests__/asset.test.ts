@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { assetCapabilities, mimeToAssetType } from '../asset';
+import {
+  assetCapabilities,
+  contentTypeForUpload,
+  mimeToAssetType,
+} from '../asset';
 
 describe('mimeToAssetType', () => {
   it.each([
@@ -60,5 +64,20 @@ describe('assetCapabilities', () => {
     expect(caps.canReplaceFile).toBe(false);
     expect(caps.tagAutocomplete).toBe(false);
     expect(caps.hasThumbnails).toBe(false);
+  });
+});
+
+describe('contentTypeForUpload', () => {
+  it('uses the browser-provided type when present', () => {
+    expect(contentTypeForUpload('a.bin', 'image/png')).toBe('image/png');
+  });
+
+  it('derives from the extension when the browser gives none', () => {
+    expect(contentTypeForUpload('logo.svg')).toBe('image/svg+xml');
+    expect(contentTypeForUpload('clip.MP4')).toBe('video/mp4');
+  });
+
+  it('falls back to octet-stream for an unknown extension', () => {
+    expect(contentTypeForUpload('data.xyz')).toBe('application/octet-stream');
   });
 });

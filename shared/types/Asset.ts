@@ -68,6 +68,79 @@ export interface AssetUploadMeta {
   localizations?: Localized<AssetLocalizations>;
 }
 
+// =============================================================================
+// Upload ticket flow (Geins.Media 3-step upload: ticket → PUT bytes → complete)
+//
+// Phase 1 uploads claim a ticket, PUT bytes straight to storage via a returned
+// plan URL, then confirm with `complete`. No metadata rides along — the ticket
+// carries only name/folder/size/mime/overwrite; richer metadata waits for the
+// phase-2 metadata routes. Mock-emulated today (see server/api/asset/tickets*).
+// =============================================================================
+
+/** One file's claim in a ticket request. */
+export interface UploadTicketFile {
+  /** Client-generated id used to match results back to the source file. */
+  clientRef: string;
+  folderId?: string | null;
+  /** Bare file name when `folderId` is set; may carry path segments at root. */
+  name: string;
+  sizeBytes: number;
+  mimeType: string;
+  /** Overwrite an existing asset at the path (else `PATH_ALREADY_EXISTS`). */
+  overwrite?: boolean;
+}
+
+/** How to upload one accepted file's bytes. `single` now; `parts` is phase 2. */
+export type UploadPlan = { mode: 'single'; url: string };
+
+/** Per-file rejection codes the client switches on (ticket + complete). */
+export type UploadRejectionCode =
+  | 'PATH_INVALID'
+  | 'PATH_ALREADY_EXISTS'
+  | 'PATH_MOVE_PENDING'
+  | 'FILE_TOO_LARGE'
+  | 'FILE_TYPE_NOT_ALLOWED'
+  | 'FOLDER_INVALID'
+  | 'FOLDER_DEPTH_EXCEEDED'
+  | 'FORBIDDEN'
+  | 'QUOTA_EXCEEDED'
+  | 'BLOB_MISSING'
+  | 'CONTENT_TYPE_MISMATCH'
+  | 'SCAN_REJECTED';
+
+export type UploadTicketResult =
+  | {
+      clientRef: string;
+      status: 'accepted';
+      assetId: string;
+      upload: UploadPlan;
+    }
+  | {
+      clientRef: string;
+      status: 'rejected';
+      code: UploadRejectionCode;
+      message: string;
+    };
+
+export interface UploadTicketResponse {
+  ticketId: string;
+  expiresAt: string;
+  results: UploadTicketResult[];
+}
+
+export type UploadCompleteResult =
+  | { clientRef: string; status: 'completed'; file: Asset }
+  | {
+      clientRef: string;
+      status: 'rejected';
+      code: UploadRejectionCode;
+      message: string;
+    };
+
+export interface UploadCompleteResponse {
+  results: UploadCompleteResult[];
+}
+
 /** Asset as returned by the API — base + identity + server-managed fields. */
 export interface Asset extends ResponseEntity<AssetBase> {
   /** Blob storage path: `folderPath`/`name`. Mirrors the real API's `path`. */
