@@ -118,6 +118,10 @@ export default defineConfig({
                 text: 'useAssetCapabilities',
                 link: '/composables/useAssetCapabilities.md',
               },
+              {
+                text: 'useAssetStorage',
+                link: '/composables/useAssetStorage.md',
+              },
               { text: 'useAssetType', link: '/composables/useAssetType.md' },
               { text: 'useFolders', link: '/composables/useFolders.md' },
               {
@@ -225,6 +229,10 @@ export default defineConfig({
               {
                 text: 'AssetActionsMenu',
                 link: '/components/asset/AssetActionsMenu.md',
+              },
+              {
+                text: 'AssetStoragePanel',
+                link: '/components/asset/AssetStoragePanel.md',
               },
               {
                 text: 'AssetFolderDeleteDialog',
