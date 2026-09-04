@@ -1605,6 +1605,16 @@
   },
   "asset_library": {
     "upload_assets": "Ladda upp filer",
+    "storage": {
+      "title": "Lagring",
+      "description": "Lagringsanvändning per filtyp och mapp.",
+      "of_used": "av {total} använt",
+      "by_type": "Filtyp",
+      "images": "Bilder",
+      "video": "Video",
+      "documents": "Dokument",
+      "other": "Övrigt"
+    },
     "upload_choose_description": "Välj hur du vill lägga till filer i biblioteket.",
     "upload_quick": "Snabbuppladdning",
     "upload_quick_hint": "Släpp filer, välj en mapp och ladda upp.",

@@ -3,6 +3,7 @@ import { useMediaQuery } from '@vueuse/core';
 import type { Asset } from '#shared/types';
 import { TableMode } from '#shared/types';
 import { ENTITIES } from '#shared/utils/entities';
+import { formatFileSize } from '#shared/utils/file';
 import { cn } from '@/utils/index';
 import type { ColumnDef } from '@tanstack/vue-table';
 
@@ -37,6 +38,16 @@ const selectedFolder = ref<string | null>(
   (route.query.folder as string) || null,
 );
 const uploadOpen = ref(false);
+
+// Storage usage (mocked; phase-2 API). Summary in the header + a details panel.
+const storageOpen = ref(false);
+const { storage } = useAssetStorage();
+const storageUsedPct = computed(() =>
+  storage.value.totalBytes
+    ? Math.round((storage.value.usedBytes / storage.value.totalBytes) * 100)
+    : 0,
+);
+
 const detailOpen = ref(false);
 const detailAsset = ref<Asset | null>(null);
 
@@ -319,11 +330,41 @@ async function confirmDelete() {
 
   <ContentHeader :title="$t(entityKey, 2)">
     <ContentActionBar>
+      <!-- Storage summary + details panel (mocked usage; phase-2 API). -->
+      <div class="hidden w-64 sm:me-4 sm:block">
+        <div class="flex items-center gap-1.5">
+          <p class="text-xs whitespace-nowrap">
+            <span class="font-semibold">
+              {{ formatFileSize(storage.usedBytes) }}
+            </span>
+            <!-- explicit space: Vue condenses the whitespace between spans -->
+            {{ ' ' }}
+            <span class="text-muted-foreground">
+              {{
+                $t('asset_library.storage.of_used', {
+                  total: formatFileSize(storage.totalBytes),
+                })
+              }}
+            </span>
+          </p>
+          <button
+            type="button"
+            class="text-muted-foreground hover:text-foreground focus-visible:ring-ring shrink-0 rounded-full transition-colors focus-visible:ring-2 focus-visible:outline-none"
+            :aria-label="$t('asset_library.storage.title')"
+            @click="storageOpen = true"
+          >
+            <LucideInfo class="size-4" aria-hidden="true" />
+          </button>
+        </div>
+        <Progress :model-value="storageUsedPct" class="mt-1.5 h-1.5" />
+      </div>
       <ButtonIcon icon="upload" @click="uploadOpen = true">
         {{ $t('asset_library.upload_assets') }}
       </ButtonIcon>
     </ContentActionBar>
   </ContentHeader>
+
+  <AssetStoragePanel v-model:open="storageOpen" />
 
   <!-- Toolbar: folder toggle + search (left), view toggle (right) -->
   <div class="flex flex-wrap items-center gap-2">
