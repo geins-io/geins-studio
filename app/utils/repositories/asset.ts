@@ -19,6 +19,12 @@ import { entityRepo } from './entity';
 import type { RepoFetchOptions } from './entity-base';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
+// Module scope, mirroring the product repo: the auto-import for `useBatchQuery`
+// is only injected when it's called at the top level — calling it inside the
+// factory left it undefined and crashed app init (the account store builds the
+// repos on startup). Just two constant config refs, so sharing them is fine.
+const { batchQueryMatchAll, batchQueryNoPagination } = useBatchQuery();
+
 /**
  * Repository for the Assets Library — full CRUD for assets plus a `folder`
  * sub-repo. Both are standard `entityRepo`s off the registry, so create/update/
@@ -35,8 +41,6 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     ENTITIES.folder,
     fetch,
   );
-
-  const { batchQueryMatchAll, batchQueryNoPagination } = useBatchQuery();
 
   return {
     ...assets,
