@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ProductMatch } from '#shared/types';
 import { parseProductRef } from '#shared/utils/asset';
+import { segmentedButtonClass } from '@/utils/index';
 
 /**
  * Step 3 of the upload wizard — the review list. A read-only summary of every
@@ -168,9 +169,11 @@ const viewOptions: { value: ReviewView; icon: string; labelKey: string }[] = [
         <Button
           v-for="opt in viewOptions"
           :key="opt.value"
-          :variant="view === opt.value ? 'default' : 'outline'"
+          variant="outline"
           size="sm"
           class="gap-1.5"
+          :class="segmentedButtonClass(view === opt.value)"
+          :aria-pressed="view === opt.value"
           @click="view = opt.value"
         >
           <component :is="resolveIcon(opt.icon)" class="size-3.5" />

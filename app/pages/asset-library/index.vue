@@ -4,7 +4,7 @@ import type { Asset } from '#shared/types';
 import { TableMode } from '#shared/types';
 import { ENTITIES } from '#shared/utils/entities';
 import { formatFileSize } from '#shared/utils/file';
-import { cn } from '@/utils/index';
+import { cn, segmentedButtonClass } from '@/utils/index';
 import type { ColumnDef } from '@tanstack/vue-table';
 
 // Fixed-height list layout: header + toolbar + folder nav + pagination stay put;
@@ -369,9 +369,11 @@ async function confirmDelete() {
   <!-- Toolbar: folder toggle + search (left), view toggle (right) -->
   <div class="flex flex-wrap items-center gap-2">
     <Button
-      :variant="showFolders ? 'default' : 'outline'"
+      variant="outline"
       size="icon"
+      :class="segmentedButtonClass(showFolders)"
       :aria-label="$t('folder', 2)"
+      :aria-pressed="showFolders"
       @click="showFolders = !showFolders"
     >
       <LucideFolder class="size-4" aria-hidden="true" />
@@ -383,17 +385,21 @@ async function confirmDelete() {
     />
     <ButtonGroup class="order-1 ml-auto sm:order-2">
       <Button
-        :variant="view === 'grid' ? 'default' : 'outline'"
+        variant="outline"
         size="icon"
+        :class="segmentedButtonClass(view === 'grid')"
         :aria-label="$t('grid_view')"
+        :aria-pressed="view === 'grid'"
         @click="view = 'grid'"
       >
         <LucideLayoutGrid class="size-4" aria-hidden="true" />
       </Button>
       <Button
-        :variant="view === 'list' ? 'default' : 'outline'"
+        variant="outline"
         size="icon"
+        :class="segmentedButtonClass(view === 'list')"
         :aria-label="$t('list_view')"
+        :aria-pressed="view === 'list'"
         @click="view = 'list'"
       >
         <LucideList class="size-4" aria-hidden="true" />

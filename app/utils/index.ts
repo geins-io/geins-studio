@@ -9,6 +9,19 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Active/inactive colours for a segmented toggle button (grid/list view, folder
+ * toggle, wizard "group by"): the active option is plain white (`card`) and
+ * holds its colour on hover; the rest sit on the gray `background` with muted
+ * text. Structure — borders, joining — stays with `ButtonGroup` + the Button
+ * `outline` variant; this only swaps the fill/text so the toggles read the same.
+ */
+export function segmentedButtonClass(active: boolean): string {
+  return active
+    ? 'bg-card text-foreground hover:bg-card hover:text-foreground'
+    : 'bg-background text-muted-foreground hover:text-foreground';
+}
+
+/**
  *
  * @param updaterOrValue
  * @param ref
