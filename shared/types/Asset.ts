@@ -2,6 +2,7 @@ import type {
   CreateEntity,
   UpdateEntity,
   ResponseEntity,
+  EntityBaseWithName,
   ApiOptions,
   Localized,
 } from './index';
@@ -225,4 +226,14 @@ export interface AssetCapabilities {
   tagAutocomplete: boolean;
   /** Backend produces real thumbnails (`thumbUrl`); phase 1 returns null. */
   hasThumbnails: boolean;
+}
+
+/**
+ * The subset of a product the wizard shows when an image links to one — enough
+ * to render the linked indicator and the "group by products" header. A filename
+ * ref links if it matches EITHER the product's `_id` (the id merchants use) or
+ * its `articleNumber`.
+ */
+export interface ProductMatch extends EntityBaseWithName {
+  articleNumber: string;
 }

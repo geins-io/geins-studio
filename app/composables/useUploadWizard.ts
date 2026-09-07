@@ -35,6 +35,10 @@ interface UseUploadWizardReturnType {
   files: Ref<WizardFile[]>;
   settings: Ref<Record<string, WizardFileSettings>>;
   totalSize: ComputedRef<number>;
+  // Whole-upload toggle for auto-linking images to products, shared by the
+  // manage (indicator + control) and review (grouping) steps. Matching itself
+  // (article number or product id) lives in useProductMatch.
+  linkProducts: Ref<boolean>;
   addFiles: (list: FileList | File[] | null | undefined) => void;
   removeFiles: (ids: string[]) => void;
   clear: () => void;
@@ -61,6 +65,7 @@ interface UseUploadWizardReturnType {
 export function useUploadWizard(): UseUploadWizardReturnType {
   const files = ref<WizardFile[]>([]);
   const settings = ref<Record<string, WizardFileSettings>>({});
+  const linkProducts = ref(true);
 
   const totalSize = computed(() =>
     files.value.reduce((sum, f) => sum + f.file.size, 0),
@@ -167,6 +172,7 @@ export function useUploadWizard(): UseUploadWizardReturnType {
   return {
     files,
     settings,
+    linkProducts,
     totalSize,
     addFiles,
     removeFiles,

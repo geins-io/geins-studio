@@ -122,6 +122,10 @@ export default defineConfig({
                 text: 'useAssetStorage',
                 link: '/composables/useAssetStorage.md',
               },
+              {
+                text: 'useProductMatch',
+                link: '/composables/useProductMatch.md',
+              },
               { text: 'useAssetType', link: '/composables/useAssetType.md' },
               { text: 'useFolders', link: '/composables/useFolders.md' },
               {
@@ -253,6 +257,14 @@ export default defineConfig({
               {
                 text: 'AssetWizardManage',
                 link: '/components/asset/AssetWizardManage.md',
+              },
+              {
+                text: 'AssetWizardProductLinking',
+                link: '/components/asset/AssetWizardProductLinking.md',
+              },
+              {
+                text: 'AssetReviewRow',
+                link: '/components/asset/AssetReviewRow.md',
               },
               {
                 text: 'AssetWizardBulkPane',

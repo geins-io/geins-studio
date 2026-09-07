@@ -3,6 +3,7 @@ import {
   assetCapabilities,
   contentTypeForUpload,
   mimeToAssetType,
+  parseProductRef,
 } from '../asset';
 
 describe('mimeToAssetType', () => {
@@ -64,6 +65,28 @@ describe('assetCapabilities', () => {
     expect(caps.canReplaceFile).toBe(false);
     expect(caps.tagAutocomplete).toBe(false);
     expect(caps.hasThumbnails).toBe(false);
+  });
+});
+
+describe('parseProductRef', () => {
+  it.each([
+    ['9963010083_hero-banner.jpg', '9963010083'],
+    ['42_packshot.png', '42'],
+    ['9963010083_size-guide.docx', '9963010083'], // non-image names still parse
+    ['C-228_feature2.jpg', 'C-228'], // alphanumeric refs (article numbers / ids)
+    ['IND-1042_photo.jpg', 'IND-1042'],
+  ])('parses the ref before the first underscore from %s', (name, ref) => {
+    expect(parseProductRef(name)).toBe(ref);
+  });
+
+  it.each([
+    ['brand-logo.svg'], // no underscore
+    ['9963010083-hero.jpg'], // separator must be an underscore, not a hyphen
+    ['_leading-underscore.jpg'], // nothing before the underscore
+    ['9963010083.jpg'], // no underscore at all
+    [''],
+  ])('returns null for %s', (name) => {
+    expect(parseProductRef(name)).toBeNull();
   });
 });
 
