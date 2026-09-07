@@ -63,6 +63,19 @@ export function assetCapabilities(backend: AssetsBackend): AssetCapabilities {
   };
 }
 
+/**
+ * The product reference embedded in an upload filename: everything before the
+ * first underscore (`9963010083_hero.jpg` → `9963010083`, `C-228_front.jpg` →
+ * `C-228`). Refs are matched against a product's article number or id, both of
+ * which are alphanumeric in Geins — so this is deliberately not digits-only.
+ * Parsing the ref from the name is the frontend's job; the lookup that turns it
+ * into a match is the backend's. Returns null when the name has no `<ref>_`
+ * prefix (no underscore, or nothing before it).
+ */
+export function parseProductRef(filename: string): string | null {
+  return /^([^_]+)_/.exec(filename)?.[1]?.trim() || null;
+}
+
 // Raster image mimes browsers can render inline. Only these become `image` (and
 // get an `<img>` preview) — an `image/*` prefix is too broad: formats like PSD
 // (`image/vnd.adobe.photoshop`), TIFF and HEIC are images but can't be shown in

@@ -14,8 +14,12 @@ const { assetApi } = useGeinsRepository();
 const { meta } = useAssetType();
 const { resolveIcon } = useLucideIcon();
 const { folderName } = useFolders();
-const { files, settingsOf, patchSettings, removeFiles } =
+const { files, settingsOf, patchSettings, removeFiles, linkProducts } =
   useUploadWizardContext();
+const { matchOf } = useProductMatch();
+
+// An image whose filename ref resolves to a product (only when auto-link is on).
+const isLinked = (file: File): boolean => linkProducts.value && !!matchOf(file);
 
 // Distinct existing tags feed the tags autocomplete (custom tags still typeable).
 const { data: allTags } = useAsyncData<string[]>(
@@ -121,192 +125,206 @@ const rowFolderName = (id: string): string | undefined => {
 </script>
 
 <template>
-  <div class="flex h-full min-h-0 overflow-hidden rounded-lg border">
-    <!-- Left: file list -->
-    <div class="flex w-[35%] min-w-0 shrink-0 flex-col border-r">
-      <div class="flex items-center gap-3 border-b px-4 py-3">
-        <Checkbox
-          :model-value="selectAllState"
-          :aria-label="$t('select_all')"
-          @update:model-value="toggleAll"
-        />
-        <span
-          class="text-muted-foreground text-xs font-medium tracking-wider uppercase"
-        >
-          {{ $t('file', 2) }} ({{ files.length }})
-        </span>
-      </div>
-      <div class="min-h-0 flex-1 divide-y overflow-y-auto">
-        <div
-          v-for="f in files"
-          :key="f.id"
-          class="hover:bg-muted/40 flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors"
-          :class="checked.includes(f.id) && 'bg-muted/60'"
-          @click="selectSingle(f.id)"
-        >
+  <div class="flex h-full min-h-0 flex-col gap-4">
+    <AssetWizardProductLinking />
+
+    <div class="flex min-h-0 flex-1 overflow-hidden rounded-lg border">
+      <!-- Left: file list -->
+      <div class="flex w-[35%] min-w-0 shrink-0 flex-col border-r">
+        <div class="flex items-center gap-3 border-b px-4 py-3">
           <Checkbox
-            :model-value="checked.includes(f.id)"
-            :aria-label="f.file.name"
-            @click.stop
-            @update:model-value="toggleCheck(f.id)"
+            :model-value="selectAllState"
+            :aria-label="$t('select_all')"
+            @update:model-value="toggleAll"
           />
-          <div
-            :class="[
-              meta(mimeToAssetType(f.file.type)).tint,
-              'flex size-8 shrink-0 items-center justify-center rounded-md',
-            ]"
+          <span
+            class="text-muted-foreground text-xs font-medium tracking-wider uppercase"
           >
-            <component
-              :is="resolveIcon(meta(mimeToAssetType(f.file.type)).icon)"
-              class="size-4"
+            {{ $t('file', 2) }} ({{ files.length }})
+          </span>
+        </div>
+        <div class="min-h-0 flex-1 divide-y overflow-y-auto">
+          <div
+            v-for="f in files"
+            :key="f.id"
+            class="hover:bg-muted/40 flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors"
+            :class="checked.includes(f.id) && 'bg-muted/60'"
+            @click="selectSingle(f.id)"
+          >
+            <Checkbox
+              :model-value="checked.includes(f.id)"
+              :aria-label="f.file.name"
+              @click.stop
+              @update:model-value="toggleCheck(f.id)"
             />
-          </div>
-          <div class="min-w-0 flex-1">
-            <p class="truncate text-sm font-medium">
-              {{ settingsOf(f.id).name ?? f.file.name }}
-            </p>
-            <p class="text-muted-foreground truncate text-xs">
-              {{ formatFileSize(f.file.size) }}
-              <template v-if="rowFolderName(f.id)">
-                · {{ rowFolderName(f.id) }}
-              </template>
-            </p>
+            <div
+              :class="[
+                meta(mimeToAssetType(f.file.type)).tint,
+                'flex size-8 shrink-0 items-center justify-center rounded-md',
+              ]"
+            >
+              <component
+                :is="resolveIcon(meta(mimeToAssetType(f.file.type)).icon)"
+                class="size-4"
+              />
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-medium">
+                {{ settingsOf(f.id).name ?? f.file.name }}
+              </p>
+              <p class="text-muted-foreground truncate text-xs">
+                {{ formatFileSize(f.file.size) }}
+                <template v-if="rowFolderName(f.id)">
+                  · {{ rowFolderName(f.id) }}
+                </template>
+              </p>
+            </div>
+            <TooltipProvider v-if="isLinked(f.file)" :delay-duration="100">
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <LucideLink2 class="text-muted-foreground size-4 shrink-0" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  {{ $t('asset_library.linked_to_product') }}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Right: detail / bulk / empty -->
-    <div class="flex min-h-0 min-w-0 flex-1 flex-col">
-      <!-- Bulk pane (multi-select) -->
-      <AssetWizardBulkPane
-        v-if="bulkMode"
-        :ids="checked"
-        :tag-options="tagOptions"
-        @deselect="checked = []"
-        @removed="checked = []"
-      />
+      <!-- Right: detail / bulk / empty -->
+      <div class="flex min-h-0 min-w-0 flex-1 flex-col">
+        <!-- Bulk pane (multi-select) -->
+        <AssetWizardBulkPane
+          v-if="bulkMode"
+          :ids="checked"
+          :tag-options="tagOptions"
+          @deselect="checked = []"
+          @removed="checked = []"
+        />
 
-      <!-- Single-file fields -->
-      <template v-else-if="active">
-        <div class="flex items-center gap-3 border-b px-6 py-4">
-          <div
-            :class="[
-              activeMeta.tint,
-              'flex size-9 shrink-0 items-center justify-center rounded-md',
-            ]"
-          >
-            <component :is="resolveIcon(activeMeta.icon)" class="size-4" />
-          </div>
-          <div class="min-w-0 flex-1">
-            <p class="truncate text-sm font-semibold">
-              {{ name || active.file.name }}
-            </p>
-            <p class="text-muted-foreground text-xs">
-              {{ formatFileSize(active.file.size) }} ·
-              {{ $t(activeMeta.labelKey) }}
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            :aria-label="$t('remove')"
-            @click="removeFile(active.id)"
-          >
-            <LucideTrash2 class="size-4" />
-          </Button>
-        </div>
-
-        <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
-          <div class="space-y-1.5">
-            <Label>{{ $t('name', 1) }}</Label>
-            <Input v-model="name" />
+        <!-- Single-file fields -->
+        <template v-else-if="active">
+          <div class="flex items-center gap-3 border-b px-6 py-4">
+            <div
+              :class="[
+                activeMeta.tint,
+                'flex size-9 shrink-0 items-center justify-center rounded-md',
+              ]"
+            >
+              <component :is="resolveIcon(activeMeta.icon)" class="size-4" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-semibold">
+                {{ name || active.file.name }}
+              </p>
+              <p class="text-muted-foreground text-xs">
+                {{ formatFileSize(active.file.size) }} ·
+                {{ $t(activeMeta.labelKey) }}
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              :aria-label="$t('remove')"
+              @click="removeFile(active.id)"
+            >
+              <LucideTrash2 class="size-4" />
+            </Button>
           </div>
 
-          <div v-if="activeType === 'image'" class="space-y-1.5">
-            <Label>
-              {{ $t('asset_library.alt_text') }}
-              <span class="text-muted-foreground font-normal">
-                ({{ $t('optional') }})
-              </span>
-            </Label>
-            <FormTranslatableField
-              v-model="altText"
-              :label="$t('asset_library.alt_text')"
-              :placeholder="$t('asset_library.alt_text_placeholder')"
-              :subject="name || active.file.name"
-            />
-          </div>
+          <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
+            <div class="space-y-1.5">
+              <Label>{{ $t('name', 1) }}</Label>
+              <Input v-model="name" />
+            </div>
 
-          <div class="space-y-1.5">
-            <Label>
-              {{ $t('folder', 1) }}
-              <span class="text-muted-foreground font-normal">
-                ({{ $t('optional') }})
-              </span>
-            </Label>
-            <AssetFolderPicker v-model="folderId" />
-          </div>
+            <div v-if="activeType === 'image'" class="space-y-1.5">
+              <Label>
+                {{ $t('asset_library.alt_text') }}
+                <span class="text-muted-foreground font-normal">
+                  ({{ $t('optional') }})
+                </span>
+              </Label>
+              <FormTranslatableField
+                v-model="altText"
+                :label="$t('asset_library.alt_text')"
+                :placeholder="$t('asset_library.alt_text_placeholder')"
+                :subject="name || active.file.name"
+              />
+            </div>
 
-          <div class="space-y-1.5">
-            <Label>
-              {{ $t('channel', 2) }}
-              <span class="text-muted-foreground font-normal">
-                ({{ $t('optional') }})
-              </span>
-            </Label>
-            <FormInputChannels v-model="channels" />
-          </div>
+            <div class="space-y-1.5">
+              <Label>
+                {{ $t('folder', 1) }}
+                <span class="text-muted-foreground font-normal">
+                  ({{ $t('optional') }})
+                </span>
+              </Label>
+              <AssetFolderPicker v-model="folderId" />
+            </div>
 
-          <div class="space-y-1.5">
-            <Label>
-              {{ $t('description') }}
-              <span class="text-muted-foreground font-normal">
-                ({{ $t('optional') }})
-              </span>
-            </Label>
-            <Textarea v-model="description" />
-          </div>
+            <div class="space-y-1.5">
+              <Label>
+                {{ $t('channel', 2) }}
+                <span class="text-muted-foreground font-normal">
+                  ({{ $t('optional') }})
+                </span>
+              </Label>
+              <FormInputChannels v-model="channels" />
+            </div>
 
-          <div class="space-y-1.5">
-            <Label>
-              {{ $t('tag', 2) }}
-              <span class="text-muted-foreground font-normal">
-                ({{ $t('optional') }})
-              </span>
-            </Label>
-            <FormInputTagsSearch
-              v-model="tags"
-              entity-key="tag"
-              :data-set="tagOptions"
-              :allow-custom-tags="true"
-            />
-          </div>
-        </div>
-      </template>
+            <div class="space-y-1.5">
+              <Label>
+                {{ $t('description') }}
+                <span class="text-muted-foreground font-normal">
+                  ({{ $t('optional') }})
+                </span>
+              </Label>
+              <Textarea v-model="description" />
+            </div>
 
-      <!-- Empty states -->
-      <Empty v-else>
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <LucideFiles />
-          </EmptyMedia>
-          <EmptyTitle>
-            {{
-              files.length === 0
-                ? $t('asset_library.wizard_no_files')
-                : $t('asset_library.wizard_no_selection')
-            }}
-          </EmptyTitle>
-          <EmptyDescription>
-            {{
-              files.length === 0
-                ? $t('asset_library.wizard_no_files_hint')
-                : $t('asset_library.wizard_no_selection_hint')
-            }}
-          </EmptyDescription>
-        </EmptyHeader>
-      </Empty>
+            <div class="space-y-1.5">
+              <Label>
+                {{ $t('tag', 2) }}
+                <span class="text-muted-foreground font-normal">
+                  ({{ $t('optional') }})
+                </span>
+              </Label>
+              <FormInputTagsSearch
+                v-model="tags"
+                entity-key="tag"
+                :data-set="tagOptions"
+                :allow-custom-tags="true"
+              />
+            </div>
+          </div>
+        </template>
+
+        <!-- Empty states -->
+        <Empty v-else>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <LucideFiles />
+            </EmptyMedia>
+            <EmptyTitle>
+              {{
+                files.length === 0
+                  ? $t('asset_library.wizard_no_files')
+                  : $t('asset_library.wizard_no_selection')
+              }}
+            </EmptyTitle>
+            <EmptyDescription>
+              {{
+                files.length === 0
+                  ? $t('asset_library.wizard_no_files_hint')
+                  : $t('asset_library.wizard_no_selection_hint')
+              }}
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      </div>
     </div>
   </div>
 </template>
