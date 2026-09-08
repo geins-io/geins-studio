@@ -1640,6 +1640,7 @@
     "link_products": "Länka bilder till produkter automatiskt",
     "link_products_hint": "Matchar ett artikelnummer eller produkt-ID i filnamnet (ex. \"XXXX_filnamn.jpg\").",
     "linked_to_product": "Länkad till en produkt",
+    "linked_product": "Länkad produkt",
     "match_matched": "matchade",
     "match_unmatched": "omatchade",
     "no_match": "Ingen matchning",
