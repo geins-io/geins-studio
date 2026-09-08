@@ -267,6 +267,10 @@ export default defineConfig({
                 link: '/components/asset/AssetReviewRow.md',
               },
               {
+                text: 'AssetLinkedProduct',
+                link: '/components/asset/AssetLinkedProduct.md',
+              },
+              {
                 text: 'AssetWizardBulkPane',
                 link: '/components/asset/AssetWizardBulkPane.md',
               },
@@ -297,6 +301,16 @@ export default defineConfig({
               {
                 text: 'AssetThumbnail',
                 link: '/components/asset/AssetThumbnail.md',
+              },
+            ],
+          },
+          {
+            text: 'Product',
+            collapsed: true,
+            items: [
+              {
+                text: 'ProductThumbnail',
+                link: '/components/product/ProductThumbnail.md',
               },
             ],
           },

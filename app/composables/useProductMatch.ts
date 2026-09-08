@@ -3,7 +3,7 @@ import { mimeToAssetType, parseProductRef } from '#shared/utils/asset';
 import type { Ref } from 'vue';
 
 interface UseProductMatchReturnType {
-  /** The product-list fetch is still in flight (first load). */
+  /** The products store hasn't finished its initial load yet. */
   pending: Ref<boolean>;
   /**
    * Resolve the product an upload file links to, or null. Only images whose
@@ -16,31 +16,25 @@ interface UseProductMatchReturnType {
 /**
  * Resolves which product an image upload links to, by matching the filename ref
  * (text before the first `_`) against the account's products — article number
- * or product id, whichever hits. Shared across the wizard's manage + review
- * steps via a stable `useAsyncData` key, so the product list is fetched once.
+ * or product id, whichever hits. Reads the shared products store (already loaded
+ * + transformed after auth, so its `thumbnail` is a ready image URL), so no
+ * extra fetch and no duplicated transform.
  *
  * cutover: REVISIT@phase2 — the ref → product lookup is the backend's job. For
- * now we fetch the whole product list and match on the client; phase 2 pushes
- * the filter server-side (`productApi.query` by articleNumber / productId) so we
- * don't over-fetch. The `(file) → ProductMatch` seam stays. Ledger:
+ * now we match on the client over the full product list; phase 2 pushes the
+ * filter server-side (query by articleNumber / productId) so we don't scan the
+ * whole catalogue. The `(file) → ProductMatch` seam stays. Ledger:
  * docs/domains/assets-cutover.md.
  */
 export function useProductMatch(): UseProductMatchReturnType {
-  const { productApi } = useGeinsRepository();
+  const productsStore = useProductsStore();
+  const { products, ready } = storeToRefs(productsStore);
 
-  const { data, pending } = useAsyncData<ProductMatch[]>(
-    'product-match-index',
-    async () => {
-      const res = await productApi.list();
-      const items = Array.isArray(res?.items) ? res.items : [];
-      return items.map((p) => ({
-        _id: p._id,
-        articleNumber: p.articleNumber,
-        name: p.name,
-      }));
-    },
-    { default: () => [], lazy: true },
-  );
+  // The store is initialised once after auth by the geins-global plugin;
+  // init() is idempotent, so calling it here just covers running first.
+  productsStore.init();
+
+  const pending = computed(() => !ready.value);
 
   // Keys normalized (trim + lowercase) so a filename ref matches regardless of
   // case — article numbers / ids are case-insensitive-unique in practice.
@@ -48,9 +42,15 @@ export function useProductMatch(): UseProductMatchReturnType {
 
   const index = computed(() => {
     const map = new Map<string, ProductMatch>();
-    for (const p of data.value ?? []) {
-      if (p.articleNumber) map.set(norm(p.articleNumber), p);
-      if (p._id) map.set(norm(p._id), p);
+    for (const p of products.value) {
+      const match: ProductMatch = {
+        _id: p._id,
+        name: p.name,
+        articleNumber: p.articleNumber,
+        thumbnail: p.thumbnail,
+      };
+      if (p.articleNumber) map.set(norm(p.articleNumber), match);
+      if (p._id) map.set(norm(p._id), match);
     }
     return map;
   });

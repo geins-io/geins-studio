@@ -1643,6 +1643,7 @@
     "link_products": "Automatically link images to products",
     "link_products_hint": "Matches an article number or product ID in the filename (ex. \"XXXX_filename.jpg\").",
     "linked_to_product": "Linked to a product",
+    "linked_product": "Linked product",
     "match_matched": "matched",
     "match_unmatched": "unmatched",
     "no_match": "No match",

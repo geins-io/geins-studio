@@ -236,4 +236,6 @@ export interface AssetCapabilities {
  */
 export interface ProductMatch extends EntityBaseWithName {
   articleNumber: string;
+  /** Product image src (already in the fetched product list); may be absent. */
+  thumbnail?: string;
 }
