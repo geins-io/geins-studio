@@ -52,3 +52,20 @@ For each Phase-1 capability, draft an issue (via `save_issue`) that is **impleme
 ## Handoff to execution
 
 Once the phase milestones exist and Phase 1's issues are drafted, per-issue work uses `.agents/skills/linear/SKILL.md` (prep → build → present → merge → Ready for QA). Draft later phases' issues as those phases approach, since scope shifts while building.
+
+## Project updates
+
+Post a Linear **project status update** (`save_status_update`) to keep the project's health + progress visible.
+
+**Cadence:** every **Friday**, at **each milestone completion**, and **on demand** ("post a project update for <project>").
+
+**Format** — keep it short and scannable:
+
+- **Health:** 🟢 On track · 🟡 At risk · 🔴 Off track
+- **TL;DR** — one line.
+- **Shipped since last update** — merged issues / completed milestones (with `STU-` refs).
+- **In progress / up next** — what's active + what's queued.
+- **Risks & blockers** — cross-team deps, open decisions (or "none").
+- **Milestone** — current `Phase N` and what's left in it.
+
+Draft from the last update (`get_status_updates`) + issues merged since; **present it for review before posting** — a project update is outward-facing, so don't auto-post.

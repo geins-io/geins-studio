@@ -26,7 +26,7 @@ The single runbook for how we work with Linear issues, projects, and the code th
 2. Check the Linear **project plan + issue** for Figma links; if a design exists, fetch it (`get_design_context`) and match the layout before coding.
 3. **Readiness check** — the issue must carry enough codebase-specific guidance to execute without inventing patterns. Look for gaps: repo/type conventions, registration steps (`shared/types/index.ts`, `app/utils/repos.ts`, `useGeinsRepository.ts`), page patterns (`useEntityEdit`, list-page fetch-error handling), i18n + VitePress doc follow-ups, verification steps. If gaps exist, **update the issue first**.
 4. **Confirm scope-changing decisions with the user before building** — when a choice materially changes the work (data source, extra fetch, which API), ask (AskUserQuestion) with a recommendation. Don't guess on those.
-5. Set status → **In Progress**.
+5. Set status → **In Progress**, and **assign it to the current developer** — pass `assignee: "me"` to `save_issue` (the Linear MCP resolves `"me"` to the authenticated user, so it's correct per developer, no hardcoded name).
 6. Branch from `next`: `feat/{issue}-{short-desc}` or `fix/{issue}-{short-desc}`. **Never use Linear's suggested `gitBranchName`** (e.g. `olivia/stu-…`) and don't surface it as an option — always use this convention. Only ask the user if it's genuinely unclear whether the work is a `feat` or a `fix`.
 7. Run `.agents/skills/implementation-plan/SKILL.md` for non-trivial work.
 
