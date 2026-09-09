@@ -23,6 +23,7 @@ The single runbook for how we work with Linear issues, projects, and the code th
 ## 1. Start / prep an issue
 
 1. `get_issue` — read it fully. Read it against `CLAUDE.md` + the matching Geins skill.
+   - **Check for a `Context group:` marker.** If the issue names sibling issues to build together and they're still open, offer to build them back-to-back **in this same context** (before compacting/handing off) — re-exploring the shared prototype/inventory in a fresh context per issue wastes tokens. Respect blocked-by order. No marker → default to a fresh context per issue; don't drag an unrelated prior issue's transcript along.
 2. Check the Linear **project plan + issue** for Figma links; if a design exists, fetch it (`get_design_context`) and match the layout before coding.
 3. **Readiness check** — the issue must carry enough codebase-specific guidance to execute without inventing patterns. Look for gaps: repo/type conventions, registration steps (`shared/types/index.ts`, `app/utils/repos.ts`, `useGeinsRepository.ts`), page patterns (`useEntityEdit`, list-page fetch-error handling), i18n + VitePress doc follow-ups, verification steps. If gaps exist, **update the issue first**.
 4. **Confirm scope-changing decisions with the user before building** — when a choice materially changes the work (data source, extra fetch, which API), ask (AskUserQuestion) with a recommendation. Don't guess on those.
