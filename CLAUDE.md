@@ -8,7 +8,7 @@ Skills live in `.agents/skills/{name}/SKILL.md` and are auto-discovered by the a
 - Add entity: `geins-add-entity` | Entity edit page: `geins-entity-edit-page`
 - i18n: `geins-i18n-update` | API repos: `geins-api-repository`
 - UI components: `geins-ui-components` | Tables: `geins-table-patterns` | List pages: `geins-list-page`
-- Linear issues: `linear` | Implementation plan: `implementation-plan`
+- Linear issue lifecycle: `linear` | Linear project/milestone planning: `linear-planning` | Implementation plan: `implementation-plan`
 - Learning loop: `geins-learning-loop`
 - Sync domain docs: `sync-domain` | Verify docs: `verify-docs`
 
