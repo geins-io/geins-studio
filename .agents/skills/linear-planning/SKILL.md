@@ -49,6 +49,14 @@ For each Phase-1 capability, draft an issue (via `save_issue`) that is **impleme
 - Call out cross-team blockers up front (own milestone).
 - Don't silently drop prototype scope — everything either becomes an issue or an explicit "deferred" note.
 
+## Context grouping (for token-efficient execution)
+
+Issues that share heavy exploration — the same prototype section, the same component/file inventory, the same domain dig — are cheapest to **build in one agent context**. Re-reading that exploration in a fresh context per issue is pure tax; carrying unrelated issues in one long context is also tax. Decide the grouping **at creation time**, while the shared context is fresh, so the builder never has to open and compare all the issues to work it out later.
+
+- When two+ issues in a phase share the same exploration **and** can be built back-to-back (respect blocked-by order), add a **`**Context group:**`** line near the top of each one's body naming the siblings + a one-line why, e.g. `**Context group:** build in the same context as STU-339 — shares the AssetPickerSheet prototype + AssetCard/TableView inventory.`
+- A **dependency chain** where B reuses A's exploration is the classic group. A **fan-out** of independent issues off one base usually is **not** — build each fresh; grouping unrelated surfaces just to batch them adds noise (= tokens).
+- **Solo issues need no marker** — absence means "a fresh context is fine". Don't annotate everything.
+
 ## Handoff to execution
 
 Once the phase milestones exist and Phase 1's issues are drafted, per-issue work uses `.agents/skills/linear/SKILL.md` (prep → build → present → merge → Ready for QA). Draft later phases' issues as those phases approach, since scope shifts while building.
