@@ -231,6 +231,10 @@ export default defineConfig({
             items: [
               { text: 'AssetCard', link: '/components/asset/AssetCard.md' },
               {
+                text: 'AssetPickerPanel',
+                link: '/components/asset/AssetPickerPanel.md',
+              },
+              {
                 text: 'AssetActionsMenu',
                 link: '/components/asset/AssetActionsMenu.md',
               },
