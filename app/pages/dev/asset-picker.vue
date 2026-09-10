@@ -3,10 +3,11 @@ import type { Asset, AssetType } from '#shared/types';
 import { formatFileSize } from '#shared/utils/file';
 
 /**
- * DEV-ONLY harness for the Phase 9 asset picker (STU-339). Not linked from the
- * nav — reach it at /dev/asset-picker. Lets you open the picker in a few modes
- * and inspect what comes back. Copy is hardcoded on purpose: this page never
- * ships to production (guarded below) and must not pollute the locale files.
+ * DEV-ONLY harness for the Phase 9 asset picker. Not linked from the nav —
+ * reach it at /dev/asset-picker. Exercises the imperative service
+ * (`useAssetPicker`) and the `<AssetPicker>` wrapper against the single global
+ * host. Copy is hardcoded on purpose: this page never ships to production
+ * (guarded below) and must not pollute the locale files.
  */
 if (!import.meta.dev) {
   throw createError({
@@ -17,30 +18,26 @@ if (!import.meta.dev) {
 }
 
 const { folderName } = useFolders();
-
-const open = ref(false);
-const multiple = ref(true);
-const types = ref<AssetType[] | null>(null);
-const title = ref<string | undefined>(undefined);
+const { open: openPicker } = useAssetPicker();
 
 const chosen = ref<Asset[]>([]);
 // Feed the last result back in as preselected so you can see the "linked" state
 // and the new-vs-existing count behaviour on reopen.
 const preselectedIds = computed(() => chosen.value.map((a) => a._id));
 
-function openPicker(opts: {
+async function openMode(opts: {
   multiple: boolean;
   types: AssetType[] | null;
   title: string;
 }) {
-  multiple.value = opts.multiple;
-  types.value = opts.types;
-  title.value = opts.title;
-  open.value = true;
-}
-
-function onConfirm(assets: Asset[]) {
-  chosen.value = assets;
+  const assets = await openPicker({
+    multiple: opts.multiple,
+    types: opts.types,
+    title: opts.title,
+    preselectedIds: preselectedIds.value,
+  });
+  // Cancel resolves [] — keep the previous result.
+  if (assets.length) chosen.value = assets;
 }
 
 const FILE_TYPES: AssetType[] = ['pdf', 'doc', 'video', 'audio', 'svg'];
@@ -49,21 +46,19 @@ const FILE_TYPES: AssetType[] = ['pdf', 'doc', 'video', 'audio', 'svg'];
 <template>
   <ContentHeader
     title="Asset picker — dev harness"
-    description="Not in the nav. Opens the AssetPickerPanel (STU-339) in a few modes and shows what it returns."
+    description="Not in the nav. Drives the global AssetPickerHost via useAssetPicker + the <AssetPicker> wrapper."
   />
 
   <div class="flex flex-wrap gap-2">
     <Button
-      @click="
-        openPicker({ multiple: true, types: null, title: 'Select assets' })
-      "
+      @click="openMode({ multiple: true, types: null, title: 'Select assets' })"
     >
       Pick multiple (any type)
     </Button>
     <Button
       variant="secondary"
       @click="
-        openPicker({ multiple: false, types: null, title: 'Select an asset' })
+        openMode({ multiple: false, types: null, title: 'Select an asset' })
       "
     >
       Pick a single asset
@@ -71,11 +66,7 @@ const FILE_TYPES: AssetType[] = ['pdf', 'doc', 'video', 'audio', 'svg'];
     <Button
       variant="secondary"
       @click="
-        openPicker({
-          multiple: true,
-          types: ['image'],
-          title: 'Select images',
-        })
+        openMode({ multiple: true, types: ['image'], title: 'Select images' })
       "
     >
       Pick images only
@@ -83,16 +74,22 @@ const FILE_TYPES: AssetType[] = ['pdf', 'doc', 'video', 'audio', 'svg'];
     <Button
       variant="secondary"
       @click="
-        openPicker({
-          multiple: true,
-          types: FILE_TYPES,
-          title: 'Select files',
-        })
+        openMode({ multiple: true, types: FILE_TYPES, title: 'Select files' })
       "
     >
       Pick files only
     </Button>
-    <Button v-if="chosen.length" variant="outline" @click="chosen = []">
+
+    <!-- Wrapper path: v-model + auto-bind click on the wrapped child. -->
+    <AssetPicker
+      v-model="chosen"
+      :types="['image']"
+      title="Select images (wrapper)"
+    >
+      <Button variant="outline">Wrapper (images, v-model)</Button>
+    </AssetPicker>
+
+    <Button v-if="chosen.length" variant="ghost" @click="chosen = []">
       Clear result
     </Button>
   </div>
@@ -147,13 +144,4 @@ const FILE_TYPES: AssetType[] = ['pdf', 'doc', 'video', 'audio', 'svg'];
       }}</pre>
     </details>
   </div>
-
-  <AssetPickerPanel
-    v-model:open="open"
-    :multiple="multiple"
-    :types="types"
-    :title="title"
-    :preselected-ids="preselectedIds"
-    @confirm="onConfirm"
-  />
 </template>

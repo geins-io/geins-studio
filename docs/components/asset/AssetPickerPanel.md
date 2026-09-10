@@ -25,7 +25,7 @@ function onPicked(assets: Asset[]) {
 }
 ```
 
-The imperative trigger API (`useAssetPicker()` + a global host + an `<AssetPicker>` wrapper) lands in a follow-up issue; here `open` is driven directly.
+You rarely render `AssetPickerPanel` directly. The public trigger API — [`useAssetPicker`](/composables/useAssetPicker) (imperative service), [`AssetPickerHost`](/components/asset/AssetPickerHost) (single global instance), and [`AssetPicker`](/components/asset/AssetPicker) (declarative wrapper) — drives one shared instance app-wide. Prefer those.
 
 ## Props
 

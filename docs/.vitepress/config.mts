@@ -127,6 +127,10 @@ export default defineConfig({
                 link: '/composables/useProductMatch.md',
               },
               { text: 'useAssetType', link: '/composables/useAssetType.md' },
+              {
+                text: 'useAssetPicker',
+                link: '/composables/useAssetPicker.md',
+              },
               { text: 'useFolders', link: '/composables/useFolders.md' },
               {
                 text: 'useUploadWizard',
@@ -230,6 +234,14 @@ export default defineConfig({
             collapsed: true,
             items: [
               { text: 'AssetCard', link: '/components/asset/AssetCard.md' },
+              {
+                text: 'AssetPicker',
+                link: '/components/asset/AssetPicker.md',
+              },
+              {
+                text: 'AssetPickerHost',
+                link: '/components/asset/AssetPickerHost.md',
+              },
               {
                 text: 'AssetPickerPanel',
                 link: '/components/asset/AssetPickerPanel.md',
