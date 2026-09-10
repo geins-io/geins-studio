@@ -5,36 +5,72 @@ import { formatFileSize } from '#shared/utils/file';
 /**
  * Grid tile for a single asset: thumbnail, name, type badge, folder, tags, and
  * size/modified meta. Click (name or card) or the action menu opens the asset.
- * Selection + bulk actions are deferred post-v0, so no select checkbox yet.
+ *
+ * In `selectable` mode (asset picker) the tile becomes a selection target: a
+ * checkbox overlays the thumbnail, the whole tile toggles selection instead of
+ * opening, and `hideActions` drops the per-card actions menu.
  */
-const props = defineProps<{
-  asset: Asset;
-  /** Resolved folder name (the asset only carries `folderId`). */
-  folderName?: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    asset: Asset;
+    /** Resolved folder name (the asset only carries `folderId`). */
+    folderName?: string;
+    /** Picker mode — render a selection checkbox and toggle on tile click. */
+    selectable?: boolean;
+    /** Reflected selected state (driven by the parent). */
+    selected?: boolean;
+    /** Suppress the actions menu (the picker has selection only). */
+    hideActions?: boolean;
+  }>(),
+  {
+    selectable: false,
+    selected: false,
+    hideActions: false,
+  },
+);
 
 const emit = defineEmits<{
   open: [];
   download: [];
   copyUrl: [];
   delete: [];
+  toggleSelect: [];
 }>();
 
 const { formatDate } = useDate();
 const { canDeleteAsset } = useAssetCapabilities();
 const size = computed(() => formatFileSize(props.asset.sizeBytes));
+
+// In the picker, the tile is a selection target — clicking the thumbnail or
+// name toggles selection rather than opening the (nonexistent) detail panel.
+const activate = () => {
+  if (props.selectable) {
+    emit('toggleSelect');
+  } else {
+    emit('open');
+  }
+};
 </script>
 
 <template>
   <Card
-    class="group hover:border-ring/40 gap-0 overflow-hidden py-0 transition-colors hover:shadow-sm"
+    :class="
+      cn(
+        'group gap-0 overflow-hidden py-0 transition-colors hover:shadow-sm',
+        selectable && selected
+          ? 'border-primary ring-primary ring-2'
+          : 'hover:border-ring/40',
+      )
+    "
   >
     <div class="relative">
       <button
         type="button"
         class="block w-full cursor-pointer"
-        :aria-label="$t('asset_library.view_details')"
-        @click="emit('open')"
+        :aria-label="
+          selectable ? $t('select') : $t('asset_library.view_details')
+        "
+        @click="activate"
       >
         <AssetThumbnail
           :type="asset.type"
@@ -45,6 +81,25 @@ const size = computed(() => formatFileSize(props.asset.sizeBytes));
         />
       </button>
       <div
+        v-if="selectable"
+        :class="
+          cn(
+            'absolute top-2 left-2 transition-opacity',
+            selected
+              ? 'opacity-100'
+              : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100',
+          )
+        "
+      >
+        <Checkbox
+          :model-value="selected"
+          :aria-label="$t('select')"
+          class="bg-white/90 shadow-xs"
+          @click.stop="emit('toggleSelect')"
+        />
+      </div>
+      <div
+        v-if="!hideActions"
         class="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
       >
         <AssetActionsMenu
@@ -62,7 +117,7 @@ const size = computed(() => formatFileSize(props.asset.sizeBytes));
       <button
         type="button"
         class="link-text truncate text-left text-sm"
-        @click="emit('open')"
+        @click="activate"
       >
         {{ asset.name }}
       </button>
