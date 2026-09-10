@@ -2,7 +2,7 @@
 
 ## Skills Index
 
-Skills live in `.agents/skills/{name}/SKILL.md` and are auto-discovered by the agent.
+Skills live in `.agents/skills/{name}/SKILL.md`. **They are advertised, NOT auto-applied: when a task matches one below, INVOKE it (Skill tool) before acting — reading this index is not enough.** Mandatory for Linear/issue/PR work (`linear`) and for planning a feature into milestones (`linear-planning`).
 
 - Dev loop: `geins-dev-loop` | CI preflight: `geins-ci-preflight`
 - Add entity: `geins-add-entity` | Entity edit page: `geins-entity-edit-page`
@@ -38,13 +38,15 @@ Skills live in `.agents/skills/{name}/SKILL.md` and are auto-discovered by the a
 
 These MUST be followed for every task.
 
-**Before writing code**: (1) Set Linear issue to "In Progress". (2) Ask about branching — `feat/{issue}-{desc}` or `fix/{issue}-{desc}` from `next`. (3) Verify issue has enough codebase-specific guidance. (4) Read issue body against this file + matching skill. (5) Check the Linear project plan and issue for Figma links — if a design exists, fetch it with `get_design_context` and match the layout (field grouping, grid design, card structure) before coding. (6) Run `implementation-plan` skill before coding.
+For the full runbook, invoke the `linear` skill (issue lifecycle) — the rules below are the always-on non-negotiables that must hold even if that skill isn't loaded.
 
-**While writing code**: (7) Follow all patterns in this file. If breaking a pattern, document why. (8) Consider performance implications.
+**Before writing code**: (1) Set the Linear issue to "In Progress" **and assign it to `me`** (`assignee: "me"`). (2) Branch from `next`: `feat/{issue}-{desc}` or `fix/{issue}-{desc}` — auto-pick `feat` vs `fix`, NEVER ask about branching and NEVER surface Linear's suggested `gitBranchName`. Only ask if `feat`-vs-`fix` is genuinely ambiguous. (3) Verify issue has enough codebase-specific guidance. (4) Read issue body against this file + matching skill. (5) Check the Linear project plan and issue for Figma links — if a design exists, fetch it with `get_design_context` and match the layout before coding. (6) Run `implementation-plan` skill before coding.
 
-**Before committing**: (9) Run `pnpm lint:check && pnpm typecheck` (and `pnpm test --run` if tests exist). All must pass.
+**While writing code**: (7) Follow all patterns in this file; document why if you break one. (8) Consider performance. (9) **Docs travel with the code** — a new/changed component or composable gets its VitePress page updated + registered in `docs/.vitepress/config.mts` in the SAME PR (not deferred).
 
-**When user says "task done"**: (10) Update `/docs` if architectural changes. (11) Update CLAUDE.md with new learnings. (12) Organize CLAUDE.md (dedup, group, format).
+**Committing & merging** — **NEVER commit or push without explicit user approval**; present a diff-shaped summary and wait for a clear "yes". (10) Preflight green: `pnpm lint:check && pnpm typecheck` (+ `pnpm test --run` if tests exist; + `pnpm build` for i18n/template changes). (11) On approval: Conventional Commit ending with the `Co-Authored-By` trailer → push → `gh pr create --base next` → `gh pr merge --squash --delete-branch` → `git checkout next && git pull --ff-only`. NEVER `git push --force` to `main`/`next`. (12) Set the issue → **Ready for QA testing** (QA moves it to Done — we don't).
+
+**Keep shared knowledge current** (ongoing, not gated on any phrase): update `/docs` when patterns/architecture change; add durable, repo-relevant learnings to CLAUDE.md — keep it lean (dedup, group, prune stale guidance), it's the team's shared memory.
 
 ---
 
