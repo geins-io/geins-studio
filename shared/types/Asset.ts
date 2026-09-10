@@ -159,6 +159,24 @@ export interface Asset extends ResponseEntity<AssetBase> {
   updatedAt: string;
 }
 
+/**
+ * Options for opening the asset picker — mirrors `AssetPickerPanel`'s props.
+ * Every field is optional; the panel applies its own defaults (`multiple: true`,
+ * `types: null` = all types, empty `preselectedIds`, default title, root folder).
+ */
+export interface AssetPickerOptions {
+  /** Single vs multi-select. Single = a new pick replaces the selection. */
+  multiple?: boolean;
+  /** Allowed types. `null`/omitted = all; e.g. `['image']` = images only. */
+  types?: AssetType[] | null;
+  /** Already-linked asset ids — shown checked; the confirm count is NEW picks only. */
+  preselectedIds?: string[];
+  /** Panel heading override. */
+  title?: string;
+  /** Initial folder scope (server-side filter). */
+  folderId?: string | null;
+}
+
 /** Query options for listing assets — folder filter + free-text search + paging. */
 export interface AssetApiOptions extends ApiOptions<keyof AssetBase> {
   folderId?: string;
