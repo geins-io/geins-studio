@@ -1,13 +1,13 @@
 ---
-name: linear
-description: "Manage Linear-backed work in Geins Studio end to end: prep an issue to implementation-ready, run the build → review → merge → status lifecycle consistently, and file follow-up issues cleanly. Use when starting from a Linear issue, drafting/prepping an issue, reviewing readiness, or closing out completed work. Always invoke `.agents/skills/implementation-plan/SKILL.md` before implementation planning/coding. For planning a whole feature into a project + milestones, use `.agents/skills/linear-planning/SKILL.md`. Trigger on: Linear issue, STU-, build issue STU-, prep issue STU-, issue readiness, update issue, set in progress, merge issue, close out issue, branch from issue, follow-up issue, new project issue."
+name: geins-linear
+description: "Manage Linear-backed work in Geins Studio end to end: prep an issue to implementation-ready, run the build → review → merge → status lifecycle consistently, and file follow-up issues cleanly. Use when starting from a Linear issue, drafting/prepping an issue, reviewing readiness, or closing out completed work. Read `.agents/skills/implementation-plan/SKILL.md` before implementation planning/coding. For planning a whole feature into a project + milestones, read `.agents/skills/geins-linear-planning/SKILL.md`. Trigger on: Linear issue, STU-, build issue STU-, prep issue STU-, issue readiness, update issue, set in progress, merge issue, close out issue, branch from issue, follow-up issue, new project issue."
 metadata:
   short-description: Geins Studio Linear workflow (full lifecycle)
 ---
 
 # Geins Studio — Linear Workflow
 
-The single runbook for how we work with Linear issues, projects, and the code that closes them. Canonical conventions live in `CLAUDE.md` → "Workflow Rules"; this skill is the step-by-step. For any planning/coding flow, invoke `.agents/skills/implementation-plan/SKILL.md` first. To plan a whole feature into a project + milestones, use `.agents/skills/linear-planning/SKILL.md`.
+The single runbook for how we work with Linear issues, projects, and the code that closes them. Canonical conventions live in `CLAUDE.md` → "Workflow Rules"; this skill is the step-by-step. For any planning/coding flow, read `.agents/skills/implementation-plan/SKILL.md` first. To plan a whole feature into a project + milestones, read `.agents/skills/geins-linear-planning/SKILL.md`.
 
 ## Ground rules (always)
 
@@ -67,7 +67,7 @@ pnpm lint:check && pnpm typecheck && pnpm test --run
 
 ## 5. Projects, milestones & follow-up issues
 
-- Every issue lives in a **project** (e.g. "Assets library", team "Studio") and usually a **milestone** — an ordered `Phase N — <theme>` (e.g. "Phase 8 — Real API alignment"). See `.agents/skills/linear-planning/SKILL.md` for the phase model.
+- Every issue lives in a **project** (e.g. "Assets library", team "Studio") and usually a **milestone** — an ordered `Phase N — <theme>` (e.g. "Phase 8 — Real API alignment"). See `.agents/skills/geins-linear-planning/SKILL.md` for the phase model.
 - **Creating a follow-up** (scope creep, a "maybe later", an out-of-scope fix): `save_issue` with `team`, `project`, `milestone`, a clear title, and a description that **links the parent issue** and states why it's separate + what data/design it needs.
 - Prefer one project + milestones over many projects for a coherent effort.
 
