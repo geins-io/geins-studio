@@ -9,7 +9,13 @@ import type { FolderNode } from '@/composables/useFolders';
  * system folders, and a "New folder" action. Selection via `v-model:selected`
  * (folder id, or `null` for All) drives the server-side `folderId` filter.
  * Must be used inside a `SidebarProvider` / `Sidebar`.
+ *
+ * `readonly` makes the rail selection-only — every folder mutation control
+ * (hover create/delete, "New folder", delete dialogs) is gated off. Used by the
+ * asset picker, where folder management must stay on the library page.
  */
+const props = defineProps<{ readonly?: boolean }>();
+
 const selected = defineModel<string | null>('selected', { default: null });
 
 const { tree, systemFolders, loading, refresh, descendantIds } = useFolders();
@@ -136,6 +142,7 @@ async function confirmDelete(assets: FolderDeleteAssets = 'move') {
             :key="node._id"
             :node="node"
             :selected="selected"
+            :readonly="props.readonly"
             @select="selected = $event"
             @create="createFolder"
             @delete="requestDelete"
@@ -158,39 +165,43 @@ async function confirmDelete(assets: FolderDeleteAssets = 'move') {
             </SidebarMenuButton>
           </SidebarMenuItem>
 
-          <AssetFolderCreateInput
-            v-if="addingTop"
-            @create="(name) => createFolder({ parentFolderId: null, name })"
-            @cancel="addingTop = false"
-          />
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              class="text-muted-foreground"
-              @click="addingTop = true"
-            >
-              <span class="size-4 shrink-0" />
-              <LucidePlus class="text-muted-foreground" aria-hidden="true" />
-              <span>{{ $t('new_entity', { entityKey: 'folder' }) }}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          <template v-if="!props.readonly">
+            <AssetFolderCreateInput
+              v-if="addingTop"
+              @create="(name) => createFolder({ parentFolderId: null, name })"
+              @cancel="addingTop = false"
+            />
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                class="text-muted-foreground"
+                @click="addingTop = true"
+              >
+                <span class="size-4 shrink-0" />
+                <LucidePlus class="text-muted-foreground" aria-hidden="true" />
+                <span>{{ $t('new_entity', { entityKey: 'folder' }) }}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </template>
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
   </SidebarContent>
 
-  <DialogDelete
-    v-model:open="deleteOpen"
-    entity-key="folder"
-    :loading="deleting"
-    @confirm="confirmDelete"
-  />
+  <template v-if="!props.readonly">
+    <DialogDelete
+      v-model:open="deleteOpen"
+      entity-key="folder"
+      :loading="deleting"
+      @confirm="confirmDelete"
+    />
 
-  <AssetFolderDeleteDialog
-    v-model:open="choiceOpen"
-    :folder-name="deleteTarget?.name ?? ''"
-    :count="pendingCount"
-    :loading="deleting"
-    @confirm="confirmDelete"
-    @cancel="choiceOpen = false"
-  />
+    <AssetFolderDeleteDialog
+      v-model:open="choiceOpen"
+      :folder-name="deleteTarget?.name ?? ''"
+      :count="pendingCount"
+      :loading="deleting"
+      @confirm="confirmDelete"
+      @cancel="choiceOpen = false"
+    />
+  </template>
 </template>

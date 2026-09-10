@@ -378,7 +378,7 @@ function confirmSelection() {
               {{ $t('asset_library.picker_recently_added') }}
             </button>
           </div>
-          <AssetFolderTree v-model:selected="treeSelected" />
+          <AssetFolderTree v-model:selected="treeSelected" readonly />
         </Sidebar>
 
         <!-- Main: toolbar + body + (grid) pagination -->
