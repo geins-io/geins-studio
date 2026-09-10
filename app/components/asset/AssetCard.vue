@@ -56,7 +56,7 @@ const activate = () => {
   <Card
     :class="
       cn(
-        'group gap-0 overflow-hidden py-0 transition-colors hover:shadow-sm',
+        'group flex h-full flex-col gap-0 overflow-hidden py-0 transition-colors hover:shadow-sm',
         selectable && selected
           ? 'border-primary ring-primary ring-2'
           : 'hover:border-ring/40',
@@ -113,7 +113,7 @@ const activate = () => {
       </div>
     </div>
 
-    <div class="flex flex-col gap-2 p-3">
+    <div class="flex flex-1 flex-col gap-2 p-3">
       <button
         type="button"
         class="link-text truncate text-left text-sm"
@@ -145,7 +145,7 @@ const activate = () => {
       </div>
 
       <div
-        class="text-muted-foreground flex items-center justify-between text-xs"
+        class="text-muted-foreground mt-auto flex items-center justify-between text-xs"
       >
         <span>{{ size }}</span>
         <span>{{ formatDate(asset.updatedAt, { dateStyle: 'medium' }) }}</span>
