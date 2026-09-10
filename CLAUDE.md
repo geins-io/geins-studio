@@ -2,13 +2,13 @@
 
 ## Skills Index
 
-Skills live in `.agents/skills/{name}/SKILL.md`. **They are advertised, NOT auto-applied: when a task matches one below, INVOKE it (Skill tool) before acting — reading this index is not enough.** Mandatory for Linear/issue/PR work (`linear`) and for planning a feature into milestones (`linear-planning`).
+Skills are project files at `.agents/skills/{name}/SKILL.md`. **To use one, READ its `SKILL.md` by path (Read tool) and follow it — do NOT rely on the Skill tool.** Several of these skills aren't registered as invokable in every context, and some names collide with marketplace plugins, so invoking mis-fires; reading the file by path always works. **Mandatory to load** for Linear/issue/PR work → `.agents/skills/geins-linear/SKILL.md`, and for feature planning → `.agents/skills/geins-linear-planning/SKILL.md`.
 
 - Dev loop: `geins-dev-loop` | CI preflight: `geins-ci-preflight`
 - Add entity: `geins-add-entity` | Entity edit page: `geins-entity-edit-page`
 - i18n: `geins-i18n-update` | API repos: `geins-api-repository`
 - UI components: `geins-ui-components` | Tables: `geins-table-patterns` | List pages: `geins-list-page`
-- Linear issue lifecycle: `linear` | Linear project/milestone planning: `linear-planning` | Implementation plan: `implementation-plan`
+- Linear issue lifecycle: `geins-linear` | Linear project/milestone planning: `geins-linear-planning` | Implementation plan: `implementation-plan`
 - Learning loop: `geins-learning-loop`
 - Sync domain docs: `sync-domain` | Verify docs: `verify-docs`
 
@@ -38,9 +38,9 @@ Skills live in `.agents/skills/{name}/SKILL.md`. **They are advertised, NOT auto
 
 These MUST be followed for every task.
 
-For the full runbook, invoke the `linear` skill (issue lifecycle) — the rules below are the always-on non-negotiables that must hold even if that skill isn't loaded.
+For the full runbook, read `.agents/skills/geins-linear/SKILL.md` (issue lifecycle) — the rules below are the always-on non-negotiables that must hold even if that file isn't read.
 
-**Before writing code**: (1) Set the Linear issue to "In Progress" **and assign it to `me`** (`assignee: "me"`). (2) Branch from `next`: `feat/{issue}-{desc}` or `fix/{issue}-{desc}` — auto-pick `feat` vs `fix`, NEVER ask about branching and NEVER surface Linear's suggested `gitBranchName`. Only ask if `feat`-vs-`fix` is genuinely ambiguous. (3) Verify issue has enough codebase-specific guidance. (4) Read issue body against this file + matching skill. (5) Check the Linear project plan and issue for Figma links — if a design exists, fetch it with `get_design_context` and match the layout before coding. (6) Run `implementation-plan` skill before coding.
+**Before writing code**: (1) Set the Linear issue to "In Progress" **and assign it to `me`** (`assignee: "me"`). (2) Branch from `next`: `feat/{issue}-{desc}` or `fix/{issue}-{desc}` — auto-pick `feat` vs `fix`, NEVER ask about branching and NEVER surface Linear's suggested `gitBranchName`. Only ask if `feat`-vs-`fix` is genuinely ambiguous. (3) Verify issue has enough codebase-specific guidance. (4) Read issue body against this file + matching skill. (5) Check the Linear project plan and issue for Figma links — if a design exists, fetch it with `get_design_context` and match the layout before coding. (6) Read `.agents/skills/implementation-plan/SKILL.md` and produce a plan before coding.
 
 **While writing code**: (7) Follow all patterns in this file; document why if you break one. (8) Consider performance. (9) **Docs travel with the code** — a new/changed component or composable gets its VitePress page updated + registered in `docs/.vitepress/config.mts` in the SAME PR (not deferred).
 
