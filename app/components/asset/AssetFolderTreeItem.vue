@@ -5,6 +5,8 @@ import type { FolderNode } from '@/composables/useFolders';
 const props = defineProps<{
   node: FolderNode;
   selected: string | null;
+  /** Selection-only mode: hides the hover add/delete actions (picker rail). */
+  readonly?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -70,8 +72,9 @@ function onCreateChild(name: string) {
     </button>
 
     <!-- Hover actions (siblings of the row button, not nested); reveal on
-         keyboard focus too, not just hover. -->
+         keyboard focus too, not just hover. Hidden in readonly (picker) mode. -->
     <div
+      v-if="!readonly"
       class="absolute top-1 right-1 flex gap-0.5 opacity-0 group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100"
     >
       <button
@@ -107,6 +110,7 @@ function onCreateChild(name: string) {
           :key="child._id"
           :node="child"
           :selected="selected"
+          :readonly="readonly"
           @select="emit('select', $event)"
           @create="emit('create', $event)"
           @delete="emit('delete', $event)"

@@ -31,6 +31,18 @@ v-model:selected: string | null
 
 The selected folder id, or `null` for "All assets".
 
+## Props
+
+### `readonly`
+
+```ts
+readonly?: boolean // default: false
+```
+
+Selection-only mode. When `true`, every folder **mutation** control is gated off: the per-node hover **create subfolder** / **delete** actions, the top-level **New folder** input/button, and the delete dialogs. Selection + navigation still work.
+
+The [`AssetPickerPanel`](/components/asset/AssetPickerPanel) passes `readonly` so a user browsing to pick an asset can't accidentally create or delete folders — folder management stays on the asset library page, which renders the tree with actions on (the default).
+
 ## Data
 
 Reads [`useFolders`](/composables/useFolders) — the `tree` (nested user folders) and `systemFolders`. No fetching of its own; it shares the `asset-folders` cache with every other consumer.

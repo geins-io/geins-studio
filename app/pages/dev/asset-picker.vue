@@ -3,20 +3,15 @@ import type { Asset, AssetType } from '#shared/types';
 import { formatFileSize } from '#shared/utils/file';
 
 /**
- * DEV-ONLY harness for the Phase 9 asset picker. Not linked from the nav —
- * reach it at /dev/asset-picker. Exercises the imperative service
- * (`useAssetPicker`) and the `<AssetPicker>` wrapper against the single global
- * host. Copy is hardcoded on purpose: this page never ships to production
- * (guarded below) and must not pollute the locale files.
+ * Harness for the Phase 9 asset picker. Not linked from the nav — reach it at
+ * /dev/asset-picker. Exercises the imperative service (`useAssetPicker`) and
+ * the `<AssetPicker>` wrapper against the single global host. Copy is hardcoded
+ * on purpose and must not pollute the locale files.
+ *
+ * Intentionally UNGUARDED so QA can reach it on the QA deploy (a separate Vercel
+ * project that runs as prod, so an `import.meta.dev` gate would 404 it there
+ * too). Must be removed or re-guarded before the prod merge — tracked separately.
  */
-if (!import.meta.dev) {
-  throw createError({
-    statusCode: 404,
-    statusMessage: 'Not Found',
-    fatal: true,
-  });
-}
-
 const { folderName } = useFolders();
 const { open: openPicker } = useAssetPicker();
 
