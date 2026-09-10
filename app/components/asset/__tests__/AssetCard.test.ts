@@ -37,4 +37,28 @@ describe('AssetCard', () => {
     expect(card.emitted('delete')).toHaveLength(1);
     expect(card.emitted('open')).toHaveLength(1);
   });
+
+  it('renders a selection checkbox and hides the actions menu in picker mode', async () => {
+    const card = await mountWithContext(AssetCard, {
+      props: { asset: buildAsset(), selectable: true, hideActions: true },
+    });
+    expect(card.find('[data-slot="checkbox"]').exists()).toBe(true);
+    expect(card.findComponent(AssetActionsMenu).exists()).toBe(false);
+  });
+
+  it('emits toggle-select instead of open when the tile is clicked in picker mode', async () => {
+    const card = await mountWithContext(AssetCard, {
+      props: { asset: buildAsset(), selectable: true },
+    });
+    await card.find('button.link-text').trigger('click');
+    expect(card.emitted('toggleSelect')).toHaveLength(1);
+    expect(card.emitted('open')).toBeUndefined();
+  });
+
+  it('does not render a checkbox in the default (library) mode', async () => {
+    const card = await mountWithContext(AssetCard, {
+      props: { asset: buildAsset() },
+    });
+    expect(card.find('[data-slot="checkbox"]').exists()).toBe(false);
+  });
 });
