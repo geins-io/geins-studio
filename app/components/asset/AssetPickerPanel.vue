@@ -45,7 +45,6 @@ const open = defineModel<boolean>('open', { default: false });
 const { t } = useI18n();
 const { assetApi } = useGeinsRepository();
 const { folderName } = useFolders();
-const { label: assetTypeLabel } = useAssetType();
 const { resolveIcon } = useLucideIcon();
 const { getColumns, getBasicCellStyle, getBasicHeaderStyle } =
   useColumns<Asset>();
@@ -65,10 +64,10 @@ const view = ref<'grid' | 'list'>('grid');
 const recent = ref(false);
 const selectedFolder = ref<string | null>(props.folderId ?? null);
 const search = ref('');
-const typeChip = ref<AssetType | 'all'>('all');
 const selectedIds = ref<string[]>([]);
 const page = ref(1);
 const pageSize = ref(DEFAULT_PAGE_SIZE);
+const uploadOpen = ref(false);
 
 // Files-only pickers (no images) default to list — you pick documents by
 // name/type/date, not by thumbnail. Everything else defaults to grid.
@@ -115,18 +114,11 @@ const pool = computed(() =>
     : dataList.value,
 );
 
-// Type chips: only the allowed types actually present in the pool.
-const typeChips = computed(() => [
-  ...new Set(pool.value.map((asset) => asset.type)),
-]);
-
 const visible = computed(() => {
   const term = search.value.trim().toLowerCase();
-  let list = pool.value.filter((asset) => {
-    if (typeChip.value !== 'all' && asset.type !== typeChip.value) return false;
-    if (term && !asset.name.toLowerCase().includes(term)) return false;
-    return true;
-  });
+  let list = pool.value.filter(
+    (asset) => !term || asset.name.toLowerCase().includes(term),
+  );
   if (recent.value) {
     list = [...list]
       .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
@@ -207,7 +199,7 @@ const pagedAssets = computed(() => {
 });
 
 // Any change to the result set / size goes back to page 1.
-watch([search, selectedFolder, typeChip, recent, pageSize], () => {
+watch([search, selectedFolder, recent, pageSize], () => {
   page.value = 1;
 });
 
@@ -326,15 +318,37 @@ watch(
     recent.value = false;
     selectedFolder.value = props.folderId ?? null;
     search.value = '';
-    typeChip.value = 'all';
     selectedIds.value = [...props.preselectedIds];
     seen.value = {};
     page.value = 1;
     pageSize.value = DEFAULT_PAGE_SIZE;
+    uploadOpen.value = false;
     refresh();
   },
   { immediate: true },
 );
+
+// Quick-upload success: the new assets are already in the library. Seed them so
+// they resolve immediately, auto-select the ones matching this picker's types,
+// flip the rail to "Recently added" so the user sees them, and refetch the list.
+function handleUploaded(assets: Asset[]) {
+  const next = { ...seen.value };
+  for (const asset of assets) next[asset._id] = asset;
+  seen.value = next;
+
+  const matching = assets.filter(
+    (asset) => !props.types || props.types!.includes(asset.type),
+  );
+  const ids = matching.map((asset) => asset._id);
+  if (ids.length) {
+    selectedIds.value = props.multiple
+      ? [...new Set([...selectedIds.value, ...ids])]
+      : [ids[0]!];
+  }
+
+  selectRecent();
+  refresh();
+}
 
 function confirmSelection() {
   emit('confirm', chosen.value);
@@ -351,6 +365,21 @@ function confirmSelection() {
           {{ $t('asset_library.picker_subtitle') }}
         </SheetDescription>
       </SheetHeader>
+
+      <!-- Library header + inline upload entry (spans the rail + main split) -->
+      <div class="flex items-center justify-between border-b px-4 py-2.5">
+        <span class="text-sm font-bold">
+          {{ $t('asset_library.picker_library') }}
+        </span>
+        <ButtonIcon
+          icon="upload"
+          variant="outline"
+          size="sm"
+          @click="uploadOpen = true"
+        >
+          {{ $t('asset_library.picker_upload_new') }}
+        </ButtonIcon>
+      </div>
 
       <SidebarProvider
         class="min-h-0! flex-1 items-stretch gap-0 overflow-hidden"
@@ -390,29 +419,7 @@ function confirmSelection() {
               class="order-2 w-full sm:order-1 sm:w-64"
             />
 
-            <div
-              v-if="typeChips.length > 1"
-              class="order-3 flex items-center gap-1.5 sm:order-2"
-            >
-              <Button
-                size="sm"
-                :variant="typeChip === 'all' ? 'default' : 'outline'"
-                @click="typeChip = 'all'"
-              >
-                {{ $t('asset_library.picker_all_types') }}
-              </Button>
-              <Button
-                v-for="tp in typeChips"
-                :key="tp"
-                size="sm"
-                :variant="typeChip === tp ? 'default' : 'outline'"
-                @click="typeChip = tp"
-              >
-                {{ assetTypeLabel(tp) }}
-              </Button>
-            </div>
-
-            <span class="text-muted-foreground order-4 ml-auto text-xs">
+            <span class="text-muted-foreground order-3 ml-auto text-xs">
               {{
                 $t(
                   'rows_total',
@@ -422,7 +429,7 @@ function confirmSelection() {
               }}
             </span>
 
-            <ButtonGroup class="order-1 sm:order-5">
+            <ButtonGroup class="order-1 sm:order-4">
               <Button
                 variant="outline"
                 size="icon"
@@ -578,4 +585,13 @@ function confirmSelection() {
       </SheetFooter>
     </SheetContent>
   </Sheet>
+
+  <!-- Quick-upload only — the wizard would navigate away and abandon the picker. -->
+  <AssetUploadDialog
+    v-model:open="uploadOpen"
+    :methods="['quick']"
+    :multiple="multiple"
+    :default-folder-id="folderId"
+    @uploaded="handleUploaded"
+  />
 </template>

@@ -43,7 +43,7 @@ Single vs multi-select. In single mode a new pick **replaces** the selection and
 types?: AssetType[] | null; // default null
 ```
 
-Allowed asset types. `null` = all; `['image']` = images only; a subset (e.g. `['video', 'pdf', 'doc', 'svg', 'audio']`) = files. Assets outside `types` are filtered out entirely, and the type chips only offer allowed-and-present types. The default view is **grid** for image pickers and **list** for files-only pickers (a `types` set that excludes `'image'`).
+Allowed asset types. `null` = all; `['image']` = images only; a subset (e.g. `['video', 'pdf', 'doc', 'svg', 'audio']`) = files. Assets outside `types` are filtered out entirely. The default view is **grid** for image pickers and **list** for files-only pickers (a `types` set that excludes `'image'`).
 
 ### `preselectedIds`
 
@@ -89,6 +89,19 @@ confirm: [assets: Asset[]];
 
 Emitted from the footer's "add" button with the full selected `Asset` objects (including any still-selected preselected ones). The panel closes itself afterward.
 
+## Inline quick-upload
+
+The **Upload new** button in the Library header bar (above the folder-rail / browse split) opens [`AssetUploadDialog`](/components/asset/AssetUploadDialog) constrained to quick-only (`:methods="['quick']"`) — the wizard is withheld because it routes away and would abandon the picker/entity context. The picker's `folderId` seeds the upload's default folder, and `multiple` is forwarded so a single-select picker uploads a single file.
+
+On the dialog's `uploaded` event the panel:
+
+1. **Seeds** the new assets into its resolve map (so the selection resolves them before the refetch lands),
+2. **Auto-selects** the uploaded assets whose type matches `types` — added to the current selection when `multiple`, or the first match alone when single-select,
+3. **Flips the rail to "Recently added"** so the user sees what they just added, and
+4. **Refetches** the library list.
+
+The picker goes through `assetApi.upload` (via the dialog), not a specific transport, so the mock → Geins.Media cutover stays mechanical.
+
 ## Data
 
 Reads `assetApi.list({ folderId })` via [`useGeinsRepository`](/composables/useGeinsRepository) in `useAsyncData` (folder scope stays server-side, matching the library page). Search, type filtering, "recently added" sorting, and pagination are client-side over the fetched list. Selected assets are remembered across folder switches so a confirm returns picks made in more than one folder.
@@ -97,5 +110,6 @@ Reads `assetApi.list({ folderId })` via [`useGeinsRepository`](/composables/useG
 
 - [`AssetFolderTree`](/components/asset/AssetFolderTree), [`AssetCard`](/components/asset/AssetCard) (`selectable` / `hide-actions`), [`AssetThumbnail`](/components/asset/AssetThumbnail), [`AssetTypeBadge`](/components/asset/AssetTypeBadge)
 - [`TableView`](/components/table/TableView) (Simple mode + `select` column via [`useColumns`](/composables/useColumns)), [`PaginationBar`](/components/PaginationBar)
+- [`AssetUploadDialog`](/components/asset/AssetUploadDialog) — inline quick-upload (`:methods="['quick']"`)
 - shadcn-vue `Sheet` / `SheetContent` (`width="wide"`), `Sidebar`, `Button`, `ButtonGroup`, `Badge`, `Input`, `Empty`
 - [`useAssetType`](/composables/useAssetType) — type chip labels; [`useFolders`](/composables/useFolders) — folder names
