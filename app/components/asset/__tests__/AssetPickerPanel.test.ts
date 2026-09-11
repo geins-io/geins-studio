@@ -32,11 +32,24 @@ const PDF = buildAsset({ _id: 'pdf-1', name: 'manual.pdf', type: 'pdf' });
 // filtering / confirm logic, not the tree or the table rendering. SheetContent
 // is stubbed to render inline — the real one teleports to document.body (out of
 // the wrapper's reach); the real Sheet stays so SheetTitle keeps its context.
+// The upload dialog is stubbed to a button that re-emits `uploaded` with two
+// freshly-uploaded images — lets us drive `handleUploaded` without the real
+// dropzone/upload flow.
 const stubs = {
   AssetFolderTree: true,
   TableView: true,
   PaginationBar: true,
   SheetContent: { template: '<div><slot /></div>' },
+  AssetUploadDialog: {
+    template:
+      '<button data-test="emit-uploaded" @click="$emit(\'uploaded\', payload)" />',
+    data: () => ({
+      payload: [
+        { _id: 'up-1', type: 'image', name: 'new-a.jpg' },
+        { _id: 'up-2', type: 'image', name: 'new-b.jpg' },
+      ],
+    }),
+  },
 };
 
 async function flush() {
@@ -100,6 +113,40 @@ describe('AssetPickerPanel', () => {
     const confirmed = panel.emitted('confirm')![0]![0] as { _id: string }[];
     expect(confirmed).toHaveLength(1);
     expect(confirmed[0]!._id).toBe('img-2');
+  });
+
+  it('auto-selects uploaded assets matching the picker types', async () => {
+    const panel = await mountWithContext(AssetPickerPanel, {
+      props: { open: true, types: ['image'] },
+      global: { stubs },
+    });
+    await flush();
+
+    await panel.find('[data-test="emit-uploaded"]').trigger('click');
+    await flush();
+
+    const addButton = panel.find('[data-test="asset-picker-confirm"]');
+    expect(addButton.attributes('disabled')).toBeUndefined();
+
+    await addButton.trigger('click');
+    const confirmed = panel.emitted('confirm')![0]![0] as { _id: string }[];
+    expect(confirmed.map((a) => a._id)).toEqual(['up-1', 'up-2']);
+  });
+
+  it('single-select keeps only the first uploaded match', async () => {
+    const panel = await mountWithContext(AssetPickerPanel, {
+      props: { open: true, multiple: false, types: ['image'] },
+      global: { stubs },
+    });
+    await flush();
+
+    await panel.find('[data-test="emit-uploaded"]').trigger('click');
+    await flush();
+
+    const addButton = panel.find('[data-test="asset-picker-confirm"]');
+    await addButton.trigger('click');
+    const confirmed = panel.emitted('confirm')![0]![0] as { _id: string }[];
+    expect(confirmed.map((a) => a._id)).toEqual(['up-1']);
   });
 
   it('filters out assets outside the allowed types', async () => {
