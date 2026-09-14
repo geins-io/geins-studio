@@ -141,6 +141,7 @@
   "or": "eller",
   "and": "och",
   "select": "Välj",
+  "select_named": "Välj {name}",
   "selected": "Vald",
   "none": "Inga",
   "close": "Stäng",
