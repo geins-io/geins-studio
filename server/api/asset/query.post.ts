@@ -10,11 +10,11 @@ import {
 } from '../../utils/assets-mock';
 
 // POST /api/asset/query — repo `list()`. Mirrors the real POST /media/assets/query
-// (BatchQueryResult envelope). Studio fetches everything (huge pageSize, per the
-// app-wide batch convention) and paginates/sorts/searches client-side via
-// TanStack, so this returns every matching row within the folder scope in one
-// page rather than doing real server-side paging. cutover: swap to the real
-// endpoint; see docs/domains/assets-cutover.md.
+// (`assetQuery` body + BatchQueryResult envelope). Studio fetches everything via
+// `all: true` (the real schema caps `pageSize` at 1000) and paginates/sorts/
+// searches client-side via TanStack, so this returns every matching row within
+// the folder scope in one page rather than doing real server-side paging.
+// cutover: swap to the real endpoint; see docs/domains/assets-cutover.md.
 export default defineEventHandler(
   async (event): Promise<BatchQueryResult<Asset>> => {
     const body =
@@ -22,7 +22,7 @@ export default defineEventHandler(
         page?: number;
         pageSize?: number;
         all?: boolean;
-        folderId?: string;
+        folderIds?: (string | null)[];
       }>(event)) ?? {};
     const sb = assetMockSupabase();
 
@@ -31,21 +31,37 @@ export default defineEventHandler(
       .select('*')
       .order('updated_at', { ascending: false });
 
-    // Folder scope stays server-side (matches STU-317): Uncategorised = NULL,
-    // any other folder = its subtree.
-    const folderFilter = resolveAssetFolderFilter(body.folderId);
-    if (folderFilter === 'null') {
-      query = query.is('folder_id', null);
-    } else if (folderFilter === 'descendants' && body.folderId) {
-      const { data: folders, error: fErr } = await sb
-        .from('folder')
-        .select('id,parent_id');
-      if (fErr)
-        throw createError({ statusCode: 502, statusMessage: fErr.message });
-      query = query.in(
-        'folder_id',
-        descendantFolderIds(folders ?? [], body.folderId),
+    // Folder scope stays server-side (mirrors the real `assetQuery.folderIds`):
+    // each entry is the NULL bucket (null / Uncategorised = root) or a folder's
+    // subtree; the union is applied. No `folderIds` = every folder (all assets).
+    const folderIds = body.folderIds ?? [];
+    if (folderIds.length) {
+      const wantsRoot = folderIds.some(
+        (id) => resolveAssetFolderFilter(id) === 'null',
       );
+      const subtreeRoots = folderIds.filter(
+        (id): id is string => resolveAssetFolderFilter(id) === 'descendants',
+      );
+      let descendantIds: string[] = [];
+      if (subtreeRoots.length) {
+        const { data: folders, error: fErr } = await sb
+          .from('folder')
+          .select('id,parent_id');
+        if (fErr)
+          throw createError({ statusCode: 502, statusMessage: fErr.message });
+        descendantIds = subtreeRoots.flatMap((id) =>
+          descendantFolderIds(folders ?? [], id),
+        );
+      }
+      if (wantsRoot && descendantIds.length) {
+        query = query.or(
+          `folder_id.is.null,folder_id.in.(${descendantIds.join(',')})`,
+        );
+      } else if (wantsRoot) {
+        query = query.is('folder_id', null);
+      } else if (descendantIds.length) {
+        query = query.in('folder_id', descendantIds);
+      }
     }
 
     const { data, error } = await query;

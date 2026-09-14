@@ -167,15 +167,16 @@ export function distinctSortedTags(rows: Pick<AssetRow, 'tags'>[]): string[] {
 export const UNCATEGORISED_FOLDER_ID = '00000000-0000-0000-0000-000000000001';
 
 /**
- * How to filter assets for a selected folder id: no filter, the NULL-folder
- * bucket (Uncategorised), or the folder's own subtree. See
- * {@link UNCATEGORISED_FOLDER_ID} for why Uncategorised maps to NULL.
+ * How to filter assets for one `folderIds` entry: no filter (`undefined`), the
+ * NULL-folder bucket, or the folder's own subtree. A `null` entry means the
+ * library root (the real `assetQuery` semantics), which — like the Uncategorised
+ * system folder — maps to `folder_id IS NULL`. See {@link UNCATEGORISED_FOLDER_ID}.
  */
 export function resolveAssetFolderFilter(
-  folderId: string | undefined,
+  folderId: string | null | undefined,
 ): 'none' | 'null' | 'descendants' {
-  if (!folderId) return 'none';
-  if (folderId === UNCATEGORISED_FOLDER_ID) return 'null';
+  if (folderId === undefined) return 'none';
+  if (folderId === null || folderId === UNCATEGORISED_FOLDER_ID) return 'null';
   return 'descendants';
 }
 

@@ -22,8 +22,8 @@ import type { NitroFetchRequest, $Fetch } from 'nitropack';
 // Module scope, mirroring the product repo: the auto-import for `useBatchQuery`
 // is only injected when it's called at the top level — calling it inside the
 // factory left it undefined and crashed app init (the account store builds the
-// repos on startup). Just two constant config refs, so sharing them is fine.
-const { batchQueryMatchAll, batchQueryNoPagination } = useBatchQuery();
+// repos on startup). Just a constant config ref, so sharing it is fine.
+const { batchQueryMatchAll } = useBatchQuery();
 
 /**
  * Repository for the Assets Library — full CRUD for assets plus a `folder`
@@ -48,10 +48,12 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 
     /**
      * List assets via `POST /asset/query` (mirrors the real POST
-     * /media/assets/query `BatchQueryResult` shape + the product repo's batch
-     * convention). Fetches everything (no-pagination batch) so the grid + list
-     * sort / paginate / search client-side via TanStack — the app-wide pattern.
-     * Folder scope stays server-side. Returns the unwrapped items.
+     * /media/assets/query `assetQuery` schema + `BatchQueryResult` shape).
+     * `all: true` is the fetch-all switch (not a huge `pageSize`, which the real
+     * schema caps at 1000), so the grid + list sort / paginate / search
+     * client-side via TanStack — the app-wide pattern. Folder scope goes over the
+     * wire as `folderIds` (a `null` element = library root); omitted entirely for
+     * the "all assets" view. Returns the unwrapped items.
      */
     async list(
       options?: AssetApiOptions,
@@ -63,8 +65,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
           method: 'POST',
           body: {
             ...batchQueryMatchAll.value,
-            ...batchQueryNoPagination.value,
-            ...(options?.folderId ? { folderId: options.folderId } : {}),
+            ...(options?.folderId ? { folderIds: [options.folderId] } : {}),
           },
           ...fetchOptions,
         },

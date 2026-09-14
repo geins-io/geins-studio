@@ -136,6 +136,11 @@ describe('resolveAssetFolderFilter', () => {
     expect(resolveAssetFolderFilter(undefined)).toBe('none');
   });
 
+  it('maps a null entry (library root) to a NULL-folder filter', () => {
+    // Real `assetQuery.folderIds` uses a null element for the library root.
+    expect(resolveAssetFolderFilter(null)).toBe('null');
+  });
+
   it('maps the Uncategorised system folder to a NULL-folder filter', () => {
     // Regression: Uncategorised owns no rows — assets re-homed by folder delete
     // land at folder_id IS NULL, so matching its id returned an empty view.
