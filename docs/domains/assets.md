@@ -54,23 +54,23 @@ The contract is **camelCase + `_id`/`_type`** (via `ResponseEntity`), mirroring 
 
 > **Phase 8 alignment (STU-326).** Ahead of the real `Geins.Media` backend, the mock pre-emits its wire fields: `Asset._type` is `'geins.asset'`, each `Asset` carries `path` (= `folderPath`/`name`) and `folderPath` (owning folder's full path; `null` at root), and each `Folder` carries `fullPath` + `depth` (segment count; 1 = top level). Derived server-side in the mappers via `folderPathIndex` / `loadFolderPaths` ([assets-mock.ts](server/utils/assets-mock.ts)). Fields the real phase 1 drops (`sortOrder`, `system`, and the metadata group) still ship from the mock until cutover — see the Phase 8 milestone. Every temporary Phase 8 addition is logged in the [cutover ledger](./assets-cutover.md) (`grep cutover:`) so nothing rots at swap time.
 
-| Method & path              | Repo call                           | Body / query                            | Returns    |
-| -------------------------- | ----------------------------------- | --------------------------------------- | ---------- |
-| `GET /asset/list`          | `assetApi.list(opts)`               | `?folderId`, `?search`                  | `Asset[]`  |
-| `GET /asset/:id`           | `assetApi.get(id)`                  | —                                       | `Asset`    |
-| `POST /asset`              | `assetApi.create(data)`             | `AssetCreate`                           | `Asset`    |
-| `PATCH /asset/:id`         | `assetApi.update(id, data)`         | `AssetUpdate`                           | `Asset`    |
-| `DELETE /asset/:id`        | `assetApi.delete(id)`               | —                                       | `null`     |
-| `POST /asset/upload`       | `assetApi.upload(formData)`         | multipart files + `folderId`            | `Asset[]`  |
-| `POST /asset/:id/replace`  | `assetApi.replace(id, fd)`          | multipart single file                   | `Asset`    |
-| `GET /asset/folder/list`   | `assetApi.folder.list()`            | —                                       | `Folder[]` |
-| `GET /asset/folder/:id`    | `assetApi.folder.get(id)`           | —                                       | `Folder`   |
-| `POST /asset/folder`       | `assetApi.folder.create(d)`         | `FolderCreate`                          | `Folder`   |
-| `PATCH /asset/folder/:id`  | `assetApi.folder.update(…)`         | `FolderUpdate` (rename / move)          | `Folder`   |
-| `DELETE /asset/folder/:id` | `assetApi.deleteFolder(id, assets)` | `?assets=move\|delete` (default `move`) | `null`     |
+| Method & path              | Repo call                           | Body / query                              | Returns    |
+| -------------------------- | ----------------------------------- | ----------------------------------------- | ---------- |
+| `POST /asset/query`        | `assetApi.list(opts)`               | `assetQuery` (`all: true`, `folderIds[]`) | `Asset[]`  |
+| `GET /asset/:id`           | `assetApi.get(id)`                  | —                                         | `Asset`    |
+| `POST /asset`              | `assetApi.create(data)`             | `AssetCreate`                             | `Asset`    |
+| `PATCH /asset/:id`         | `assetApi.update(id, data)`         | `AssetUpdate`                             | `Asset`    |
+| `DELETE /asset/:id`        | `assetApi.delete(id)`               | —                                         | `null`     |
+| `POST /asset/upload`       | `assetApi.upload(formData)`         | multipart files + `folderId`              | `Asset[]`  |
+| `POST /asset/:id/replace`  | `assetApi.replace(id, fd)`          | multipart single file                     | `Asset`    |
+| `GET /asset/folder/list`   | `assetApi.folder.list()`            | —                                         | `Folder[]` |
+| `GET /asset/folder/:id`    | `assetApi.folder.get(id)`           | —                                         | `Folder`   |
+| `POST /asset/folder`       | `assetApi.folder.create(d)`         | `FolderCreate`                            | `Folder`   |
+| `PATCH /asset/folder/:id`  | `assetApi.folder.update(…)`         | `FolderUpdate` (rename / move)            | `Folder`   |
+| `DELETE /asset/folder/:id` | `assetApi.deleteFolder(id, assets)` | `?assets=move\|delete` (default `move`)   | `null`     |
 
-- **List envelope:** bare arrays today. Consumers must still guard with `Array.isArray()` / a normalizer before `.map()` — the real API may wrap in `{ items }` (per the repository rules in `CLAUDE.md`).
-- **`folderId` filtering** resolves the selected folder + descendants server-side.
+- **List query:** `assetApi.list()` POSTs the real `assetQuery` shape to `POST /asset/query` and unwraps `BatchQueryResult.items`. Fetch-all is `all: true` (the real schema caps `pageSize` at 1000 — no huge page size); sort / paginate / search stay client-side via TanStack (app-wide convention). Still guard with `Array.isArray()` before `.map()` (per the repository rules in `CLAUDE.md`).
+- **`folderIds` filtering** goes over the wire as `folderIds: [id]` (a `null` element = library root) and resolves the selected folder + descendants server-side; omitted entirely for the "all assets" view.
 - **Folder delete:** the caller picks what happens to the assets inside via `?assets`. `move` (default) re-homes them to uncategorised (`folder_id` FK is `ON DELETE SET NULL`); `delete` removes the whole folder + descendant subtree's assets first. Child folders cascade in both cases. The UI ([`AssetFolderDeleteDialog`](/components/asset/AssetFolderDeleteDialog)) only prompts for the choice when the subtree still holds assets; empty folders use the plain `DialogDelete` (`assetApi.folder.delete` — the move-only default).
 - **Upload:** `POST /asset/upload` (multipart) stores each file in the `assets` bucket server-side (service key), derives `sizeBytes` / `mime` / `AssetType` (`mimeToAssetType`), builds the public URL, inserts the row, and returns the created `Asset[]`. Images and SVGs reuse the original as `thumbUrl` (both render in an `<img>`; v0). Deleting an asset removes the row, not the stored object (mock — orphaned objects are harmless).
   - **Per-file metadata:** the upload wizard sends a `meta` field alongside the file parts — a JSON array of [`AssetUploadMeta`](/../shared/types/Asset.ts) (`{ name?, folderId?, description?, tags?, channels?, localizations? }`), **one entry per file in the same order** — and each is persisted on its asset row. The quick-upload dialog omits `meta` and sends a single `folderId` field applied to all files (the per-file `folderId` falls back to it). **This extends the frozen contract**: when the real API serves `/asset/upload` it must accept the same per-file `meta` payload (or the wizard's submit + `assetApi.upload` FormData must be re-mapped to whatever shape it expects).

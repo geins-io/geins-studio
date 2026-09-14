@@ -13,22 +13,23 @@ describe('assetRepo', () => {
   const api = assetRepo(mockFetch);
 
   describe('assets → /asset', () => {
-    it('list POSTs the no-pagination batch to /asset/query and unwraps items', async () => {
+    it('list POSTs the fetch-all batch to /asset/query and unwraps items', async () => {
       const items = [{ _id: 'a1', _type: 'geins.asset' }];
       mockFetch.mockResolvedValue({ items });
       await expect(api.list()).resolves.toEqual(items);
+      // `all: true` is the fetch-all switch; no folderIds = every folder.
       expect(mockFetch).toHaveBeenCalledWith('/asset/query', {
         method: 'POST',
-        body: { all: true, page: 1, pageSize: 10000000 },
+        body: { all: true },
       });
     });
 
-    it('list scopes to a folder via the query body (search stays client-side)', async () => {
+    it('list scopes to a folder via folderIds (search stays client-side)', async () => {
       mockFetch.mockResolvedValue({ items: [] });
       await api.list({ folderId: 'f1', search: 'logo' });
       expect(mockFetch).toHaveBeenCalledWith('/asset/query', {
         method: 'POST',
-        body: { all: true, page: 1, pageSize: 10000000, folderId: 'f1' },
+        body: { all: true, folderIds: ['f1'] },
       });
     });
 
