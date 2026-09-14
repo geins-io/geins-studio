@@ -41,10 +41,12 @@ export function contentTypeForUpload(
 }
 
 /**
- * Feature availability for a given backend. Everything is on for the `mock`;
- * `media-phase1` serves browse + upload only, so it gates the controls the real
- * phase-1 API doesn't implement yet (they return in a later phase). Pure so it
- * can be unit-tested and reused by the `useAssetCapabilities` composable.
+ * Feature availability for a given backend. Everything is on for the `mock`.
+ * `media-phase1` reflects the shipped Geins.Media surface: browse + upload, plus
+ * `PATCH` (description/altText/localizations) and `DELETE` (+ restore) — so
+ * description/alt-text edit and delete are on, while rename, tags, channels,
+ * move, replace, thumbnails and tag-autocomplete stay gated to the mock until
+ * phase 2. Pure so it can be unit-tested and reused by `useAssetCapabilities`.
  *
  * cutover: REVISIT@phase2 — the whole capability mechanism is temporary; remove
  * it (+ its consumers) once phase 2 restores the gated features. Ledger:
@@ -54,9 +56,14 @@ export function assetCapabilities(backend: AssetsBackend): AssetCapabilities {
   const mock = backend === 'mock';
   return {
     backend,
-    canEditMetadata: mock,
+    // Shipped in real phase 1 (PATCH description/altText/localizations, DELETE).
+    canEditDescriptionAltText: true,
+    canDeleteAsset: true,
+    // Not in the phase-1 updateAsset surface — mock-only until phase 2.
+    canRenameAsset: mock,
+    canEditTags: mock,
+    canEditChannels: mock,
     canMoveAsset: mock,
-    canDeleteAsset: mock,
     canReplaceFile: mock,
     tagAutocomplete: mock,
     hasThumbnails: mock,
