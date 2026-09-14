@@ -23,6 +23,31 @@ The Assets domain manages media files (images, SVGs, documents, PDFs, video, aud
 
 **Browse state in the URL** — the library page reflects the selected folder + grid pagination in the query (`?folder=<id>&page=<n>&perPage=<n>`, defaults omitted) so a link opens the exact folder + page. The grid uses [`PaginationBar`](/components/PaginationBar) (page-size + page nav, matching the table); the list view paginates via `TableView`.
 
+## Asset picker
+
+A wide slide-in panel that lets any entity **link** assets from the library (product images, attachments, …). It **links, never copies** — the library stays the single source of truth; the picker only hands back the chosen `Asset` objects and the consumer stores their ids. Confirming resolves the selection; cancel/close resolves `[]` and leaves the caller's model untouched.
+
+One panel instance lives app-wide ([`AssetPickerHost`](/components/asset/AssetPickerHost), mounted in `app.vue`); every caller drives that shared instance — never place a picker on a page directly.
+
+**Public API — two styles:**
+
+- **Imperative** — [`useAssetPicker`](/composables/useAssetPicker): `const assets = await open(options)`. Resolves with the chosen assets, or `[]` on cancel/close (never rejects, so no try/catch). A second `open` while one is in flight returns the same promise.
+- **Declarative** — [`AssetPicker`](/components/asset/AssetPicker): wrap a trigger (`<AssetPicker v-model="images"><Button>Pick</Button></AssetPicker>`); the chosen assets flow back through `v-model` + the `confirm` emit. `preselectedIds` defaults to the current model's ids, so a re-open shows them as "Linked".
+
+**Options** (`AssetPickerOptions`, all optional):
+
+| Option           | Effect                                                                                                                         |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `multiple`       | Multi-select (default) vs single — single replaces the pick on each click.                                                     |
+| `types`          | Allowed `AssetType`s (`null` = all). Disallowed types are filtered out entirely. A files-only scope defaults to the list view. |
+| `preselectedIds` | Already-linked ids — shown checked with a "Linked" tag; the confirm button counts only **new** picks.                          |
+| `title`          | Panel title override.                                                                                                          |
+| `folderId`       | Initial folder scope (server-side filter).                                                                                     |
+
+Folder scope is a server-side filter (matching the library page); search / type-scope / sort / paginate are client-side over the fetched folder list. Quick-upload ([`AssetUploadDialog`](/components/asset/AssetUploadDialog) `quick` method) is available inline — new assets matching the picker's types auto-select and the rail flips to "Recently added".
+
+The [`AssetPickerPanel`](/components/asset/AssetPickerPanel) is not a `PanelEdit` (no unsaved-changes semantics) — it's a plain wide `Sheet` with a custom selection footer.
+
 ## API Contract
 
 The contract is **camelCase + `_id`/`_type`** (via `ResponseEntity`), mirroring the rest of the Management API. It is independent of the storage backend — the mock maps to it (see below).
@@ -93,14 +118,15 @@ When the Management API serves `/asset`:
 
 ## Key Files
 
-| Layer      | Path                                                                               |
-| ---------- | ---------------------------------------------------------------------------------- |
-| Types      | `shared/types/Asset.ts` (Asset + Folder)                                           |
-| Registry   | `shared/utils/entities.ts` (`asset`, `folder`)                                     |
-| Repository | `app/utils/repositories/asset.ts` (`assetApi`, `.folder` sub-repo)                 |
-| Mock API   | `server/api/asset/**`, `server/utils/assets-mock.ts`                               |
-| Migration  | `supabase/migrations/0001_assets_mock.sql`                                         |
-| Pages      | `app/pages/asset-library/index.vue` (grid + list browse, folder nav, detail panel) |
+| Layer      | Path                                                                                     |
+| ---------- | ---------------------------------------------------------------------------------------- |
+| Types      | `shared/types/Asset.ts` (Asset + Folder)                                                 |
+| Registry   | `shared/utils/entities.ts` (`asset`, `folder`)                                           |
+| Repository | `app/utils/repositories/asset.ts` (`assetApi`, `.folder` sub-repo)                       |
+| Mock API   | `server/api/asset/**`, `server/utils/assets-mock.ts`                                     |
+| Migration  | `supabase/migrations/0001_assets_mock.sql`                                               |
+| Pages      | `app/pages/asset-library/index.vue` (grid + list browse, folder nav, detail panel)       |
+| Picker     | `app/composables/useAssetPicker.ts`, `app/components/asset/AssetPicker{,Host,Panel}.vue` |
 
 ## Decision Log
 

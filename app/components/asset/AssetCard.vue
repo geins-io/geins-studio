@@ -68,7 +68,9 @@ const activate = () => {
         type="button"
         class="block w-full cursor-pointer"
         :aria-label="
-          selectable ? $t('select') : $t('asset_library.view_details')
+          selectable
+            ? $t('select_named', { name: asset.name })
+            : $t('asset_library.view_details')
         "
         @click="activate"
       >
@@ -93,7 +95,7 @@ const activate = () => {
       >
         <Checkbox
           :model-value="selected"
-          :aria-label="$t('select')"
+          :aria-label="$t('select_named', { name: asset.name })"
           class="bg-white/90 shadow-xs"
           @click.stop="emit('toggleSelect')"
         />

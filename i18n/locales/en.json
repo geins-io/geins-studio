@@ -141,6 +141,7 @@
   "or": "or",
   "and": "and",
   "select": "Select",
+  "select_named": "Select {name}",
   "selected": "Selected",
   "none": "None",
   "close": "Close",
