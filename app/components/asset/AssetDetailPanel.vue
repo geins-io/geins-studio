@@ -28,6 +28,15 @@ const { geinsLogError } = useGeinsLog('components/AssetDetailPanel.vue');
 const { copyUrl, download, deleteAsset } = useAssetActions();
 const caps = useAssetCapabilities();
 
+// Save is possible when at least one metadata field the backend permits is
+// editable — phase 1 allows description + alt text; the mock allows all.
+const canEditAnyMetadata =
+  caps.canEditDescriptionAltText ||
+  caps.canRenameAsset ||
+  caps.canEditTags ||
+  caps.canEditChannels ||
+  caps.canMoveAsset;
+
 const entityKey = ENTITIES.asset.key;
 
 // Distinct tags across all assets feed the tags field's autocomplete (custom
@@ -149,7 +158,7 @@ async function handleDelete() {
     :entity-key="entityKey"
     :dirty="isDirty"
     :loading="loading"
-    :save-disabled="!isDirty || !caps.canEditMetadata"
+    :save-disabled="!isDirty || !canEditAnyMetadata"
     @save="handleSave"
   >
     <template v-if="asset">
@@ -198,16 +207,19 @@ async function handleDelete() {
       <div class="border-border -mx-3 mt-4 mb-6 border-b sm:-mx-6" />
 
       <form @submit.prevent>
-        <!-- The real Geins.Media phase 1 has no metadata-edit routes; disable
-             the whole form (fieldset gates every nested control) rather than
-             remove it — phase 2 restores editing. See useAssetCapabilities. -->
-        <fieldset
-          :disabled="!caps.canEditMetadata"
-          class="m-0 min-w-0 border-0 p-0"
-          :class="{ 'opacity-60': !caps.canEditMetadata }"
-        >
-          <FormGridWrap>
-            <FormGrid design="1">
+        <!-- Metadata edit is gated per field, not as one block: the real
+             Geins.Media phase 1 PATCH only sets description + alt text, so those
+             stay editable while rename / folder move / tags / channels disable
+             until phase 2. Each group is wrapped in its own <fieldset> (which
+             reliably disables the nested custom controls). See
+             useAssetCapabilities. -->
+        <FormGridWrap>
+          <FormGrid design="1">
+            <fieldset
+              :disabled="!caps.canRenameAsset"
+              class="m-0 min-w-0 border-0 p-0"
+              :class="{ 'opacity-60': !caps.canRenameAsset }"
+            >
               <FormField v-slot="{ componentField }" name="name" keep-value>
                 <FormItem>
                   <FormLabel>{{ $t('name', 1) }}</FormLabel>
@@ -217,7 +229,13 @@ async function handleDelete() {
                   <FormMessage />
                 </FormItem>
               </FormField>
+            </fieldset>
 
+            <fieldset
+              :disabled="!caps.canMoveAsset"
+              class="m-0 min-w-0 border-0 p-0"
+              :class="{ 'opacity-60': !caps.canMoveAsset }"
+            >
               <FormField
                 v-slot="{ value, handleChange }"
                 name="folderId"
@@ -231,40 +249,46 @@ async function handleDelete() {
                   />
                 </FormItem>
               </FormField>
+            </fieldset>
 
-              <FormField
-                v-slot="{ componentField }"
-                name="description"
-                keep-value
-              >
-                <FormItem>
-                  <FormLabel :optional="true">
-                    {{ $t('description') }}
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea v-bind="componentField" />
-                  </FormControl>
-                </FormItem>
-              </FormField>
-
-              <FormField
-                v-if="asset.type === 'image'"
-                name="altText"
-                keep-value
-              >
-                <FormItem>
-                  <FormLabel :optional="true">
-                    {{ $t('asset_library.alt_text') }}
-                  </FormLabel>
-                  <FormTranslatableField
-                    v-model="altText"
-                    :label="$t('asset_library.alt_text')"
-                    :placeholder="$t('asset_library.alt_text_placeholder')"
-                    :subject="asset.name"
+            <FormField
+              v-slot="{ componentField }"
+              name="description"
+              keep-value
+            >
+              <FormItem>
+                <FormLabel :optional="true">
+                  {{ $t('description') }}
+                </FormLabel>
+                <FormControl>
+                  <Textarea
+                    v-bind="componentField"
+                    :disabled="!caps.canEditDescriptionAltText"
                   />
-                </FormItem>
-              </FormField>
+                </FormControl>
+              </FormItem>
+            </FormField>
 
+            <FormField v-if="asset.type === 'image'" name="altText" keep-value>
+              <FormItem>
+                <FormLabel :optional="true">
+                  {{ $t('asset_library.alt_text') }}
+                </FormLabel>
+                <FormTranslatableField
+                  v-model="altText"
+                  :label="$t('asset_library.alt_text')"
+                  :placeholder="$t('asset_library.alt_text_placeholder')"
+                  :subject="asset.name"
+                  :disabled="!caps.canEditDescriptionAltText"
+                />
+              </FormItem>
+            </FormField>
+
+            <fieldset
+              :disabled="!caps.canEditTags"
+              class="m-0 min-w-0 border-0 p-0"
+              :class="{ 'opacity-60': !caps.canEditTags }"
+            >
               <FormField v-slot="{ componentField }" name="tags" keep-value>
                 <FormItem>
                   <FormLabel :optional="true">{{ $t('tag', 2) }}</FormLabel>
@@ -281,7 +305,13 @@ async function handleDelete() {
                   </FormControl>
                 </FormItem>
               </FormField>
+            </fieldset>
 
+            <fieldset
+              :disabled="!caps.canEditChannels"
+              class="m-0 min-w-0 border-0 p-0"
+              :class="{ 'opacity-60': !caps.canEditChannels }"
+            >
               <FormField
                 v-slot="{ value, handleChange }"
                 name="channels"
@@ -297,9 +327,9 @@ async function handleDelete() {
                   </FormControl>
                 </FormItem>
               </FormField>
-            </FormGrid>
-          </FormGridWrap>
-        </fieldset>
+            </fieldset>
+          </FormGrid>
+        </FormGridWrap>
       </form>
 
       <dl class="mt-6 space-y-2 border-t pt-4 text-sm">

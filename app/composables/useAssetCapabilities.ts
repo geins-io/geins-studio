@@ -3,10 +3,10 @@ import { assetCapabilities } from '#shared/utils/asset';
 
 /**
  * Which Assets Library features are available, derived from the configured
- * backend (`public.assetsBackend`). Gate metadata editing, delete, replace, and
- * tag autocomplete on these so the UI degrades cleanly against the real
- * Geins.Media phase-1 API (browse + upload only) while the Supabase mock keeps
- * everything on.
+ * backend (`public.assetsBackend`). Gate the per-field metadata edits, delete,
+ * replace, and tag autocomplete on these so the UI degrades cleanly against the
+ * real Geins.Media phase-1 API (browse + upload + description/alt-text edit +
+ * delete) while the Supabase mock keeps everything on.
  *
  * cutover: REVISIT@phase2 — temporary gating; remove this composable and every
  * `useAssetCapabilities()` consumer once phase 2 restores the features. Ledger:

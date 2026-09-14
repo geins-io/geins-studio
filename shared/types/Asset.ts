@@ -228,14 +228,24 @@ export type AssetsBackend = 'mock' | 'media-phase1';
 
 /**
  * Feature availability per backend — the shipped UI gates on these so controls
- * the real phase-1 API can't fulfil (metadata edit, delete, replace, tag
- * autocomplete, thumbnails) disable cleanly instead of erroring, while the mock
- * keeps everything on. Derived from the backend via `assetCapabilities`.
+ * the real phase-1 API can't fulfil disable cleanly instead of erroring, while
+ * the mock keeps everything on. Derived from the backend via `assetCapabilities`.
+ *
+ * Real Geins.Media phase 1 ships browse + upload, `PATCH` (description/altText/
+ * localizations only) and `DELETE` (+ restore) — so description/alt-text edit and
+ * delete are on, but rename/tags/channels/move/replace/thumbnails/tag-autocomplete
+ * are still gated to the mock until phase 2.
  */
 export interface AssetCapabilities {
   backend: AssetsBackend;
-  /** Edit + save asset metadata (name, description, alt text, tags, channels). */
-  canEditMetadata: boolean;
+  /** Edit + save an asset's description and localized alt text (phase-1 PATCH). */
+  canEditDescriptionAltText: boolean;
+  /** Rename an asset (edit `name`). */
+  canRenameAsset: boolean;
+  /** Edit an asset's tags. */
+  canEditTags: boolean;
+  /** Edit an asset's publication channels. */
+  canEditChannels: boolean;
   /** Move an asset to another folder (change `folderId`). */
   canMoveAsset: boolean;
   canDeleteAsset: boolean;

@@ -47,7 +47,10 @@ describe('assetCapabilities', () => {
     const caps = assetCapabilities('mock');
     expect(caps).toEqual({
       backend: 'mock',
-      canEditMetadata: true,
+      canEditDescriptionAltText: true,
+      canRenameAsset: true,
+      canEditTags: true,
+      canEditChannels: true,
       canMoveAsset: true,
       canDeleteAsset: true,
       canReplaceFile: true,
@@ -56,12 +59,17 @@ describe('assetCapabilities', () => {
     });
   });
 
-  it('gates the phase-1-missing features for media-phase1', () => {
+  it('reflects the shipped phase-1 surface for media-phase1', () => {
     const caps = assetCapabilities('media-phase1');
     expect(caps.backend).toBe('media-phase1');
-    expect(caps.canEditMetadata).toBe(false);
+    // PATCH (description/altText) + DELETE shipped in phase 1.
+    expect(caps.canEditDescriptionAltText).toBe(true);
+    expect(caps.canDeleteAsset).toBe(true);
+    // Not in the phase-1 surface yet.
+    expect(caps.canRenameAsset).toBe(false);
+    expect(caps.canEditTags).toBe(false);
+    expect(caps.canEditChannels).toBe(false);
     expect(caps.canMoveAsset).toBe(false);
-    expect(caps.canDeleteAsset).toBe(false);
     expect(caps.canReplaceFile).toBe(false);
     expect(caps.tagAutocomplete).toBe(false);
     expect(caps.hasThumbnails).toBe(false);
