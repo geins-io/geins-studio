@@ -6,11 +6,18 @@ import type { FetchOptions } from 'ofetch';
 
 /**
  * Extra fetch options a repository call may forward to `$geinsApi` on top of
- * the query/body it builds. Currently just the per-request error-toast opt-out
- * so a caller (a background fetch, a flow with its own inline error UX) can
- * silence the global toast without the block-scoped wrapper.
+ * the query/body it builds:
+ * - `suppressErrorToast` — per-request opt-out of the global error toast, for a
+ *   background fetch or a flow with its own inline error UX.
+ * - `headers` — extra request headers merged into the ones `$geinsApi` sets
+ *   (auth, account key), e.g. `If-Match: {etag}` for an optimistic-concurrency
+ *   update. The factory methods spread these last, so they never clobber the
+ *   method/body/query the call builds.
  */
-export type RepoFetchOptions = Pick<FetchOptions, 'suppressErrorToast'>;
+export type RepoFetchOptions = Pick<
+  FetchOptions,
+  'suppressErrorToast' | 'headers'
+>;
 
 /** Return type for {@link entityGetRepo} — single entity retrieval */
 export interface EntityGetRepo<

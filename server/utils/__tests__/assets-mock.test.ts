@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import {
+  assetEtag,
   toAsset,
   toFolder,
   assetColumns,
@@ -68,6 +69,11 @@ describe('toAsset', () => {
 
   it('derives default-language altText from localizations', () => {
     expect(toAsset(assetRow).altText).toBe('Hero');
+  });
+
+  it('derives an opaque etag from updated_at (round-tripped as If-Match)', () => {
+    expect(toAsset(assetRow).etag).toBe(assetEtag(assetRow.updated_at));
+    expect(toAsset(assetRow).etag).toBe('"2026-08-18T00:00:00.000Z"');
   });
 
   it('defaults nullable collections + altText when absent', () => {

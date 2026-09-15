@@ -144,6 +144,12 @@ export interface UploadCompleteResponse {
 
 /** Asset as returned by the API — base + identity + server-managed fields. */
 export interface Asset extends ResponseEntity<AssetBase> {
+  /**
+   * Optimistic-concurrency tag. The real `PATCH /media/assets/{id}` requires it
+   * echoed back as `If-Match: {etag}`; a stale tag yields `412`. Round-trip it
+   * verbatim (opaque token) — `null` when the backend supplies none.
+   */
+  etag: string | null;
   /** Blob storage path: `folderPath`/`name`. Mirrors the real API's `path`. */
   path: string;
   /** Owning folder's full path (breadcrumb source); `null` for a root asset. */
