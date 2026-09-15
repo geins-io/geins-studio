@@ -4,8 +4,10 @@ import { useForm } from 'vee-validate';
 import * as z from 'zod';
 import type {
   Asset,
+  AssetLocalizations,
   AssetUpdate,
   EntityBaseWithName,
+  Localized,
   LocalizedText,
 } from '#shared/types';
 import { ENTITIES } from '#shared/utils/entities';
@@ -22,6 +24,7 @@ const open = defineModel<boolean>('open', { default: false });
 const emit = defineEmits<{ updated: []; replaced: [Asset] }>();
 
 const { t } = useI18n();
+const { currentLanguage } = storeToRefs(useAccountStore());
 const { assetApi } = useGeinsRepository();
 const { formatDate } = useDate();
 const { geinsLogError } = useGeinsLog('components/AssetDetailPanel.vue');
@@ -64,7 +67,7 @@ const formSchema = toTypedSchema(
   z.object({
     name: z.string().min(1, { message: t('form.field_required') }),
     folderId: z.string().nullable(),
-    description: z.string(),
+    description: z.record(z.string(), z.string()),
     altText: z.record(z.string(), z.string()),
     tags: z.array(z.string()),
     channels: z.array(z.string()),
@@ -75,7 +78,7 @@ const form = useForm({ validationSchema: formSchema });
 interface AssetFormValues {
   name: string;
   folderId: string | null;
-  description: string;
+  description: LocalizedText;
   altText: LocalizedText;
   tags: string[];
   channels: string[];
@@ -85,27 +88,62 @@ interface AssetFormValues {
 // child input mount emits), so derive dirty from a post-settle snapshot.
 const { isDirty, captureBaseline } = usePanelDirty(() => form.values);
 
-// altText is a LocalizedText map (locale→string) bound to FormTranslatableField,
-// mapped to/from the wire `localizations` shape at load/save.
+// description + altText are LocalizedText maps (locale→string) bound to
+// FormTranslatableField, mapped to/from the wire `localizations` shape at
+// load/save (both are per-locale, product-standard).
+const description = computed<LocalizedText>({
+  get: () => (form.values.description as LocalizedText | undefined) ?? {},
+  set: (value) => form.setFieldValue('description', value),
+});
 const altText = computed<LocalizedText>({
   get: () => (form.values.altText as LocalizedText | undefined) ?? {},
   set: (value) => form.setFieldValue('altText', value),
 });
+
+// Merge the two per-locale maps into the wire `localizations` shape, dropping
+// blank fields (and empty locales). A full replace: locales/fields absent here
+// are cleared server-side — matching `assetLocalizationsRequest` semantics.
+function buildLocalizations(
+  descriptions: LocalizedText,
+  altTexts: LocalizedText,
+): Localized<AssetLocalizations> {
+  const out: Localized<AssetLocalizations> = {};
+  for (const locale of new Set([
+    ...Object.keys(descriptions),
+    ...Object.keys(altTexts),
+  ])) {
+    const entry: AssetLocalizations = {};
+    const desc = descriptions[locale]?.trim();
+    const alt = altTexts[locale]?.trim();
+    if (desc) entry.description = desc;
+    if (alt) entry.altText = alt;
+    if (Object.keys(entry).length) out[locale] = entry;
+  }
+  return out;
+}
 watch(open, (value) => {
   if (value && props.asset) {
     stale.value = false;
     if (caps.tagAutocomplete) refreshTags();
+    // Edit description + alt text as locale→string maps; localizations is the
+    // wire shape (only non-empty fields are kept).
+    const localizations = props.asset.localizations ?? {};
+    const descriptions: LocalizedText = {};
+    const altTexts: LocalizedText = {};
+    for (const [lang, loc] of Object.entries(localizations)) {
+      if (loc.description) descriptions[lang] = loc.description;
+      if (loc.altText) altTexts[lang] = loc.altText;
+    }
+    // Legacy rows kept description in a top-level column, not localizations —
+    // seed the current language so an existing description survives a first edit.
+    if (!Object.keys(descriptions).length && props.asset.description) {
+      descriptions[currentLanguage.value] = props.asset.description;
+    }
     const values: AssetFormValues = {
       name: props.asset.name,
       folderId: props.asset.folderId,
-      description: props.asset.description ?? '',
-      // Edit alt text as a locale→string map; localizations is the wire shape.
-      altText: Object.fromEntries(
-        Object.entries(props.asset.localizations ?? {}).map(([lang, loc]) => [
-          lang,
-          loc.altText ?? '',
-        ]),
-      ),
+      description: descriptions,
+      altText: altTexts,
       tags: [...props.asset.tags],
       channels: [...props.asset.channels],
     };
@@ -123,11 +161,11 @@ async function handleSave() {
     const payload: AssetUpdate = {
       name: form.values.name,
       folderId: form.values.folderId ?? null,
-      description: form.values.description || null,
-      localizations: Object.fromEntries(
-        Object.entries((form.values.altText as LocalizedText | undefined) ?? {})
-          .filter(([, text]) => text?.trim())
-          .map(([lang, text]) => [lang, { altText: text }]),
+      // Description + alt text both round-trip through localizations (the
+      // top-level values are derived server-side in the account default language).
+      localizations: buildLocalizations(
+        (form.values.description as LocalizedText | undefined) ?? {},
+        (form.values.altText as LocalizedText | undefined) ?? {},
       ),
       tags: form.values.tags ?? [],
       channels: form.values.channels ?? [],
@@ -288,21 +326,19 @@ async function handleDelete() {
               </FormField>
             </fieldset>
 
-            <FormField
-              v-slot="{ componentField }"
-              name="description"
-              keep-value
-            >
+            <FormField name="description" keep-value>
               <FormItem>
                 <FormLabel :optional="true">
                   {{ $t('description') }}
                 </FormLabel>
-                <FormControl>
-                  <Textarea
-                    v-bind="componentField"
-                    :disabled="!caps.canEditDescriptionAltText"
-                  />
-                </FormControl>
+                <FormTranslatableField
+                  v-model="description"
+                  multiline
+                  :label="$t('description')"
+                  :placeholder="$t('asset_library.description_placeholder')"
+                  :subject="asset.name"
+                  :disabled="!caps.canEditDescriptionAltText"
+                />
               </FormItem>
             </FormField>
 

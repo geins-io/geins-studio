@@ -34,6 +34,7 @@ export type LocalizedText = Record<string, string>;
 
 /** Per-locale translatable asset fields (product-standard `localizations`). */
 export interface AssetLocalizations {
+  description?: string;
   altText?: string;
 }
 
@@ -43,8 +44,15 @@ export interface AssetBase {
   type: AssetType;
   /** Folder acts as a backend category filter; `null` = uncategorised. */
   folderId: string | null;
+  /**
+   * Default-language description. On a response it's derived from
+   * `localizations` (like {@link Asset.altText}); the panel edits it per-locale
+   * and writes it back through `localizations`, so `PATCH` sends it there, not
+   * as a separate top-level field. Still accepted top-level on the create/upload
+   * path ({@link AssetUploadMeta}).
+   */
   description?: string | null;
-  /** Locale-keyed translatable fields, e.g. `{ en: { altText }, sv: { altText } }`. */
+  /** Locale-keyed translatable fields, e.g. `{ en: { description, altText } }`. */
   localizations?: Localized<AssetLocalizations>;
   tags: string[];
   channels: string[];

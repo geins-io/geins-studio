@@ -60,7 +60,10 @@ export interface AssetRow {
   url: string | null;
   thumb_url: string | null;
   description: string | null;
-  localizations: Record<string, { altText?: string }> | null;
+  localizations: Record<
+    string,
+    { description?: string; altText?: string }
+  > | null;
   tags: string[] | null;
   channels: string[] | null;
   created_by: string | null;
@@ -93,9 +96,12 @@ export function toAsset(
     // for a root asset). folderPath feeds the breadcrumb.
     folderPath,
     path: folderPath ? `${folderPath}/${row.name}` : row.name,
-    description: row.description,
     localizations: row.localizations ?? {},
-    // Default-language value surfaced inline (derived; source of truth is localizations).
+    // Default-language values surfaced inline (derived; source of truth is
+    // localizations). Description falls back to the legacy top-level column for
+    // rows created before it moved into localizations.
+    description:
+      row.localizations?.[DEFAULT_LANG]?.description ?? row.description ?? null,
     altText: row.localizations?.[DEFAULT_LANG]?.altText ?? null,
     tags: row.tags ?? [],
     channels: row.channels ?? [],
@@ -135,8 +141,19 @@ export function assetColumns(
   if ('name' in body) row.name = body.name;
   if ('type' in body) row.type = body.type;
   if ('folderId' in body) row.folder_id = body.folderId;
-  if ('description' in body) row.description = body.description;
-  if ('localizations' in body) row.localizations = body.localizations;
+  if ('localizations' in body) {
+    row.localizations = body.localizations;
+    // Mirror the default-language description into the legacy top-level column
+    // so the derived `description` stays correct even when a locale is cleared.
+    const loc = body.localizations as Record<
+      string,
+      { description?: string }
+    > | null;
+    row.description = loc?.[DEFAULT_LANG]?.description ?? null;
+  } else if ('description' in body) {
+    // Create/upload path still sets the top-level description directly.
+    row.description = body.description;
+  }
   if ('tags' in body) row.tags = body.tags;
   if ('channels' in body) row.channels = body.channels;
   return row;

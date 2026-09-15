@@ -68,6 +68,14 @@ subject?: string;
 
 Context shown before the fill count in the subtitle (e.g. the asset name).
 
+### `multiline`
+
+```ts
+multiline?: boolean;
+```
+
+Render a `Textarea` per locale instead of an `Input` — for multi-line fields (e.g. description). [`FormTranslatableField`](/components/form/FormTranslatableField) forwards its own `multiline` here.
+
 ## v-model
 
 ### default (`modelValue`)

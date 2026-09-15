@@ -76,6 +76,24 @@ describe('toAsset', () => {
     expect(toAsset(assetRow).etag).toBe('"2026-08-18T00:00:00.000Z"');
   });
 
+  it('derives default-language description from localizations', () => {
+    const asset = toAsset({
+      ...assetRow,
+      description: 'legacy column value',
+      localizations: { en: { description: 'Hero shot', altText: 'Hero' } },
+    });
+    expect(asset.description).toBe('Hero shot');
+  });
+
+  it('falls back to the legacy description column when localizations has none', () => {
+    const asset = toAsset({
+      ...assetRow,
+      description: 'legacy column value',
+      localizations: { en: { altText: 'Hero' } },
+    });
+    expect(asset.description).toBe('legacy column value');
+  });
+
   it('defaults nullable collections + altText when absent', () => {
     const asset = toAsset({
       ...assetRow,
@@ -122,6 +140,30 @@ describe('assetColumns', () => {
 
   it('is empty for an empty body', () => {
     expect(assetColumns({})).toEqual({});
+  });
+
+  it('mirrors the default-language description into the column with localizations', () => {
+    expect(
+      assetColumns({
+        localizations: { en: { description: 'D', altText: 'A' } },
+      }),
+    ).toEqual({
+      localizations: { en: { description: 'D', altText: 'A' } },
+      description: 'D',
+    });
+  });
+
+  it('clears the description column when the default locale has none', () => {
+    expect(assetColumns({ localizations: { sv: { altText: 'A' } } })).toEqual({
+      localizations: { sv: { altText: 'A' } },
+      description: null,
+    });
+  });
+
+  it('sets description directly on the create/upload path (no localizations)', () => {
+    expect(assetColumns({ description: 'plain' })).toEqual({
+      description: 'plain',
+    });
   });
 });
 

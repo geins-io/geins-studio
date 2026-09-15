@@ -1677,6 +1677,7 @@
     "view_details": "Visa detaljer",
     "alt_text": "Alternativtext",
     "alt_text_placeholder": "Beskriv bilden för skärmläsare…",
+    "description_placeholder": "Beskriv den här resursen…",
     "asset_stale_title": "Resursen ändrades någon annanstans",
     "asset_stale_description": "Någon uppdaterade den här resursen efter att du öppnade den. Ladda om för att se den senaste versionen – dina ändringar här kastas.",
     "copy_public_url": "Kopiera URL",

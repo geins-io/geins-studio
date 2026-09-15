@@ -60,8 +60,8 @@ Footer is the standard **Cancel + Save**. Deleting lives in a **remove section a
 
 ## Editable fields
 
-- **name** (required), **folder** (`Select` from [`useFolders`](/composables/useFolders) with inline create), **description** (`Textarea`), **alt text** (images only — a [`FormTranslatableField`](/components/form/FormTranslatableField): current-language input + flag that opens the translation panel, which auto-stacks over this one), **tags** (`TagsInput`), **channels** ([`FormInputChannels`](/components/form/input/FormInputChannels)).
-- Alt text is edited as a locale→string map in the form, then written as `localizations` (`{ [lang]: { altText } }`) on save — the product-standard shape (see [assets domain](/domains/assets)).
+- **name** (required), **folder** (`Select` from [`useFolders`](/composables/useFolders) with inline create), **description** (multi-line [`FormTranslatableField`](/components/form/FormTranslatableField) — `multiline`), **alt text** (images only — a [`FormTranslatableField`](/components/form/FormTranslatableField): current-language input + flag that opens the translation panel, which auto-stacks over this one), **tags** (`TagsInput`), **channels** ([`FormInputChannels`](/components/form/input/FormInputChannels)).
+- **Description and alt text are both per-locale.** Each is edited as a locale→string map in the form; on save they merge into one `localizations` object (`{ [lang]: { description, altText } }`, blanks dropped) — the product-standard shape (see [assets domain](/domains/assets)). No top-level `description` is sent; the default-language value is derived server-side. Legacy rows whose description lived in the top-level column seed the current language on open so it isn't lost.
 - Save → `assetApi.update(id, …)` → refresh `asset-library-list`.
 
 ## Optimistic concurrency
