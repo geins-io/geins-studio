@@ -77,18 +77,6 @@ describe('assetRepo', () => {
       });
     });
 
-    it('upload POSTs the form data to /asset/upload', async () => {
-      const form = new FormData();
-      form.append('file', new File(['x'], 'a.jpg', { type: 'image/jpeg' }));
-      mockFetch.mockResolvedValue([]);
-      await api.upload(form);
-      expect(mockFetch).toHaveBeenCalledWith('/asset/upload', {
-        method: 'POST',
-        body: form,
-        errorContext: { action: 'creating', entity: 'asset' },
-      });
-    });
-
     it('replace POSTs the form data to /asset/:id/replace', async () => {
       const form = new FormData();
       form.append('file', new File(['x'], 'b.jpg', { type: 'image/jpeg' }));
@@ -195,7 +183,7 @@ describe('assetRepo', () => {
         '/asset/tickets',
         expect.objectContaining({ method: 'POST' }),
       );
-      // Step 2: PUT only the accepted file, with both content-type headers.
+      // Step 2: PUT only the accepted file, with the Azure blob headers.
       expect(put).toHaveBeenCalledTimes(1);
       expect(put).toHaveBeenCalledWith(
         '/api/asset/tickets/t1/blob/a',
@@ -203,6 +191,7 @@ describe('assetRepo', () => {
           method: 'PUT',
           headers: {
             'content-type': 'image/png',
+            'x-ms-blob-type': 'BlockBlob',
             'x-ms-blob-content-type': 'image/png',
           },
         }),
@@ -221,6 +210,76 @@ describe('assetRepo', () => {
           status: 'rejected',
           code: 'FILE_TOO_LARGE',
           message: 'too big',
+        },
+      ]);
+      vi.unstubAllGlobals();
+    });
+
+    it('chunks over the per-ticket file cap into separate ticket claims', async () => {
+      const put = vi.fn().mockResolvedValue({ ok: true });
+      vi.stubGlobal('fetch', put);
+      // 51 files > MAX_FILES_PER_TICKET (50) → two ticket claims + two completes.
+      const files = Array.from(
+        { length: 51 },
+        (_, i) => new File(['x'], `f${i}.png`, { type: 'image/png' }),
+      );
+      // Each ticket claim accepts whatever it was sent; each complete echoes them.
+      mockFetch.mockImplementation((url: string, opts: { body?: unknown }) => {
+        if (url === '/asset/tickets') {
+          const body = opts.body as { files: { clientRef: string }[] };
+          return Promise.resolve({
+            ticketId: `t-${body.files.length}`,
+            expiresAt: 'x',
+            results: body.files.map((f) => ({
+              clientRef: f.clientRef,
+              status: 'accepted',
+              assetId: `id-${f.clientRef}`,
+              upload: { mode: 'single', url: `/blob/${f.clientRef}` },
+            })),
+          });
+        }
+        // complete
+        const body = opts.body as { files: string[] };
+        return Promise.resolve({
+          results: body.files.map((clientRef) => ({
+            clientRef,
+            status: 'completed',
+            file: { _id: `id-${clientRef}` },
+          })),
+        });
+      });
+
+      const out = await api.uploadViaTickets(
+        files.map((file, i) => ({ file, clientRef: String(i) })),
+      );
+
+      const ticketClaims = mockFetch.mock.calls.filter(
+        (c: unknown[]) => c[0] === '/asset/tickets',
+      );
+      expect(ticketClaims).toHaveLength(2); // 50 + 1
+      expect(put).toHaveBeenCalledTimes(51);
+      expect(out.filter((r) => r.status === 'completed')).toHaveLength(51);
+      vi.unstubAllGlobals();
+    });
+
+    it('rejects an over-1 GB file client-side without claiming a ticket', async () => {
+      const put = vi.fn().mockResolvedValue({ ok: true });
+      vi.stubGlobal('fetch', put);
+      const big = new File(['x'], 'big.png', { type: 'image/png' });
+      // Force the size past the 1 GB cap without allocating real bytes.
+      Object.defineProperty(big, 'size', { value: 2 * 1024 ** 3 });
+
+      const out = await api.uploadViaTickets([{ file: big, clientRef: 'big' }]);
+
+      // No ticket claimed, no bytes PUT — just the client-side rejection.
+      expect(mockFetch).not.toHaveBeenCalled();
+      expect(put).not.toHaveBeenCalled();
+      expect(out).toEqual([
+        {
+          clientRef: 'big',
+          status: 'rejected',
+          code: 'FILE_TOO_LARGE',
+          message: 'File exceeds the 1 GB limit.',
         },
       ]);
       vi.unstubAllGlobals();

@@ -17,6 +17,11 @@ const { folderName } = useFolders();
 const { files, settingsOf, patchSettings, removeFiles, linkProducts } =
   useUploadWizardContext();
 const { matchOf } = useProductMatch();
+// Phase-1 tickets persist name + folder (at create) and description + alt text
+// (a follow-up PATCH); tags + channels have no route yet, so those fields are
+// disabled under a real backend. Values still live in the wizard state — nothing
+// is lost if a later phase enables them.
+const caps = useAssetCapabilities();
 
 // An image whose filename ref resolves to a product (only when auto-link is on).
 const isLinked = (file: File): boolean => linkProducts.value && !!matchOf(file);
@@ -30,7 +35,7 @@ const activeProduct = computed(() =>
 const { data: allTags } = useAsyncData<string[]>(
   'asset-tags',
   () => assetApi.listTags(),
-  { default: () => [] },
+  { default: () => [], immediate: caps.tagAutocomplete },
 );
 const tagOptions = computed<EntityBaseWithName[]>(() =>
   (allTags.value ?? []).map((tag) => ({ _id: tag, name: tag })),
@@ -272,7 +277,11 @@ const rowFolderName = (id: string): string | undefined => {
               <AssetFolderPicker v-model="folderId" />
             </div>
 
-            <div class="space-y-1.5">
+            <fieldset
+              :disabled="!caps.canEditChannels"
+              class="m-0 min-w-0 space-y-1.5 border-0 p-0"
+              :class="{ 'opacity-60': !caps.canEditChannels }"
+            >
               <Label>
                 {{ $t('channel', 2) }}
                 <span class="text-muted-foreground font-normal">
@@ -280,7 +289,13 @@ const rowFolderName = (id: string): string | undefined => {
                 </span>
               </Label>
               <FormInputChannels v-model="channels" />
-            </div>
+              <p
+                v-if="!caps.canEditChannels"
+                class="text-muted-foreground text-xs"
+              >
+                {{ $t('asset_library.wizard_field_not_saved') }}
+              </p>
+            </fieldset>
 
             <div class="space-y-1.5">
               <Label>
@@ -292,7 +307,11 @@ const rowFolderName = (id: string): string | undefined => {
               <Textarea v-model="description" />
             </div>
 
-            <div class="space-y-1.5">
+            <fieldset
+              :disabled="!caps.canEditTags"
+              class="m-0 min-w-0 space-y-1.5 border-0 p-0"
+              :class="{ 'opacity-60': !caps.canEditTags }"
+            >
               <Label>
                 {{ $t('tag', 2) }}
                 <span class="text-muted-foreground font-normal">
@@ -305,7 +324,10 @@ const rowFolderName = (id: string): string | undefined => {
                 :data-set="tagOptions"
                 :allow-custom-tags="true"
               />
-            </div>
+              <p v-if="!caps.canEditTags" class="text-muted-foreground text-xs">
+                {{ $t('asset_library.wizard_field_not_saved') }}
+              </p>
+            </fieldset>
           </div>
         </template>
 

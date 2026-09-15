@@ -2,7 +2,16 @@ import type {
   AssetCapabilities,
   AssetsBackend,
   AssetType,
+  UploadRejectionCode,
 } from '#shared/types';
+
+// Upload-ticket limits — the real Geins.Media `createUploadTicket` caps. KEEP:
+// these are the API contract, not mock-only. The client validates + chunks
+// against them before claiming a ticket, and the mock route enforces the same
+// numbers (imported from here so there's one source of truth).
+export const MAX_FILES_PER_TICKET = 50;
+export const MAX_FILE_BYTES = 1024 ** 3; // 1 GB per file
+export const MAX_TICKET_BYTES = 10 * 1024 ** 3; // 10 GB per ticket total
 
 // Extension → MIME for the upload path. The browser leaves `File.type` empty
 // for many types (e.g. `.svg`, some `.mp4`), and the ticket flow needs a
@@ -38,6 +47,30 @@ export function contentTypeForUpload(
   if (browserType) return browserType;
   const ext = name.toLowerCase().split('.').pop() ?? '';
   return EXT_MIME[ext] ?? 'application/octet-stream';
+}
+
+// Friendly, translatable copy per upload rejection code. The client shows these
+// (not the raw backend `message`, which is English + terse) so the reason is
+// localized; rare/unknown codes fall back to a generic line. Keys live under
+// `asset_library.*` in both locales.
+const UPLOAD_REJECTION_KEYS: Record<UploadRejectionCode, string> = {
+  PATH_INVALID: 'asset_library.upload_reject_path_invalid',
+  PATH_ALREADY_EXISTS: 'asset_library.upload_reject_path_already_exists',
+  PATH_MOVE_PENDING: 'asset_library.upload_reject_path_move_pending',
+  FILE_TOO_LARGE: 'asset_library.upload_reject_file_too_large',
+  FILE_TYPE_NOT_ALLOWED: 'asset_library.upload_reject_file_type_not_allowed',
+  FOLDER_INVALID: 'asset_library.upload_reject_folder_invalid',
+  FOLDER_DEPTH_EXCEEDED: 'asset_library.upload_reject_folder_depth_exceeded',
+  FORBIDDEN: 'asset_library.upload_reject_forbidden',
+  QUOTA_EXCEEDED: 'asset_library.upload_reject_quota_exceeded',
+  BLOB_MISSING: 'asset_library.upload_reject_blob_missing',
+  CONTENT_TYPE_MISMATCH: 'asset_library.upload_reject_content_type_mismatch',
+  SCAN_REJECTED: 'asset_library.upload_reject_scan_rejected',
+};
+
+/** i18n key for an upload rejection code's friendly reason (generic fallback). */
+export function uploadRejectionMessageKey(code: UploadRejectionCode): string {
+  return UPLOAD_REJECTION_KEYS[code] ?? 'asset_library.upload_reject_generic';
 }
 
 /**

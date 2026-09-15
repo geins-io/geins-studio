@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { Asset } from '#shared/types';
+import type { Asset, UploadRejectionCode } from '#shared/types';
+import { uploadRejectionMessageKey } from '#shared/utils/asset';
 import { entityListUrl } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 
@@ -9,8 +10,9 @@ type UploadMethodId = 'quick' | 'wizard' | 'csv';
  * Upload dialog. Step 1 picks a method: Quick upload or the multi-step wizard
  * (CSV import is still disabled with a "coming soon" tooltip). Quick upload
  * continues inline (step 2 below: drag/drop or browse, pick a folder with inline
- * create, upload via `assetApi.upload`, refresh the library). The wizard closes
- * the dialog and routes to the full-page wizard at `/asset-library/upload`.
+ * create, upload via `assetApi.uploadViaTickets`, refresh the library). The
+ * wizard closes the dialog and routes to the full-page wizard at
+ * `/asset-library/upload`.
  *
  * `methods` restricts the offered methods; when only one remains the chooser is
  * skipped entirely (the asset picker embeds it as quick-only so it never routes
@@ -62,6 +64,8 @@ const method = ref<UploadMethodId>('quick');
 const files = ref<File[]>([]);
 const folderId = ref<string | null>(props.defaultFolderId ?? null);
 const uploading = ref(false);
+// Per-file rejections shown inline when nothing uploaded (so the user can fix).
+const rejected = ref<{ name: string; code: UploadRejectionCode }[]>([]);
 
 watch(open, (value) => {
   if (value) {
@@ -69,6 +73,7 @@ watch(open, (value) => {
     step.value = skipChooser.value ? 'quick' : 'choose';
     files.value = [];
     folderId.value = props.defaultFolderId ?? null;
+    rejected.value = [];
   }
 });
 
@@ -100,22 +105,47 @@ function removeFile(index: number) {
 async function upload() {
   if (!files.value.length) return;
   uploading.value = true;
-  const form = new FormData();
-  for (const file of files.value) form.append('files', file);
-  if (folderId.value) form.append('folderId', folderId.value);
+  rejected.value = [];
+  // Index as clientRef so a rejection maps back to its file (for the reason list).
+  const items = files.value.map((file, i) => ({
+    file,
+    clientRef: String(i),
+    folderId: folderId.value,
+  }));
   try {
-    const created = await assetApi.upload(form);
+    const results = await assetApi.uploadViaTickets(items);
     await refreshNuxtData('asset-library-list');
-    toast({
-      title: t(
-        'asset_library.assets_uploaded',
-        { count: created.length },
-        created.length,
-      ),
-      variant: 'positive',
-    });
-    emit('uploaded', created);
-    open.value = false;
+    const created = results.flatMap((r) =>
+      r.status === 'completed' ? [r.file] : [],
+    );
+    const fails = results.flatMap((r) => (r.status === 'rejected' ? [r] : []));
+
+    if (created.length) {
+      toast({
+        title: fails.length
+          ? t('asset_library.upload_partial', {
+              created: created.length,
+              total: files.value.length,
+            })
+          : t(
+              'asset_library.assets_uploaded',
+              { count: created.length },
+              created.length,
+            ),
+        variant: fails.length ? 'warning' : 'positive',
+      });
+      emit('uploaded', created);
+    }
+
+    // Nothing uploaded → keep the dialog open and show why; otherwise close.
+    if (fails.length && !created.length) {
+      rejected.value = fails.map((r) => ({
+        name: files.value[Number(r.clientRef)]?.name ?? r.clientRef,
+        code: r.code,
+      }));
+    } else {
+      open.value = false;
+    }
   } catch (error) {
     geinsLogError('upload', getErrorMessage(error));
   } finally {
@@ -232,6 +262,23 @@ async function upload() {
               </span>
             </Label>
             <AssetFolderPicker v-model="folderId" />
+          </div>
+
+          <!-- Rejections when nothing uploaded — friendly reason per file. -->
+          <div v-if="rejected.length" class="space-y-1.5">
+            <div
+              v-for="(row, i) in rejected"
+              :key="i"
+              class="bg-destructive/10 text-destructive flex items-start gap-2 rounded-md px-3 py-2 text-sm"
+            >
+              <LucideFileX class="mt-0.5 size-4 shrink-0" />
+              <div class="min-w-0">
+                <p class="truncate font-medium">{{ row.name }}</p>
+                <p class="text-xs opacity-90">
+                  {{ $t(uploadRejectionMessageKey(row.code)) }}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 

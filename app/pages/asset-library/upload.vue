@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import type { AssetUploadMeta } from '#shared/types';
+import type {
+  AssetLocalizations,
+  Localized,
+  LocalizedText,
+  UploadCompleteResult,
+  UploadRejectionCode,
+} from '#shared/types';
+import { uploadRejectionMessageKey } from '#shared/utils/asset';
 import { entityListUrl } from '#shared/utils/entities';
 import { formatFileSize } from '#shared/utils/file';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,7 +17,6 @@ import {
   StepperTitle,
   StepperTrigger,
 } from '@/components/ui/stepper';
-import { useToast } from '@/components/ui/toast/use-toast';
 import {
   uploadWizardKey,
   useUploadWizard,
@@ -50,60 +56,104 @@ const canProceed = computed(
 );
 
 const { assetApi } = useGeinsRepository();
-const { toast } = useToast();
 const { geinsLogError } = useGeinsLog('pages/asset-library/upload.vue');
+const caps = useAssetCapabilities();
+const { currentLanguage } = storeToRefs(useAccountStore());
 
 const uploading = ref(false);
 const done = ref(false);
-const uploadedCount = ref(0);
 
-// Per-file metadata sent alongside the files (same order); alt text is mapped
-// from the UI's LocalizedText to the wire `localizations` shape, dropping blanks.
-function buildMeta(): AssetUploadMeta[] {
-  return files.value.map((wf) => {
-    const s = wizard.settingsOf(wf.id);
-    const localizations = Object.fromEntries(
-      Object.entries(s.altText ?? {})
-        .filter(([, text]) => text?.trim())
-        .map(([loc, text]) => [loc, { altText: text }]),
-    );
-    const meta: AssetUploadMeta = {
-      name: s.name || wf.file.name,
-      folderId: s.folderId ?? null,
-      tags: s.tags ?? [],
-      channels: s.channels ?? [],
-    };
-    if (s.description?.trim()) meta.description = s.description.trim();
-    if (Object.keys(localizations).length) meta.localizations = localizations;
-    return meta;
-  });
+// Per-file outcome for the result screen. `clientRef` is the WizardFile id we
+// send as the ticket clientRef, so it maps each result back to its source file.
+interface OutcomeRow {
+  name: string;
+  status: 'completed' | 'rejected';
+  code?: UploadRejectionCode;
+}
+const outcomes = ref<OutcomeRow[]>([]);
+const completedCount = computed(
+  () => outcomes.value.filter((o) => o.status === 'completed').length,
+);
+const rejectedOutcomes = computed(() =>
+  outcomes.value.filter((o) => o.status === 'rejected'),
+);
+
+// Wizard alt text (per-locale) + description (single, default-language) → the
+// wire `localizations` shape, dropping blanks. Sent as a follow-up PATCH after
+// the ticket flow, which itself carries no metadata (phase-1 reality).
+function buildLocalizations(
+  description: string | undefined,
+  altText: LocalizedText,
+): Localized<AssetLocalizations> {
+  const out: Localized<AssetLocalizations> = {};
+  for (const [loc, text] of Object.entries(altText ?? {})) {
+    const trimmed = text?.trim();
+    if (trimmed) (out[loc] ??= {}).altText = trimmed;
+  }
+  const desc = description?.trim();
+  if (desc) (out[currentLanguage.value] ??= {}).description = desc;
+  return out;
+}
+
+// Persist description + alt text on each created asset (the ticket flow can't).
+// Gated on the backend capability; a per-file failure is logged, not fatal —
+// the file is already uploaded, only its metadata didn't stick.
+async function persistMetadata(results: UploadCompleteResult[]) {
+  await Promise.all(
+    results.map(async (r) => {
+      if (r.status !== 'completed') return;
+      const s = wizard.settingsOf(r.clientRef);
+      const localizations = buildLocalizations(s.description, s.altText ?? {});
+      if (!Object.keys(localizations).length) return;
+      // If-Match guards the write with the just-created asset's etag.
+      const headers = r.file.etag ? { 'If-Match': r.file.etag } : undefined;
+      try {
+        await assetApi.update(r.file._id, { localizations }, undefined, {
+          suppressErrorToast: true,
+          headers,
+        });
+      } catch (error) {
+        geinsLogError('persistMetadata', getErrorMessage(error));
+      }
+    }),
+  );
 }
 
 async function submit() {
   if (!files.value.length) return;
-  const total = files.value.length;
   uploading.value = true;
-  const form = new FormData();
-  for (const wf of files.value) form.append('files', wf.file);
-  form.append('meta', JSON.stringify(buildMeta()));
+
+  // Snapshot the display name per clientRef before the async work, so outcomes
+  // resolve even if the file list changes underneath.
+  const nameByRef = new Map(
+    files.value.map((wf) => [
+      wf.id,
+      wizard.settingsOf(wf.id).name || wf.file.name,
+    ]),
+  );
+  const items = files.value.map((wf) => {
+    const s = wizard.settingsOf(wf.id);
+    return {
+      file: wf.file,
+      clientRef: wf.id,
+      folderId: s.folderId ?? null,
+      name: s.name || wf.file.name,
+    };
+  });
+
   try {
-    const created = await assetApi.upload(form);
+    const results = await assetApi.uploadViaTickets(items);
+    if (caps.canEditDescriptionAltText) await persistMetadata(results);
     await refreshNuxtData('asset-library-list');
-    uploadedCount.value = created.length;
-    // Partial success: the endpoint returns only the created subset. v0 still
-    // completes (the created assets are live) but flags the shortfall.
-    if (created.length < total) {
-      toast({
-        title: t('asset_library.upload_partial', {
-          created: created.length,
-          total,
-        }),
-        variant: 'warning',
-      });
-    }
+    outcomes.value = results.map((r) => ({
+      name: nameByRef.get(r.clientRef) ?? r.clientRef,
+      status: r.status,
+      code: r.status === 'rejected' ? r.code : undefined,
+    }));
     done.value = true;
   } catch (error) {
-    // Total failure flows to the global error toast; stay on the review step.
+    // A hard failure (e.g. a ticket claim threw) flows to the global error
+    // toast; stay on the review step so the user can retry.
     geinsLogError('submit', getErrorMessage(error));
   } finally {
     uploading.value = false;
@@ -171,28 +221,70 @@ function leave() {
         </CardContent>
       </Card>
 
-      <!-- Success -->
+      <!-- Result — completed count, plus any per-file rejections -->
       <Card v-else-if="done">
         <CardContent class="flex flex-col items-center gap-5 py-16 text-center">
           <div
-            class="bg-positive/10 text-positive flex size-16 items-center justify-center rounded-full"
+            class="flex size-16 items-center justify-center rounded-full"
+            :class="
+              rejectedOutcomes.length
+                ? 'bg-warning/10 text-warning'
+                : 'bg-positive/10 text-positive'
+            "
           >
-            <LucideCircleCheck class="size-8" />
+            <LucideTriangleAlert
+              v-if="rejectedOutcomes.length"
+              class="size-8"
+            />
+            <LucideCircleCheck v-else class="size-8" />
           </div>
           <div>
             <p class="text-xl font-semibold">
               {{
-                $t(
-                  'asset_library.uploaded_success',
-                  { count: uploadedCount },
-                  uploadedCount,
-                )
+                completedCount
+                  ? $t(
+                      'asset_library.uploaded_success',
+                      { count: completedCount },
+                      completedCount,
+                    )
+                  : $t('asset_library.upload_none_succeeded')
               }}
             </p>
             <p class="text-muted-foreground mt-1 text-sm">
-              {{ $t('asset_library.uploaded_success_hint') }}
+              {{
+                rejectedOutcomes.length
+                  ? $t(
+                      'asset_library.upload_failed_count',
+                      { count: rejectedOutcomes.length },
+                      rejectedOutcomes.length,
+                    )
+                  : $t('asset_library.uploaded_success_hint')
+              }}
             </p>
           </div>
+
+          <!-- Per-file rejection reasons (friendly copy by code). -->
+          <div
+            v-if="rejectedOutcomes.length"
+            class="w-full max-w-md space-y-1.5 text-left"
+          >
+            <div
+              v-for="(row, i) in rejectedOutcomes"
+              :key="i"
+              class="bg-muted/40 flex items-start gap-2 rounded-md px-3 py-2 text-sm"
+            >
+              <LucideFileX
+                class="text-muted-foreground mt-0.5 size-4 shrink-0"
+              />
+              <div class="min-w-0">
+                <p class="truncate font-medium">{{ row.name }}</p>
+                <p class="text-muted-foreground text-xs">
+                  {{ $t(uploadRejectionMessageKey(row.code!)) }}
+                </p>
+              </div>
+            </div>
+          </div>
+
           <Button @click="leave">
             {{ $t('asset_library.go_to_library') }}
           </Button>

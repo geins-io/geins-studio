@@ -48,8 +48,7 @@ export interface AssetBase {
    * Default-language description. On a response it's derived from
    * `localizations` (like {@link Asset.altText}); the panel edits it per-locale
    * and writes it back through `localizations`, so `PATCH` sends it there, not
-   * as a separate top-level field. Still accepted top-level on the create/upload
-   * path ({@link AssetUploadMeta}).
+   * as a separate top-level field.
    */
   description?: string | null;
   /** Locale-keyed translatable fields, e.g. `{ en: { description, altText } }`. */
@@ -60,22 +59,6 @@ export interface AssetBase {
 
 export type AssetCreate = CreateEntity<AssetBase>;
 export type AssetUpdate = UpdateEntity<AssetBase>;
-
-/**
- * Per-file metadata sent alongside a multipart upload (the upload wizard). The
- * `POST /asset/upload` route reads a `meta` field — a JSON array of these, one
- * per file part, in the same order — and persists it on each created asset.
- * Everything is optional; omitted fields fall back to defaults (uncategorised,
- * empty tags/channels, filename as name).
- */
-export interface AssetUploadMeta {
-  name?: string;
-  folderId?: string | null;
-  description?: string | null;
-  tags?: string[];
-  channels?: string[];
-  localizations?: Localized<AssetLocalizations>;
-}
 
 // =============================================================================
 // Upload ticket flow (Geins.Media 3-step upload: ticket → PUT bytes → complete)

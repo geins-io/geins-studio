@@ -23,6 +23,9 @@ const {
   bulkSharedTags,
   applyBulkTags,
 } = useUploadWizardContext();
+// Tags + channels have no phase-1 upload route, so disable them under a real
+// backend (values persist in wizard state). See AssetWizardManage for the rationale.
+const caps = useAssetCapabilities();
 
 const folder = computed<string | null | undefined>({
   get: () => bulkFolderId(props.ids),
@@ -91,7 +94,11 @@ function removeSelected() {
         />
       </div>
 
-      <div class="space-y-1.5">
+      <fieldset
+        :disabled="!caps.canEditChannels"
+        class="m-0 min-w-0 space-y-1.5 border-0 p-0"
+        :class="{ 'opacity-60': !caps.canEditChannels }"
+      >
         <Label>
           {{ $t('channel', 2) }}
           <span class="text-muted-foreground font-normal">
@@ -100,11 +107,19 @@ function removeSelected() {
         </Label>
         <FormInputChannels v-model="channels" :item-class="channelItemClass" />
         <p class="text-muted-foreground text-xs">
-          {{ $t('asset_library.wizard_channels_partial_hint') }}
+          {{
+            caps.canEditChannels
+              ? $t('asset_library.wizard_channels_partial_hint')
+              : $t('asset_library.wizard_field_not_saved')
+          }}
         </p>
-      </div>
+      </fieldset>
 
-      <div class="space-y-1.5">
+      <fieldset
+        :disabled="!caps.canEditTags"
+        class="m-0 min-w-0 space-y-1.5 border-0 p-0"
+        :class="{ 'opacity-60': !caps.canEditTags }"
+      >
         <Label>{{ $t('tag', 2) }}</Label>
         <FormInputTagsSearch
           v-model="tags"
@@ -112,7 +127,10 @@ function removeSelected() {
           :data-set="tagOptions"
           :allow-custom-tags="true"
         />
-      </div>
+        <p v-if="!caps.canEditTags" class="text-muted-foreground text-xs">
+          {{ $t('asset_library.wizard_field_not_saved') }}
+        </p>
+      </fieldset>
 
       <div class="space-y-1.5">
         <Label>{{ $t('remove') }}</Label>

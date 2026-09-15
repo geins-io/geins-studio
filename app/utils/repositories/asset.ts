@@ -13,7 +13,12 @@ import type {
   UploadTicketFile,
   UploadTicketResponse,
 } from '#shared/types';
-import { contentTypeForUpload } from '#shared/utils/asset';
+import {
+  contentTypeForUpload,
+  MAX_FILE_BYTES,
+  MAX_FILES_PER_TICKET,
+  MAX_TICKET_BYTES,
+} from '#shared/utils/asset';
 import { ENTITIES } from '#shared/utils/entities';
 import { entityRepo } from './entity';
 import type { RepoFetchOptions } from './entity-base';
@@ -24,6 +29,45 @@ import type { NitroFetchRequest, $Fetch } from 'nitropack';
 // factory left it undefined and crashed app init (the account store builds the
 // repos on startup). Just a constant config ref, so sharing it is fine.
 const { batchQueryMatchAll } = useBatchQuery();
+
+/** One file to upload via the ticket flow, plus its optional per-file overrides. */
+export interface UploadTicketItem {
+  file: File;
+  clientRef?: string;
+  folderId?: string | null;
+  name?: string;
+  overwrite?: boolean;
+}
+
+/**
+ * Pack items into ticket-sized batches: each batch holds ≤ MAX_FILES_PER_TICKET
+ * files and ≤ MAX_TICKET_BYTES total. A claim over either cap is a 400 that would
+ * fail the whole upload, so we chunk before claiming. Greedy is enough — order is
+ * preserved and a single file is never split. Callers must drop per-file
+ * oversize (> MAX_FILE_BYTES) first; such a file would otherwise sit alone in its
+ * own batch and be rejected server-side.
+ */
+function chunkForTickets<T extends { file: File }>(items: T[]): T[][] {
+  const batches: T[][] = [];
+  let current: T[] = [];
+  let currentBytes = 0;
+  for (const item of items) {
+    const size = item.file.size;
+    if (
+      current.length &&
+      (current.length >= MAX_FILES_PER_TICKET ||
+        currentBytes + size > MAX_TICKET_BYTES)
+    ) {
+      batches.push(current);
+      current = [];
+      currentBytes = 0;
+    }
+    current.push(item);
+    currentBytes += size;
+  }
+  if (current.length) batches.push(current);
+  return batches;
+}
 
 /**
  * Repository for the Assets Library — full CRUD for assets plus a `folder`
@@ -84,113 +128,129 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * Upload files (multipart) — stores each in Supabase storage and creates
-     * its asset row, returning the created assets. `formData` carries the
-     * file(s) and optional fields (e.g. `folderId`).
-     */
-    async upload(
-      formData: FormData,
-      fetchOptions?: RepoFetchOptions,
-    ): Promise<Asset[]> {
-      return await fetch<Asset[]>(`${ENTITIES.asset.endpoint}/upload`, {
-        method: 'POST',
-        body: formData,
-        errorContext: { action: 'creating', entity: ENTITIES.asset.key },
-        ...fetchOptions,
-      });
-    },
-
-    /**
      * Upload files via the 3-step ticket flow (mirrors Geins.Media): claim a
      * ticket, PUT each accepted file's bytes straight to its plan URL (raw
      * fetch, no auth header — like a signed storage URL), then confirm with
      * `complete`. Returns the per-file outcomes (ticket-stage rejections +
-     * complete-stage results) keyed by `clientRef`. Phase-1 carries no metadata.
+     * complete-stage results) keyed by `clientRef`. Phase-1 tickets carry no
+     * metadata beyond name/folder — the caller persists description/alt text
+     * with a follow-up `PATCH` on each created asset.
+     *
+     * Files are validated + chunked before any ticket is claimed: a file over
+     * the per-file cap is rejected client-side, and the rest are packed into
+     * batches within the ≤50-files / ≤10 GB ticket caps (each batch is one
+     * ticket), so a large selection never trips the claim's 400.
      *
      * The bytes PUT deliberately uses the global `fetch`, not `$geinsApi`: it
      * targets the plan URL directly (a storage endpoint in production), so it
      * must not go through the API proxy. Throws on an unknown upload `mode`.
      */
     async uploadViaTickets(
-      items: {
-        file: File;
-        clientRef?: string;
-        folderId?: string | null;
-        name?: string;
-        overwrite?: boolean;
-      }[],
+      items: UploadTicketItem[],
       fetchOptions?: RepoFetchOptions,
     ): Promise<UploadCompleteResult[]> {
-      const claims: UploadTicketFile[] = items.map((it) => {
-        const name = it.name || it.file.name;
-        return {
-          clientRef: it.clientRef ?? globalThis.crypto.randomUUID(),
-          folderId: it.folderId ?? null,
-          name,
-          sizeBytes: it.file.size,
-          mimeType: contentTypeForUpload(name, it.file.type),
-          overwrite: it.overwrite ?? false,
-        };
-      });
-      const fileByRef = new Map(
-        claims.map((claim, i) => [claim.clientRef, items[i]!.file]),
-      );
+      // Stamp a stable clientRef on every item up front so outcomes map back to
+      // their source file across batches (and against client-side rejections).
+      const stamped = items.map((it) => ({
+        ...it,
+        clientRef: it.clientRef ?? globalThis.crypto.randomUUID(),
+      }));
 
-      const ticket = await fetch<UploadTicketResponse>(
-        `${ENTITIES.asset.endpoint}/tickets`,
-        {
-          method: 'POST',
-          body: { files: claims },
-          errorContext: { action: 'creating', entity: ENTITIES.asset.key },
-          ...fetchOptions,
-        },
-      );
-
-      const accepted = ticket.results.filter(
-        (r): r is Extract<typeof r, { status: 'accepted' }> =>
-          r.status === 'accepted',
-      );
-
-      await Promise.all(
-        accepted.map(async (r) => {
-          const mode = r.upload.mode as string;
-          if (mode !== 'single')
-            throw new Error(`Unsupported upload mode: ${mode}`);
-          const file = fileByRef.get(r.clientRef)!;
-          const contentType =
-            file.type || contentTypeForUpload(file.name, undefined);
-          await globalThis.fetch(r.upload.url, {
-            method: 'PUT',
-            body: file,
-            headers: {
-              'content-type': contentType,
-              // Azure blob storage requires this alongside content-type.
-              'x-ms-blob-content-type': contentType,
-            },
+      // A file over the per-file cap can't fit any ticket — reject it here
+      // rather than claim a ticket that would reject it server-side anyway.
+      const clientRejected: UploadCompleteResult[] = [];
+      const uploadable = stamped.filter((it) => {
+        if (it.file.size > MAX_FILE_BYTES) {
+          clientRejected.push({
+            clientRef: it.clientRef,
+            status: 'rejected',
+            code: 'FILE_TOO_LARGE',
+            message: 'File exceeds the 1 GB limit.',
           });
-        }),
+          return false;
+        }
+        return true;
+      });
+
+      const runTicket = async (
+        batch: (UploadTicketItem & { clientRef: string })[],
+      ): Promise<UploadCompleteResult[]> => {
+        const claims: UploadTicketFile[] = batch.map((it) => {
+          const name = it.name || it.file.name;
+          return {
+            clientRef: it.clientRef,
+            folderId: it.folderId ?? null,
+            name,
+            sizeBytes: it.file.size,
+            mimeType: contentTypeForUpload(name, it.file.type),
+            overwrite: it.overwrite ?? false,
+          };
+        });
+        const fileByRef = new Map(batch.map((it) => [it.clientRef, it.file]));
+
+        const ticket = await fetch<UploadTicketResponse>(
+          `${ENTITIES.asset.endpoint}/tickets`,
+          {
+            method: 'POST',
+            body: { files: claims },
+            errorContext: { action: 'creating', entity: ENTITIES.asset.key },
+            ...fetchOptions,
+          },
+        );
+
+        const accepted = ticket.results.filter(
+          (r): r is Extract<typeof r, { status: 'accepted' }> =>
+            r.status === 'accepted',
+        );
+
+        await Promise.all(
+          accepted.map(async (r) => {
+            const mode = r.upload.mode as string;
+            if (mode !== 'single')
+              throw new Error(`Unsupported upload mode: ${mode}`);
+            const file = fileByRef.get(r.clientRef)!;
+            const contentType =
+              file.type || contentTypeForUpload(file.name, undefined);
+            await globalThis.fetch(r.upload.url, {
+              method: 'PUT',
+              body: file,
+              headers: {
+                'content-type': contentType,
+                // Azure blob storage requires both of these alongside the body:
+                // the block-blob type and the content type it should serve with.
+                'x-ms-blob-type': 'BlockBlob',
+                'x-ms-blob-content-type': contentType,
+              },
+            });
+          }),
+        );
+
+        const done = await fetch<UploadCompleteResponse>(
+          `${ENTITIES.asset.endpoint}/tickets/${ticket.ticketId}/complete`,
+          {
+            method: 'POST',
+            body: { files: accepted.map((r) => r.clientRef) },
+            errorContext: { action: 'creating', entity: ENTITIES.asset.key },
+            ...fetchOptions,
+          },
+        );
+
+        const rejectedAtTicket: UploadCompleteResult[] = ticket.results
+          .filter((r) => r.status === 'rejected')
+          .map((r) => ({
+            clientRef: r.clientRef,
+            status: 'rejected',
+            code: (r as Extract<typeof r, { status: 'rejected' }>).code,
+            message: (r as Extract<typeof r, { status: 'rejected' }>).message,
+          }));
+
+        return [...done.results, ...rejectedAtTicket];
+      };
+
+      const batches = await Promise.all(
+        chunkForTickets(uploadable).map(runTicket),
       );
-
-      const done = await fetch<UploadCompleteResponse>(
-        `${ENTITIES.asset.endpoint}/tickets/${ticket.ticketId}/complete`,
-        {
-          method: 'POST',
-          body: { files: accepted.map((r) => r.clientRef) },
-          errorContext: { action: 'creating', entity: ENTITIES.asset.key },
-          ...fetchOptions,
-        },
-      );
-
-      const rejectedAtTicket: UploadCompleteResult[] = ticket.results
-        .filter((r) => r.status === 'rejected')
-        .map((r) => ({
-          clientRef: r.clientRef,
-          status: 'rejected',
-          code: (r as Extract<typeof r, { status: 'rejected' }>).code,
-          message: (r as Extract<typeof r, { status: 'rejected' }>).message,
-        }));
-
-      return [...done.results, ...rejectedAtTicket];
+      return [...batches.flat(), ...clientRejected];
     },
 
     /**

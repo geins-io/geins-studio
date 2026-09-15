@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { UploadRejectionCode } from '#shared/types';
+import { MAX_FILE_BYTES } from '#shared/utils/asset';
 
 /**
  * In-memory upload-ticket store + validators for the mock 3-step upload
@@ -35,9 +36,10 @@ export interface TicketState {
 const tickets = new Map<string, TicketState>();
 
 export const TICKET_TTL_MS = 60 * 60 * 1000; // 60 minutes (plan C5)
-export const MAX_FILE_BYTES = 1024 ** 3; // 1 GB
-export const MAX_FILES_PER_TICKET = 50;
-export const MAX_TICKET_BYTES = 10 * 1024 ** 3; // 10 GB
+// Ticket size/count caps live in `#shared/utils/asset` — one source shared with
+// the client, which chunks against them before claiming. `MAX_FILE_BYTES` is
+// imported above for `validateUploadClaim`; the ticket route imports the count +
+// total caps from `#shared/utils/asset` directly.
 
 const ALLOWED_EXT = new Set([
   'jpg',
