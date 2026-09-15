@@ -15,6 +15,8 @@ const props = defineProps<{
   fieldLabel?: string;
   /** Context shown before the fill count in the subtitle (e.g. asset name). */
   subject?: string;
+  /** Render a `Textarea` per locale instead of an `Input` (multi-line fields). */
+  multiline?: boolean;
 }>();
 
 const open = defineModel<boolean>('open', { default: false });
@@ -114,7 +116,19 @@ function handleDiscard() {
             · {{ $t('default') }}
           </span>
         </Label>
+        <Textarea
+          v-if="multiline"
+          :id="`translation-${lang._id}`"
+          v-model="working[lang._id]"
+          :placeholder="
+            $t('translation_field_placeholder', {
+              field: fieldLabel,
+              language: lang.name,
+            })
+          "
+        />
         <Input
+          v-else
           :id="`translation-${lang._id}`"
           v-model="working[lang._id]"
           type="text"

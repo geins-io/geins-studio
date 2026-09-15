@@ -18,6 +18,8 @@ defineProps<{
   /** Context before the fill count in the panel subtitle (e.g. the entity name). */
   subject?: string;
   disabled?: boolean;
+  /** Render a `Textarea` (multi-line) instead of an `Input`, inline + in the panel. */
+  multiline?: boolean;
 }>();
 
 const model = defineModel<LocalizedText>({ default: () => ({}) });
@@ -42,7 +44,15 @@ const current = computed<string>({
 
 <template>
   <div class="relative">
+    <Textarea
+      v-if="multiline"
+      v-model="current"
+      :placeholder="placeholder"
+      :disabled="disabled"
+      class="pr-11"
+    />
     <Input
+      v-else
       v-model="current"
       :placeholder="placeholder"
       :disabled="disabled"
@@ -50,7 +60,8 @@ const current = computed<string>({
     />
     <button
       type="button"
-      class="absolute top-1/2 right-3 -translate-y-1/2 transition-opacity hover:opacity-80 disabled:opacity-50"
+      class="absolute right-3 transition-opacity hover:opacity-80 disabled:opacity-50"
+      :class="multiline ? 'top-3' : 'top-1/2 -translate-y-1/2'"
       :disabled="disabled"
       :aria-label="$t('translations')"
       @click="open = true"
@@ -64,5 +75,6 @@ const current = computed<string>({
     v-model="model"
     :field-label="label"
     :subject="subject"
+    :multiline="multiline"
   />
 </template>

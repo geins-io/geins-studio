@@ -57,6 +57,14 @@ Context shown before the fill count in the panel subtitle (e.g. the entity name)
 disabled?: boolean;
 ```
 
+### `multiline`
+
+```ts
+multiline?: boolean;
+```
+
+Render a `Textarea` (multi-line) instead of an `Input`, both inline and in each per-language row of the panel (forwarded to [`PanelTranslation`](/components/panel/PanelTranslation)). Used for longer copy such as an asset's description.
+
 ## v-model
 
 ```ts
