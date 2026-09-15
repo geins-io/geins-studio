@@ -20,6 +20,16 @@ import { useRuntimeConfig } from '#imports';
 // (mirrors how a channel default resolves the inline value in the real API).
 const DEFAULT_LANG = 'en';
 
+/**
+ * cutover: REMOVE@cutover — mock etag emulation. The real Geins.Media API owns
+ * the etag; here we derive an opaque token from `updated_at` so every write
+ * advances it (the PATCH route bumps `updated_at`), letting dev exercise the
+ * `If-Match` / 412 optimistic-concurrency path. Ledger: docs/domains/assets-cutover.md.
+ */
+export function assetEtag(updatedAt: string): string {
+  return `"${updatedAt}"`;
+}
+
 // ── Supabase client (secret/service_role key — bypasses RLS, never client-side)
 let client: SupabaseClient | null = null;
 
@@ -75,6 +85,7 @@ export function toAsset(
   return {
     _id: row.id,
     _type: 'geins.asset',
+    etag: assetEtag(row.updated_at),
     name: row.name,
     type: row.type,
     folderId: row.folder_id,

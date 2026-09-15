@@ -116,6 +116,29 @@ repo.entity<CompanyBuyer, CompanyBuyerCreate, CompanyBuyerUpdate>(
 );
 ```
 
+### Per-request fetch options
+
+Every factory method takes an optional trailing `fetchOptions: RepoFetchOptions` (after `options`), forwarded to `$geinsApi` and spread **last** so it never clobbers the method/body/query the call builds:
+
+```ts
+export type RepoFetchOptions = Pick<
+  FetchOptions,
+  'suppressErrorToast' | 'headers'
+>;
+```
+
+- **`suppressErrorToast`** — opt this request out of the global API error toast (for a background fetch, or a flow with its own inline error UX).
+- **`headers`** — extra request headers merged onto the ones `$geinsApi` sets (auth, account key). Used for optimistic concurrency: send the loaded entity's etag as `If-Match` on update.
+
+```ts
+// send If-Match so a concurrent change is caught (412) instead of overwritten
+await assetApi.update(id, payload, undefined, {
+  headers: { 'If-Match': asset.etag },
+});
+```
+
+A `412 Precondition Failed` is treated like `401`: the plugin **skips the global toast** for it (see `plugins/geins-api.ts`), so the caller resolves it inline — typically a "changed elsewhere — reload" prompt.
+
 ## Type Definitions
 
 Repositories use generic types to ensure type safety across all operations:

@@ -5,6 +5,7 @@ export function buildAsset(overrides?: Partial<Asset>): Asset {
   return {
     _id: nextId('as'),
     _type: 'geins.asset',
+    etag: '"2026-08-17T00:00:00.000Z"',
     name: 'hero-spring.jpg',
     type: 'image',
     folderId: null,

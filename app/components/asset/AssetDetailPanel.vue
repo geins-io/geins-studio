@@ -55,6 +55,10 @@ const loading = ref(false);
 const replaceOpen = ref(false);
 const deleteOpen = ref(false);
 const deleting = ref(false);
+// Set when a save fails the etag precondition (412) — someone else changed the
+// asset since it loaded. Shown inline instead of the global toast (suppressed
+// for 412 in geins-api); cleared on reopen.
+const stale = ref(false);
 
 const formSchema = toTypedSchema(
   z.object({
@@ -89,6 +93,7 @@ const altText = computed<LocalizedText>({
 });
 watch(open, (value) => {
   if (value && props.asset) {
+    stale.value = false;
     if (caps.tagAutocomplete) refreshTags();
     const values: AssetFormValues = {
       name: props.asset.name,
@@ -127,15 +132,31 @@ async function handleSave() {
       tags: form.values.tags ?? [],
       channels: form.values.channels ?? [],
     };
-    await assetApi.update(props.asset._id, payload);
+    // Round-trip the loaded etag as If-Match so a concurrent change is caught
+    // (412) instead of silently overwritten. Omitted when the backend gave none.
+    const fetchOptions = props.asset.etag
+      ? { headers: { 'If-Match': props.asset.etag } }
+      : undefined;
+    await assetApi.update(props.asset._id, payload, undefined, fetchOptions);
     await refreshNuxtData('asset-library-list');
     emit('updated');
     open.value = false;
   } catch (error) {
+    if (getErrorStatus(error) === 412) {
+      stale.value = true;
+      return;
+    }
     geinsLogError('updateAsset', getErrorMessage(error));
   } finally {
     loading.value = false;
   }
+}
+
+// Discard the stale local copy and reload: the list refresh re-fetches with the
+// current etag, so reopening the panel edits fresh data.
+function handleReloadStale() {
+  emit('updated');
+  open.value = false;
 }
 
 async function handleDelete() {
@@ -162,6 +183,22 @@ async function handleDelete() {
     @save="handleSave"
   >
     <template v-if="asset">
+      <Alert v-if="stale" variant="warning" class="mb-6">
+        <LucideTriangleAlert class="size-4" />
+        <AlertTitle>{{ $t('asset_library.asset_stale_title') }}</AlertTitle>
+        <AlertDescription class="flex flex-col items-start gap-2">
+          {{ $t('asset_library.asset_stale_description') }}
+          <Button
+            size="sm"
+            variant="outline"
+            class="bg-transparent dark:bg-transparent"
+            @click="handleReloadStale"
+          >
+            {{ $t('reload') }}
+          </Button>
+        </AlertDescription>
+      </Alert>
+
       <div class="mb-6">
         <AssetThumbnail
           :type="asset.type"

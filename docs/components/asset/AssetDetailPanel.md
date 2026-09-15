@@ -64,6 +64,10 @@ Footer is the standard **Cancel + Save**. Deleting lives in a **remove section a
 - Alt text is edited as a locale→string map in the form, then written as `localizations` (`{ [lang]: { altText } }`) on save — the product-standard shape (see [assets domain](/domains/assets)).
 - Save → `assetApi.update(id, …)` → refresh `asset-library-list`.
 
+## Optimistic concurrency
+
+Save sends the loaded asset's `etag` as an `If-Match` header (via `RepoFetchOptions.headers`). If the asset changed elsewhere since it loaded, the update returns **`412`** — the global toast is skipped for `412`, and the panel shows an inline **warning `Alert`** ("changed elsewhere — reload") instead. **Reload** emits `updated` (the page re-fetches the list) and closes; the stale local edits are discarded, and reopening edits fresh data with the current etag. See the [assets domain](/domains/assets) concurrency note.
+
 ## Read-only info
 
 Preview ([`AssetThumbnail`](/components/asset/AssetThumbnail)), type badge, size, created / modified, created by.

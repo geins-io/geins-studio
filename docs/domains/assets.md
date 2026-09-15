@@ -21,6 +21,8 @@ The Assets domain manages media files (images, SVGs, documents, PDFs, video, aud
 
 **Channels** — String tags marking where an asset is published (web, mobile, …).
 
+**Optimistic concurrency** (`etag` / `If-Match`) — Each `Asset` carries an opaque `etag`. The detail panel round-trips it as an `If-Match` header on `assetApi.update` (via `RepoFetchOptions.headers`), so a save against a version someone else already changed fails with **`412 Precondition Failed`** instead of silently overwriting. `412` is excluded from the global error toast (like `401`); the panel shows an inline "changed elsewhere — reload" alert and discards the stale copy on reload. The mock derives the etag from `updated_at` and bumps it on every PATCH (`cutover:` — the real API owns this).
+
 **Browse state in the URL** — the library page reflects the selected folder + grid pagination in the query (`?folder=<id>&page=<n>&perPage=<n>`, defaults omitted) so a link opens the exact folder + page. The grid uses [`PaginationBar`](/components/PaginationBar) (page-size + page nav, matching the table); the list view paginates via `TableView`.
 
 ## Asset picker
