@@ -5,13 +5,9 @@ import type {
   UploadTicketResponse,
   UploadTicketResult,
 } from '#shared/types';
+import { MAX_FILES_PER_TICKET, MAX_TICKET_BYTES } from '#shared/utils/asset';
 import { assetMockSupabase } from '../../utils/assets-mock';
-import {
-  createTicket,
-  validateUploadClaim,
-  MAX_FILES_PER_TICKET,
-  MAX_TICKET_BYTES,
-} from '../../utils/upload-tickets';
+import { createTicket, validateUploadClaim } from '../../utils/upload-tickets';
 
 // POST /api/asset/tickets — repo `uploadViaTickets()` step 1. Claims a ticket
 // for N files: validates each, reserves a blob path, and returns a per-file

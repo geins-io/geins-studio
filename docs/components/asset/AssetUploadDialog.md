@@ -1,6 +1,6 @@
 # `AssetUploadDialog`
 
-`AssetUploadDialog` is the upload dialog. Step 1 picks an upload method — only **Quick upload** is available in v0; **Upload wizard** and **CSV import** are shown disabled with a "coming soon" tooltip. Step 2 is quick upload: drag-and-drop or browse for files, pick a target folder (with inline folder create), and upload. On success it refreshes the library list and closes.
+`AssetUploadDialog` is the upload dialog. Step 1 picks an upload method — **Quick upload** and **Upload wizard** (routes to `/asset-library/upload`); **CSV import** is shown disabled with a "coming soon" tooltip. Step 2 is quick upload: drag-and-drop or browse for files, pick a target folder (with inline folder create), and upload via the 3-step ticket flow. When every file lands it refreshes the library and closes; on a partial failure it toasts a summary and closes; when **nothing** lands it stays open and lists the per-file reasons.
 
 ## Usage
 
@@ -47,7 +47,7 @@ Allow selecting several files in quick upload. `false` constrains it to a single
 uploaded: [assets: Asset[]];
 ```
 
-Fires with the created assets after a successful quick upload (alongside the toast + library refresh). Embedders like the asset picker listen to auto-select the new assets.
+Fires with the created assets after upload (the completed subset on a partial success), alongside the toast + library refresh. Embedders like the asset picker listen to auto-select the new assets.
 
 ## v-model
 
@@ -63,10 +63,10 @@ Dialog visibility. Selected files + folder reset each time it opens.
 
 - **Files** — drag/drop onto the zone or click to browse (multiple by default; single when `multiple` is `false`); each file lists its name + size with a remove button.
 - **Folder** — a `Select` of all folders (or "No folder — uncategorised"), plus **New folder** which reveals an inline name input and creates via `assetApi.folder.create` (then selects it).
-- **Upload** — builds a `FormData` (`files` + optional `folderId`) and calls [`assetApi.upload`](/domains/assets); refreshes `asset-library-list` and toasts the count.
+- **Upload** — calls [`assetApi.uploadViaTickets`](/domains/assets) with `{ file, folderId }` per file (no metadata); refreshes `asset-library-list`. Completed files emit via `uploaded` and toast a count (or "X of Y" on a partial); rejections map to friendly copy via `uploadRejectionMessageKey` and show inline only when nothing landed.
 
 ## Dependencies
 
 - [`useFolders`](/composables/useFolders) — folder list + refresh
-- `assetApi.upload` / `assetApi.folder.create`, `formatFileSize` (`#shared/utils/file`)
+- `assetApi.uploadViaTickets` / `assetApi.folder.create`, `uploadRejectionMessageKey` (`#shared/utils/asset`)
 - shadcn-vue `Dialog`, `Select`, `Input`, `Button`, `Label`
