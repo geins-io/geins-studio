@@ -3,6 +3,11 @@ const props = defineProps<{
   entityKey: string;
   loading: boolean;
   /**
+   * Replaces the default confirm line. Needed when the default's permanence
+   * claim isn't true for the entity — e.g. a backend that soft-deletes.
+   */
+  description?: string;
+  /**
    * Optional caution callout (e.g. an asset used in several places). Both are
    * needed to render it — a `Feedback` with this title + description.
    */
@@ -25,6 +30,7 @@ const _emit = defineEmits(['confirm', 'cancel']);
         </AlertDialogTitle>
         <AlertDialogDescription>
           {{
+            props.description ??
             $t('dialog.delete_confirm_description', {
               entityKey: $t(props.entityKey),
             })

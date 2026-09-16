@@ -322,6 +322,7 @@ async function confirmDelete() {
     v-model:open="deleteOpen"
     :entity-key="entityKey"
     :loading="deleting"
+    :description="$t('asset_library.asset_delete_confirm_description')"
     :warning-title="$t('asset_library.removing_everywhere')"
     :warning-description="$t('asset_library.remove_everywhere_description', 1)"
     @confirm="confirmDelete"
