@@ -48,6 +48,8 @@ deleteAsset: (asset: Asset) => Promise<boolean>;
 
 Deletes the asset (`assetApi.delete`), refreshes `asset-library-list`, and toasts (`entity_deleted`). Returns `true` on success, `false` on failure (the error surfaces via the global API-error toast). Callers close their dialog / panel on `true`.
 
+How permanent the delete is belongs to the backend, not this composable: the mock drops the row, while `Geins.Media` moves the asset to **trash** (recoverable via `POST /media/assets/{id}/restore`). Either way it leaves the default library list, so the delete copy stays neutral on permanence — see [assets](/domains/assets).
+
 ## Dependencies
 
 - [`useGeinsRepository`](/composables/useGeinsRepository) — `assetApi`

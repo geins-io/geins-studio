@@ -4,7 +4,7 @@
 
 ## Features
 
-- Pre-localized title and description via `dialog.delete_confirm_title` / `dialog.delete_confirm_description`
+- Pre-localized title and description via `dialog.delete_confirm_title` / `dialog.delete_confirm_description`, with an optional per-entity `description` override
 - Entity name interpolation through the `entityKey` i18n key
 - Loading state on the destructive confirm button
 - Two-way `open` binding via `v-model:open`
@@ -60,6 +60,16 @@ loading: boolean;
 Disables the confirm button and shows a spinner while the delete request is in flight.
 
 - **Required:** yes
+
+### `description`
+
+```ts
+description?: string;
+```
+
+Replaces the default confirm line (`dialog.delete_confirm_description`). Use it when the default's permanence claim — "permanently delete … cannot be undone" — isn't true for the entity, e.g. an asset, where the backend soft-deletes to trash. Pass an already-translated string.
+
+- **Required:** no
 
 ### `warningTitle` / `warningDescription`
 
