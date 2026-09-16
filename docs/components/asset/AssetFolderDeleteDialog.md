@@ -5,7 +5,11 @@
 - **Move to uncategorised** — keep the files, re-home them to the uncategorised bucket (the server sets `folder_id` to `null`).
 - **Delete folder and files** — permanently delete the files too.
 
-Empty folders never reach this dialog — [`AssetFolderTree`](/components/asset/AssetFolderTree) shows the plain [`DialogDelete`](/components/dialog/DialogDelete) confirm instead. The subtree asset count is resolved by the caller (via `assetApi.list({ folderId })`, which already returns the folder + descendants) and passed in.
+Empty folders never reach this dialog — [`AssetFolderTree`](/components/asset/AssetFolderTree) shows the plain [`DialogDelete`](/components/dialog/DialogDelete) confirm instead.
+
+:::warning Capability-gated
+The dialog only runs when `useAssetCapabilities().canDeleteFolderWithAssets` is on (the mock). Real Geins.Media phase 1 deletes **empty folders only** (`409 FOLDER_NOT_EMPTY`), so under `media-phase1` the tree skips this dialog entirely — see [`AssetFolderTree` → Deleting a folder](/components/asset/AssetFolderTree#deleting-a-folder). The component stays in place for phase 2.
+::: The subtree asset count is resolved by the caller (via `assetApi.list({ folderId })`, which already returns the folder + descendants) and passed in.
 
 A destructive-usage warning ("if a file is used in several places, it will be removed from all of them") is shown only when the delete option is selected.
 

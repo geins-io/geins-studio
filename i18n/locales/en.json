@@ -1693,6 +1693,8 @@
     "folder_delete_move_description": "Keep the assets and move them to the uncategorised folder.",
     "folder_delete_delete_title": "Delete folder and assets",
     "folder_delete_delete_description": "Permanently delete the assets too. This can't be undone.",
+    "folder_not_empty_title": "Folder isn't empty",
+    "folder_not_empty_description": "Only empty folders can be deleted. Move or delete the assets inside it first, then try again.",
     "view_details": "View details",
     "alt_text": "Alt text",
     "alt_text_placeholder": "Describe the image for screen readers…",

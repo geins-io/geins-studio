@@ -231,7 +231,8 @@ export type AssetsBackend = 'mock' | 'media-phase1';
  * Real Geins.Media phase 1 ships browse + upload, `PATCH` (description/altText/
  * localizations only) and `DELETE` (+ restore) — so description/alt-text edit and
  * delete are on, but rename/tags/channels/move/replace/thumbnails/tag-autocomplete
- * are still gated to the mock until phase 2.
+ * and the folder-delete asset disposition are still gated to the mock until
+ * phase 2.
  */
 export interface AssetCapabilities {
   backend: AssetsBackend;
@@ -246,6 +247,12 @@ export interface AssetCapabilities {
   /** Move an asset to another folder (change `folderId`). */
   canMoveAsset: boolean;
   canDeleteAsset: boolean;
+  /**
+   * Folder delete can decide what happens to the assets inside (re-home to
+   * uncategorised, or delete them too). Phase 1's `DELETE /media/folders/{id}`
+   * is empty-only and answers `409 FOLDER_NOT_EMPTY` instead.
+   */
+  canDeleteFolderWithAssets: boolean;
   canReplaceFile: boolean;
   /** Suggest existing tags from the distinct-tags source. */
   tagAutocomplete: boolean;

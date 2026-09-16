@@ -53,6 +53,7 @@ describe('assetCapabilities', () => {
       canEditChannels: true,
       canMoveAsset: true,
       canDeleteAsset: true,
+      canDeleteFolderWithAssets: true,
       canReplaceFile: true,
       tagAutocomplete: true,
       hasThumbnails: true,
@@ -70,6 +71,8 @@ describe('assetCapabilities', () => {
     expect(caps.canEditTags).toBe(false);
     expect(caps.canEditChannels).toBe(false);
     expect(caps.canMoveAsset).toBe(false);
+    // Phase-1 folder delete is empty-only (409 FOLDER_NOT_EMPTY) — no disposition.
+    expect(caps.canDeleteFolderWithAssets).toBe(false);
     expect(caps.canReplaceFile).toBe(false);
     expect(caps.tagAutocomplete).toBe(false);
     expect(caps.hasThumbnails).toBe(false);
