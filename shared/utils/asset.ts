@@ -78,7 +78,8 @@ export function uploadRejectionMessageKey(code: UploadRejectionCode): string {
  * `media-phase1` reflects the shipped Geins.Media surface: browse + upload, plus
  * `PATCH` (description/altText/localizations) and `DELETE` (+ restore) — so
  * description/alt-text edit and delete are on, while rename, tags, channels,
- * move, replace, thumbnails and tag-autocomplete stay gated to the mock until
+ * move, replace, thumbnails, tag-autocomplete and the folder-delete asset
+ * disposition (phase 1 deletes empty folders only) stay gated to the mock until
  * phase 2. Pure so it can be unit-tested and reused by `useAssetCapabilities`.
  *
  * cutover: REVISIT@phase2 — the whole capability mechanism is temporary; remove
@@ -97,6 +98,7 @@ export function assetCapabilities(backend: AssetsBackend): AssetCapabilities {
     canEditTags: mock,
     canEditChannels: mock,
     canMoveAsset: mock,
+    canDeleteFolderWithAssets: mock,
     canReplaceFile: mock,
     tagAutocomplete: mock,
     hasThumbnails: mock,

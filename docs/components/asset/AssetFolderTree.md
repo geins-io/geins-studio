@@ -43,6 +43,15 @@ Selection-only mode. When `true`, every folder **mutation** control is gated off
 
 The [`AssetPickerPanel`](/components/asset/AssetPickerPanel) passes `readonly` so a user browsing to pick an asset can't accidentally create or delete folders — folder management stays on the asset library page, which renders the tree with actions on (the default).
 
+## Deleting a folder
+
+Which delete flow runs is gated on `useAssetCapabilities().canDeleteFolderWithAssets`:
+
+| Capability               | Flow                                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **on** (`mock`)          | The tree counts the subtree (`assetApi.list({ folderId })`). Non-empty → [`AssetFolderDeleteDialog`](/components/asset/AssetFolderDeleteDialog) (move vs delete the assets), calling `assetApi.deleteFolder(id, assets)`. Empty → the plain [`DialogDelete`](/components/dialog/DialogDelete).                                                                                            |
+| **off** (`media-phase1`) | **Empty-only delete.** No subtree probe and no disposition: the plain `DialogDelete` calls `assetApi.folder.delete(id)`. The backend answers `409 FOLDER_NOT_EMPTY` when the folder still holds assets — the call passes `suppressErrorToast: true` and the reason is rendered as the dialog's own warning callout, so the user can empty the folder and retry without losing the dialog. |
+
 ## Data
 
 Reads [`useFolders`](/composables/useFolders) — the `tree` (nested user folders) and `systemFolders`. No fetching of its own; it shares the `asset-folders` cache with every other consumer.

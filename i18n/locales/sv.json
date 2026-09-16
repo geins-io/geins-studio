@@ -1690,6 +1690,8 @@
     "folder_delete_move_description": "Behåll filerna och flytta dem till mappen okategoriserat.",
     "folder_delete_delete_title": "Radera mapp och filer",
     "folder_delete_delete_description": "Radera även filerna permanent. Detta går inte att ångra.",
+    "folder_not_empty_title": "Mappen är inte tom",
+    "folder_not_empty_description": "Bara tomma mappar kan raderas. Flytta eller radera filerna i den först och försök sedan igen.",
     "view_details": "Visa detaljer",
     "alt_text": "Alternativtext",
     "alt_text_placeholder": "Beskriv bilden för skärmläsare…",
