@@ -252,7 +252,7 @@
     "unsaved_changes_title": "Du har osparade ändringar!",
     "unsaved_changes_description": "Alla ändringar går förlorade om du lämnar denna sida. Är du säker på att du vill lämna?",
     "delete_confirm_title": "Är du helt säker?",
-    "delete_confirm_description": "Detta kommer permanent ta bort denna {entityKey}. Denna åtgärd kan inte ångras.",
+    "delete_confirm_description": "@.capitalize:{entityKey} tas bort permanent. Åtgärden kan inte ångras.",
     "price_breaks_removed_title": "Dina tillämpade prisavbrott kommer att tas bort!",
     "price_breaks_removed_description": "Om du fortsätter att ändra prisläge till {mode} kommer dina globalt tillämpade prisavbrott att tas bort.",
     "product_prices_overwrite_title": "Produktpriser kommer att skrivas över!",
