@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AssetType } from '#shared/types';
+import { assetPreviewUrl } from '#shared/utils/asset';
 import { cn } from '@/utils/index';
 
 /**
@@ -11,6 +12,8 @@ import { cn } from '@/utils/index';
 const props = defineProps<{
   type: AssetType;
   thumbUrl?: string | null;
+  /** Full-size file, used as the preview when there is no thumbnail. */
+  url?: string | null;
   alt?: string;
   className?: string;
 }>();
@@ -21,15 +24,21 @@ const { resolveIcon } = useLucideIcon();
 const info = computed(() => meta(props.type));
 const icon = computed(() => resolveIcon(info.value.icon));
 
+const src = computed(() =>
+  assetPreviewUrl(props.type, props.thumbUrl, props.url),
+);
 const broken = ref(false);
-const showImage = computed(() => !!props.thumbUrl && !broken.value);
+watch(src, () => {
+  broken.value = false;
+});
+const showImage = computed(() => !!src.value && !broken.value);
 </script>
 
 <template>
   <div :class="cn(className, 'px-1')">
     <img
       v-if="showImage"
-      :src="thumbUrl ?? ''"
+      :src="src ?? ''"
       :alt="alt ?? label(type)"
       class="mx-auto size-7 max-w-10 rounded-md object-cover p-0.5"
       @error="broken = true"

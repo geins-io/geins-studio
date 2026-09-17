@@ -53,8 +53,13 @@ export interface AssetBase {
   description?: string | null;
   /** Locale-keyed translatable fields, e.g. `{ en: { description, altText } }`. */
   localizations?: Localized<AssetLocalizations>;
-  tags: string[];
-  channels: string[];
+  /**
+   * Both are mock-only in phase 1 — a real `media_response_asset` carries
+   * neither, so every read site must tolerate `undefined` (a missing array
+   * blanked the grid when the first real assets landed).
+   */
+  tags?: string[];
+  channels?: string[];
 }
 
 export type AssetCreate = CreateEntity<AssetBase>;
@@ -189,20 +194,36 @@ export interface FolderBase {
   name: string;
   /** Parent folder id; `null` = top-level. Named to match Geins.Media. */
   parentFolderId: string | null;
-  sortOrder: number;
+  /** Mock-only — real phase 1 has no manual ordering. REMOVE@cutover. */
+  sortOrder?: number;
 }
 
 export type FolderCreate = CreateEntity<FolderBase>;
-export type FolderUpdate = UpdateEntity<FolderBase>;
+
+/**
+ * A folder update is a **full replace**: real `PUT /media/folders/{id}` requires
+ * `name` on every call, so a move sends the current name and a rename sends the
+ * current `parentFolderId`. Deliberately not `UpdateEntity` (partial) — a
+ * partial body would blank the other field.
+ */
+export type FolderUpdate = CreateEntity<FolderBase>;
 
 export interface Folder extends ResponseEntity<FolderBase> {
-  /** Locked system folder (Uncategorised / Archived) — server-owned, not creatable. */
-  system: boolean;
-  /** Full path from the root to this folder, e.g. `marketing/campaigns`. */
-  fullPath: string;
-  /** Depth in the tree — segment count of `fullPath` (1 = top level). */
+  /**
+   * Full path from the root to this folder, lowercased, e.g.
+   * `marketing/campaigns` — the leading part of every asset path within it.
+   */
+  path: string;
+  /** Depth in the tree — segment count of `path` (1 = top level). */
   depth: number;
+  /**
+   * Locked system folder (Uncategorised / Archived) — mock-only; real phase 1
+   * has no system folders, so it is absent there. REMOVE@cutover.
+   */
+  system?: boolean;
+  createdBy?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 /**
@@ -222,6 +243,26 @@ export type FolderDeleteAssets = 'move' | 'delete';
  * + upload only (see the Phase 8 milestone).
  */
 export type AssetsBackend = 'mock' | 'media-phase1';
+
+/**
+ * The wire routes for a given backend. The real Geins.Media surface and the
+ * Supabase mock differ in more than a prefix: folders list at the collection
+ * root (`GET /media/folders`) rather than the Management API's `/list`
+ * convention, folder updates are a `PUT` replace, and upload tickets are a
+ * sibling of assets, not a child. Derived from the backend via `assetEndpoints`.
+ */
+export interface AssetEndpoints {
+  /** Asset collection base — `{base}/{id}` and `{base}/query` hang off it. */
+  asset: string;
+  /** Folder collection base — `{base}/{id}` for get/update/delete. */
+  folder: string;
+  /** Folder list route (real: the collection root; mock: `/list`). */
+  folderList: string;
+  /** Verb for a folder update — the real API replaces, the mock patches. */
+  folderUpdateMethod: 'PATCH' | 'PUT';
+  /** Upload-ticket base — `{base}/{ticketId}/complete` hangs off it. */
+  tickets: string;
+}
 
 /**
  * Feature availability per backend — the shipped UI gates on these so controls

@@ -144,8 +144,8 @@ watch(open, (value) => {
       folderId: props.asset.folderId,
       description: descriptions,
       altText: altTexts,
-      tags: [...props.asset.tags],
-      channels: [...props.asset.channels],
+      tags: [...(props.asset.tags ?? [])],
+      channels: [...(props.asset.channels ?? [])],
     };
     form.resetForm({ values });
     captureBaseline();
@@ -241,6 +241,7 @@ async function handleDelete() {
         <AssetThumbnail
           :type="asset.type"
           :thumb-url="asset.thumbUrl"
+          :url="asset.url"
           :alt="asset.name"
           size="banner"
         />

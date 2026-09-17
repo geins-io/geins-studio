@@ -117,7 +117,7 @@ export function toAsset(
 
 export function toFolder(
   row: FolderRow,
-  meta?: { fullPath: string; depth: number },
+  meta?: { path: string; depth: number },
 ): Folder {
   return {
     _id: row.id,
@@ -127,7 +127,7 @@ export function toFolder(
     system: row.system,
     sortOrder: row.sort_order,
     // Derived from the tree; default to a top-level folder when no map is given.
-    fullPath: meta?.fullPath ?? row.name,
+    path: meta?.path ?? row.name,
     depth: meta?.depth ?? 1,
     createdAt: row.created_at,
   };
@@ -210,17 +210,17 @@ export function resolveAssetFolderFilter(
 
 /**
  * Full path + depth per folder, built from the adjacency list: walk each
- * folder's parent chain to the root and join the names. `fullPath` mirrors the
+ * folder's parent chain to the root and join the names. `path` mirrors the
  * real API's folder path (the leading part of an asset's `path`); `depth` is the
  * segment count (1 = top level). Cycle-guarded, though seed data has none.
  */
 export function folderPathIndex(
   folders: Pick<FolderRow, 'id' | 'parent_id' | 'name'>[],
-): Map<string, { fullPath: string; depth: number }> {
+): Map<string, { path: string; depth: number }> {
   const byId = new Map<string, Pick<FolderRow, 'id' | 'parent_id' | 'name'>>(
     folders.map((f) => [f.id, f]),
   );
-  const out = new Map<string, { fullPath: string; depth: number }>();
+  const out = new Map<string, { path: string; depth: number }>();
   for (const folder of folders) {
     const segments: string[] = [];
     const seen = new Set<string>();
@@ -233,7 +233,7 @@ export function folderPathIndex(
       cur = node.parent_id;
     }
     out.set(folder.id, {
-      fullPath: segments.join('/'),
+      path: segments.join('/'),
       depth: segments.length,
     });
   }
@@ -242,20 +242,20 @@ export function folderPathIndex(
 
 /** An asset's folder path from a {@link folderPathIndex}; `null` at the root. */
 export function assetFolderPath(
-  paths: Map<string, { fullPath: string; depth: number }>,
+  paths: Map<string, { path: string; depth: number }>,
   folderId: string | null,
 ): string | null {
-  return folderId ? (paths.get(folderId)?.fullPath ?? null) : null;
+  return folderId ? (paths.get(folderId)?.path ?? null) : null;
 }
 
 /**
  * Fetch every folder and index it by path — the shared source for stamping
- * `fullPath`/`depth` on folders and `folderPath`/`path` on assets in the route
+ * `path`/`depth` on folders and `folderPath`/`path` on assets in the route
  * handlers (a single small query per request; the folder set is tiny).
  */
 export async function loadFolderPaths(
   sb: SupabaseClient,
-): Promise<Map<string, { fullPath: string; depth: number }>> {
+): Promise<Map<string, { path: string; depth: number }>> {
   const { data, error } = await sb.from('folder').select('id,parent_id,name');
   if (error)
     throw createError({ statusCode: 502, statusMessage: error.message });

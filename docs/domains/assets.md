@@ -54,7 +54,7 @@ The [`AssetPickerPanel`](/components/asset/AssetPickerPanel) is not a `PanelEdit
 
 The contract is **camelCase + `_id`/`_type`** (via `ResponseEntity`), mirroring the rest of the Management API. It is independent of the storage backend — the mock maps to it (see below).
 
-> **Phase 8 alignment (STU-326).** Ahead of the real `Geins.Media` backend, the mock pre-emits its wire fields: `Asset._type` is `'geins.asset'`, each `Asset` carries `path` (= `folderPath`/`name`) and `folderPath` (owning folder's full path; `null` at root), and each `Folder` carries `fullPath` + `depth` (segment count; 1 = top level). Derived server-side in the mappers via `folderPathIndex` / `loadFolderPaths` ([assets-mock.ts](server/utils/assets-mock.ts)). Fields the real phase 1 drops (`sortOrder`, `system`, and the metadata group) still ship from the mock until cutover — see the Phase 8 milestone. Every temporary Phase 8 addition is logged in the [cutover ledger](./assets-cutover.md) (`grep cutover:`) so nothing rots at swap time.
+> **Phase 8 alignment (STU-326).** Ahead of the real `Geins.Media` backend, the mock pre-emits its wire fields: `Asset._type` is `'geins.asset'`, each `Asset` carries `path` (= `folderPath`/`name`) and `folderPath` (owning folder's full path; `null` at root), and each `Folder` carries `path` + `depth` (segment count; 1 = top level). Derived server-side in the mappers via `folderPathIndex` / `loadFolderPaths` ([assets-mock.ts](server/utils/assets-mock.ts)). Fields the real phase 1 drops (`sortOrder`, `system`, and the metadata group) still ship from the mock until cutover — see the Phase 8 milestone. Every temporary Phase 8 addition is logged in the [cutover ledger](./assets-cutover.md) (`grep cutover:`) so nothing rots at swap time.
 
 | Method & path                      | Repo call                           | Body / query                              | Returns                  |
 | ---------------------------------- | ----------------------------------- | ----------------------------------------- | ------------------------ |
@@ -108,15 +108,37 @@ The mock lives entirely under `server/` and never reaches the client:
 | `sortOrder`               | `sort_order`                         |
 | `createdAt` / `updatedAt` | `created_at` / `updated_at`          |
 
-## Mock → real swap
+## Transport — which backend the client talks to (STU-330)
 
-When the Management API serves `/asset`:
+`NUXT_PUBLIC_ASSETS_BACKEND` switches the **whole library** between the Supabase mock and real Geins.Media, at runtime config level:
 
-1. Delete `server/api/asset/` and `server/utils/assets-mock.ts`. The catch-all proxy then forwards `/asset` to the real API.
-2. Remove `supabaseUrl` / `supabaseServiceKey` from `nuxt.config.ts` (`runtimeConfig.private`) and the `.env` keys; drop `@supabase/supabase-js` if unused elsewhere.
-3. Optionally delete the `supabase/` migration.
+| Value            | Routes                                              | Notes                                                                 |
+| ---------------- | --------------------------------------------------- | --------------------------------------------------------------------- |
+| `mock` (default) | `/asset`, `/asset/folder`, `/asset/tickets`         | Nitro mock routes under `server/api/asset/**`. Every capability on.   |
+| `media-phase1`   | `/media/assets`, `/media/folders`, `/media/tickets` | Catch-all proxy → Geins Media API. Phase-1 capability gating applies. |
 
-**No change** to `shared/types/Asset.ts`, the entity registry, `assetRepo`, or any UI — that is the entire point of freezing the contract.
+The routes come from [`assetEndpoints(backend)`](shared/utils/asset.ts) — the same flag that drives [`useAssetCapabilities`](/composables/useAssetCapabilities), so transport and feature gating can never disagree. The entity registry (`ENTITIES.asset` / `ENTITIES.folder`) holds the **real** paths; the mock is the temporary override that dies at final cutover.
+
+The real surface is not the mock's paths with a prefix swapped — verified against the shipped QA OpenAPI (`Geins Media API 1.0.0`):
+
+- **`GET /media/folders`** lists folders at the collection root, not the Management API's `{base}/list`.
+- **`PUT /media/folders/{id}`** replaces a folder (name + parent together); the mock takes a partial `PATCH`.
+- **`POST /media/tickets`** is a sibling of assets, not `…/assets/tickets`.
+- No `/tags` and no `/replace` route exists — both are already gated off under `media-phase1`.
+- Real assets carry **no `tags` and no `channels` fields at all** (the mock always sends arrays), so both are optional on `AssetBase`. Every read site must tolerate `undefined` — a bare `asset.tags.length` in `AssetCard` blanked the entire grid when the first real assets landed (the render error tears down the subtree; the pagination footer outside it survives, which is what the symptom looks like).
+- Folders follow `media_response_folder`: `path` (lowercased full path, **not** `fullPath`), `depth`, `createdBy`/`createdAt`/`updatedAt`. `sortOrder` and `system` (Uncategorised / Archived) exist **only** in the mock and are optional on the type.
+- A folder update is a **full replace** — real `PUT /media/folders/{id}` requires `name` on every call, so `FolderUpdate` is `CreateEntity<FolderBase>`: a move sends the current name, a rename sends the current `parentFolderId`. (No rename/move UI exists yet.)
+- `thumbUrl` comes back as `''`. `AssetThumbnail` / `TableCellAssetThumbnail` therefore preview the full-size `url` for `image`/`svg` assets (`assetPreviewUrl`), so the library shows pictures rather than a wall of type icons. Full-size files in grid tiles is the trade-off until Geins.Media serves thumbnails.
+
+`x-account-key` needs **no** transport work: [`geins-api.ts`](app/plugins/geins-api.ts) sets it on every request from the session's account key, and the catch-all proxy forwards headers verbatim. The real API also accepts `x-functions-key` (Azure function app key) for direct function-host access — not used when calls go through the Geins gateway.
+
+### What is left at final cutover
+
+1. Delete `server/api/asset/`, `server/utils/assets-mock.ts`, `server/utils/upload-tickets.ts`.
+2. Remove `supabaseUrl` / `supabaseServiceKey` from `nuxt.config.ts` (`runtimeConfig.private`) and the `.env` keys; drop `@supabase/supabase-js` if unused elsewhere; delete `supabase/migrations/` and retire the Supabase project.
+3. Drop the `mock` branch of `assetEndpoints` (repos read `ENTITIES.asset` / `ENTITIES.folder` again) and the `assetsBackend` config once phase 2 also retires the capability gating.
+
+Folder shape parity (STU-353) shipped with the switch — see the two folder bullets above and the [cutover ledger](./assets-cutover.md).
 
 ## Dependencies
 

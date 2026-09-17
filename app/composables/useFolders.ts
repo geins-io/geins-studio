@@ -20,8 +20,11 @@ export interface UseFoldersReturnType {
 const FOLDERS_KEY = 'asset-folders';
 
 function sortLevel(nodes: FolderNode[]): void {
+  // `sortOrder` is mock-only (real phase 1 has no manual ordering), so absent
+  // values collapse to a plain name sort.
   nodes.sort(
-    (a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name),
+    (a, b) =>
+      (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name),
   );
   nodes.forEach((node) => sortLevel(node.children));
 }

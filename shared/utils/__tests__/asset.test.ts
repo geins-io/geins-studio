@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   assetCapabilities,
+  assetEndpoints,
+  assetPreviewUrl,
   contentTypeForUpload,
   mimeToAssetType,
   parseProductRef,
@@ -113,5 +115,52 @@ describe('contentTypeForUpload', () => {
 
   it('falls back to octet-stream for an unknown extension', () => {
     expect(contentTypeForUpload('data.xyz')).toBe('application/octet-stream');
+  });
+});
+
+describe('assetEndpoints', () => {
+  it('points media-phase1 at the real Geins.Media routes', () => {
+    expect(assetEndpoints('media-phase1')).toEqual({
+      asset: '/media/assets',
+      folder: '/media/folders',
+      // Real folders list at the collection root and are replaced with PUT.
+      folderList: '/media/folders',
+      folderUpdateMethod: 'PUT',
+      // Tickets are a sibling of assets on the real API, not a child.
+      tickets: '/media/tickets',
+    });
+  });
+
+  it('overrides back to the mock routes', () => {
+    expect(assetEndpoints('mock')).toEqual({
+      asset: '/asset',
+      folder: '/asset/folder',
+      folderList: '/asset/folder/list',
+      folderUpdateMethod: 'PATCH',
+      tickets: '/asset/tickets',
+    });
+  });
+});
+
+describe('assetPreviewUrl', () => {
+  it('prefers the thumbnail when the backend serves one', () => {
+    expect(assetPreviewUrl('image', '/thumb.jpg', '/full.jpg')).toBe(
+      '/thumb.jpg',
+    );
+  });
+
+  it('falls back to the full file for renderable types (phase-1 has no thumbs)', () => {
+    expect(assetPreviewUrl('image', '', '/full.jpg')).toBe('/full.jpg');
+    expect(assetPreviewUrl('svg', null, '/logo.svg')).toBe('/logo.svg');
+  });
+
+  it('never previews a type an <img> cannot render', () => {
+    expect(assetPreviewUrl('pdf', '', '/doc.pdf')).toBeNull();
+    expect(assetPreviewUrl('video', null, '/clip.mp4')).toBeNull();
+  });
+
+  it('returns null when there is nothing to show', () => {
+    expect(assetPreviewUrl('image', '', '')).toBeNull();
+    expect(assetPreviewUrl('image')).toBeNull();
   });
 });

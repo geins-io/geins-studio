@@ -75,10 +75,10 @@ export const ENTITIES = defineEntities({
     endpoint: '/orchestrator/variables',
     route: 'settings/orchestrator/variables',
   },
-  asset: { endpoint: '/asset', route: 'asset-library' },
+  asset: { endpoint: '/media/assets', route: 'asset-library' },
   // Folder is a sub-resource of the asset domain (no page of its own — the
   // folder UI lives inside the library, like `buyer`/`customer`).
-  folder: { endpoint: '/asset/folder' },
+  folder: { endpoint: '/media/folders' },
 });
 
 /** Union of all domain-entity keys (e.g. 'price_list' | 'quotation' | …). */

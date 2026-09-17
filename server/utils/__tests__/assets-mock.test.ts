@@ -117,15 +117,15 @@ describe('toFolder', () => {
       parentFolderId: null,
       system: false,
       sortOrder: 2,
-      fullPath: 'Marketing',
+      path: 'Marketing',
       depth: 1,
       createdAt: '2026-08-17T00:00:00.000Z',
     });
   });
 
-  it('takes fullPath + depth from the supplied path meta', () => {
-    const folder = toFolder(folderRow, { fullPath: 'a/b/Marketing', depth: 3 });
-    expect(folder.fullPath).toBe('a/b/Marketing');
+  it('takes path + depth from the supplied path meta', () => {
+    const folder = toFolder(folderRow, { path: 'a/b/Marketing', depth: 3 });
+    expect(folder.path).toBe('a/b/Marketing');
     expect(folder.depth).toBe(3);
   });
 });
@@ -237,12 +237,12 @@ describe('folderPathIndex', () => {
 
   it('builds full paths + depth by walking the parent chain', () => {
     const idx = folderPathIndex(folders);
-    expect(idx.get('m')).toEqual({ fullPath: 'marketing', depth: 1 });
+    expect(idx.get('m')).toEqual({ path: 'marketing', depth: 1 });
     expect(idx.get('c')).toEqual({
-      fullPath: 'marketing/campaigns',
+      path: 'marketing/campaigns',
       depth: 2,
     });
-    expect(idx.get('b')).toEqual({ fullPath: 'brand', depth: 1 });
+    expect(idx.get('b')).toEqual({ path: 'brand', depth: 1 });
   });
 
   it('assetFolderPath resolves a folder id, null at the root', () => {

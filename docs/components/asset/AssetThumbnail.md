@@ -1,6 +1,6 @@
 # `AssetThumbnail`
 
-`AssetThumbnail` renders an asset's preview: the image when a `thumbUrl` is present, otherwise a typed icon block (icon + label) for non-image types.
+`AssetThumbnail` renders an asset's preview: the thumbnail when the backend serves one, the full-size file for `image`/`svg` assets when it doesn't, otherwise a typed icon block (icon + label). The fallback matters against Geins.Media phase 1, which returns `thumbUrl: ''` on every asset but a usable `url` — without it the whole library renders as icons.
 
 ## Usage
 
@@ -9,11 +9,17 @@
 <AssetThumbnail
   :type="asset.type"
   :thumb-url="asset.thumbUrl"
+  :url="asset.url"
   :alt="asset.name"
 />
 
 <!-- list row -->
-<AssetThumbnail :type="asset.type" :thumb-url="asset.thumbUrl" size="row" />
+<AssetThumbnail
+  :type="asset.type"
+  :thumb-url="asset.thumbUrl"
+  :url="asset.url"
+  size="row"
+/>
 ```
 
 ## Props
@@ -32,7 +38,15 @@ Used for the icon-block fallback and its label.
 thumbUrl?: string | null
 ```
 
-Image URL. When present the image renders (`object-cover`); when absent the typed icon block is shown.
+Thumbnail URL. Preferred when present (`object-cover`).
+
+### `url`
+
+```ts
+url?: string | null
+```
+
+The asset's full-size file, used as the preview when there is no `thumbUrl` — but only for types a browser can render in an `<img>` (`image`, `svg`). A PDF or video falls through to the icon block. Source of truth: [`assetPreviewUrl`](shared/utils/asset.ts). An image that 404s also falls back to the icon.
 
 ### `alt`
 
