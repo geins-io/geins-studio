@@ -10,7 +10,7 @@ beforeEach(() => {
 });
 
 describe('assetRepo', () => {
-  const api = assetRepo(mockFetch);
+  const api = assetRepo(mockFetch, 'mock');
 
   describe('assets → /asset', () => {
     it('list POSTs the fetch-all batch to /asset/query and unwraps items', async () => {
@@ -305,5 +305,122 @@ describe('assetRepo', () => {
       ).rejects.toThrow(/Unsupported upload mode/);
       vi.unstubAllGlobals();
     });
+  });
+});
+
+// The mock and Geins.Media differ in more than a prefix — these pin the route
+// deltas the `media-phase1` flag has to get right. cutover: the `mock` describes
+// above drop when the Supabase mock does; this block becomes the only one.
+describe('assetRepo — media-phase1 transport', () => {
+  const api = assetRepo(mockFetch, 'media-phase1');
+
+  it('list POSTs to /media/assets/query', async () => {
+    mockFetch.mockResolvedValue({ items: [] });
+    await api.list({ folderId: 'f1' });
+    expect(mockFetch).toHaveBeenCalledWith('/media/assets/query', {
+      method: 'POST',
+      body: { all: true, folderIds: ['f1'] },
+    });
+  });
+
+  it('get / update / delete hang off /media/assets/:id', async () => {
+    mockFetch.mockResolvedValue({ _id: '1', _type: 'geins.asset' });
+    await api.get('1');
+    expect(mockFetch).toHaveBeenCalledWith('/media/assets/1', {
+      query: undefined,
+    });
+
+    await api.update('1', { description: 'x' });
+    expect(mockFetch).toHaveBeenCalledWith('/media/assets/1', {
+      method: 'PATCH',
+      body: { description: 'x' },
+      query: undefined,
+      errorContext: { action: 'updating', entity: 'asset' },
+    });
+
+    mockFetch.mockResolvedValue(null);
+    await api.delete('1');
+    expect(mockFetch).toHaveBeenCalledWith('/media/assets/1', {
+      method: 'DELETE',
+      errorContext: { action: 'deleting', entity: 'asset' },
+    });
+  });
+
+  it('folder.list reads the collection root, not /list', async () => {
+    mockFetch.mockResolvedValue([]);
+    await api.folder.list();
+    expect(mockFetch).toHaveBeenCalledWith('/media/folders', {
+      query: undefined,
+    });
+  });
+
+  it('folder.update PUTs (the real API replaces the folder)', async () => {
+    mockFetch.mockResolvedValue({ _id: 'f', _type: 'geins.folder' });
+    await api.folder.update('f', { name: 'Campaigns', parentFolderId: null });
+    expect(mockFetch).toHaveBeenCalledWith('/media/folders/f', {
+      method: 'PUT',
+      body: { name: 'Campaigns', parentFolderId: null },
+      query: undefined,
+      errorContext: { action: 'updating', entity: 'folder' },
+    });
+  });
+
+  it('folder.create / delete hang off /media/folders', async () => {
+    mockFetch.mockResolvedValue({ _id: 'f', _type: 'geins.folder' });
+    // `sortOrder` is still on FolderCreate (mock-only, REMOVE@cutover) — the
+    // route, not the body, is what this pins.
+    const body = { name: 'Campaigns', parentFolderId: null, sortOrder: 0 };
+    await api.folder.create(body);
+    expect(mockFetch).toHaveBeenCalledWith('/media/folders', {
+      method: 'POST',
+      body,
+      query: undefined,
+      errorContext: { action: 'creating', entity: 'folder' },
+    });
+
+    mockFetch.mockResolvedValue(null);
+    await api.folder.delete('f');
+    expect(mockFetch).toHaveBeenCalledWith('/media/folders/f', {
+      method: 'DELETE',
+      errorContext: { action: 'deleting', entity: 'folder' },
+    });
+  });
+
+  it('tickets sit at /media/tickets, not under assets', async () => {
+    const put = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal('fetch', put);
+    mockFetch
+      .mockResolvedValueOnce({
+        ticketId: 't1',
+        expiresAt: 'x',
+        results: [
+          {
+            clientRef: 'a',
+            status: 'accepted',
+            assetId: 'id-a',
+            upload: { mode: 'single', url: 'https://blob/a' },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        results: [
+          { clientRef: 'a', status: 'completed', file: { _id: 'id-a' } },
+        ],
+      });
+
+    const file = new File(['x'], 'a.png', { type: 'image/png' });
+    await api.uploadViaTickets([{ file, clientRef: 'a' }]);
+
+    expect(mockFetch).toHaveBeenNthCalledWith(
+      1,
+      '/media/tickets',
+      expect.objectContaining({ method: 'POST' }),
+    );
+    expect(mockFetch).toHaveBeenNthCalledWith(
+      2,
+      '/media/tickets/t1/complete',
+      expect.objectContaining({ method: 'POST', body: { files: ['a'] } }),
+    );
+    vi.unstubAllGlobals();
   });
 });

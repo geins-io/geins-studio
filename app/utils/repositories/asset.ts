@@ -1,6 +1,7 @@
 import type {
   Asset,
   AssetCreate,
+  AssetsBackend,
   AssetUpdate,
   AssetApiOptions,
   BatchQueryResult,
@@ -13,7 +14,9 @@ import type {
   UploadTicketFile,
   UploadTicketResponse,
 } from '#shared/types';
+import { buildQueryObject } from '#shared/utils/api-query';
 import {
+  assetEndpoints,
   contentTypeForUpload,
   MAX_FILE_BYTES,
   MAX_FILES_PER_TICKET,
@@ -71,20 +74,52 @@ function chunkForTickets<T extends { file: File }>(items: T[]): T[][] {
 
 /**
  * Repository for the Assets Library — full CRUD for assets plus a `folder`
- * sub-repo. Both are standard `entityRepo`s off the registry, so create/update/
- * delete auto-attach the right `errorContext` (asset / folder) for the global
- * error toast. Backed by the Supabase mock today (STU-266); swaps to the real
- * Management API with no change here.
+ * sub-repo. Both are standard `entityRepo`s, so create/update/delete
+ * auto-attach the right `errorContext` (asset / folder) for the global error
+ * toast.
+ *
+ * The routes come from `assetEndpoints(backend)` rather than straight off the
+ * registry: until the Supabase mock is retired, `NUXT_PUBLIC_ASSETS_BACKEND`
+ * switches the whole library between the mock and real Geins.Media, so the same
+ * build can be pointed back at the mock if the real API misbehaves. The registry
+ * holds the real paths; the mock is the temporary override.
  */
-export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
+export function assetRepo(
+  fetch: $Fetch<unknown, NitroFetchRequest>,
+  backend: AssetsBackend,
+) {
+  const endpoints = assetEndpoints(backend);
+
   const assets = entityRepo<Asset, AssetCreate, AssetUpdate, AssetApiOptions>(
-    ENTITIES.asset,
+    { endpoint: endpoints.asset, key: ENTITIES.asset.key },
     fetch,
   );
-  const folder = entityRepo<Folder, FolderCreate, FolderUpdate>(
-    ENTITIES.folder,
+  const folderBase = entityRepo<Folder, FolderCreate, FolderUpdate>(
+    { endpoint: endpoints.folder, key: ENTITIES.folder.key },
     fetch,
   );
+
+  // Geins.Media lists folders at the collection root and replaces a folder with
+  // PUT; `/list` + PATCH is the Management API convention the mock follows. Both
+  // differences are config, so the mock's routes drop out with `assetEndpoints`.
+  const folder: typeof folderBase = {
+    ...folderBase,
+    async list(options, fetchOptions) {
+      return await fetch<Folder[]>(endpoints.folderList, {
+        query: buildQueryObject(options),
+        ...fetchOptions,
+      });
+    },
+    async update(id, data, options, fetchOptions) {
+      return await fetch<Folder>(`${endpoints.folder}/${id}`, {
+        method: endpoints.folderUpdateMethod,
+        body: data,
+        query: buildQueryObject(options),
+        errorContext: { action: 'updating', entity: ENTITIES.folder.key },
+        ...fetchOptions,
+      });
+    },
+  };
 
   return {
     ...assets,
@@ -104,7 +139,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       fetchOptions?: RepoFetchOptions,
     ): Promise<Asset[]> {
       const res = await fetch<BatchQueryResult<Asset>>(
-        `${ENTITIES.asset.endpoint}/query`,
+        `${endpoints.asset}/query`,
         {
           method: 'POST',
           body: {
@@ -122,7 +157,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
      * suggestions. Read-only; failures surface inline, not via a toast.
      */
     async listTags(fetchOptions?: RepoFetchOptions): Promise<string[]> {
-      return await fetch<string[]>(`${ENTITIES.asset.endpoint}/tags`, {
+      return await fetch<string[]>(`${endpoints.asset}/tags`, {
         ...fetchOptions,
       });
     },
@@ -188,15 +223,12 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         });
         const fileByRef = new Map(batch.map((it) => [it.clientRef, it.file]));
 
-        const ticket = await fetch<UploadTicketResponse>(
-          `${ENTITIES.asset.endpoint}/tickets`,
-          {
-            method: 'POST',
-            body: { files: claims },
-            errorContext: { action: 'creating', entity: ENTITIES.asset.key },
-            ...fetchOptions,
-          },
-        );
+        const ticket = await fetch<UploadTicketResponse>(endpoints.tickets, {
+          method: 'POST',
+          body: { files: claims },
+          errorContext: { action: 'creating', entity: ENTITIES.asset.key },
+          ...fetchOptions,
+        });
 
         const accepted = ticket.results.filter(
           (r): r is Extract<typeof r, { status: 'accepted' }> =>
@@ -226,7 +258,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         );
 
         const done = await fetch<UploadCompleteResponse>(
-          `${ENTITIES.asset.endpoint}/tickets/${ticket.ticketId}/complete`,
+          `${endpoints.tickets}/${ticket.ticketId}/complete`,
           {
             method: 'POST',
             body: { files: accepted.map((r) => r.clientRef) },
@@ -263,7 +295,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       formData: FormData,
       fetchOptions?: RepoFetchOptions,
     ): Promise<Asset> {
-      return await fetch<Asset>(`${ENTITIES.asset.endpoint}/${id}/replace`, {
+      return await fetch<Asset>(`${endpoints.asset}/${id}/replace`, {
         method: 'POST',
         body: formData,
         errorContext: { action: 'updating', entity: ENTITIES.asset.key },
@@ -282,7 +314,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       assets: FolderDeleteAssets = 'move',
       fetchOptions?: RepoFetchOptions,
     ): Promise<void> {
-      await fetch<null>(`${ENTITIES.folder.endpoint}/${id}`, {
+      await fetch<null>(`${endpoints.folder}/${id}`, {
         method: 'DELETE',
         query: { assets },
         errorContext: { action: 'deleting', entity: ENTITIES.folder.key },

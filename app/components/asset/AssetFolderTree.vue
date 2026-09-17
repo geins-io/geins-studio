@@ -42,7 +42,6 @@ async function createFolder(payload: {
     await assetApi.folder.create({
       name: payload.name,
       parentFolderId: payload.parentFolderId,
-      sortOrder: 0,
     });
     await refresh();
     toast({

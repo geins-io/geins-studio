@@ -1,9 +1,11 @@
 import type {
   AssetCapabilities,
+  AssetEndpoints,
   AssetsBackend,
   AssetType,
   UploadRejectionCode,
 } from '#shared/types';
+import { ENTITIES } from '#shared/utils/entities';
 
 // Upload-ticket limits — the real Geins.Media `createUploadTicket` caps. KEEP:
 // these are the API contract, not mock-only. The client validates + chunks
@@ -71,6 +73,57 @@ const UPLOAD_REJECTION_KEYS: Record<UploadRejectionCode, string> = {
 /** i18n key for an upload rejection code's friendly reason (generic fallback). */
 export function uploadRejectionMessageKey(code: UploadRejectionCode): string {
   return UPLOAD_REJECTION_KEYS[code] ?? 'asset_library.upload_reject_generic';
+}
+
+// Asset types a browser can render in an `<img>`; everything else gets a type
+// icon. `svg` is separate from `image` in AssetType but renders the same way.
+const PREVIEWABLE_TYPES = new Set<AssetType>(['image', 'svg']);
+
+/**
+ * Preview source for an asset: the backend's thumbnail when there is one, else
+ * the full-size file for types an `<img>` can render. Geins.Media phase 1 serves
+ * no thumbnails (`thumbUrl: ''`) but does return a usable `url`, so without the
+ * fallback the whole library renders as type icons. Returns null when there is
+ * nothing previewable — the caller shows the icon block.
+ */
+export function assetPreviewUrl(
+  type: AssetType,
+  thumbUrl?: string | null,
+  url?: string | null,
+): string | null {
+  if (thumbUrl) return thumbUrl;
+  return PREVIEWABLE_TYPES.has(type) && url ? url : null;
+}
+
+/**
+ * Wire routes per backend. The real Geins.Media surface (QA OpenAPI, `Geins
+ * Media API 1.0.0`) is not the mock's paths with a prefix swapped: folders list
+ * at `GET /media/folders` instead of the Management API's `{base}/list`, a
+ * folder update is a `PUT` replace, and tickets sit at `/media/tickets` rather
+ * than under assets. Pure so both backends are unit-testable without a running
+ * app.
+ *
+ * cutover: REMOVE@cutover — the `mock` branch dies with the Supabase mock, and
+ * the repos go back to reading `ENTITIES.asset` / `ENTITIES.folder` directly.
+ * Ledger: docs/domains/assets-cutover.md.
+ */
+export function assetEndpoints(backend: AssetsBackend): AssetEndpoints {
+  if (backend === 'mock') {
+    return {
+      asset: '/asset',
+      folder: '/asset/folder',
+      folderList: '/asset/folder/list',
+      folderUpdateMethod: 'PATCH',
+      tickets: '/asset/tickets',
+    };
+  }
+  return {
+    asset: ENTITIES.asset.endpoint,
+    folder: ENTITIES.folder.endpoint,
+    folderList: ENTITIES.folder.endpoint,
+    folderUpdateMethod: 'PUT',
+    tickets: '/media/tickets',
+  };
 }
 
 /**

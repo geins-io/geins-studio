@@ -69,3 +69,19 @@ Cell wrapper classes — pass `getBasicCellStyle(table)` so padding/alignment ma
 
 - [`useAssetType`](/composables/useAssetType) — icon, tint, and label per type
 - [`useLucideIcon`](/composables/useLucideIcon) — resolves the fallback icon
+
+## Preview source
+
+`thumbUrl` is preferred; when it is empty the cell previews the asset's full-size `url`, but only for `image`/`svg` types — shared with [`AssetThumbnail`](/components/asset/AssetThumbnail) via `assetPreviewUrl` in `shared/utils/asset.ts`. Pass both props:
+
+```ts
+h(TableCellAssetThumbnail, {
+  type: row.original.type,
+  thumbUrl: row.original.thumbUrl,
+  url: row.original.url,
+  alt: row.original.name,
+  className: getBasicCellStyle(table),
+});
+```
+
+Geins.Media phase 1 serves no thumbnails, so without `url` every row renders a type icon.

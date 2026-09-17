@@ -77,6 +77,7 @@ const activate = () => {
         <AssetThumbnail
           :type="asset.type"
           :thumb-url="asset.thumbUrl"
+          :url="asset.url"
           :alt="asset.name"
           size="card"
           class="rounded-none"
@@ -136,7 +137,7 @@ const activate = () => {
         <span class="truncate">{{ folderName }}</span>
       </div>
 
-      <div v-if="asset.tags.length" class="flex items-center gap-1.5">
+      <div v-if="asset.tags?.length" class="flex items-center gap-1.5">
         <LucideTag
           class="text-muted-foreground size-3 shrink-0"
           aria-hidden="true"

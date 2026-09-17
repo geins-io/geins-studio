@@ -35,7 +35,7 @@ export function buildFolder(overrides?: Partial<Folder>): Folder {
     parentFolderId: null,
     system: false,
     sortOrder: 0,
-    fullPath: 'Marketing',
+    path: 'Marketing',
     depth: 1,
     createdAt: '2026-08-17T00:00:00.000Z',
     ...overrides,
