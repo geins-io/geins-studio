@@ -252,7 +252,7 @@
     "unsaved_changes_title": "You have unsaved changes!",
     "unsaved_changes_description": "All changes will be lost if you leave this page. Are you sure you want to leave?",
     "delete_confirm_title": "Are you absolutely sure?",
-    "delete_confirm_description": "This will permanently delete this {entityKey}. This action cannot be undone.",
+    "delete_confirm_description": "This will permanently delete this @.lower:{entityKey}. This action cannot be undone.",
     "price_breaks_removed_title": "Your applied price breaks will be removed!",
     "price_breaks_removed_description": "If you proceed changing price mode to {mode}, your globally applied price breaks will be removed.",
     "product_prices_overwrite_title": "Product prices will be overwritten!",

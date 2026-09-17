@@ -32,7 +32,7 @@ const _emit = defineEmits(['confirm', 'cancel']);
           {{
             props.description ??
             $t('dialog.delete_confirm_description', {
-              entityKey: $t(props.entityKey),
+              entityKey: props.entityKey,
             })
           }}
         </AlertDialogDescription>

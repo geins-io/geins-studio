@@ -19,6 +19,7 @@ Make translation changes safely and consistently. See `CLAUDE.md` → "Stack" (i
   - `i18n/locales/en.json`
   - `i18n/locales/sv.json`
 - Global entity action keys (top-level, outside any namespace): `save_entity`, `delete_entity`, `send_entity`, `accept_entity`, `reject_entity`, `confirm_entity`, `cancel_entity` — all use `@.lower:{entityName}` interpolation and serve as both button labels and dialog titles.
+- **`{entityKey}` always carries a modifier.** When a message interpolates an entity name, the *message* resolves the key — `@.lower:{entityKey}` mid-sentence, `@.capitalize:{entityKey}` or `@:{entityKey}` sentence-initial — and the *caller* passes the raw key name (`{ entityKey: 'price_list' }`), never `$t('price_list')`. A bare `{entityKey}` is the bug: it forces callers to pre-translate (a `CLAUDE.md` hard block) and renders "delete this Price list" mid-sentence. Both locale files must agree.
 - Quotation-specific description text belongs in the `orders` namespace (for example `orders.accept_quotation_description`).
 
 ## Checklist
@@ -27,7 +28,8 @@ Make translation changes safely and consistently. See `CLAUDE.md` → "Stack" (i
 2. Mirror the same keys in `sv.json`.
 3. Search usages to ensure the key naming matches conventions already in the codebase.
 4. Verify every new English value is **sentence case** (only first word + proper nouns capitalized).
-5. Scan your `.vue` diff for raw user-facing text (labels, headings, `title=`, `placeholder=`, toast strings) that should be an i18n key instead.
+5. If a value interpolates `{entityKey}`, check it uses `@.lower:` / `@.capitalize:` / `@:` in BOTH locales, and that the call site passes a raw key name.
+6. Scan your `.vue` diff for raw user-facing text (labels, headings, `title=`, `placeholder=`, toast strings) that should be an i18n key instead.
 
 ## Verify
 
