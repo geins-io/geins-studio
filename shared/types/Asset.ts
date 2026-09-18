@@ -65,6 +65,18 @@ export interface AssetBase {
 export type AssetCreate = CreateEntity<AssetBase>;
 export type AssetUpdate = UpdateEntity<AssetBase>;
 
+/**
+ * Rename and/or move in one call — the body of `POST /media/assets/{id}/relocate`
+ * (`media_request_relocateAsset`). A full replace like the folder `PUT`: a move
+ * sends the current `name`, a rename the current `folderId`. `name` carries the
+ * file extension and may not contain a slash; `folderId` `null` is the library
+ * root.
+ */
+export interface AssetRelocate {
+  name: string;
+  folderId: string | null;
+}
+
 // =============================================================================
 // Upload ticket flow (Geins.Media 3-step upload: ticket → PUT bytes → complete)
 //
@@ -240,7 +252,8 @@ export type FolderDeleteAssets = 'move' | 'delete';
 /**
  * Which Assets Library backend the client targets. `mock` is the full Supabase
  * mock; `media-phase1` is the real Geins.Media phase-1 API, which serves browse
- * + upload only (see the Phase 8 milestone).
+ * + upload, metadata `PATCH`, `relocate` and `DELETE` (see the Phase 8
+ * milestone).
  */
 export type AssetsBackend = 'mock' | 'media-phase1';
 
@@ -270,23 +283,19 @@ export interface AssetEndpoints {
  * the mock keeps everything on. Derived from the backend via `assetCapabilities`.
  *
  * Real Geins.Media phase 1 ships browse + upload, `PATCH` (description/altText/
- * localizations only) and `DELETE` (+ restore) — so description/alt-text edit and
- * delete are on, but rename/tags/channels/move/replace/thumbnails/tag-autocomplete
- * and the folder-delete asset disposition are still gated to the mock until
- * phase 2.
+ * localizations only), `POST …/relocate` (rename + move) and `DELETE`
+ * (+ restore). Those work on both backends and therefore carry no flag at all;
+ * tags/channels/replace/thumbnails/tag-autocomplete and the folder-delete asset
+ * disposition are still gated to the mock until phase 2.
  */
 export interface AssetCapabilities {
   backend: AssetsBackend;
   /** Edit + save an asset's description and localized alt text (phase-1 PATCH). */
   canEditDescriptionAltText: boolean;
-  /** Rename an asset (edit `name`). */
-  canRenameAsset: boolean;
   /** Edit an asset's tags. */
   canEditTags: boolean;
   /** Edit an asset's publication channels. */
   canEditChannels: boolean;
-  /** Move an asset to another folder (change `folderId`). */
-  canMoveAsset: boolean;
   canDeleteAsset: boolean;
   /**
    * Folder delete can decide what happens to the assets inside (re-home to

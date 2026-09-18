@@ -31,15 +31,6 @@ const { geinsLogError } = useGeinsLog('components/AssetDetailPanel.vue');
 const { copyUrl, download, deleteAsset } = useAssetActions();
 const caps = useAssetCapabilities();
 
-// Save is possible when at least one metadata field the backend permits is
-// editable — phase 1 allows description + alt text; the mock allows all.
-const canEditAnyMetadata =
-  caps.canEditDescriptionAltText ||
-  caps.canRenameAsset ||
-  caps.canEditTags ||
-  caps.canEditChannels ||
-  caps.canMoveAsset;
-
 const entityKey = ENTITIES.asset.key;
 
 // Distinct tags across all assets feed the tags field's autocomplete (custom
@@ -62,10 +53,24 @@ const deleting = ref(false);
 // asset since it loaded. Shown inline instead of the global toast (suppressed
 // for 412 in geins-api); cleared on reopen.
 const stale = ref(false);
+// Set when the rename/move leg fails: `conflict` is the documented 409 (the
+// target folder already holds that name), `error` is anything else. Shown
+// inline — the call suppresses the toast so the reason sits by the fields.
+const relocateFailed = ref<'conflict' | 'error' | null>(null);
+// The etag this panel last wrote against. Seeded on open and advanced by a
+// successful PATCH, so retrying after a failed relocate isn't rejected as stale
+// by the etag the first PATCH already consumed.
+const etag = ref<string | null>(null);
 
 const formSchema = toTypedSchema(
   z.object({
-    name: z.string().min(1, { message: t('form.field_required') }),
+    name: z
+      .string()
+      .min(1, { message: t('form.field_required') })
+      // `relocate` takes a bare file name — a slash is a 422 from the real API.
+      .refine((value) => !value.includes('/'), {
+        message: t('asset_library.asset_name_no_slash'),
+      }),
     folderId: z.string().nullable(),
     description: z.record(z.string(), z.string()),
     altText: z.record(z.string(), z.string()),
@@ -124,6 +129,8 @@ function buildLocalizations(
 watch(open, (value) => {
   if (value && props.asset) {
     stale.value = false;
+    relocateFailed.value = null;
+    etag.value = props.asset.etag ?? null;
     if (caps.tagAutocomplete) refreshTags();
     // Edit description + alt text as locale→string maps; localizations is the
     // wire shape (only non-empty fields are kept).
@@ -152,15 +159,23 @@ watch(open, (value) => {
   }
 });
 
+// A save is up to two calls: metadata through `PATCH`, then name + folder
+// through `relocate` (one endpoint covers rename and move, as a full replace).
+// PATCH goes first and carries the `If-Match`, so a concurrent change is caught
+// as a 412 before the relocate — which has no precondition of its own and would
+// otherwise be unrecoverable. Name/folder are deliberately absent from the PATCH
+// body: they are not part of the phase-1 update surface.
 async function handleSave() {
   if (!props.asset) return;
   const result = await form.validate();
   if (!result.valid) return;
+  const asset = props.asset;
+  const name = form.values.name ?? asset.name;
+  const folderId = form.values.folderId ?? null;
   loading.value = true;
+  relocateFailed.value = null;
   try {
     const payload: AssetUpdate = {
-      name: form.values.name,
-      folderId: form.values.folderId ?? null,
       // Description + alt text both round-trip through localizations (the
       // top-level values are derived server-side in the account default language).
       localizations: buildLocalizations(
@@ -172,10 +187,38 @@ async function handleSave() {
     };
     // Round-trip the loaded etag as If-Match so a concurrent change is caught
     // (412) instead of silently overwritten. Omitted when the backend gave none.
-    const fetchOptions = props.asset.etag
-      ? { headers: { 'If-Match': props.asset.etag } }
+    const fetchOptions = etag.value
+      ? { headers: { 'If-Match': etag.value } }
       : undefined;
-    await assetApi.update(props.asset._id, payload, undefined, fetchOptions);
+    const updated = await assetApi.update(
+      asset._id,
+      payload,
+      undefined,
+      fetchOptions,
+    );
+    etag.value = updated?.etag ?? etag.value;
+
+    if (name !== asset.name || folderId !== asset.folderId) {
+      try {
+        // Relocate answers 200 or 202 — a 202 means the move is accepted but
+        // not settled, so the refreshed list is the source of truth either way.
+        await assetApi.relocate(
+          asset._id,
+          { name, folderId },
+          { suppressErrorToast: true },
+        );
+      } catch (error) {
+        geinsLogError('relocateAsset', getErrorMessage(error));
+        relocateFailed.value =
+          getErrorStatus(error) === 409 ? 'conflict' : 'error';
+        // The metadata write landed — surface it while the panel stays open on
+        // the failed rename/move.
+        await refreshNuxtData('asset-library-list');
+        emit('updated');
+        return;
+      }
+    }
+
     await refreshNuxtData('asset-library-list');
     emit('updated');
     open.value = false;
@@ -217,7 +260,7 @@ async function handleDelete() {
     :entity-key="entityKey"
     :dirty="isDirty"
     :loading="loading"
-    :save-disabled="!isDirty || !canEditAnyMetadata"
+    :save-disabled="!isDirty"
     @save="handleSave"
   >
     <template v-if="asset">
@@ -234,6 +277,24 @@ async function handleDelete() {
           >
             {{ $t('reload') }}
           </Button>
+        </AlertDescription>
+      </Alert>
+
+      <Alert v-if="relocateFailed" variant="warning" class="mb-6">
+        <LucideTriangleAlert class="size-4" />
+        <AlertTitle>
+          {{
+            relocateFailed === 'conflict'
+              ? $t('asset_library.asset_relocate_conflict_title')
+              : $t('error_updating_entity', { entityKey })
+          }}
+        </AlertTitle>
+        <AlertDescription>
+          {{
+            relocateFailed === 'conflict'
+              ? $t('asset_library.asset_relocate_conflict_description')
+              : $t('error_try_again')
+          }}
         </AlertDescription>
       </Alert>
 
@@ -283,49 +344,36 @@ async function handleDelete() {
       <div class="border-border -mx-3 mt-4 mb-6 border-b sm:-mx-6" />
 
       <form @submit.prevent>
-        <!-- Metadata edit is gated per field, not as one block: the real
-             Geins.Media phase 1 PATCH only sets description + alt text, so those
-             stay editable while rename / folder move / tags / channels disable
-             until phase 2. Each group is wrapped in its own <fieldset> (which
-             reliably disables the nested custom controls). See
-             useAssetCapabilities. -->
+        <!-- Metadata edit is gated per field, not as one block: name + folder
+             (relocate), description + alt text (PATCH) ship on both backends,
+             while tags / channels wait for phase 2. Each gated group is wrapped
+             in its own <fieldset> (which reliably disables the nested custom
+             controls). See useAssetCapabilities. -->
         <FormGridWrap>
           <FormGrid design="1">
-            <fieldset
-              :disabled="!caps.canRenameAsset"
-              class="m-0 min-w-0 border-0 p-0"
-              :class="{ 'opacity-60': !caps.canRenameAsset }"
-            >
-              <FormField v-slot="{ componentField }" name="name" keep-value>
-                <FormItem>
-                  <FormLabel>{{ $t('name', 1) }}</FormLabel>
-                  <FormControl>
-                    <Input v-bind="componentField" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-            </fieldset>
+            <FormField v-slot="{ componentField }" name="name" keep-value>
+              <FormItem>
+                <FormLabel>{{ $t('name', 1) }}</FormLabel>
+                <FormControl>
+                  <Input v-bind="componentField" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
 
-            <fieldset
-              :disabled="!caps.canMoveAsset"
-              class="m-0 min-w-0 border-0 p-0"
-              :class="{ 'opacity-60': !caps.canMoveAsset }"
+            <FormField
+              v-slot="{ value, handleChange }"
+              name="folderId"
+              keep-value
             >
-              <FormField
-                v-slot="{ value, handleChange }"
-                name="folderId"
-                keep-value
-              >
-                <FormItem>
-                  <FormLabel :optional="true">{{ $t('folder', 1) }}</FormLabel>
-                  <AssetFolderPicker
-                    :model-value="value"
-                    @update:model-value="handleChange"
-                  />
-                </FormItem>
-              </FormField>
-            </fieldset>
+              <FormItem>
+                <FormLabel :optional="true">{{ $t('folder', 1) }}</FormLabel>
+                <AssetFolderPicker
+                  :model-value="value"
+                  @update:model-value="handleChange"
+                />
+              </FormItem>
+            </FormField>
 
             <FormField name="description" keep-value>
               <FormItem>

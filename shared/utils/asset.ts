@@ -129,11 +129,12 @@ export function assetEndpoints(backend: AssetsBackend): AssetEndpoints {
 /**
  * Feature availability for a given backend. Everything is on for the `mock`.
  * `media-phase1` reflects the shipped Geins.Media surface: browse + upload, plus
- * `PATCH` (description/altText/localizations) and `DELETE` (+ restore) — so
- * description/alt-text edit and delete are on, while rename, tags, channels,
- * move, replace, thumbnails, tag-autocomplete and the folder-delete asset
- * disposition (phase 1 deletes empty folders only) stay gated to the mock until
- * phase 2. Pure so it can be unit-tested and reused by `useAssetCapabilities`.
+ * `PATCH` (description/altText/localizations), `POST …/relocate` (rename + move)
+ * and `DELETE` (+ restore). Those are available on both backends, so they have
+ * no flag here; tags, channels, replace, thumbnails, tag-autocomplete and the
+ * folder-delete asset disposition (phase 1 deletes empty folders only) stay
+ * gated to the mock until phase 2. Pure so it can be unit-tested and reused by
+ * `useAssetCapabilities`.
  *
  * cutover: REVISIT@phase2 — the whole capability mechanism is temporary; remove
  * it (+ its consumers) once phase 2 restores the gated features. Ledger:
@@ -146,11 +147,9 @@ export function assetCapabilities(backend: AssetsBackend): AssetCapabilities {
     // Shipped in real phase 1 (PATCH description/altText/localizations, DELETE).
     canEditDescriptionAltText: true,
     canDeleteAsset: true,
-    // Not in the phase-1 updateAsset surface — mock-only until phase 2.
-    canRenameAsset: mock,
+    // Not in the phase-1 surface — mock-only until phase 2.
     canEditTags: mock,
     canEditChannels: mock,
-    canMoveAsset: mock,
     canDeleteFolderWithAssets: mock,
     canReplaceFile: mock,
     tagAutocomplete: mock,

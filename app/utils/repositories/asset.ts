@@ -1,6 +1,7 @@
 import type {
   Asset,
   AssetCreate,
+  AssetRelocate,
   AssetsBackend,
   AssetUpdate,
   AssetApiOptions,
@@ -298,6 +299,33 @@ export function assetRepo(
       return await fetch<Asset>(`${endpoints.asset}/${id}/replace`, {
         method: 'POST',
         body: formData,
+        errorContext: { action: 'updating', entity: ENTITIES.asset.key },
+        ...fetchOptions,
+      });
+    },
+
+    /**
+     * Rename and/or move an asset — real `POST /media/assets/{id}/relocate`. A
+     * full replace: a move sends the current `name`, a rename the current
+     * `folderId`. The updated asset comes back on `200` **or** `202` (the
+     * backend may settle the move asynchronously), so callers refresh the
+     * library read rather than trusting the returned row to be settled.
+     *
+     * cutover: REMOVE@cutover — the mock has no relocate route (rename + move
+     * go through its `PATCH /asset/:id`), so it falls back to `update` and its
+     * wire behaviour is unchanged. Drop the branch with the mock. Ledger:
+     * docs/domains/assets-cutover.md.
+     */
+    async relocate(
+      id: string,
+      data: AssetRelocate,
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<Asset> {
+      if (backend === 'mock')
+        return await assets.update(id, data, undefined, fetchOptions);
+      return await fetch<Asset>(`${endpoints.asset}/${id}/relocate`, {
+        method: 'POST',
+        body: data,
         errorContext: { action: 'updating', entity: ENTITIES.asset.key },
         ...fetchOptions,
       });
