@@ -77,6 +77,17 @@ describe('assetRepo', () => {
       });
     });
 
+    it('relocate falls back to the mock PATCH (no relocate route there)', async () => {
+      mockFetch.mockResolvedValue({ _id: '1', _type: 'asset' });
+      await api.relocate('1', { name: 'renamed.jpg', folderId: 'f1' });
+      expect(mockFetch).toHaveBeenCalledWith('/asset/1', {
+        method: 'PATCH',
+        body: { name: 'renamed.jpg', folderId: 'f1' },
+        query: undefined,
+        errorContext: { action: 'updating', entity: 'asset' },
+      });
+    });
+
     it('replace POSTs the form data to /asset/:id/replace', async () => {
       const form = new FormData();
       form.append('file', new File(['x'], 'b.jpg', { type: 'image/jpeg' }));
@@ -343,6 +354,21 @@ describe('assetRepo — media-phase1 transport', () => {
     expect(mockFetch).toHaveBeenCalledWith('/media/assets/1', {
       method: 'DELETE',
       errorContext: { action: 'deleting', entity: 'asset' },
+    });
+  });
+
+  it('relocate POSTs name + folder to /media/assets/:id/relocate', async () => {
+    mockFetch.mockResolvedValue({ _id: '1', _type: 'geins.asset' });
+    await api.relocate(
+      '1',
+      { name: 'renamed.jpg', folderId: null },
+      { suppressErrorToast: true },
+    );
+    expect(mockFetch).toHaveBeenCalledWith('/media/assets/1/relocate', {
+      method: 'POST',
+      body: { name: 'renamed.jpg', folderId: null },
+      errorContext: { action: 'updating', entity: 'asset' },
+      suppressErrorToast: true,
     });
   });
 

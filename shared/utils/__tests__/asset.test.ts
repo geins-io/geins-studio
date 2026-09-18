@@ -50,10 +50,8 @@ describe('assetCapabilities', () => {
     expect(caps).toEqual({
       backend: 'mock',
       canEditDescriptionAltText: true,
-      canRenameAsset: true,
       canEditTags: true,
       canEditChannels: true,
-      canMoveAsset: true,
       canDeleteAsset: true,
       canDeleteFolderWithAssets: true,
       canReplaceFile: true,
@@ -65,14 +63,13 @@ describe('assetCapabilities', () => {
   it('reflects the shipped phase-1 surface for media-phase1', () => {
     const caps = assetCapabilities('media-phase1');
     expect(caps.backend).toBe('media-phase1');
-    // PATCH (description/altText) + DELETE shipped in phase 1.
+    // PATCH (description/altText) + DELETE shipped in phase 1. Rename + move
+    // ship too (POST …/relocate) — they carry no flag, so there is none to assert.
     expect(caps.canEditDescriptionAltText).toBe(true);
     expect(caps.canDeleteAsset).toBe(true);
     // Not in the phase-1 surface yet.
-    expect(caps.canRenameAsset).toBe(false);
     expect(caps.canEditTags).toBe(false);
     expect(caps.canEditChannels).toBe(false);
-    expect(caps.canMoveAsset).toBe(false);
     // Phase-1 folder delete is empty-only (409 FOLDER_NOT_EMPTY) — no disposition.
     expect(caps.canDeleteFolderWithAssets).toBe(false);
     expect(caps.canReplaceFile).toBe(false);
