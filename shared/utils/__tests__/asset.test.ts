@@ -5,6 +5,7 @@ import {
   assetListOptions,
   folderIdForSelection,
   ROOT_FOLDER_KEY,
+  TRASH_KEY,
   assetPreviewUrl,
   contentTypeForUpload,
   mimeToAssetType,
@@ -48,7 +49,7 @@ describe('mimeToAssetType', () => {
 });
 
 describe('assetCapabilities', () => {
-  it('enables everything for the mock backend', () => {
+  it('enables every gated feature for the mock backend, except trash', () => {
     const caps = assetCapabilities('mock');
     expect(caps).toEqual({
       backend: 'mock',
@@ -60,6 +61,8 @@ describe('assetCapabilities', () => {
       canReplaceFile: true,
       tagAutocomplete: true,
       hasThumbnails: true,
+      // The mock hard-deletes, so there is nothing to restore.
+      hasTrash: false,
     });
   });
 
@@ -78,6 +81,8 @@ describe('assetCapabilities', () => {
     expect(caps.canReplaceFile).toBe(false);
     expect(caps.tagAutocomplete).toBe(false);
     expect(caps.hasThumbnails).toBe(false);
+    // DELETE is soft on Geins.Media — trash + restore is real-only.
+    expect(caps.hasTrash).toBe(true);
   });
 });
 
@@ -178,12 +183,17 @@ describe('assetListOptions', () => {
   it('scopes to a folder id', () => {
     expect(assetListOptions('fld-1')).toEqual({ folderId: 'fld-1' });
   });
+
+  it('asks for the trashed set instead of a folder scope', () => {
+    expect(assetListOptions(TRASH_KEY)).toEqual({ trashed: true });
+  });
 });
 
 describe('folderIdForSelection', () => {
   it.each([
     [null, null],
     [ROOT_FOLDER_KEY, null],
+    [TRASH_KEY, null],
     ['fld-1', 'fld-1'],
   ])('maps %s to %s', (selected, expected) => {
     expect(folderIdForSelection(selected)).toBe(expected);

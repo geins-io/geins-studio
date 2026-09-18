@@ -9,6 +9,9 @@ import { formatFileSize } from '#shared/utils/file';
  * In `selectable` mode (asset picker) the tile becomes a selection target: a
  * checkbox overlays the thumbnail, the whole tile toggles selection instead of
  * opening, and `hideActions` drops the per-card actions menu.
+ *
+ * In `trashed` mode (trash view) the tile is inert apart from its menu, which
+ * offers Restore only — there is no detail panel for a soft-deleted asset.
  */
 const props = withDefaults(
   defineProps<{
@@ -21,11 +24,14 @@ const props = withDefaults(
     selected?: boolean;
     /** Suppress the actions menu (the picker has selection only). */
     hideActions?: boolean;
+    /** Trash view — the tile doesn't open, and the menu offers Restore only. */
+    trashed?: boolean;
   }>(),
   {
     selectable: false,
     selected: false,
     hideActions: false,
+    trashed: false,
   },
 );
 
@@ -34,6 +40,7 @@ const emit = defineEmits<{
   download: [];
   copyUrl: [];
   delete: [];
+  restore: [];
   toggleSelect: [];
 }>();
 
@@ -44,6 +51,7 @@ const size = computed(() => formatFileSize(props.asset.sizeBytes));
 // In the picker, the tile is a selection target — clicking the thumbnail or
 // name toggles selection rather than opening the (nonexistent) detail panel.
 const activate = () => {
+  if (props.trashed) return;
   if (props.selectable) {
     emit('toggleSelect');
   } else {
@@ -66,7 +74,8 @@ const activate = () => {
     <div class="relative">
       <button
         type="button"
-        class="block w-full cursor-pointer"
+        class="block w-full cursor-pointer disabled:cursor-default"
+        :disabled="trashed"
         :aria-label="
           selectable
             ? $t('select_named', { name: asset.name })
@@ -108,16 +117,20 @@ const activate = () => {
         <AssetActionsMenu
           :asset="asset"
           :can-delete="canDeleteAsset"
+          :trashed="trashed"
           @open="emit('open')"
           @download="emit('download')"
           @copy-url="emit('copyUrl')"
           @delete="emit('delete')"
+          @restore="emit('restore')"
         />
       </div>
     </div>
 
     <div class="flex flex-1 flex-col gap-2 p-3">
+      <span v-if="trashed" class="truncate text-sm">{{ asset.name }}</span>
       <button
+        v-else
         type="button"
         class="link-text truncate text-left text-sm"
         @click="activate"

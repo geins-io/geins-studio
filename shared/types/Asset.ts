@@ -200,6 +200,12 @@ export interface AssetApiOptions extends ApiOptions<keyof AssetBase> {
    * value rather than collapse into "no filter".
    */
   folderId?: string | null;
+  /**
+   * Trash filter — either-or, not an include flag: omitted (or `false`) returns
+   * live assets only, `true` returns **only** trashed ones. Deleted assets sit
+   * in trash for 30 days before the backend hard-deletes them.
+   */
+  trashed?: boolean;
   search?: string;
   page?: string;
 }
@@ -310,6 +316,12 @@ export interface AssetCapabilities {
    */
   canDeleteFolderWithAssets: boolean;
   canReplaceFile: boolean;
+  /**
+   * `DELETE` is a soft delete: the asset goes to trash (30-day retention) and
+   * comes back via `POST /media/assets/{id}/restore`, with `assetQuery.trashed`
+   * listing it. The mock hard-deletes, so it has no trash to show.
+   */
+  hasTrash: boolean;
   /** Suggest existing tags from the distinct-tags source. */
   tagAutocomplete: boolean;
   /** Backend produces real thumbnails (`thumbUrl`); phase 1 returns null. */

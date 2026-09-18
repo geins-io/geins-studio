@@ -4,6 +4,8 @@
 
 In `selectable` mode (the asset picker) the tile becomes a selection target instead: a checkbox overlays the thumbnail, clicking the tile toggles selection rather than opening the detail panel, and `hideActions` drops the actions menu.
 
+In `trashed` mode (the library's Trash view) the tile is inert apart from its menu: the thumbnail button is disabled, the name renders as plain text, and the menu offers **Restore** only.
+
 :::tip NOTE
 "Used in" is deferred (no data).
 :::
@@ -62,6 +64,14 @@ hideActions?: boolean; // default false
 
 Suppress the [`AssetActionsMenu`](/components/asset/AssetActionsMenu) — the picker has selection only, no per-card open/download/delete.
 
+### `trashed`
+
+```ts
+trashed?: boolean; // default false
+```
+
+Trash mode: nothing on the tile opens the detail panel (a soft-deleted asset has nothing to edit), and the menu shows **Restore** only, emitting `restore`.
+
 ## Events
 
 The hover action menu is the shared [`AssetActionsMenu`](/components/asset/AssetActionsMenu); the card re-emits its per-action events and the page wires them to [`useAssetActions`](/composables/useAssetActions) + a shared [`DialogDelete`](/components/dialog/DialogDelete).
@@ -73,6 +83,10 @@ Emitted from the thumbnail, the name, or the menu's "View details" item — the 
 ### `download` / `copyUrl`
 
 Download the file / copy its URL. Disabled in the menu when the asset has no `url`.
+
+### `restore`
+
+`trashed` mode only — restore the asset from trash; the page calls [`useAssetActions`](/composables/useAssetActions)`.restoreAsset`.
 
 ### `delete`
 

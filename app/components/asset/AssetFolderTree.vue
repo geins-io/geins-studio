@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import type { FolderDeleteAssets } from '#shared/types';
-import { ROOT_FOLDER_KEY } from '#shared/utils/asset';
+import { ROOT_FOLDER_KEY, TRASH_KEY } from '#shared/utils/asset';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { FolderNode } from '@/composables/useFolders';
 
 /**
  * Folder navigation tree (shadcn Sidebar). "Folders" header, then "All assets",
  * the nested folders (create subfolder / delete on hover), the pinned
- * "Uncategorised" view, and a "New folder" action. Selection via
- * `v-model:selected` — a folder id, `null` for All, or `ROOT_FOLDER_KEY` for
- * Uncategorised (assets with no folder) — drives the server-side folder scope.
+ * "Uncategorised" and "Trash" views, and a "New folder" action. Selection via
+ * `v-model:selected` — a folder id, `null` for All, `ROOT_FOLDER_KEY` for
+ * Uncategorised (assets with no folder), or `TRASH_KEY` for the soft-deleted
+ * ones — drives the server-side query.
  * Must be used inside a `SidebarProvider` / `Sidebar`.
  *
  * `readonly` makes the rail selection-only — every folder mutation control
@@ -206,6 +207,21 @@ async function confirmDelete(assets: FolderDeleteAssets = 'move') {
               />
               <span :class="selected === ROOT_FOLDER_KEY && 'font-semibold'">
                 {{ $t('asset_library.uncategorised') }}
+              </span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          <!-- Trash is a separate query (`trashed: true`), and the picker must
+               not browse soft-deleted assets — hence `!readonly`. -->
+          <SidebarMenuItem v-if="!props.readonly && caps.hasTrash">
+            <SidebarMenuButton
+              :is-active="selected === TRASH_KEY"
+              @click="selected = TRASH_KEY"
+            >
+              <span class="size-4 shrink-0" />
+              <LucideTrash2 class="text-muted-foreground" aria-hidden="true" />
+              <span :class="selected === TRASH_KEY && 'font-semibold'">
+                {{ $t('asset_library.trash') }}
               </span>
             </SidebarMenuButton>
           </SidebarMenuItem>

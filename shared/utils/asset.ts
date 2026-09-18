@@ -107,24 +107,44 @@ export function assetPreviewUrl(
 export const ROOT_FOLDER_KEY = 'root';
 
 /**
+ * Rail selection for the trash view. Like {@link ROOT_FOLDER_KEY} it is not a
+ * folder id — it swaps the whole query for `trashed: true`, which returns only
+ * soft-deleted assets (see `AssetApiOptions.trashed`).
+ */
+export const TRASH_KEY = 'trash';
+
+/**
+ * How long a soft-deleted asset stays restorable before Geins.Media hard-deletes
+ * it. Configurable server-side, so this is the copy's number, not a guarantee —
+ * the UI only states it, nothing branches on it.
+ */
+export const TRASH_RETENTION_DAYS = 30;
+
+/**
  * List options for a rail selection: `null` (All assets) sends no folder scope
- * at all, {@link ROOT_FOLDER_KEY} scopes to the root, and anything else is a
- * folder id. `folderId: null` and `undefined` are different queries here — the
- * root view and "every folder" must not collapse into each other.
+ * at all, {@link ROOT_FOLDER_KEY} scopes to the root, {@link TRASH_KEY} asks for
+ * the trashed set instead, and anything else is a folder id. `folderId: null`
+ * and `undefined` are different queries here — the root view and "every folder"
+ * must not collapse into each other.
  */
 export function assetListOptions(
   selected: string | null,
 ): AssetApiOptions | undefined {
   if (selected === null) return undefined;
+  // Trash is its own query, not a folder scope: `trashed: true` returns only
+  // the soft-deleted assets, across every folder.
+  if (selected === TRASH_KEY) return { trashed: true };
   return { folderId: selected === ROOT_FOLDER_KEY ? null : selected };
 }
 
 /**
  * The folder id a rail selection writes to (upload target, move destination):
- * a real id, or `null` for the root — both All assets and Uncategorised.
+ * a real id, or `null` for the root — All assets, Uncategorised and Trash.
  */
 export function folderIdForSelection(selected: string | null): string | null {
-  return selected === ROOT_FOLDER_KEY ? null : selected;
+  return selected === ROOT_FOLDER_KEY || selected === TRASH_KEY
+    ? null
+    : selected;
 }
 
 /**
@@ -186,6 +206,8 @@ export function assetCapabilities(backend: AssetsBackend): AssetCapabilities {
     canReplaceFile: mock,
     tagAutocomplete: mock,
     hasThumbnails: mock,
+    // Soft delete + restore is real-only; the mock deletes the row outright.
+    hasTrash: !mock,
   };
 }
 

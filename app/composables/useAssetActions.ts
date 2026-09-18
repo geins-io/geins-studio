@@ -9,13 +9,15 @@ export interface UseAssetActionsReturnType {
   download: (asset: Asset) => void;
   /** Delete the asset, refresh the library list, toast. Returns success. */
   deleteAsset: (asset: Asset) => Promise<boolean>;
+  /** Restore a trashed asset, refresh the library list, toast. Returns success. */
+  restoreAsset: (asset: Asset) => Promise<boolean>;
 }
 
 /**
- * Shared asset row/panel actions (copy URL, download, delete) so the library
- * page, grid card, and detail panel stay consistent. Delete refreshes the
- * `asset-library-list` read; callers own their confirm dialog + surrounding UI
- * (closing a panel, clearing selection).
+ * Shared asset row/panel actions (copy URL, download, delete, restore) so the
+ * library page, grid card, and detail panel stay consistent. Delete and restore
+ * refresh the `asset-library-list` read; callers own their confirm dialog +
+ * surrounding UI (closing a panel, clearing selection).
  */
 export function useAssetActions(): UseAssetActionsReturnType {
   const { t } = useI18n();
@@ -62,5 +64,20 @@ export function useAssetActions(): UseAssetActionsReturnType {
     }
   }
 
-  return { copyUrl, download, deleteAsset };
+  async function restoreAsset(asset: Asset): Promise<boolean> {
+    try {
+      await assetApi.restore(asset._id);
+      await refreshNuxtData('asset-library-list');
+      toast({
+        title: t('entity_restored', { entityKey }),
+        variant: 'positive',
+      });
+      return true;
+    } catch (error) {
+      geinsLogError('restoreAsset', getErrorMessage(error));
+      return false;
+    }
+  }
+
+  return { copyUrl, download, deleteAsset, restoreAsset };
 }
