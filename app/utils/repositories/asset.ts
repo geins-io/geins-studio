@@ -135,6 +135,8 @@ export function assetRepo(
      * wire as `folderIds`: a folder id for that subtree, `null` for the library
      * root (assets with no folder), and omitted entirely for the "all assets"
      * view — so an explicit `folderId: null` is NOT the same as no options.
+     * `trashed: true` swaps the whole result set for the soft-deleted assets
+     * (either-or, not an include flag), so it is only sent when asked for.
      * Returns the unwrapped items.
      */
     async list(
@@ -150,6 +152,7 @@ export function assetRepo(
             ...(options && options.folderId !== undefined
               ? { folderIds: [options.folderId] }
               : {}),
+            ...(options?.trashed ? { trashed: true } : {}),
           },
           ...fetchOptions,
         },
@@ -330,6 +333,22 @@ export function assetRepo(
       return await fetch<Asset>(`${endpoints.asset}/${id}/relocate`, {
         method: 'POST',
         body: data,
+        errorContext: { action: 'updating', entity: ENTITIES.asset.key },
+        ...fetchOptions,
+      });
+    },
+
+    /**
+     * Restore a soft-deleted asset from trash — real
+     * `POST /media/assets/{id}/restore`. Deleting is soft on Geins.Media (30-day
+     * retention), so this is the undo; the mock hard-deletes and therefore has
+     * no trash at all, which is why callers gate on `hasTrash`. The response
+     * body is not relied on (the backend may answer `200` or `204`) — callers
+     * refresh the library read instead.
+     */
+    async restore(id: string, fetchOptions?: RepoFetchOptions): Promise<void> {
+      await fetch<unknown>(`${endpoints.asset}/${id}/restore`, {
+        method: 'POST',
         errorContext: { action: 'updating', entity: ENTITIES.asset.key },
         ...fetchOptions,
       });

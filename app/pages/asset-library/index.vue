@@ -6,6 +6,8 @@ import {
   assetListOptions,
   folderIdForSelection,
   ROOT_FOLDER_KEY,
+  TRASH_KEY,
+  TRASH_RETENTION_DAYS,
 } from '#shared/utils/asset';
 import { ENTITIES } from '#shared/utils/entities';
 import { formatFileSize } from '#shared/utils/file';
@@ -37,15 +39,23 @@ const search = ref('');
 // template uses to switch from overlay-drawer to inline) so the active folder
 // filter is always visible; below sm it starts closed and overlays on demand.
 const showFolders = ref(useMediaQuery('(min-width: 640px)').value);
-// Rail selection: a folder id, `null` for All assets, or `ROOT_FOLDER_KEY` for
-// Uncategorised — all three drive the server-side folder scope. Browse state
-// (folder + page + page size) is restored from / synced to the URL.
+// Rail selection: a folder id, `null` for All assets, `ROOT_FOLDER_KEY` for
+// Uncategorised, or `TRASH_KEY` for the soft-deleted set — all four drive the
+// server-side query. Browse state (folder + page + page size) is restored from
+// / synced to the URL.
 const selectedFolder = ref<string | null>(
   (route.query.folder as string) || null,
 );
 // Uncategorised is a query, not a folder, so uploads from there land at the root.
 const uploadFolderId = computed(() =>
   folderIdForSelection(selectedFolder.value),
+);
+// Trash lists the soft-deleted assets instead of a folder scope: restore is the
+// only action there, and upload / detail panel / delete are all off.
+const isTrash = computed(() => selectedFolder.value === TRASH_KEY);
+// Stated, not enforced — the backend owns the retention window.
+const retentionNote = computed(() =>
+  t('asset_library.trash_retention', { days: TRASH_RETENTION_DAYS }),
 );
 const uploadOpen = ref(false);
 
@@ -85,21 +95,23 @@ const filtered = computed(() => {
 // (TableView props): a search with no matches reads differently from an empty
 // folder / empty library.
 const isSearching = computed(() => search.value.trim().length > 0);
-const emptyIcon = computed(
-  () => resolveIcon(isSearching.value ? 'SearchX' : 'FolderOpen') ?? undefined,
-);
-const emptyTitle = computed(() =>
-  isSearching.value
-    ? t('no_entity_found', { entityKey }, 2)
-    : selectedFolder.value && selectedFolder.value !== ROOT_FOLDER_KEY
-      ? t('asset_library.no_assets_in_folder')
-      : t('no_entity', { entityKey }, 2),
-);
-const emptyDescription = computed(() =>
-  isSearching.value
-    ? t('empty_filtered_description', { entityKey }, 2)
-    : t('empty_description', { entityKey }, 2),
-);
+const emptyIcon = computed(() => {
+  if (isSearching.value) return resolveIcon('SearchX') ?? undefined;
+  return resolveIcon(isTrash.value ? 'Trash2' : 'FolderOpen') ?? undefined;
+});
+const emptyTitle = computed(() => {
+  if (isSearching.value) return t('no_entity_found', { entityKey }, 2);
+  if (isTrash.value) return t('asset_library.trash_empty');
+  return selectedFolder.value && selectedFolder.value !== ROOT_FOLDER_KEY
+    ? t('asset_library.no_assets_in_folder')
+    : t('no_entity', { entityKey }, 2);
+});
+const emptyDescription = computed(() => {
+  if (isSearching.value)
+    return t('empty_filtered_description', { entityKey }, 2);
+  if (isTrash.value) return retentionNote.value;
+  return t('empty_description', { entityKey }, 2);
+});
 
 // Grid pagination (list view paginates via TableView). Page + size live in the
 // URL (?page, ?perPage) so a link opens the exact page.
@@ -194,15 +206,17 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
       h(
         'div',
         { class: getBasicCellStyle(table) },
-        h(
-          'button',
-          {
-            type: 'button',
-            class: 'link-text text-left',
-            onClick: () => openAsset(row.original),
-          },
-          row.original.name,
-        ),
+        isTrash.value
+          ? row.original.name
+          : h(
+              'button',
+              {
+                type: 'button',
+                class: 'link-text text-left',
+                onClick: () => openAsset(row.original),
+              },
+              row.original.name,
+            ),
       );
   }
 
@@ -243,10 +257,12 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
           asset: row.original,
           trigger: 'table',
           canDelete: caps.canDeleteAsset,
+          trashed: isTrash.value,
           onOpen: () => openAsset(row.original),
           onDownload: () => download(row.original),
           onCopyUrl: () => copyUrl(row.original),
           onDelete: () => requestDelete(row.original),
+          onRestore: () => restore(row.original),
         }),
       ),
     meta: { type: 'actions' },
@@ -269,7 +285,7 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
 
 onMounted(() => {
   watch(
-    [data, error],
+    [data, error, isTrash],
     ([newData, newError]) => {
       if (newError) {
         fetchError.value = true;
@@ -293,7 +309,7 @@ function openAsset(asset: Asset) {
   detailOpen.value = true;
 }
 
-const { copyUrl, download, deleteAsset } = useAssetActions();
+const { copyUrl, download, deleteAsset, restoreAsset } = useAssetActions();
 const deleteOpen = ref(false);
 const deleting = ref(false);
 const pendingDelete = ref<Asset | null>(null);
@@ -301,6 +317,12 @@ const pendingDelete = ref<Asset | null>(null);
 function requestDelete(asset: Asset) {
   pendingDelete.value = asset;
   deleteOpen.value = true;
+}
+
+// Restore refreshes the list inside the action, so the row leaves trash on its
+// own — no local bookkeeping.
+async function restore(asset: Asset) {
+  await restoreAsset(asset);
 }
 
 async function confirmDelete() {
@@ -367,7 +389,7 @@ async function confirmDelete() {
         </div>
         <Progress :model-value="storageUsedPct" class="mt-1.5 h-1.5" />
       </div>
-      <ButtonIcon icon="upload" @click="uploadOpen = true">
+      <ButtonIcon v-if="!isTrash" icon="upload" @click="uploadOpen = true">
         {{ $t('asset_library.upload_assets') }}
       </ButtonIcon>
     </ContentActionBar>
@@ -415,6 +437,10 @@ async function confirmDelete() {
       </Button>
     </ButtonGroup>
   </div>
+
+  <p v-if="isTrash" class="text-muted-foreground mt-2 text-xs">
+    {{ retentionNote }}
+  </p>
 
   <SidebarProvider
     class="relative mt-4 -mb-12 min-h-0! flex-1 items-stretch gap-4 @2xl:-mb-14"
@@ -519,10 +545,12 @@ async function confirmDelete() {
             :key="asset._id"
             :asset="asset"
             :folder-name="folderName(asset.folderId)"
+            :trashed="isTrash"
             @open="openAsset(asset)"
             @download="download(asset)"
             @copy-url="copyUrl(asset)"
             @delete="requestDelete(asset)"
+            @restore="restore(asset)"
           />
         </div>
       </div>

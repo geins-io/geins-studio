@@ -1,8 +1,10 @@
 # `AssetFolderTree`
 
-`AssetFolderTree` is the folder-navigation tree for the Assets Library, built on the shadcn `Sidebar` primitives. Under a "Folders" header it shows **All assets**, then the nested folders (each expandable via a leading chevron; the folder icon opens when expanded/active), with the pinned **Uncategorised** view last — below the folder list, where the mock's system folders used to sit.
+`AssetFolderTree` is the folder-navigation tree for the Assets Library, built on the shadcn `Sidebar` primitives. Under a "Folders" header it shows **All assets**, then the nested folders (each expandable via a leading chevron; the folder icon opens when expanded/active), with the pinned **Uncategorised** and **Trash** views last — below the folder list, where the mock's system folders used to sit.
 
-Selection is emitted via `v-model:selected` — a folder id, `null` for **All assets**, or `ROOT_FOLDER_KEY` (`'root'`, from `#shared/utils/asset`) for **Uncategorised**. The consumer turns that into list options with `assetListOptions(selected)`; the tree itself only selects.
+Selection is emitted via `v-model:selected` — a folder id, `null` for **All assets**, `ROOT_FOLDER_KEY` (`'root'`, from `#shared/utils/asset`) for **Uncategorised**, or `TRASH_KEY` (`'trash'`) for **Trash**. The consumer turns that into list options with `assetListOptions(selected)`; the tree itself only selects.
+
+The **Trash** entry appears only when `useAssetCapabilities().hasTrash` is on (the real backend — the mock hard-deletes) and only outside `readonly` mode: the picker must never browse soft-deleted assets.
 
 :::tip NOTE
 **Uncategorised is a query, not a folder.** Real Geins.Media has no system folders — assets with no folder are `folderId: null`, and the query asks for them with `folderIds: [null]`. That is why the entry is pinned by the component rather than coming from the folder list, and why `assetListOptions` distinguishes "root only" (`folderId: null`) from "all assets" (no folder scope at all).
@@ -33,7 +35,7 @@ Must be rendered inside a `SidebarProvider` / `Sidebar` (the library page provid
 v-model:selected: string | null
 ```
 
-The selected folder id, `null` for "All assets", or `ROOT_FOLDER_KEY` for "Uncategorised" (assets with no folder). It is also the `?folder=` URL value on the library page, so every view deep-links.
+The selected folder id, `null` for "All assets", `ROOT_FOLDER_KEY` for "Uncategorised" (assets with no folder), or `TRASH_KEY` for the soft-deleted set. It is also the `?folder=` URL value on the library page, so every view deep-links.
 
 ## Props
 
@@ -43,7 +45,7 @@ The selected folder id, `null` for "All assets", or `ROOT_FOLDER_KEY` for "Uncat
 readonly?: boolean // default: false
 ```
 
-Selection-only mode. When `true`, every folder **mutation** control is gated off: the per-node hover **create subfolder** / **delete** actions, the top-level **New folder** input/button, and the delete dialogs. Selection + navigation still work.
+Selection-only mode. When `true`, every folder **mutation** control is gated off: the per-node hover **create subfolder** / **delete** actions, the top-level **New folder** input/button, and the delete dialogs — and the **Trash** entry is hidden. Selection + navigation still work.
 
 The [`AssetPickerPanel`](/components/asset/AssetPickerPanel) passes `readonly` so a user browsing to pick an asset can't accidentally create or delete folders — folder management stays on the asset library page, which renders the tree with actions on (the default).
 

@@ -43,6 +43,16 @@ describe('assetRepo', () => {
       });
     });
 
+    it('list asks for the trashed set', async () => {
+      mockFetch.mockResolvedValue({ items: [] });
+      await api.list({ trashed: true });
+      // Either-or: `trashed: true` replaces the live set, so it rides alone.
+      expect(mockFetch).toHaveBeenCalledWith('/asset/query', {
+        method: 'POST',
+        body: { all: true, trashed: true },
+      });
+    });
+
     it('get calls GET /asset/:id', async () => {
       mockFetch.mockResolvedValue({ _id: '1', _type: 'asset' });
       await api.get('1');
@@ -364,6 +374,15 @@ describe('assetRepo — media-phase1 transport', () => {
     expect(mockFetch).toHaveBeenCalledWith('/media/assets/1', {
       method: 'DELETE',
       errorContext: { action: 'deleting', entity: 'asset' },
+    });
+  });
+
+  it('restore POSTs to /media/assets/:id/restore', async () => {
+    mockFetch.mockResolvedValue(null);
+    await api.restore('1');
+    expect(mockFetch).toHaveBeenCalledWith('/media/assets/1/restore', {
+      method: 'POST',
+      errorContext: { action: 'updating', entity: 'asset' },
     });
   });
 

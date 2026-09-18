@@ -10,10 +10,10 @@ Studio built the full v0 UI against the mock. The real backend's phase 1 serves 
 
 The backend is a public runtime config value, `assetsBackend`, set from `NUXT_PUBLIC_ASSETS_BACKEND` (default `'mock'`):
 
-| Value          | Meaning                                                |
-| -------------- | ------------------------------------------------------ |
-| `mock`         | Supabase mock — every feature on (default).            |
-| `media-phase1` | Real Geins.Media phase 1 — gates the phase-2 features. |
+| Value          | Meaning                                                  |
+| -------------- | -------------------------------------------------------- |
+| `mock`         | Supabase mock — every feature on except trash (default). |
+| `media-phase1` | Real Geins.Media phase 1 — gates the phase-2 features.   |
 
 ## Usage
 
@@ -41,10 +41,13 @@ An `AssetCapabilities` object (plain, not reactive — the backend is fixed per 
 | `canReplaceFile`            | `boolean`       | Replace-file action.                                              |
 | `tagAutocomplete`           | `boolean`       | Distinct-tags suggestions fetch.                                  |
 | `hasThumbnails`             | `boolean`       | Backend produces real `thumbUrl`s (phase 1 returns null).         |
+| `hasTrash`                  | `boolean`       | Trash rail entry + restore action (real backend only).            |
 
 :::warning A FEATURE BOTH BACKENDS SUPPORT GETS NO FLAG
 There is no `canRenameAsset` / `canMoveAsset`: `POST /media/assets/{id}/relocate` ships in phase 1, so rename and move work everywhere and the fields were removed rather than left permanently `true`. An always-`true` flag is dead gating — retire each one as phase 2 restores its feature (see the [cutover ledger](/domains/assets-cutover)).
 :::
+
+`hasTrash` is the one flag that is **off** for the mock and **on** for `media-phase1`: real `DELETE` is a soft delete (30-day trash + `POST …/restore`), while the mock drops the row outright, so it has no trash to list.
 
 The mapping is a pure function — [`assetCapabilities(backend)`](/utils/asset) in `#shared/utils/asset` — so it is unit-tested and reusable outside a component.
 

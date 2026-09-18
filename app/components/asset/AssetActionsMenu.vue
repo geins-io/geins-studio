@@ -5,6 +5,10 @@ import type { Asset } from '#shared/types';
  * Shared asset context menu (view / download / copy URL / delete) so the grid
  * card and the list-view actions column render identical items + emits.
  * Download / copy URL are disabled when the asset has no public `url`.
+ *
+ * In `trashed` mode the menu collapses to a single **Restore** item: a trashed
+ * asset can only come back, and its stored file may already be unreachable, so
+ * offering details / download / delete there would be dead ends.
  */
 withDefaults(
   defineProps<{
@@ -13,8 +17,10 @@ withDefaults(
     trigger?: 'card' | 'table';
     /** Gated off (disabled) when the backend can't delete — see useAssetCapabilities. */
     canDelete?: boolean;
+    /** Trash view — the asset is soft-deleted, so Restore is the only action. */
+    trashed?: boolean;
   }>(),
-  { trigger: 'card', canDelete: true },
+  { trigger: 'card', canDelete: true, trashed: false },
 );
 
 const emit = defineEmits<{
@@ -22,6 +28,7 @@ const emit = defineEmits<{
   download: [];
   copyUrl: [];
   delete: [];
+  restore: [];
 }>();
 </script>
 
@@ -43,23 +50,30 @@ const emit = defineEmits<{
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end">
-      <DropdownMenuItem @click="emit('open')">
-        <LucideEye class="mr-2 size-4" aria-hidden="true" />
-        <span>{{ $t('asset_library.view_details') }}</span>
+      <DropdownMenuItem v-if="trashed" @click="emit('restore')">
+        <LucideUndo2 class="mr-2 size-4" aria-hidden="true" />
+        <span>{{ $t('restore') }}</span>
       </DropdownMenuItem>
-      <DropdownMenuItem :disabled="!asset.url" @click="emit('download')">
-        <LucideDownload class="mr-2 size-4" aria-hidden="true" />
-        <span>{{ $t('download') }}</span>
-      </DropdownMenuItem>
-      <DropdownMenuItem :disabled="!asset.url" @click="emit('copyUrl')">
-        <LucideCopy class="mr-2 size-4" aria-hidden="true" />
-        <span>{{ $t('asset_library.copy_public_url') }}</span>
-      </DropdownMenuItem>
-      <DropdownMenuSeparator />
-      <DropdownMenuItem :disabled="!canDelete" @click="emit('delete')">
-        <LucideTrash2 class="mr-2 size-4" aria-hidden="true" />
-        <span>{{ $t('delete_entity', { entityKey: 'asset' }) }}</span>
-      </DropdownMenuItem>
+
+      <template v-else>
+        <DropdownMenuItem @click="emit('open')">
+          <LucideEye class="mr-2 size-4" aria-hidden="true" />
+          <span>{{ $t('asset_library.view_details') }}</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem :disabled="!asset.url" @click="emit('download')">
+          <LucideDownload class="mr-2 size-4" aria-hidden="true" />
+          <span>{{ $t('download') }}</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem :disabled="!asset.url" @click="emit('copyUrl')">
+          <LucideCopy class="mr-2 size-4" aria-hidden="true" />
+          <span>{{ $t('asset_library.copy_public_url') }}</span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem :disabled="!canDelete" @click="emit('delete')">
+          <LucideTrash2 class="mr-2 size-4" aria-hidden="true" />
+          <span>{{ $t('delete_entity', { entityKey: 'asset' }) }}</span>
+        </DropdownMenuItem>
+      </template>
     </DropdownMenuContent>
   </DropdownMenu>
 </template>
