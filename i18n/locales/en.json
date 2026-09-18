@@ -1686,6 +1686,7 @@
     "wizard_no_selection_hint": "Pick a file to edit its details, or check several to edit them together.",
     "no_assets_in_folder": "No assets in this folder",
     "no_folder": "No folder — uncategorised",
+    "uncategorised": "Uncategorised",
     "folder_name": "Folder name",
     "delete_folder_title": "Delete “{name}”?",
     "folder_delete_intro": "This folder contains {assets}. Choose what happens to it. | This folder contains {assets}. Choose what happens to them.",

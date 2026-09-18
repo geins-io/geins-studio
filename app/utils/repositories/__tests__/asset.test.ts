@@ -33,6 +33,16 @@ describe('assetRepo', () => {
       });
     });
 
+    it('list scopes to the library root via a null folderIds entry', async () => {
+      mockFetch.mockResolvedValue({ items: [] });
+      await api.list({ folderId: null });
+      // `folderId: null` (Uncategorised) must not collapse into "no filter".
+      expect(mockFetch).toHaveBeenCalledWith('/asset/query', {
+        method: 'POST',
+        body: { all: true, folderIds: [null] },
+      });
+    });
+
     it('get calls GET /asset/:id', async () => {
       mockFetch.mockResolvedValue({ _id: '1', _type: 'asset' });
       await api.get('1');

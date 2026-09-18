@@ -9,8 +9,8 @@ mockNuxtImport('useGeinsRepository', () => () => ({
   assetApi: { folder: { list: vi.fn() } },
 }));
 
-// Derivations (tree, split, name lookup, descendants) are the logic under test,
-// so stub useAsyncData with a ready dataset instead of exercising the fetch.
+// Derivations (tree, name lookup, descendants) are the logic under test, so
+// stub useAsyncData with a ready dataset instead of exercising the fetch.
 const folders: Folder[] = [
   buildFolder({
     _id: 'f1',
@@ -38,15 +38,13 @@ mockNuxtImport('useAsyncData', () => () => ({
 import { useFolders } from '../useFolders';
 
 describe('useFolders', () => {
-  const { userFolders, systemFolders, tree, folderName, descendantIds } =
-    useFolders();
+  const { folders, tree, folderName, descendantIds } = useFolders();
 
-  it('splits system vs user folders', () => {
-    expect(userFolders.value.map((f) => f._id)).toEqual(['f1', 'f2', 'f3']);
-    expect(systemFolders.value.map((f) => f._id)).toEqual(['sys1']);
+  it('drops the mock-only system folders', () => {
+    expect(folders.value.map((f) => f._id)).toEqual(['f1', 'f2', 'f3']);
   });
 
-  it('builds a nested tree of user folders, sorted by sortOrder then name', () => {
+  it('builds a nested tree, sorted by sortOrder then name', () => {
     expect(tree.value).toHaveLength(1);
     const root = tree.value[0]!;
     expect(root._id).toBe('f1');
@@ -54,10 +52,11 @@ describe('useFolders', () => {
     expect(root.children.map((c) => c._id)).toEqual(['f3', 'f2']);
   });
 
-  it('resolves a folder name by id, undefined for null/unknown', () => {
+  it('resolves a folder name by id, undefined for null/unknown/system', () => {
     expect(folderName('f2')).toBe('Brand');
     expect(folderName(null)).toBeUndefined();
     expect(folderName('nope')).toBeUndefined();
+    expect(folderName('sys1')).toBeUndefined();
   });
 
   it('returns a folder plus its descendants', () => {

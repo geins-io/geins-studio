@@ -1,4 +1,5 @@
 import type {
+  AssetApiOptions,
   AssetCapabilities,
   AssetEndpoints,
   AssetsBackend,
@@ -93,6 +94,37 @@ export function assetPreviewUrl(
 ): string | null {
   if (thumbUrl) return thumbUrl;
   return PREVIEWABLE_TYPES.has(type) && url ? url : null;
+}
+
+// ── Folder rail selection ────────────────────────────────────────────────────
+
+/**
+ * Rail selection for "assets with no folder" — the library root. Not a folder
+ * id: real Geins.Media has no folder row for it, the state is `folderId: null`
+ * on the asset and `folderIds: [null]` on the query. Also the `?folder=` URL
+ * value, so the view deep-links like any folder.
+ */
+export const ROOT_FOLDER_KEY = 'root';
+
+/**
+ * List options for a rail selection: `null` (All assets) sends no folder scope
+ * at all, {@link ROOT_FOLDER_KEY} scopes to the root, and anything else is a
+ * folder id. `folderId: null` and `undefined` are different queries here — the
+ * root view and "every folder" must not collapse into each other.
+ */
+export function assetListOptions(
+  selected: string | null,
+): AssetApiOptions | undefined {
+  if (selected === null) return undefined;
+  return { folderId: selected === ROOT_FOLDER_KEY ? null : selected };
+}
+
+/**
+ * The folder id a rail selection writes to (upload target, move destination):
+ * a real id, or `null` for the root — both All assets and Uncategorised.
+ */
+export function folderIdForSelection(selected: string | null): string | null {
+  return selected === ROOT_FOLDER_KEY ? null : selected;
 }
 
 /**

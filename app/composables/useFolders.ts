@@ -1,14 +1,12 @@
 import type { Folder } from '#shared/types';
 
-/** A folder plus its nested children (user folders only). */
+/** A folder plus its nested children. */
 export interface FolderNode extends Folder {
   children: FolderNode[];
 }
 
 export interface UseFoldersReturnType {
   folders: ComputedRef<Folder[]>;
-  userFolders: ComputedRef<Folder[]>;
-  systemFolders: ComputedRef<Folder[]>;
   tree: ComputedRef<FolderNode[]>;
   folderName: (id?: string | null) => string | undefined;
   descendantIds: (rootId: string) => string[];
@@ -48,9 +46,8 @@ function buildTree(folders: Folder[]): FolderNode[] {
 /**
  * Shared folder source for the Assets Library — one fetch (by the stable
  * `asset-folders` key) reused by the tree, cards, and pickers. Derives the
- * nested `tree` (user folders), splits system vs user, and resolves names by
- * id. Folder filtering itself is server-side; `descendantIds` is only a
- * client mirror for UI needs.
+ * nested `tree` and resolves names by id. Folder filtering itself is
+ * server-side; `descendantIds` is only a client mirror for UI needs.
  */
 export function useFolders(): UseFoldersReturnType {
   const { assetApi } = useGeinsRepository();
@@ -61,12 +58,14 @@ export function useFolders(): UseFoldersReturnType {
     { default: () => [] },
   );
 
+  // The mock's `system` rows (Uncategorised / Archived) are dropped outright:
+  // real Geins.Media has no such folders, Uncategorised is a root query rather
+  // than a row, and Archived has no counterpart at all. cutover: REMOVE@cutover
+  // — the filter dies with the mock. Ledger: docs/domains/assets-cutover.md.
   const folders = computed<Folder[]>(() =>
-    Array.isArray(data.value) ? data.value : [],
+    Array.isArray(data.value) ? data.value.filter((f) => !f.system) : [],
   );
-  const userFolders = computed(() => folders.value.filter((f) => !f.system));
-  const systemFolders = computed(() => folders.value.filter((f) => f.system));
-  const tree = computed(() => buildTree(userFolders.value));
+  const tree = computed(() => buildTree(folders.value));
 
   const byId = computed(() => {
     const map = new Map<string, Folder>();
@@ -96,8 +95,6 @@ export function useFolders(): UseFoldersReturnType {
 
   return {
     folders,
-    userFolders,
-    systemFolders,
     tree,
     folderName,
     descendantIds,

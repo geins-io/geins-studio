@@ -2,6 +2,9 @@ import { describe, it, expect } from 'vitest';
 import {
   assetCapabilities,
   assetEndpoints,
+  assetListOptions,
+  folderIdForSelection,
+  ROOT_FOLDER_KEY,
   assetPreviewUrl,
   contentTypeForUpload,
   mimeToAssetType,
@@ -159,5 +162,30 @@ describe('assetPreviewUrl', () => {
   it('returns null when there is nothing to show', () => {
     expect(assetPreviewUrl('image', '', '')).toBeNull();
     expect(assetPreviewUrl('image')).toBeNull();
+  });
+});
+
+describe('assetListOptions', () => {
+  it('sends no folder scope for All assets', () => {
+    expect(assetListOptions(null)).toBeUndefined();
+  });
+
+  it('scopes to the library root for Uncategorised', () => {
+    // Distinct from `undefined` — the repo turns this into `folderIds: [null]`.
+    expect(assetListOptions(ROOT_FOLDER_KEY)).toEqual({ folderId: null });
+  });
+
+  it('scopes to a folder id', () => {
+    expect(assetListOptions('fld-1')).toEqual({ folderId: 'fld-1' });
+  });
+});
+
+describe('folderIdForSelection', () => {
+  it.each([
+    [null, null],
+    [ROOT_FOLDER_KEY, null],
+    ['fld-1', 'fld-1'],
+  ])('maps %s to %s', (selected, expected) => {
+    expect(folderIdForSelection(selected)).toBe(expected);
   });
 });

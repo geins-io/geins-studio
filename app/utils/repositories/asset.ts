@@ -132,8 +132,10 @@ export function assetRepo(
      * `all: true` is the fetch-all switch (not a huge `pageSize`, which the real
      * schema caps at 1000), so the grid + list sort / paginate / search
      * client-side via TanStack — the app-wide pattern. Folder scope goes over the
-     * wire as `folderIds` (a `null` element = library root); omitted entirely for
-     * the "all assets" view. Returns the unwrapped items.
+     * wire as `folderIds`: a folder id for that subtree, `null` for the library
+     * root (assets with no folder), and omitted entirely for the "all assets"
+     * view — so an explicit `folderId: null` is NOT the same as no options.
+     * Returns the unwrapped items.
      */
     async list(
       options?: AssetApiOptions,
@@ -145,7 +147,9 @@ export function assetRepo(
           method: 'POST',
           body: {
             ...batchQueryMatchAll.value,
-            ...(options?.folderId ? { folderIds: [options.folderId] } : {}),
+            ...(options && options.folderId !== undefined
+              ? { folderIds: [options.folderId] }
+              : {}),
           },
           ...fetchOptions,
         },

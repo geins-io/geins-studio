@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import type { FolderDeleteAssets } from '#shared/types';
+import { ROOT_FOLDER_KEY } from '#shared/utils/asset';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { FolderNode } from '@/composables/useFolders';
 
 /**
  * Folder navigation tree (shadcn Sidebar). "Folders" header, then "All assets",
- * the nested user folders (create subfolder / delete on hover), the locked
- * system folders, and a "New folder" action. Selection via `v-model:selected`
- * (folder id, or `null` for All) drives the server-side `folderId` filter.
+ * the nested folders (create subfolder / delete on hover), the pinned
+ * "Uncategorised" view, and a "New folder" action. Selection via
+ * `v-model:selected` — a folder id, `null` for All, or `ROOT_FOLDER_KEY` for
+ * Uncategorised (assets with no folder) — drives the server-side folder scope.
  * Must be used inside a `SidebarProvider` / `Sidebar`.
  *
  * `readonly` makes the rail selection-only — every folder mutation control
@@ -18,7 +20,7 @@ const props = defineProps<{ readonly?: boolean }>();
 
 const selected = defineModel<string | null>('selected', { default: null });
 
-const { tree, systemFolders, loading, refresh, descendantIds } = useFolders();
+const { tree, loading, refresh, descendantIds } = useFolders();
 const { assetApi } = useGeinsRepository();
 const caps = useAssetCapabilities();
 const { resolveIcon } = useLucideIcon();
@@ -26,8 +28,6 @@ const { toast } = useToast();
 const { t } = useI18n();
 const { geinsLogError } = useGeinsLog('components/AssetFolderTree.vue');
 
-const systemIcon = (name: string) =>
-  resolveIcon(/archiv|arkiv/i.test(name) ? 'Archive' : 'FolderMinus');
 const allIcon = computed(() =>
   resolveIcon(selected.value === null ? 'FolderOpenDot' : 'FolderDot'),
 );
@@ -192,19 +192,20 @@ async function confirmDelete(assets: FolderDeleteAssets = 'move') {
             @delete="requestDelete"
           />
 
-          <SidebarMenuItem v-for="sys in systemFolders" :key="sys._id">
+          <!-- Not a folder row: the library root (assets with no folder), which
+               the API answers as `folderIds: [null]`. -->
+          <SidebarMenuItem>
             <SidebarMenuButton
-              :is-active="selected === sys._id"
-              @click="selected = sys._id"
+              :is-active="selected === ROOT_FOLDER_KEY"
+              @click="selected = ROOT_FOLDER_KEY"
             >
               <span class="size-4 shrink-0" />
-              <component
-                :is="systemIcon(sys.name)"
+              <LucideFolderMinus
                 class="text-muted-foreground"
                 aria-hidden="true"
               />
-              <span :class="selected === sys._id && 'font-semibold'">
-                {{ sys.name }}
+              <span :class="selected === ROOT_FOLDER_KEY && 'font-semibold'">
+                {{ $t('asset_library.uncategorised') }}
               </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
