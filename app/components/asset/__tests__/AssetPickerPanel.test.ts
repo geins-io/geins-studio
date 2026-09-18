@@ -12,8 +12,6 @@ mockNuxtImport('useGeinsRepository', () => () => ({ assetApi }));
 
 mockNuxtImport('useFolders', () => () => ({
   folders: { value: [] },
-  userFolders: { value: [] },
-  systemFolders: { value: [] },
   tree: { value: [] },
   folderName: () => 'Marketing',
   descendantIds: () => [],

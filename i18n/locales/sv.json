@@ -1683,6 +1683,7 @@
     "wizard_no_selection_hint": "Välj en fil för att redigera dess detaljer, eller markera flera för att redigera dem tillsammans.",
     "no_assets_in_folder": "Inga filer i den här mappen",
     "no_folder": "Ingen mapp — okategoriserad",
+    "uncategorised": "Okategoriserade",
     "folder_name": "Mappnamn",
     "delete_folder_title": "Radera “{name}”?",
     "folder_delete_intro": "Den här mappen innehåller {assets}. Välj vad som ska hända med den. | Den här mappen innehåller {assets}. Välj vad som ska hända med dem.",

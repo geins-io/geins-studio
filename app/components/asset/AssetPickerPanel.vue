@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Asset, AssetType } from '#shared/types';
 import { TableMode } from '#shared/types';
+import { assetListOptions } from '#shared/utils/asset';
 import { ENTITIES } from '#shared/utils/entities';
 import { cn } from '@/utils/index';
 import type { ColumnDef } from '@tanstack/vue-table';
@@ -79,10 +80,7 @@ const defaultView = (): 'grid' | 'list' =>
 // sort / paginate are client-side over the fetched list.
 const { data, error, status, refresh } = useAsyncData<Asset[]>(
   'asset-picker-list',
-  () =>
-    assetApi.list(
-      selectedFolder.value ? { folderId: selectedFolder.value } : undefined,
-    ),
+  () => assetApi.list(assetListOptions(selectedFolder.value)),
   { lazy: true, immediate: false, watch: [selectedFolder] },
 );
 

@@ -2,6 +2,11 @@
 import { useMediaQuery } from '@vueuse/core';
 import type { Asset } from '#shared/types';
 import { TableMode } from '#shared/types';
+import {
+  assetListOptions,
+  folderIdForSelection,
+  ROOT_FOLDER_KEY,
+} from '#shared/utils/asset';
 import { ENTITIES } from '#shared/utils/entities';
 import { formatFileSize } from '#shared/utils/file';
 import { cn, segmentedButtonClass } from '@/utils/index';
@@ -32,10 +37,15 @@ const search = ref('');
 // template uses to switch from overlay-drawer to inline) so the active folder
 // filter is always visible; below sm it starts closed and overlays on demand.
 const showFolders = ref(useMediaQuery('(min-width: 640px)').value);
-// Selected folder id (null = All assets); drives the server-side filter.
-// Browse state (folder + page + page size) is restored from / synced to the URL.
+// Rail selection: a folder id, `null` for All assets, or `ROOT_FOLDER_KEY` for
+// Uncategorised — all three drive the server-side folder scope. Browse state
+// (folder + page + page size) is restored from / synced to the URL.
 const selectedFolder = ref<string | null>(
   (route.query.folder as string) || null,
+);
+// Uncategorised is a query, not a folder, so uploads from there land at the root.
+const uploadFolderId = computed(() =>
+  folderIdForSelection(selectedFolder.value),
 );
 const uploadOpen = ref(false);
 
@@ -57,10 +67,7 @@ const columns = ref<ColumnDef<Asset>[]>([]);
 
 const { data, error, refresh } = await useAsyncData<Asset[]>(
   'asset-library-list',
-  () =>
-    assetApi.list(
-      selectedFolder.value ? { folderId: selectedFolder.value } : undefined,
-    ),
+  () => assetApi.list(assetListOptions(selectedFolder.value)),
   { watch: [selectedFolder] },
 );
 
@@ -84,7 +91,7 @@ const emptyIcon = computed(
 const emptyTitle = computed(() =>
   isSearching.value
     ? t('no_entity_found', { entityKey }, 2)
-    : selectedFolder.value
+    : selectedFolder.value && selectedFolder.value !== ROOT_FOLDER_KEY
       ? t('asset_library.no_assets_in_folder')
       : t('no_entity', { entityKey }, 2),
 );
@@ -310,7 +317,7 @@ async function confirmDelete() {
 <template>
   <AssetUploadDialog
     v-model:open="uploadOpen"
-    :default-folder-id="selectedFolder"
+    :default-folder-id="uploadFolderId"
   />
   <AssetDetailPanel
     v-model:open="detailOpen"

@@ -193,7 +193,13 @@ export interface AssetPickerOptions {
 
 /** Query options for listing assets — folder filter + free-text search + paging. */
 export interface AssetApiOptions extends ApiOptions<keyof AssetBase> {
-  folderId?: string;
+  /**
+   * Folder scope. A folder id scopes to that folder + its descendants, `null`
+   * scopes to the library root (assets with no folder), and omitting it means
+   * every folder — the three are distinct queries, so `null` must survive as a
+   * value rather than collapse into "no filter".
+   */
+  folderId?: string | null;
   search?: string;
   page?: string;
 }

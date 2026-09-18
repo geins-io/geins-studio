@@ -13,7 +13,17 @@ The Assets domain manages media files (images, SVGs, documents, PDFs, video, aud
 
 ## Key Concepts
 
-**Folder = backend category filter** — Folders are an adjacency list (`parentFolderId`, self-referential). A folder is not client-side tree math: selecting one sends a `folderId` filter to the API, which returns that folder **plus all descendants**. Two locked **system folders** (`Uncategorised`, `Archived`, `system: true`) are server-owned and not user-creatable; "All assets" is a UI concept (no filter), not a row.
+**Folder = backend category filter** — Folders are an adjacency list (`parentFolderId`, self-referential). A folder is not client-side tree math: selecting one sends a `folderId` filter to the API, which returns that folder **plus all descendants**.
+
+**Three folder scopes, not two** — the rail's selection maps to list options via `assetListOptions` (`#shared/utils/asset`):
+
+| Rail entry    | Selection         | List options       | Wire (`assetQuery`)   |
+| ------------- | ----------------- | ------------------ | --------------------- |
+| All assets    | `null`            | `undefined`        | no `folderIds`        |
+| Uncategorised | `ROOT_FOLDER_KEY` | `folderId: null`   | `folderIds: [null]`   |
+| A folder      | folder id         | `folderId: '<id>'` | `folderIds: ['<id>']` |
+
+**Uncategorised is a query, not a folder row** — assets with no folder are `folderId: null` on the real API, so the rail pins the entry itself. `folderId: null` and an omitted `folderId` must stay distinct all the way to the body; collapsing them turns the Uncategorised view into "everything". The mock's locked `system` folders (`Uncategorised`, `Archived`) are seed rows with no real counterpart: `useFolders` filters them out, and **Archived is gone** — deleted assets go to trash for 30 days, which is the real version of that idea (trash view + restore: STU-352).
 
 **Asset types** (`AssetType`) — `image | svg | doc | pdf | video | audio | other`. Drives the type badge and thumbnail rendering.
 
@@ -130,7 +140,7 @@ The real surface is not the mock's paths with a prefix swapped — verified agai
 - No `/tags` and no `/replace` route exists — both are already gated off under `media-phase1`.
 - **`POST /media/assets/{id}/relocate`** renames _and_ moves an asset; there is no `name`/`folderId` in the phase-1 `PATCH` surface. Both backends therefore support rename + move, so neither has a capability flag.
 - Real assets carry **no `tags` and no `channels` fields at all** (the mock always sends arrays), so both are optional on `AssetBase`. Every read site must tolerate `undefined` — a bare `asset.tags.length` in `AssetCard` blanked the entire grid when the first real assets landed (the render error tears down the subtree; the pagination footer outside it survives, which is what the symptom looks like).
-- Folders follow `media_response_folder`: `path` (lowercased full path, **not** `fullPath`), `depth`, `createdBy`/`createdAt`/`updatedAt`. `sortOrder` and `system` (Uncategorised / Archived) exist **only** in the mock and are optional on the type.
+- Folders follow `media_response_folder`: `path` (lowercased full path, **not** `fullPath`), `depth`, `createdBy`/`createdAt`/`updatedAt`. `sortOrder` and `system` (Uncategorised / Archived) exist **only** in the mock and are optional on the type; `useFolders` drops every `system` row, so the mock's seed folders never reach the UI.
 - A folder update is a **full replace** — real `PUT /media/folders/{id}` requires `name` on every call, so `FolderUpdate` is `CreateEntity<FolderBase>`: a move sends the current name, a rename sends the current `parentFolderId`. (No rename/move UI exists yet.)
 - `thumbUrl` comes back as `''`. `AssetThumbnail` / `TableCellAssetThumbnail` therefore preview the full-size `url` for `image`/`svg` assets (`assetPreviewUrl`), so the library shows pictures rather than a wall of type icons. Full-size files in grid tiles is the trade-off until Geins.Media serves thumbnails.
 

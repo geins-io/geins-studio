@@ -1,15 +1,17 @@
 # `useFolders`
 
-The `useFolders` composable is the single shared source of Assets Library folders. It fetches the folder list once (by the stable `asset-folders` key, so every consumer shares the same data) and derives the nested tree, the system/user split, and name-by-id lookup.
+The `useFolders` composable is the single shared source of Assets Library folders. It fetches the folder list once (by the stable `asset-folders` key, so every consumer shares the same data) and derives the nested tree and name-by-id lookup.
 
 :::tip NOTE
 Folder **filtering** is server-side — the library page sends `folderId` to `assetApi.list` and the backend resolves descendants. `descendantIds` here is only a client mirror for UI needs.
+
+"Uncategorised" is **not** a folder row: it is the library-root query (`folderId: null`), built from `assetListOptions` / `ROOT_FOLDER_KEY` in `#shared/utils/asset`. See [`AssetFolderTree`](/components/asset/AssetFolderTree).
 :::
 
 ## Usage
 
 ```ts
-const { tree, systemFolders, folderName, loading, refresh } = useFolders();
+const { tree, folderName, loading, refresh } = useFolders();
 
 // resolve a name for a card / row
 const name = folderName(asset.folderId);
@@ -27,16 +29,7 @@ await refresh();
 folders: ComputedRef<Folder[]>;
 ```
 
-All folders (flat), normalized to an array.
-
-### `userFolders` / `systemFolders`
-
-```ts
-userFolders: ComputedRef<Folder[]>;
-systemFolders: ComputedRef<Folder[]>;
-```
-
-Split on the `system` flag. System folders (`Uncategorised`, `Archived`) are server-owned and locked; user folders are editable.
+All folders (flat), normalized to an array. The Supabase mock's locked `system` rows (`Uncategorised`, `Archived`) are filtered out — real Geins.Media has no system folders, and the filter drops with the mock.
 
 ### `tree`
 
@@ -44,7 +37,7 @@ Split on the `system` flag. System folders (`Uncategorised`, `Archived`) are ser
 tree: ComputedRef<FolderNode[]>;
 ```
 
-The **user** folders nested via `parentFolderId`, sorted by `sortOrder` then name at each level. `FolderNode` is a `Folder` plus a `children: FolderNode[]` array.
+The folders nested via `parentFolderId`, sorted by `sortOrder` then name at each level. `FolderNode` is a `Folder` plus a `children: FolderNode[]` array.
 
 ### `folderName`
 
