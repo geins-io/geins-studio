@@ -11,14 +11,20 @@ interface UseProductMatchReturnType {
    * number OR product id link; everything else returns null.
    */
   matchOf: (file: File) => ProductMatch | null;
+  /**
+   * Resolve a product by article number or product id, or null. Feeds the asset
+   * "Used in" section, where an `AssetLink.targetId` is all the API gives back.
+   */
+  matchById: (id: string) => ProductMatch | null;
 }
 
 /**
- * Resolves which product an image upload links to, by matching the filename ref
- * (text before the first `_`) against the account's products — article number
- * or product id, whichever hits. Reads the shared products store (already loaded
- * + transformed after auth, so its `thumbnail` is a ready image URL), so no
- * extra fetch and no duplicated transform.
+ * Resolves a product from a reference — either an upload's filename ref (text
+ * before the first `_`, via `matchOf`) or a bare id from elsewhere (`matchById`,
+ * used by the asset "Used in" section) — matching it against the account's
+ * products by article number or product id, whichever hits. Reads the shared
+ * products store (already loaded + transformed after auth, so its `thumbnail` is
+ * a ready image URL), so no extra fetch and no duplicated transform.
  *
  * cutover: REVISIT@phase2 — the ref → product lookup is the backend's job. For
  * now we match on the client over the full product list; phase 2 pushes the
@@ -39,28 +45,47 @@ export function useProductMatch(): UseProductMatchReturnType {
   // Keys normalized (trim + lowercase) so a filename ref matches regardless of
   // case — article numbers / ids are case-insensitive-unique in practice.
   const norm = (v: string | number): string => String(v).trim().toLowerCase();
+  // Geins.Media strips a product id's leading zeros before writing an asset
+  // link, so `033126` comes back as `33126` and would miss the raw key. Indexed
+  // as an extra alias (never replacing the raw key) so both spellings resolve.
+  const unpadded = (v: string): string => v.replace(/^0+(?=.)/, '');
 
   const index = computed(() => {
     const map = new Map<string, ProductMatch>();
-    for (const p of products.value) {
-      const match: ProductMatch = {
+    const add = (key: string, match: ProductMatch) => {
+      // First writer wins: a real key must never be shadowed by another
+      // product's zero-stripped alias.
+      if (!map.has(key)) map.set(key, match);
+    };
+    const matches = products.value.map((p) => ({
+      keys: [p.articleNumber, p._id].filter(Boolean).map((k) => norm(k!)),
+      match: {
         _id: p._id,
         name: p.name,
         articleNumber: p.articleNumber,
         thumbnail: p.thumbnail,
-      };
-      if (p.articleNumber) map.set(norm(p.articleNumber), match);
-      if (p._id) map.set(norm(p._id), match);
-    }
+      } satisfies ProductMatch,
+    }));
+    for (const { keys, match } of matches)
+      for (const key of keys) add(key, match);
+    // Aliases go in a second pass so every exact key is already claimed.
+    for (const { keys, match } of matches)
+      for (const key of keys) add(unpadded(key), match);
     return map;
   });
+
+  function matchById(id: string): ProductMatch | null {
+    const key = norm(id);
+    if (!key) return null;
+    return index.value.get(key) ?? index.value.get(unpadded(key)) ?? null;
+  }
 
   function matchOf(file: File): ProductMatch | null {
     if (mimeToAssetType(file.type) !== 'image') return null;
     const ref = parseProductRef(file.name);
     if (!ref) return null;
-    return index.value.get(norm(ref)) ?? null;
+    return matchById(ref);
   }
 
-  return { pending, matchOf };
+  return { pending, matchOf, matchById };
 }

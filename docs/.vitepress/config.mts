@@ -303,6 +303,10 @@ export default defineConfig({
                 link: '/components/asset/AssetDetailPanel.md',
               },
               {
+                text: 'AssetUsedIn',
+                link: '/components/asset/AssetUsedIn.md',
+              },
+              {
                 text: 'AssetFolderTree',
                 link: '/components/asset/AssetFolderTree.md',
               },
