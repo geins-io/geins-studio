@@ -72,6 +72,7 @@ export default defineEventHandler(
         mimeType: file.mimeType,
         sizeBytes: file.sizeBytes,
         overwrite: !!file.overwrite,
+        localizations: file.localizations ?? {},
         storagePath: `${assetId}/${safeName}`,
         hasBytes: false,
         url: null,

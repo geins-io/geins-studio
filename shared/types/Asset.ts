@@ -81,22 +81,37 @@ export interface AssetRelocate {
 // Upload ticket flow (Geins.Media 3-step upload: ticket → PUT bytes → complete)
 //
 // Phase 1 uploads claim a ticket, PUT bytes straight to storage via a returned
-// plan URL, then confirm with `complete`. No metadata rides along — the ticket
-// carries only name/folder/size/mime/overwrite; richer metadata waits for the
-// phase-2 metadata routes. Mock-emulated today (see server/api/asset/tickets*).
+// plan URL, then confirm with `complete`. The claim carries metadata too —
+// description / alt text / localizations / product links are applied when the
+// ticket completes, so an upload needs no follow-up write. Mock-emulated today
+// (see server/api/asset/tickets*), which applies `localizations` and ignores
+// `productIds`.
 // =============================================================================
 
 /** One file's claim in a ticket request. */
 export interface UploadTicketFile {
   /** Client-generated id used to match results back to the source file. */
   clientRef: string;
+  /**
+   * Target folder. `null` is the library root; **omitting it** puts the claim in
+   * path mode — the folders named by `name`'s leading segments are created as
+   * needed (`campaigns/hero.jpg` creates `campaigns`).
+   */
   folderId?: string | null;
-  /** Bare file name when `folderId` is set; may carry path segments at root. */
+  /** Bare file name when `folderId` is set; otherwise a path, last segment the file. */
   name: string;
   sizeBytes: number;
   mimeType: string;
   /** Overwrite an existing asset at the path (else `PATH_ALREADY_EXISTS`). */
   overwrite?: boolean;
+  /** Default-language description, applied on complete. */
+  description?: string;
+  /** Default-language alt text, applied on complete. */
+  altText?: string;
+  /** Per-locale `{ description, altText }`, applied on complete. */
+  localizations?: Localized<AssetLocalizations>;
+  /** Already-resolved products to link the published asset to (max 100). */
+  productIds?: string[];
 }
 
 /** How to upload one accepted file's bytes. `single` now; `parts` is phase 2. */

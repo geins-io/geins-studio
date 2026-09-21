@@ -246,6 +246,59 @@ describe('assetRepo', () => {
       vi.unstubAllGlobals();
     });
 
+    it('forwards claim metadata + productIds, and omits folderId in path mode', async () => {
+      const put = vi.fn().mockResolvedValue({ ok: true });
+      vi.stubGlobal('fetch', put);
+      mockFetch
+        .mockResolvedValueOnce({ ticketId: 't1', expiresAt: 'x', results: [] })
+        .mockResolvedValueOnce({ results: [] });
+
+      await api.uploadViaTickets([
+        {
+          file: new File(['x'], 'a.png', { type: 'image/png' }),
+          clientRef: 'a',
+          folderId: null,
+          localizations: { en: { altText: 'Logo' } },
+          productIds: ['p1'],
+        },
+        {
+          // No folderId at all → path mode: the backend creates `campaigns`.
+          file: new File(['x'], 'hero.png', { type: 'image/png' }),
+          clientRef: 'b',
+          name: 'campaigns/hero.png',
+        },
+      ]);
+
+      expect(mockFetch).toHaveBeenNthCalledWith(
+        1,
+        '/asset/tickets',
+        expect.objectContaining({
+          body: {
+            files: [
+              {
+                clientRef: 'a',
+                folderId: null,
+                name: 'a.png',
+                sizeBytes: 1,
+                mimeType: 'image/png',
+                overwrite: false,
+                localizations: { en: { altText: 'Logo' } },
+                productIds: ['p1'],
+              },
+              {
+                clientRef: 'b',
+                name: 'campaigns/hero.png',
+                sizeBytes: 1,
+                mimeType: 'image/png',
+                overwrite: false,
+              },
+            ],
+          },
+        }),
+      );
+      vi.unstubAllGlobals();
+    });
+
     it('chunks over the per-ticket file cap into separate ticket claims', async () => {
       const put = vi.fn().mockResolvedValue({ ok: true });
       vi.stubGlobal('fetch', put);

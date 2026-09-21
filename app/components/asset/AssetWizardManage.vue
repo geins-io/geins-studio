@@ -17,10 +17,10 @@ const { folderName } = useFolders();
 const { files, settingsOf, patchSettings, removeFiles, linkProducts } =
   useUploadWizardContext();
 const { matchOf } = useProductMatch();
-// Phase-1 tickets persist name + folder (at create) and description + alt text
-// (a follow-up PATCH); tags + channels have no route yet, so those fields are
-// disabled under a real backend. Values still live in the wizard state — nothing
-// is lost if a later phase enables them.
+// Name, folder, description and alt text all ride the ticket claim; tags +
+// channels have no route yet, so those fields are disabled under a real backend.
+// Values still live in the wizard state — nothing is lost if a later phase
+// enables them.
 const caps = useAssetCapabilities();
 
 // An image whose filename ref resolves to a product (only when auto-link is on).
