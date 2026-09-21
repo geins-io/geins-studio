@@ -7,7 +7,7 @@ In `selectable` mode (the asset picker) the tile becomes a selection target inst
 In `trashed` mode (the library's Trash view) the tile is inert apart from its menu: the thumbnail button is disabled, the name renders as plain text, and the menu offers **Restore** only.
 
 :::tip NOTE
-"Used in" is deferred (no data).
+The tile shows no usage. Usage lives in the detail panel's "Where it's used" section ([`AssetUsedIn`](/components/asset/AssetUsedIn)) — it needs a per-asset request, which a grid of tiles can't afford.
 :::
 
 ## Usage

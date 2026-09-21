@@ -179,14 +179,15 @@ export function assetEndpoints(backend: AssetsBackend): AssetEndpoints {
 }
 
 /**
- * Feature availability for a given backend. Everything is on for the `mock`.
- * `media-phase1` reflects the shipped Geins.Media surface: browse + upload, plus
- * `PATCH` (description/altText/localizations), `POST …/relocate` (rename + move)
- * and `DELETE` (+ restore). Those are available on both backends, so they have
- * no flag here; tags, channels, replace, thumbnails, tag-autocomplete and the
- * folder-delete asset disposition (phase 1 deletes empty folders only) stay
- * gated to the mock until phase 2. Pure so it can be unit-tested and reused by
- * `useAssetCapabilities`.
+ * Feature availability for a given backend. `media-phase1` reflects the shipped
+ * Geins.Media surface: browse + upload, plus `PATCH` (description/altText/
+ * localizations), `POST …/relocate` (rename + move) and `DELETE` (+ restore).
+ * Those are available on both backends, so they have no flag here; tags,
+ * channels, replace, thumbnails, tag-autocomplete and the folder-delete asset
+ * disposition (phase 1 deletes empty folders only) stay gated to the mock until
+ * phase 2. The gating runs both ways: trash and usage links exist only on the
+ * real API, so those two are off for the mock. Pure so it can be unit-tested and
+ * reused by `useAssetCapabilities`.
  *
  * cutover: REVISIT@phase2 — the whole capability mechanism is temporary; remove
  * it (+ its consumers) once phase 2 restores the gated features. Ledger:
@@ -208,6 +209,8 @@ export function assetCapabilities(backend: AssetsBackend): AssetCapabilities {
     hasThumbnails: mock,
     // Soft delete + restore is real-only; the mock deletes the row outright.
     hasTrash: !mock,
+    // Usage links are real-only — the mock has no `{id}/links` route.
+    hasUsageLinks: !mock,
   };
 }
 

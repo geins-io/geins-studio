@@ -1,6 +1,7 @@
 import type {
   Asset,
   AssetCreate,
+  AssetLink,
   AssetLocalizations,
   AssetRelocate,
   AssetsBackend,
@@ -170,6 +171,24 @@ export function assetRepo(
         },
       );
       return res.items;
+    },
+
+    /**
+     * What this asset is linked to outside the library — real
+     * `GET /media/assets/{id}/links`. The backend resolves nothing: a link to a
+     * since-deleted product still comes back, and no display name is included,
+     * so the caller resolves `targetId` itself. Read-only; failures surface
+     * inline, not via a toast. Real-only (`hasUsageLinks`) — the mock has no
+     * such route, so callers must gate on the capability.
+     */
+    async links(
+      id: string,
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<AssetLink[]> {
+      const res = await fetch<AssetLink[]>(`${endpoints.asset}/${id}/links`, {
+        ...fetchOptions,
+      });
+      return Array.isArray(res) ? res : [];
     },
 
     /**

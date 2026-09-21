@@ -129,10 +129,10 @@ The mock lives entirely under `server/` and never reaches the client:
 
 `NUXT_PUBLIC_ASSETS_BACKEND` switches the **whole library** between the Supabase mock and real Geins.Media, at runtime config level:
 
-| Value            | Routes                                              | Notes                                                                 |
-| ---------------- | --------------------------------------------------- | --------------------------------------------------------------------- |
-| `mock` (default) | `/asset`, `/asset/folder`, `/asset/tickets`         | Nitro mock routes under `server/api/asset/**`. Every capability on.   |
-| `media-phase1`   | `/media/assets`, `/media/folders`, `/media/tickets` | Catch-all proxy → Geins Media API. Phase-1 capability gating applies. |
+| Value            | Routes                                              | Notes                                                                                                              |
+| ---------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `mock` (default) | `/asset`, `/asset/folder`, `/asset/tickets`         | Nitro mock routes under `server/api/asset/**`. Every capability on except the real-only ones (trash, usage links). |
+| `media-phase1`   | `/media/assets`, `/media/folders`, `/media/tickets` | Catch-all proxy → Geins Media API. Phase-1 capability gating applies.                                              |
 
 The routes come from [`assetEndpoints(backend)`](shared/utils/asset.ts) — the same flag that drives [`useAssetCapabilities`](/composables/useAssetCapabilities), so transport and feature gating can never disagree. The entity registry (`ENTITIES.asset` / `ENTITIES.folder`) holds the **real** paths; the mock is the temporary override that dies at final cutover.
 
@@ -147,6 +147,19 @@ The real surface is not the mock's paths with a prefix swapped — verified agai
 - Folders follow `media_response_folder`: `path` (lowercased full path, **not** `fullPath`), `depth`, `createdBy`/`createdAt`/`updatedAt`. `sortOrder` and `system` (Uncategorised / Archived) exist **only** in the mock and are optional on the type; `useFolders` drops every `system` row, so the mock's seed folders never reach the UI.
 - A folder update is a **full replace** — real `PUT /media/folders/{id}` requires `name` on every call, so `FolderUpdate` is `CreateEntity<FolderBase>`: a move sends the current name, a rename sends the current `parentFolderId`. (No rename/move UI exists yet.)
 - `thumbUrl` comes back as `''`. `AssetThumbnail` / `TableCellAssetThumbnail` therefore preview the full-size `url` for `image`/`svg` assets (`assetPreviewUrl`), so the library shows pictures rather than a wall of type icons. Full-size files in grid tiles is the trade-off until Geins.Media serves thumbnails.
+- **`GET /media/assets/{id}/links`** returns a **bare array** of `media_response_assetLink` — the asset usage behind the panel's "Where it's used" section. The mock has no such route, so it is gated on `hasUsageLinks`.
+
+### Usage links ("Where it's used")
+
+A link is `{ assetId, targetType, targetId, createdBy?, createdAt }`. Three properties of the contract drive how [`AssetUsedIn`](/components/asset/AssetUsedIn) reads it:
+
+- **No display name, and the server resolves nothing.** Only `targetId` comes back, so the client resolves it — `product` targets go through [`useProductMatch`](/composables/useProductMatch)'s `matchById` against the products store.
+- **A link outlives its target.** A link to a since-deleted product is still returned. It won't resolve, so it renders as a plain `targetType · targetId` row rather than being dropped — the usage is real, and hiding it would under-report.
+- **`targetType` is an open string.** Only `product` is writable, but the spec states values a release doesn't name are still returned, so it is typed as `string` (not an enum) and unknown types render.
+
+A product `targetId` has its **leading zero stripped** when the link is written (`033126` → `33126`), which `matchById` compensates for with zero-stripped aliases in its index.
+
+Writing links (`POST` / `DELETE .../links`) is not wired — Studio has no product edit page to drive it from. Note the response also carries `_type` with no `_id`; `AssetLink` deliberately omits it (`ResponseEntity` would add an `_id` the API never sends).
 
 `x-account-key` needs **no** transport work: [`geins-api.ts`](app/plugins/geins-api.ts) sets it on every request from the session's account key, and the catch-all proxy forwards headers verbatim. The real API also accepts `x-functions-key` (Azure function app key) for direct function-host access — not used when calls go through the Geins gateway.
 
@@ -161,7 +174,7 @@ Folder shape parity (STU-353) shipped with the switch — see the two folder bul
 ## Dependencies
 
 - **Depends on**: account/channel language setup (alt-text locales).
-- **Depended on by**: (future) Products (product images), CMS. Usage tracking ("Used in") is deferred post-v0 — data not available.
+- **Depended on by**: (future) Products (product images), CMS. Usage tracking ("Where it's used") reads `GET /media/assets/{id}/links` on the real backend — see below.
 
 ## Key Files
 

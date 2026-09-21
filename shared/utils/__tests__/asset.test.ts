@@ -49,7 +49,7 @@ describe('mimeToAssetType', () => {
 });
 
 describe('assetCapabilities', () => {
-  it('enables every gated feature for the mock backend, except trash', () => {
+  it('enables every gated feature for the mock backend, except the real-only ones', () => {
     const caps = assetCapabilities('mock');
     expect(caps).toEqual({
       backend: 'mock',
@@ -63,6 +63,8 @@ describe('assetCapabilities', () => {
       hasThumbnails: true,
       // The mock hard-deletes, so there is nothing to restore.
       hasTrash: false,
+      // The mock has no `{id}/links` route, so there is no usage to show.
+      hasUsageLinks: false,
     });
   });
 
@@ -83,6 +85,8 @@ describe('assetCapabilities', () => {
     expect(caps.hasThumbnails).toBe(false);
     // DELETE is soft on Geins.Media — trash + restore is real-only.
     expect(caps.hasTrash).toBe(true);
+    // `GET {id}/links` is real-only too.
+    expect(caps.hasUsageLinks).toBe(true);
   });
 });
 

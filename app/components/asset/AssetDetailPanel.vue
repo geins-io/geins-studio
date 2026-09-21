@@ -16,8 +16,10 @@ import { formatFileSize } from '#shared/utils/file';
 /**
  * Asset detail/edit panel — the standard slide-in edit panel (PanelEdit) for a
  * single asset. Editable metadata (name, folder, description, tags, channels)
- * plus read-only info. Alt text (translation panel), actions, and replace are
- * separate. Opened from the library card/row via `v-model:open` + `:asset`.
+ * plus read-only info and, on the real backend, a "Where it's used" section
+ * ([AssetUsedIn](/components/asset/AssetUsedIn)). Alt text (translation panel),
+ * actions, and replace are separate. Opened from the library card/row via
+ * `v-model:open` + `:asset`.
  */
 const props = defineProps<{ asset: Asset | null }>();
 const open = defineModel<boolean>('open', { default: false });
@@ -483,6 +485,10 @@ async function handleDelete() {
           <dd>{{ asset.createdBy }}</dd>
         </div>
       </dl>
+
+      <div v-if="caps.hasUsageLinks" class="mt-6 border-t pt-6">
+        <AssetUsedIn :asset-id="asset._id" />
+      </div>
 
       <div class="mt-6 border-t pt-6">
         <div class="flex items-center justify-between gap-4">

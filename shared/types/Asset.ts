@@ -77,6 +77,36 @@ export interface AssetRelocate {
   folderId: string | null;
 }
 
+/**
+ * A link from an asset to something outside the media library
+ * (`media_response_assetLink`, returned by `GET /media/assets/{id}/links`).
+ *
+ * The library owns the link, not the thing it points at: nothing server-side
+ * resolves a target, so a link to a since-deleted product is still returned and
+ * no display name comes with it — the client resolves `targetId` itself (see
+ * `useProductMatch`) and falls back to the raw id.
+ *
+ * The response also carries `_type`, which is deliberately absent here: it is
+ * unused, there is no `_id` to pair it with (so `ResponseEntity` would lie), and
+ * declaring `_type` on its own is a hard block.
+ */
+export interface AssetLink {
+  assetId: string;
+  /**
+   * What the link points at. Only `product` can be written today, but the API
+   * documents that it returns values this release does not name — so this stays
+   * an open string and readers must tolerate an unknown one.
+   */
+  targetType: string;
+  /**
+   * The target's id as stored. A product id has its leading zero stripped when
+   * the link is written, so matching it back to a product must tolerate that.
+   */
+  targetId: string;
+  createdBy?: string | null;
+  createdAt: string;
+}
+
 // =============================================================================
 // Upload ticket flow (Geins.Media 3-step upload: ticket → PUT bytes → complete)
 //
@@ -337,6 +367,11 @@ export interface AssetCapabilities {
    * listing it. The mock hard-deletes, so it has no trash to show.
    */
   hasTrash: boolean;
+  /**
+   * Asset usage ("Used in") is readable via `GET /media/assets/{id}/links`. The
+   * mock has no such route, so the section is real-only.
+   */
+  hasUsageLinks: boolean;
   /** Suggest existing tags from the distinct-tags source. */
   tagAutocomplete: boolean;
   /** Backend produces real thumbnails (`thumbUrl`); phase 1 returns null. */
