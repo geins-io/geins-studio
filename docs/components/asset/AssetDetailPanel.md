@@ -2,7 +2,7 @@
 
 `AssetDetailPanel` is the slide-in detail/edit panel for a single asset, built on [`PanelEdit`](/components/panel/PanelEdit). It edits the asset's metadata and shows read-only info; the library page opens it from a grid card or list row.
 
-It is the first real consumer of the `PanelEdit` primitive — the unsaved-changes guard comes from vee-validate's `meta.dirty` fed into `PanelEdit`.
+It is the first real consumer of the `PanelEdit` primitive. The unsaved-changes guard comes from [`usePanelDirty`](/composables/usePanelDirty) fed into `PanelEdit`'s `:dirty`, **or** from an unsaved inline folder name held by [`AssetFolderPicker`](/components/asset/AssetFolderPicker) ([`usePendingCommits`](/composables/usePendingCommits)'s `hasPending`) — so a typed-but-unsaved folder name enables **Save** and is created by it, instead of disappearing with the panel.
 
 ## Usage
 

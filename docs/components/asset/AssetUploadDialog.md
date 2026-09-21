@@ -62,7 +62,7 @@ Dialog visibility. Selected files + folder reset each time it opens.
 ## Behaviour
 
 - **Files** — drag/drop onto the zone or click to browse (multiple by default; single when `multiple` is `false`); each file lists its name + size with a remove button.
-- **Folder** — a `Select` of all folders (or "No folder — uncategorised"), plus **New folder** which reveals an inline name input and creates via `assetApi.folder.create` (then selects it).
+- **Folder** — a `Select` of all folders (or "No folder — uncategorised"), plus **New folder** which reveals an inline name input and creates via `assetApi.folder.create` (then selects it). A name left unsaved in that input is created by **Upload** itself ([`usePendingCommits`](/composables/usePendingCommits)), so the files never land at the root by accident; if that create fails, the upload stops.
 - **Upload** — calls [`assetApi.uploadViaTickets`](/domains/assets) with `{ file, folderId }` per file (no metadata); refreshes `asset-library-list`. Completed files emit via `uploaded` and toast a count (or "X of Y" on a partial); rejections map to friendly copy via `uploadRejectionMessageKey` and show inline only when nothing landed.
 
 ## Dependencies

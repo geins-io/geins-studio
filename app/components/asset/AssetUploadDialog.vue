@@ -41,6 +41,7 @@ const open = defineModel<boolean>('open', { default: false });
 const emit = defineEmits<{ uploaded: [assets: Asset[]] }>();
 
 const { assetApi } = useGeinsRepository();
+const { commitPending } = providePendingCommits();
 const { resolveIcon } = useLucideIcon();
 const { toast } = useToast();
 const { t } = useI18n();
@@ -106,13 +107,16 @@ async function upload() {
   if (!files.value.length) return;
   uploading.value = true;
   rejected.value = [];
-  // Index as clientRef so a rejection maps back to its file (for the reason list).
-  const items = files.value.map((file, i) => ({
-    file,
-    clientRef: String(i),
-    folderId: folderId.value,
-  }));
   try {
+    // A folder name typed into the picker but never saved is created first,
+    // so the files land in it instead of silently at the library root.
+    if (!(await commitPending())) return;
+    // Index as clientRef so a rejection maps back to its file (for the reason list).
+    const items = files.value.map((file, i) => ({
+      file,
+      clientRef: String(i),
+      folderId: folderId.value,
+    }));
     const results = await assetApi.uploadViaTickets(items);
     await refreshNuxtData('asset-library-list');
     const created = results.flatMap((r) =>

@@ -113,6 +113,10 @@ export default defineConfig({
               { text: 'usePrice', link: '/composables/usePrice.md' },
               { text: 'usePanelStack', link: '/composables/usePanelStack.md' },
               { text: 'usePanelDirty', link: '/composables/usePanelDirty.md' },
+              {
+                text: 'usePendingCommits',
+                link: '/composables/usePendingCommits.md',
+              },
               { text: 'useAssetActions', link: '/composables/useAssetActions.md' },
               {
                 text: 'useAssetCapabilities',

@@ -29,6 +29,7 @@ const { assetApi } = useGeinsRepository();
 const { formatDate } = useDate();
 const { geinsLogError } = useGeinsLog('components/AssetDetailPanel.vue');
 const { copyUrl, download, deleteAsset } = useAssetActions();
+const { hasPending, commitPending } = providePendingCommits();
 const caps = useAssetCapabilities();
 
 const entityKey = ENTITIES.asset.key;
@@ -92,6 +93,9 @@ interface AssetFormValues {
 // `form.meta.dirty` false-positives on open (undefined fields settling +
 // child input mount emits), so derive dirty from a post-settle snapshot.
 const { isDirty, captureBaseline } = usePanelDirty(() => form.values);
+// An unsaved inline folder name is unsaved work too: it enables Save and trips
+// the close guard, so it can be committed instead of lost with the panel.
+const dirty = computed(() => isDirty.value || hasPending.value);
 
 // description + altText are LocalizedText maps (locale→string) bound to
 // FormTranslatableField, mapped to/from the wire `localizations` shape at
@@ -167,6 +171,9 @@ watch(open, (value) => {
 // body: they are not part of the phase-1 update surface.
 async function handleSave() {
   if (!props.asset) return;
+  // Create a folder name typed into the picker but never saved — it feeds the
+  // folderId read below, so skipping it would move the asset to the old folder.
+  if (!(await commitPending())) return;
   const result = await form.validate();
   if (!result.valid) return;
   const asset = props.asset;
@@ -258,9 +265,9 @@ async function handleDelete() {
     width="narrow"
     :title="asset?.name ?? $t(entityKey, 1)"
     :entity-key="entityKey"
-    :dirty="isDirty"
+    :dirty="dirty"
     :loading="loading"
-    :save-disabled="!isDirty"
+    :save-disabled="!dirty"
     @save="handleSave"
   >
     <template v-if="asset">
