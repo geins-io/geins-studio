@@ -22,7 +22,7 @@ All edits write straight into the shared wizard state via [`useUploadWizard`](/c
 
 `name`, folder ([`AssetFolderPicker`](/components/asset/AssetFolderPicker)), alt text for images ([`FormTranslatableField`](/components/form/FormTranslatableField)), channels (`FormInputChannels`), description, and tags (`FormInputTagsSearch`, autocompleted from `assetApi.listTags()`). Each binds to the active file's `WizardFileSettings` through `patchSettings`.
 
-**Capability gating.** `name` + folder persist via the ticket claim, and description + alt text via a follow-up `PATCH` after upload — all editable. **Tags + channels** have no phase-1 upload route, so under a non-mock backend they render in a disabled `<fieldset>` with a "not saved yet" hint (`useAssetCapabilities` → `canEditTags` / `canEditChannels`); values are still held in wizard state. Tag autocomplete only fetches when `tagAutocomplete` is on. The bulk pane ([`AssetWizardBulkPane`](/components/asset/AssetWizardBulkPane)) gates the same two fields. (`cutover: REVISIT@phase2`.)
+**Capability gating.** `name` + folder + description + alt text all persist via the ticket claim itself (applied when the upload completes, no follow-up write) — all editable. **Tags + channels** have no phase-1 upload route, so under a non-mock backend they render in a disabled `<fieldset>` with a "not saved yet" hint (`useAssetCapabilities` → `canEditTags` / `canEditChannels`); values are still held in wizard state. Tag autocomplete only fetches when `tagAutocomplete` is on. The bulk pane ([`AssetWizardBulkPane`](/components/asset/AssetWizardBulkPane)) gates the same two fields. (`cutover: REVISIT@phase2`.)
 
 ## Dependencies
 

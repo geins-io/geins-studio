@@ -1,5 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import type { UploadRejectionCode } from '#shared/types';
+import type {
+  AssetLocalizations,
+  Localized,
+  UploadRejectionCode,
+} from '#shared/types';
 import { MAX_FILE_BYTES } from '#shared/utils/asset';
 
 /**
@@ -20,6 +24,8 @@ export interface TicketFileState {
   mimeType: string;
   sizeBytes: number;
   overwrite: boolean;
+  /** Claim-carried metadata, applied to the row on complete (real-API parity). */
+  localizations: Localized<AssetLocalizations>;
   storagePath: string;
   hasBytes: boolean;
   url: string | null;

@@ -3,7 +3,6 @@ import type {
   AssetLocalizations,
   Localized,
   LocalizedText,
-  UploadCompleteResult,
   UploadRejectionCode,
 } from '#shared/types';
 import { uploadRejectionMessageKey } from '#shared/utils/asset';
@@ -57,8 +56,8 @@ const canProceed = computed(
 
 const { assetApi } = useGeinsRepository();
 const { geinsLogError } = useGeinsLog('pages/asset-library/upload.vue');
-const caps = useAssetCapabilities();
 const { currentLanguage } = storeToRefs(useAccountStore());
+const { matchOf } = useProductMatch();
 
 const uploading = ref(false);
 const done = ref(false);
@@ -79,8 +78,8 @@ const rejectedOutcomes = computed(() =>
 );
 
 // Wizard alt text (per-locale) + description (single, default-language) → the
-// wire `localizations` shape, dropping blanks. Sent as a follow-up PATCH after
-// the ticket flow, which itself carries no metadata (phase-1 reality).
+// wire `localizations` shape, dropping blanks. Rides the ticket claim, which
+// applies it when the upload completes.
 function buildLocalizations(
   description: string | undefined,
   altText: LocalizedText,
@@ -93,30 +92,6 @@ function buildLocalizations(
   const desc = description?.trim();
   if (desc) (out[currentLanguage.value] ??= {}).description = desc;
   return out;
-}
-
-// Persist description + alt text on each created asset (the ticket flow can't).
-// Gated on the backend capability; a per-file failure is logged, not fatal —
-// the file is already uploaded, only its metadata didn't stick.
-async function persistMetadata(results: UploadCompleteResult[]) {
-  await Promise.all(
-    results.map(async (r) => {
-      if (r.status !== 'completed') return;
-      const s = wizard.settingsOf(r.clientRef);
-      const localizations = buildLocalizations(s.description, s.altText ?? {});
-      if (!Object.keys(localizations).length) return;
-      // If-Match guards the write with the just-created asset's etag.
-      const headers = r.file.etag ? { 'If-Match': r.file.etag } : undefined;
-      try {
-        await assetApi.update(r.file._id, { localizations }, undefined, {
-          suppressErrorToast: true,
-          headers,
-        });
-      } catch (error) {
-        geinsLogError('persistMetadata', getErrorMessage(error));
-      }
-    }),
-  );
 }
 
 async function submit() {
@@ -133,17 +108,21 @@ async function submit() {
   );
   const items = files.value.map((wf) => {
     const s = wizard.settingsOf(wf.id);
+    // Metadata + the matched product ride the claim, so a completed upload is
+    // already fully described — no second write to fail after the bytes land.
+    const product = wizard.linkProducts.value ? matchOf(wf.file) : null;
     return {
       file: wf.file,
       clientRef: wf.id,
       folderId: s.folderId ?? null,
       name: s.name || wf.file.name,
+      localizations: buildLocalizations(s.description, s.altText ?? {}),
+      ...(product ? { productIds: [product._id] } : {}),
     };
   });
 
   try {
     const results = await assetApi.uploadViaTickets(items);
-    if (caps.canEditDescriptionAltText) await persistMetadata(results);
     await refreshNuxtData('asset-library-list');
     outcomes.value = results.map((r) => ({
       name: nameByRef.get(r.clientRef) ?? r.clientRef,

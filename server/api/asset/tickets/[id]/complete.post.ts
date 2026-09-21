@@ -53,6 +53,11 @@ export default defineEventHandler(
         mime: f.mimeType,
         url: f.url,
         thumb_url: f.thumbUrl,
+        // Claim metadata lands here, mirroring the real API — an overwrite only
+        // takes it when the claim carried some, so it can't blank an edited row.
+        ...(Object.keys(f.localizations).length
+          ? { localizations: f.localizations }
+          : {}),
       };
 
       // Overwrite repoints the existing row at the path; otherwise insert new.

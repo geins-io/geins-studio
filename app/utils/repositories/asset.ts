@@ -1,6 +1,7 @@
 import type {
   Asset,
   AssetCreate,
+  AssetLocalizations,
   AssetRelocate,
   AssetsBackend,
   AssetUpdate,
@@ -10,6 +11,7 @@ import type {
   FolderCreate,
   FolderUpdate,
   FolderDeleteAssets,
+  Localized,
   UploadCompleteResponse,
   UploadCompleteResult,
   UploadTicketFile,
@@ -38,9 +40,19 @@ const { batchQueryMatchAll } = useBatchQuery();
 export interface UploadTicketItem {
   file: File;
   clientRef?: string;
+  /**
+   * `null` is the library root; leaving it out omits `folderId` from the claim,
+   * which asks the backend to create the folders named by `name`'s path.
+   */
   folderId?: string | null;
   name?: string;
   overwrite?: boolean;
+  /** Metadata applied when the ticket completes (no follow-up write needed). */
+  description?: string;
+  altText?: string;
+  localizations?: Localized<AssetLocalizations>;
+  /** Products to link the published asset to (resolved ids, max 100). */
+  productIds?: string[];
 }
 
 /**
@@ -175,9 +187,13 @@ export function assetRepo(
      * ticket, PUT each accepted file's bytes straight to its plan URL (raw
      * fetch, no auth header — like a signed storage URL), then confirm with
      * `complete`. Returns the per-file outcomes (ticket-stage rejections +
-     * complete-stage results) keyed by `clientRef`. Phase-1 tickets carry no
-     * metadata beyond name/folder — the caller persists description/alt text
-     * with a follow-up `PATCH` on each created asset.
+     * complete-stage results) keyed by `clientRef`. Metadata rides the claim —
+     * description / alt text / localizations / `productIds` are applied when the
+     * ticket completes, so no follow-up `PATCH` per created asset.
+     *
+     * An item's `folderId` is forwarded as given (`null` = library root) and
+     * omitted entirely when the item leaves it out, which is how the backend is
+     * asked to create the folders named by the path in `name`.
      *
      * Files are validated + chunked before any ticket is claimed: a file over
      * the per-file cap is rejected client-side, and the rest are packed into
@@ -222,11 +238,17 @@ export function assetRepo(
           const name = it.name || it.file.name;
           return {
             clientRef: it.clientRef,
-            folderId: it.folderId ?? null,
+            ...(it.folderId !== undefined ? { folderId: it.folderId } : {}),
             name,
             sizeBytes: it.file.size,
             mimeType: contentTypeForUpload(name, it.file.type),
             overwrite: it.overwrite ?? false,
+            ...(it.description ? { description: it.description } : {}),
+            ...(it.altText ? { altText: it.altText } : {}),
+            ...(it.localizations && Object.keys(it.localizations).length
+              ? { localizations: it.localizations }
+              : {}),
+            ...(it.productIds?.length ? { productIds: it.productIds } : {}),
           };
         });
         const fileByRef = new Map(batch.map((it) => [it.clientRef, it.file]));
