@@ -42,6 +42,14 @@ const { files, totalSize, addFiles, removeFiles, clear } = wizard;
 
 const { currentStep, nextStep, previousStep, isFirstStep, isLastStep } =
   useStepManagement(3);
+const { commitPending } = providePendingCommits();
+
+// The manage step's folder picker can hold a typed-but-unsaved name; create it
+// before the step unmounts and takes it along.
+async function goNext() {
+  if (!(await commitPending())) return;
+  nextStep();
+}
 
 const steps = computed(() => [
   { step: 1, title: t('asset_library.wizard_step_files') },
@@ -391,7 +399,7 @@ function leave() {
           >
             {{ $t('upload') }}
           </ButtonIcon>
-          <Button v-else :disabled="!canProceed" @click="nextStep">
+          <Button v-else :disabled="!canProceed" @click="goNext">
             {{ $t('next') }}
           </Button>
         </div>

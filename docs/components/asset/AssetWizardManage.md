@@ -24,6 +24,8 @@ All edits write straight into the shared wizard state via [`useUploadWizard`](/c
 
 **Capability gating.** `name` + folder + description + alt text all persist via the ticket claim itself (applied when the upload completes, no follow-up write) — all editable. **Tags + channels** have no phase-1 upload route, so under a non-mock backend they render in a disabled `<fieldset>` with a "not saved yet" hint (`useAssetCapabilities` → `canEditTags` / `canEditChannels`); values are still held in wizard state. Tag autocomplete only fetches when `tagAutocomplete` is on. The bulk pane ([`AssetWizardBulkPane`](/components/asset/AssetWizardBulkPane)) gates the same two fields. (`cutover: REVISIT@phase2`.)
 
+**Unsaved folder name.** The wizard page's **Next** button awaits [`usePendingCommits`](/composables/usePendingCommits) before advancing, so a folder name typed into the picker here (or in the bulk pane) is created instead of dropped when this step unmounts.
+
 ## Dependencies
 
 - [`useUploadWizard`](/composables/useUploadWizard) — shared files + per-file settings

@@ -6,6 +6,10 @@
  * that creates the folder via `assetApi.folder.create`, then selects it.
  *
  * `v-model` is the folder id (`string`) or `null` for uncategorised.
+ *
+ * A name typed into that input but never saved is registered with the nearest
+ * {@link providePendingCommits} host, so the host's primary action creates it
+ * first instead of dropping it.
  */
 withDefaults(
   defineProps<{
@@ -37,11 +41,12 @@ function cancelCreate() {
   newFolderName.value = '';
 }
 
-async function createFolder() {
+/** @returns `false` when the create failed, so a host action stops there. */
+async function createFolder(): Promise<boolean> {
   const name = newFolderName.value.trim();
   if (!name) {
     creating.value = false;
-    return;
+    return true;
   }
   try {
     const folder = await assetApi.folder.create({
@@ -51,11 +56,22 @@ async function createFolder() {
     await refreshFolders();
     model.value = folder._id;
   } catch (error) {
+    // Leave the input open with the name intact: the global error toast says
+    // why, and the host stops rather than quietly falling back to no folder.
     geinsLogError('createFolder', getErrorMessage(error));
+    return false;
   }
   creating.value = false;
   newFolderName.value = '';
+  return true;
 }
+
+// A host's primary action (upload, save, next) commits a typed-but-unsaved
+// name before it runs, so the folder isn't lost when this control unmounts.
+registerPendingCommit({
+  pending: () => creating.value && !!newFolderName.value.trim(),
+  commit: createFolder,
+});
 </script>
 
 <template>
