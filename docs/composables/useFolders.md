@@ -29,7 +29,7 @@ await refresh();
 folders: ComputedRef<Folder[]>;
 ```
 
-All folders (flat), normalized to an array. The Supabase mock's locked `system` rows (`Uncategorised`, `Archived`) are filtered out — real Geins.Media has no system folders, and the filter drops with the mock.
+All folders (flat), normalized to an array. Geins.Media has no system folders, so every returned row is a real one.
 
 ### `tree`
 
@@ -37,7 +37,7 @@ All folders (flat), normalized to an array. The Supabase mock's locked `system` 
 tree: ComputedRef<FolderNode[]>;
 ```
 
-The folders nested via `parentFolderId`, sorted by `sortOrder` then name at each level. `FolderNode` is a `Folder` plus a `children: FolderNode[]` array.
+The folders nested via `parentFolderId`, sorted by name at each level (phase 1 has no manual ordering). `FolderNode` is a `Folder` plus a `children: FolderNode[]` array.
 
 ### `folderName`
 

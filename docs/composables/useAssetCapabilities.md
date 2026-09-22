@@ -1,19 +1,10 @@
 # `useAssetCapabilities`
 
-The `useAssetCapabilities` composable reports which Assets Library features are available for the configured backend. The shipped UI gates on it so controls the real **Geins.Media phase 1** API can't fulfil yet — tags, channels, replace, tag autocomplete — disable cleanly instead of erroring, while the Supabase **mock** keeps everything on.
+The `useAssetCapabilities` composable reports which Assets Library features the backend can serve. The shipped UI gates on it so controls **Geins.Media phase 1** can't fulfil yet — tags, channels, replace, tag autocomplete — disable cleanly instead of erroring.
 
 :::tip WHY
-Studio built the full v0 UI against the mock. The real backend's phase 1 serves **browse + upload, plus description/alt-text edit (`PATCH`), rename + move (`POST …/relocate`) and delete (`DELETE` + restore)**; the rest arrives in phase 2. Rather than delete that UI, we gate it per field — see the _Phase 8 — Real API alignment_ milestone.
+Studio built the full v0 UI against a mock backend. Phase 1 of the real API serves **browse + upload, description/alt-text edit (`PATCH`), rename + move (`POST …/relocate`), delete (`DELETE` + restore) and usage links**; the rest arrives in phase 2. Rather than delete the UI that outran the backend, we gate it per field.
 :::
-
-## Configuration
-
-The backend is a public runtime config value, `assetsBackend`, set from `NUXT_PUBLIC_ASSETS_BACKEND` (default `'mock'`):
-
-| Value          | Meaning                                                  |
-| -------------- | -------------------------------------------------------- |
-| `mock`         | Supabase mock — every feature on except trash (default). |
-| `media-phase1` | Real Geins.Media phase 1 — gates the phase-2 features.   |
 
 ## Usage
 
@@ -21,7 +12,7 @@ The backend is a public runtime config value, `assetsBackend`, set from `NUXT_PU
 const caps = useAssetCapabilities();
 
 // disable a control
-<Button :disabled="!caps.canDeleteAsset">Delete</Button>
+<fieldset :disabled="!caps.canEditTags">…</fieldset>
 
 // skip a fetch the backend can't answer
 if (caps.tagAutocomplete) await refreshTags();
@@ -29,29 +20,26 @@ if (caps.tagAutocomplete) await refreshTags();
 
 ## Returns
 
-An `AssetCapabilities` object (plain, not reactive — the backend is fixed per session):
+An `AssetCapabilities` object (plain, not reactive — the surface is fixed per session):
 
-| Field                       | Type            | Gates                                                             |
-| --------------------------- | --------------- | ----------------------------------------------------------------- |
-| `backend`                   | `AssetsBackend` | The resolved backend (`mock` / `media-phase1`).                   |
-| `canEditDescriptionAltText` | `boolean`       | Description + localized alt-text fields + save (phase-1 `PATCH`). |
-| `canEditTags`               | `boolean`       | Editing an asset's tags.                                          |
-| `canEditChannels`           | `boolean`       | Editing an asset's publication channels.                          |
-| `canDeleteAsset`            | `boolean`       | Delete action (detail panel + card/row menu).                     |
-| `canReplaceFile`            | `boolean`       | Replace-file action.                                              |
-| `tagAutocomplete`           | `boolean`       | Distinct-tags suggestions fetch.                                  |
-| `hasThumbnails`             | `boolean`       | Backend produces real `thumbUrl`s (phase 1 returns null).         |
-| `hasTrash`                  | `boolean`       | Trash rail entry + restore action (real backend only).            |
+| Field                       | Type      | Gates                                                     |
+| --------------------------- | --------- | --------------------------------------------------------- |
+| `canEditTags`               | `boolean` | Editing an asset's tags.                                  |
+| `canEditChannels`           | `boolean` | Editing an asset's publication channels.                  |
+| `canDeleteFolderWithAssets` | `boolean` | Choosing what happens to assets inside a deleted folder.  |
+| `canReplaceFile`            | `boolean` | Replace-file action.                                      |
+| `tagAutocomplete`           | `boolean` | Distinct-tags suggestions fetch.                          |
+| `hasThumbnails`             | `boolean` | Backend produces real `thumbUrl`s (phase 1 returns `''`). |
 
-:::warning A FEATURE BOTH BACKENDS SUPPORT GETS NO FLAG
-There is no `canRenameAsset` / `canMoveAsset`: `POST /media/assets/{id}/relocate` ships in phase 1, so rename and move work everywhere and the fields were removed rather than left permanently `true`. An always-`true` flag is dead gating — retire each one as phase 2 restores its feature (see the [cutover ledger](/domains/assets-cutover)).
+Every flag is `false` today — each one names a phase-2 feature.
+
+:::warning A FEATURE THE BACKEND SUPPORTS GETS NO FLAG
+There is no `canEditDescriptionAltText`, `canDeleteAsset`, `hasTrash` or `hasUsageLinks` — all of those ship in phase 1, so they were removed rather than left permanently `true`. An always-`true` flag is dead gating: when phase 2 restores a feature, delete its flag **and** its consumers instead of flipping it (see the [cutover ledger](/domains/assets-cutover)).
 :::
 
-`hasTrash` is the one flag that is **off** for the mock and **on** for `media-phase1`: real `DELETE` is a soft delete (30-day trash + `POST …/restore`), while the mock drops the row outright, so it has no trash to list.
-
-The mapping is a pure function — [`assetCapabilities(backend)`](/utils/asset) in `#shared/utils/asset` — so it is unit-tested and reusable outside a component.
+The mapping is a pure function — `assetCapabilities()` in `#shared/utils/asset` — so it is unit-tested and reusable outside a component.
 
 ## See also
 
-- [`useAssetActions`](/composables/useAssetActions.md) — the copy / download / delete actions gated by `canDeleteAsset`.
+- [`useAssetActions`](/composables/useAssetActions.md) — the copy / download / delete actions.
 - [`AssetDetailPanel`](/components/asset/AssetDetailPanel.md) — the primary consumer.

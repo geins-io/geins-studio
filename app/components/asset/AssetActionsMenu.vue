@@ -15,12 +15,10 @@ withDefaults(
     asset: Asset;
     /** Trigger styling: floating chip on the grid card vs. table-row button. */
     trigger?: 'card' | 'table';
-    /** Gated off (disabled) when the backend can't delete — see useAssetCapabilities. */
-    canDelete?: boolean;
     /** Trash view — the asset is soft-deleted, so Restore is the only action. */
     trashed?: boolean;
   }>(),
-  { trigger: 'card', canDelete: true, trashed: false },
+  { trigger: 'card', trashed: false },
 );
 
 const emit = defineEmits<{
@@ -69,7 +67,7 @@ const emit = defineEmits<{
           <span>{{ $t('asset_library.copy_public_url') }}</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem :disabled="!canDelete" @click="emit('delete')">
+        <DropdownMenuItem @click="emit('delete')">
           <LucideTrash2 class="mr-2 size-4" aria-hidden="true" />
           <span>{{ $t('delete_entity', { entityKey: 'asset' }) }}</span>
         </DropdownMenuItem>

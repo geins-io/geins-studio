@@ -13,10 +13,6 @@ Product targets render as an [`AssetLinkedProduct`](/components/asset/AssetLinke
 
 `targetType` is an **open string**. Only `product` can be written today, but the API documents that it returns values a given release doesn't name, so unknown types are rendered, never dropped.
 
-:::warning REAL BACKEND ONLY
-The Supabase mock has no `{id}/links` route. The section is gated on the `hasUsageLinks` capability ([`useAssetCapabilities`](/composables/useAssetCapabilities.md)) and is absent entirely when `NUXT_PUBLIC_ASSETS_BACKEND=mock`.
-:::
-
 ## Props
 
 | Prop      | Type     | Meaning                        |
@@ -34,10 +30,10 @@ The Supabase mock has no `{id}/links` route. The section is gated on the `hasUsa
 
 ## Usage
 
-Mounted by the detail panel behind the capability gate:
+Mounted by the detail panel below the info list:
 
 ```vue
-<div v-if="caps.hasUsageLinks" class="mt-6 border-t pt-6">
+<div class="mt-6 border-t pt-6">
   <AssetUsedIn :asset-id="asset._id" />
 </div>
 ```
@@ -46,4 +42,4 @@ The read uses `useAsyncData` under the stable key `asset-links`, watched on `ass
 
 ## Not included
 
-Linking and unlinking (`POST` / `DELETE .../links`) are not wired — Studio has no product edit page to drive them from. The [replace dialog](/components/asset/AssetReplaceDialog.md)'s "used everywhere" warning is still static: replace is mock-only (`canReplaceFile`), and the mock has no links route, so there is no backend on which both exist yet.
+Linking and unlinking (`POST` / `DELETE .../links`) are not wired — Studio has no product edit page to drive them from. The [replace dialog](/components/asset/AssetReplaceDialog.md)'s "used everywhere" warning is still static: replace has no phase-1 route (`canReplaceFile` is off), so there is nothing to feed it from yet.

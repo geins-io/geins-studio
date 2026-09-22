@@ -1,17 +1,13 @@
 import type {
   AssetApiOptions,
   AssetCapabilities,
-  AssetEndpoints,
-  AssetsBackend,
   AssetType,
   UploadRejectionCode,
 } from '#shared/types';
-import { ENTITIES } from '#shared/utils/entities';
 
-// Upload-ticket limits — the real Geins.Media `createUploadTicket` caps. KEEP:
-// these are the API contract, not mock-only. The client validates + chunks
-// against them before claiming a ticket, and the mock route enforces the same
-// numbers (imported from here so there's one source of truth).
+// Upload-ticket limits — the real Geins.Media `createUploadTicket` caps. The
+// client validates + chunks against them before claiming a ticket, so an
+// over-cap claim never reaches the backend as a 400.
 export const MAX_FILES_PER_TICKET = 50;
 export const MAX_FILE_BYTES = 1024 ** 3; // 1 GB per file
 export const MAX_TICKET_BYTES = 10 * 1024 ** 3; // 10 GB per ticket total
@@ -148,69 +144,26 @@ export function folderIdForSelection(selected: string | null): string | null {
 }
 
 /**
- * Wire routes per backend. The real Geins.Media surface (QA OpenAPI, `Geins
- * Media API 1.0.0`) is not the mock's paths with a prefix swapped: folders list
- * at `GET /media/folders` instead of the Management API's `{base}/list`, a
- * folder update is a `PUT` replace, and tickets sit at `/media/tickets` rather
- * than under assets. Pure so both backends are unit-testable without a running
- * app.
- *
- * cutover: REMOVE@cutover — the `mock` branch dies with the Supabase mock, and
- * the repos go back to reading `ENTITIES.asset` / `ENTITIES.folder` directly.
- * Ledger: docs/domains/assets-cutover.md.
- */
-export function assetEndpoints(backend: AssetsBackend): AssetEndpoints {
-  if (backend === 'mock') {
-    return {
-      asset: '/asset',
-      folder: '/asset/folder',
-      folderList: '/asset/folder/list',
-      folderUpdateMethod: 'PATCH',
-      tickets: '/asset/tickets',
-    };
-  }
-  return {
-    asset: ENTITIES.asset.endpoint,
-    folder: ENTITIES.folder.endpoint,
-    folderList: ENTITIES.folder.endpoint,
-    folderUpdateMethod: 'PUT',
-    tickets: '/media/tickets',
-  };
-}
-
-/**
- * Feature availability for a given backend. `media-phase1` reflects the shipped
- * Geins.Media surface: browse + upload, plus `PATCH` (description/altText/
- * localizations), `POST …/relocate` (rename + move) and `DELETE` (+ restore).
- * Those are available on both backends, so they have no flag here; tags,
- * channels, replace, thumbnails, tag-autocomplete and the folder-delete asset
- * disposition (phase 1 deletes empty folders only) stay gated to the mock until
- * phase 2. The gating runs both ways: trash and usage links exist only on the
- * real API, so those two are off for the mock. Pure so it can be unit-tested and
- * reused by `useAssetCapabilities`.
+ * Feature availability against the shipped Geins.Media surface. Phase 1 serves
+ * browse + upload, `PATCH` (description/altText/localizations), `POST …/
+ * relocate` (rename + move), `DELETE` (+ restore) and usage links — all
+ * unconditional, so none of them carry a flag. Tags, channels, replace,
+ * thumbnails, tag autocomplete and the folder-delete asset disposition stay off
+ * until phase 2. Pure so it can be unit-tested and reused by
+ * `useAssetCapabilities`.
  *
  * cutover: REVISIT@phase2 — the whole capability mechanism is temporary; remove
  * it (+ its consumers) once phase 2 restores the gated features. Ledger:
  * docs/domains/assets-cutover.md.
  */
-export function assetCapabilities(backend: AssetsBackend): AssetCapabilities {
-  const mock = backend === 'mock';
+export function assetCapabilities(): AssetCapabilities {
   return {
-    backend,
-    // Shipped in real phase 1 (PATCH description/altText/localizations, DELETE).
-    canEditDescriptionAltText: true,
-    canDeleteAsset: true,
-    // Not in the phase-1 surface — mock-only until phase 2.
-    canEditTags: mock,
-    canEditChannels: mock,
-    canDeleteFolderWithAssets: mock,
-    canReplaceFile: mock,
-    tagAutocomplete: mock,
-    hasThumbnails: mock,
-    // Soft delete + restore is real-only; the mock deletes the row outright.
-    hasTrash: !mock,
-    // Usage links are real-only — the mock has no `{id}/links` route.
-    hasUsageLinks: !mock,
+    canEditTags: false,
+    canEditChannels: false,
+    canDeleteFolderWithAssets: false,
+    canReplaceFile: false,
+    tagAutocomplete: false,
+    hasThumbnails: false,
   };
 }
 

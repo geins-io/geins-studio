@@ -18,12 +18,7 @@ export interface UseFoldersReturnType {
 const FOLDERS_KEY = 'asset-folders';
 
 function sortLevel(nodes: FolderNode[]): void {
-  // `sortOrder` is mock-only (real phase 1 has no manual ordering), so absent
-  // values collapse to a plain name sort.
-  nodes.sort(
-    (a, b) =>
-      (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name),
-  );
+  nodes.sort((a, b) => a.name.localeCompare(b.name));
   nodes.forEach((node) => sortLevel(node.children));
 }
 
@@ -58,12 +53,8 @@ export function useFolders(): UseFoldersReturnType {
     { default: () => [] },
   );
 
-  // The mock's `system` rows (Uncategorised / Archived) are dropped outright:
-  // real Geins.Media has no such folders, Uncategorised is a root query rather
-  // than a row, and Archived has no counterpart at all. cutover: REMOVE@cutover
-  // — the filter dies with the mock. Ledger: docs/domains/assets-cutover.md.
   const folders = computed<Folder[]>(() =>
-    Array.isArray(data.value) ? data.value.filter((f) => !f.system) : [],
+    Array.isArray(data.value) ? data.value : [],
   );
   const tree = computed(() => buildTree(folders.value));
 

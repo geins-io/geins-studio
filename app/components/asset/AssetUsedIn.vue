@@ -11,8 +11,6 @@ import type { AssetLink, ProductMatch } from '#shared/types';
  * and rendered as [AssetLinkedProduct](/components/asset/AssetLinkedProduct);
  * anything that does not resolve, and any target type this release does not
  * name, falls back to a plain type + id row rather than being hidden.
- *
- * Real-backend-only — the caller gates on `hasUsageLinks`.
  */
 const props = defineProps<{ assetId: string }>();
 

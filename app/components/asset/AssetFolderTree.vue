@@ -213,7 +213,7 @@ async function confirmDelete(assets: FolderDeleteAssets = 'move') {
 
           <!-- Trash is a separate query (`trashed: true`), and the picker must
                not browse soft-deleted assets — hence `!readonly`. -->
-          <SidebarMenuItem v-if="!props.readonly && caps.hasTrash">
+          <SidebarMenuItem v-if="!props.readonly">
             <SidebarMenuButton
               :is-active="selected === TRASH_KEY"
               @click="selected = TRASH_KEY"

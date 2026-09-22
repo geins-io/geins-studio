@@ -33,8 +33,6 @@ export function buildFolder(overrides?: Partial<Folder>): Folder {
     _type: 'folder',
     name: 'Marketing',
     parentFolderId: null,
-    system: false,
-    sortOrder: 0,
     path: 'Marketing',
     depth: 1,
     createdAt: '2026-08-17T00:00:00.000Z',
