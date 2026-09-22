@@ -48,7 +48,7 @@ deleteAsset: (asset: Asset) => Promise<boolean>;
 
 Deletes the asset (`assetApi.delete`), refreshes `asset-library-list`, and toasts (`entity_deleted`). Returns `true` on success, `false` on failure (the error surfaces via the global API-error toast). Callers close their dialog / panel on `true`.
 
-How permanent the delete is belongs to the backend, not this composable: the mock drops the row, while `Geins.Media` moves the asset to **trash**. Either way it leaves the default library list, so the delete copy stays neutral on permanence — see [assets](/domains/assets).
+`Geins.Media` moves the asset to **trash** rather than dropping it, so the delete copy stays neutral on permanence — see [assets](/domains/assets).
 
 ### `restoreAsset`
 
@@ -56,7 +56,7 @@ How permanent the delete is belongs to the backend, not this composable: the moc
 restoreAsset: (asset: Asset) => Promise<boolean>;
 ```
 
-Restores a trashed asset (`assetApi.restore` → `POST /media/assets/{id}/restore`), refreshes `asset-library-list`, and toasts (`entity_restored`). Returns `true` on success. Only reachable where `useAssetCapabilities().hasTrash` is on (the real backend) — the mock hard-deletes and has no restore route. The refresh is what removes the row from the Trash view, so callers need no local bookkeeping.
+Restores a trashed asset (`assetApi.restore` → `POST /media/assets/{id}/restore`), refreshes `asset-library-list`, and toasts (`entity_restored`). Returns `true` on success. The refresh is what removes the row from the Trash view, so callers need no local bookkeeping.
 
 ## Dependencies
 

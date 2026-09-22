@@ -100,8 +100,6 @@ On the dialog's `uploaded` event the panel:
 3. **Flips the rail to "Recently added"** so the user sees what they just added, and
 4. **Refetches** the library list.
 
-The picker goes through `assetApi.upload` (via the dialog), not a specific transport, so the mock → Geins.Media cutover stays mechanical.
-
 ## Data
 
 Reads `assetApi.list({ folderId })` via [`useGeinsRepository`](/composables/useGeinsRepository) in `useAsyncData` (folder scope stays server-side, matching the library page). Search, type filtering, "recently added" sorting, and pagination are client-side over the fetched list. Selected assets are remembered across folder switches so a confirm returns picks made in more than one folder.

@@ -1,10 +1,10 @@
 # `AssetFolderTree`
 
-`AssetFolderTree` is the folder-navigation tree for the Assets Library, built on the shadcn `Sidebar` primitives. Under a "Folders" header it shows **All assets**, then the nested folders (each expandable via a leading chevron; the folder icon opens when expanded/active), with the pinned **Uncategorised** and **Trash** views last — below the folder list, where the mock's system folders used to sit.
+`AssetFolderTree` is the folder-navigation tree for the Assets Library, built on the shadcn `Sidebar` primitives. Under a "Folders" header it shows **All assets**, then the nested folders (each expandable via a leading chevron; the folder icon opens when expanded/active), with the pinned **Uncategorised** and **Trash** views last, below the folder list.
 
 Selection is emitted via `v-model:selected` — a folder id, `null` for **All assets**, `ROOT_FOLDER_KEY` (`'root'`, from `#shared/utils/asset`) for **Uncategorised**, or `TRASH_KEY` (`'trash'`) for **Trash**. The consumer turns that into list options with `assetListOptions(selected)`; the tree itself only selects.
 
-The **Trash** entry appears only when `useAssetCapabilities().hasTrash` is on (the real backend — the mock hard-deletes) and only outside `readonly` mode: the picker must never browse soft-deleted assets.
+The **Trash** entry appears only outside `readonly` mode: the picker must never browse soft-deleted assets.
 
 :::tip NOTE
 **Uncategorised is a query, not a folder.** Real Geins.Media has no system folders — assets with no folder are `folderId: null`, and the query asks for them with `folderIds: [null]`. That is why the entry is pinned by the component rather than coming from the folder list, and why `assetListOptions` distinguishes "root only" (`folderId: null`) from "all assets" (no folder scope at all).
@@ -53,10 +53,10 @@ The [`AssetPickerPanel`](/components/asset/AssetPickerPanel) passes `readonly` s
 
 Which delete flow runs is gated on `useAssetCapabilities().canDeleteFolderWithAssets`:
 
-| Capability               | Flow                                                                                                                                                                                                                                                                                                                                                                                      |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **on** (`mock`)          | The tree counts the subtree (`assetApi.list({ folderId })`). Non-empty → [`AssetFolderDeleteDialog`](/components/asset/AssetFolderDeleteDialog) (move vs delete the assets), calling `assetApi.deleteFolder(id, assets)`. Empty → the plain [`DialogDelete`](/components/dialog/DialogDelete).                                                                                            |
-| **off** (`media-phase1`) | **Empty-only delete.** No subtree probe and no disposition: the plain `DialogDelete` calls `assetApi.folder.delete(id)`. The backend answers `409 FOLDER_NOT_EMPTY` when the folder still holds assets — the call passes `suppressErrorToast: true` and the reason is rendered as the dialog's own warning callout, so the user can empty the folder and retry without losing the dialog. |
+| Capability       | Flow                                                                                                                                                                                                                                                                                                                                                                                      |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **on** (phase 2) | The tree counts the subtree (`assetApi.list({ folderId })`). Non-empty → [`AssetFolderDeleteDialog`](/components/asset/AssetFolderDeleteDialog) (move vs delete the assets), calling `assetApi.deleteFolder(id, assets)`. Empty → the plain [`DialogDelete`](/components/dialog/DialogDelete).                                                                                            |
+| **off** (today)  | **Empty-only delete.** No subtree probe and no disposition: the plain `DialogDelete` calls `assetApi.folder.delete(id)`. The backend answers `409 FOLDER_NOT_EMPTY` when the folder still holds assets — the call passes `suppressErrorToast: true` and the reason is rendered as the dialog's own warning callout, so the user can empty the folder and retry without losing the dialog. |
 
 ## Data
 

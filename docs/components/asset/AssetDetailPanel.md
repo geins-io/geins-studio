@@ -76,7 +76,7 @@ Preview ([`AssetThumbnail`](/components/asset/AssetThumbnail)), type badge, size
 
 ## Where it's used
 
-On the real backend the panel also shows a **"Where it's used"** section between the info list and the remove section — [`AssetUsedIn`](/components/asset/AssetUsedIn), a read-only list of what the asset is linked to (products today). It is gated on the `hasUsageLinks` capability, so it is absent against the mock, which has no `{id}/links` route.
+Between the info list and the remove section the panel shows a **"Where it's used"** section — [`AssetUsedIn`](/components/asset/AssetUsedIn), a read-only list of what the asset is linked to (products today).
 
 ## Not here
 

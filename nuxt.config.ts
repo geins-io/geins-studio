@@ -180,21 +180,11 @@ export default defineNuxtConfig({
       debug: process.env.GEINS_DEBUG === 'true',
       appId: process.env.NUXT_PUBLIC_APP_ID || '',
       isVercel: !!process.env.VERCEL,
-      // cutover: remove with the mock — Which Assets Library backend the client
-      // targets. 'mock' (default) keeps every feature on; 'media-phase1' gates
-      // the controls Geins.Media phase 1 doesn't serve yet (metadata edit,
-      // delete, replace, tag autocomplete). See docs/domains/assets-cutover.md.
-      assetsBackend: process.env.NUXT_PUBLIC_ASSETS_BACKEND || 'mock',
     },
     private: {
       authSecret: process.env.AUTH_SECRET,
       // HOTFIX STU-216 — remove when BE handles config-refresh natively (STU-217)
       salesPortalWebhookSecret: process.env.SALES_PORTAL_WEBHOOK_SECRET,
-      // Assets Library mock backend (STU-263). Server-only — the secret key
-      // bypasses Supabase RLS, so it must never reach the client. Delete when
-      // the real Management API serves /asset (see docs/domains/assets.md).
-      supabaseUrl: process.env.SUPABASE_URL,
-      supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY,
     },
   },
 

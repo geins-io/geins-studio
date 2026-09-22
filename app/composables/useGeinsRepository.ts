@@ -1,4 +1,3 @@
-import type { AssetsBackend } from '#shared/types';
 import { repo } from '@/utils/repos';
 
 interface UseGeinsRepositoryReturnType {
@@ -21,15 +20,10 @@ interface UseGeinsRepositoryReturnType {
  */
 export function useGeinsRepository(): UseGeinsRepositoryReturnType {
   const { $geinsApiFetchInstance } = useNuxtApp();
-  // cutover: drop with the mock — the asset repo is the one that still has two
-  // backends to speak to (Supabase mock vs real Geins.Media), so it takes the
-  // configured one instead of reading it itself (repos stay stateless).
-  const assetsBackend = useRuntimeConfig().public
-    .assetsBackend as AssetsBackend;
 
   return {
     accountApi: repo.account($geinsApiFetchInstance),
-    assetApi: repo.asset($geinsApiFetchInstance, assetsBackend),
+    assetApi: repo.asset($geinsApiFetchInstance),
     orderApi: repo.order($geinsApiFetchInstance),
     productApi: repo.product($geinsApiFetchInstance),
     userApi: repo.user($geinsApiFetchInstance),

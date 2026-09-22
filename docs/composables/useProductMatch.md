@@ -5,7 +5,7 @@ Resolves a product from a reference — an upload's filename ref (`matchOf`) or 
 The ref is the leading digits before the first `_` (`9963010083_hero.jpg` → `9963010083`), parsed by `parseProductRef`. Parsing the ref from the name is the frontend's job; the lookup that turns it into a product match is the backend's.
 
 :::tip PHASE 2
-The lookup matches on the client over the **whole product list** (read from the products store) today. Phase 2 pushes the filter server-side (query by `articleNumber` / `productId`) so we don't scan the full catalogue — the `(file) → ProductMatch` seam stays. Tracked in the cutover ledger (`docs/domains/assets-cutover.md`, STU-335). The match is **persisted** at upload: the wizard sends it as `productIds` on the ticket claim (real backend only — the mock ignores the field).
+The lookup matches on the client over the **whole product list** (read from the products store) today. Phase 2 pushes the filter server-side (query by `articleNumber` / `productId`) so we don't scan the full catalogue — the `(file) → ProductMatch` seam stays. Tracked in the cutover ledger (`docs/domains/assets-cutover.md`, STU-335). The match is **persisted** at upload: the wizard sends it as `productIds` on the ticket claim.
 :::
 
 ## Usage

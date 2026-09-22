@@ -12,20 +12,9 @@ mockNuxtImport('useGeinsRepository', () => () => ({
 // Derivations (tree, name lookup, descendants) are the logic under test, so
 // stub useAsyncData with a ready dataset instead of exercising the fetch.
 const folders: Folder[] = [
-  buildFolder({
-    _id: 'f1',
-    name: 'Marketing',
-    parentFolderId: null,
-    sortOrder: 1,
-  }),
-  buildFolder({ _id: 'f2', name: 'Brand', parentFolderId: 'f1', sortOrder: 2 }),
-  buildFolder({ _id: 'f3', name: 'Ads', parentFolderId: 'f1', sortOrder: 1 }),
-  buildFolder({
-    _id: 'sys1',
-    name: 'Uncategorised',
-    parentFolderId: null,
-    system: true,
-  }),
+  buildFolder({ _id: 'f1', name: 'Marketing', parentFolderId: null }),
+  buildFolder({ _id: 'f2', name: 'Brand', parentFolderId: 'f1' }),
+  buildFolder({ _id: 'f3', name: 'Ads', parentFolderId: 'f1' }),
 ];
 
 mockNuxtImport('useAsyncData', () => () => ({
@@ -40,23 +29,22 @@ import { useFolders } from '../useFolders';
 describe('useFolders', () => {
   const { folders, tree, folderName, descendantIds } = useFolders();
 
-  it('drops the mock-only system folders', () => {
+  it('normalizes the fetched list', () => {
     expect(folders.value.map((f) => f._id)).toEqual(['f1', 'f2', 'f3']);
   });
 
-  it('builds a nested tree, sorted by sortOrder then name', () => {
+  it('builds a nested tree, sorted by name', () => {
     expect(tree.value).toHaveLength(1);
     const root = tree.value[0]!;
     expect(root._id).toBe('f1');
-    // f3 (sortOrder 1) before f2 (sortOrder 2)
+    // Ads before Brand — phase 1 has no manual ordering, so name decides.
     expect(root.children.map((c) => c._id)).toEqual(['f3', 'f2']);
   });
 
-  it('resolves a folder name by id, undefined for null/unknown/system', () => {
+  it('resolves a folder name by id, undefined for null/unknown', () => {
     expect(folderName('f2')).toBe('Brand');
     expect(folderName(null)).toBeUndefined();
     expect(folderName('nope')).toBeUndefined();
-    expect(folderName('sys1')).toBeUndefined();
   });
 
   it('returns a folder plus its descendants', () => {

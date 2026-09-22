@@ -353,11 +353,11 @@ async function handleDelete() {
       <div class="border-border -mx-3 mt-4 mb-6 border-b sm:-mx-6" />
 
       <form @submit.prevent>
-        <!-- Metadata edit is gated per field, not as one block: name + folder
-             (relocate), description + alt text (PATCH) ship on both backends,
-             while tags / channels wait for phase 2. Each gated group is wrapped
-             in its own <fieldset> (which reliably disables the nested custom
-             controls). See useAssetCapabilities. -->
+        <!-- Metadata edit is gated per field, not as one block: name, folder,
+             description and alt text ship in phase 1, while tags / channels
+             wait for phase 2. Each gated group is wrapped in its own <fieldset>
+             (which reliably disables the nested custom controls). See
+             useAssetCapabilities. -->
         <FormGridWrap>
           <FormGrid design="1">
             <FormField v-slot="{ componentField }" name="name" keep-value>
@@ -395,7 +395,6 @@ async function handleDelete() {
                   :label="$t('description')"
                   :placeholder="$t('asset_library.description_placeholder')"
                   :subject="asset.name"
-                  :disabled="!caps.canEditDescriptionAltText"
                 />
               </FormItem>
             </FormField>
@@ -410,7 +409,6 @@ async function handleDelete() {
                   :label="$t('asset_library.alt_text')"
                   :placeholder="$t('asset_library.alt_text_placeholder')"
                   :subject="asset.name"
-                  :disabled="!caps.canEditDescriptionAltText"
                 />
               </FormItem>
             </FormField>
@@ -486,7 +484,7 @@ async function handleDelete() {
         </div>
       </dl>
 
-      <div v-if="caps.hasUsageLinks" class="mt-6 border-t pt-6">
+      <div class="mt-6 border-t pt-6">
         <AssetUsedIn :asset-id="asset._id" />
       </div>
 
@@ -501,7 +499,7 @@ async function handleDelete() {
           <Button
             size="sm"
             variant="destructive"
-            :disabled="deleting || !caps.canDeleteAsset"
+            :disabled="deleting"
             @click.stop="deleteOpen = true"
           >
             {{ $t('delete') }}

@@ -4,7 +4,6 @@ import type {
   AssetLink,
   AssetLocalizations,
   AssetRelocate,
-  AssetsBackend,
   AssetUpdate,
   AssetApiOptions,
   BatchQueryResult,
@@ -20,7 +19,6 @@ import type {
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
 import {
-  assetEndpoints,
   contentTypeForUpload,
   MAX_FILE_BYTES,
   MAX_FILES_PER_TICKET,
@@ -86,47 +84,38 @@ function chunkForTickets<T extends { file: File }>(items: T[]): T[][] {
   return batches;
 }
 
+/** Upload tickets are a sibling of assets on Geins.Media, not a child. */
+const TICKETS_ENDPOINT = '/media/tickets';
+
 /**
  * Repository for the Assets Library — full CRUD for assets plus a `folder`
  * sub-repo. Both are standard `entityRepo`s, so create/update/delete
  * auto-attach the right `errorContext` (asset / folder) for the global error
  * toast.
- *
- * The routes come from `assetEndpoints(backend)` rather than straight off the
- * registry: until the Supabase mock is retired, `NUXT_PUBLIC_ASSETS_BACKEND`
- * switches the whole library between the mock and real Geins.Media, so the same
- * build can be pointed back at the mock if the real API misbehaves. The registry
- * holds the real paths; the mock is the temporary override.
  */
-export function assetRepo(
-  fetch: $Fetch<unknown, NitroFetchRequest>,
-  backend: AssetsBackend,
-) {
-  const endpoints = assetEndpoints(backend);
-
+export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   const assets = entityRepo<Asset, AssetCreate, AssetUpdate, AssetApiOptions>(
-    { endpoint: endpoints.asset, key: ENTITIES.asset.key },
+    ENTITIES.asset,
     fetch,
   );
   const folderBase = entityRepo<Folder, FolderCreate, FolderUpdate>(
-    { endpoint: endpoints.folder, key: ENTITIES.folder.key },
+    ENTITIES.folder,
     fetch,
   );
 
   // Geins.Media lists folders at the collection root and replaces a folder with
-  // PUT; `/list` + PATCH is the Management API convention the mock follows. Both
-  // differences are config, so the mock's routes drop out with `assetEndpoints`.
+  // PUT, where `entityRepo` assumes the Management API's `{base}/list` + PATCH.
   const folder: typeof folderBase = {
     ...folderBase,
     async list(options, fetchOptions) {
-      return await fetch<Folder[]>(endpoints.folderList, {
+      return await fetch<Folder[]>(ENTITIES.folder.endpoint, {
         query: buildQueryObject(options),
         ...fetchOptions,
       });
     },
     async update(id, data, options, fetchOptions) {
-      return await fetch<Folder>(`${endpoints.folder}/${id}`, {
-        method: endpoints.folderUpdateMethod,
+      return await fetch<Folder>(`${ENTITIES.folder.endpoint}/${id}`, {
+        method: 'PUT',
         body: data,
         query: buildQueryObject(options),
         errorContext: { action: 'updating', entity: ENTITIES.folder.key },
@@ -157,7 +146,7 @@ export function assetRepo(
       fetchOptions?: RepoFetchOptions,
     ): Promise<Asset[]> {
       const res = await fetch<BatchQueryResult<Asset>>(
-        `${endpoints.asset}/query`,
+        `${ENTITIES.asset.endpoint}/query`,
         {
           method: 'POST',
           body: {
@@ -178,25 +167,29 @@ export function assetRepo(
      * `GET /media/assets/{id}/links`. The backend resolves nothing: a link to a
      * since-deleted product still comes back, and no display name is included,
      * so the caller resolves `targetId` itself. Read-only; failures surface
-     * inline, not via a toast. Real-only (`hasUsageLinks`) — the mock has no
-     * such route, so callers must gate on the capability.
+     * inline, not via a toast.
      */
     async links(
       id: string,
       fetchOptions?: RepoFetchOptions,
     ): Promise<AssetLink[]> {
-      const res = await fetch<AssetLink[]>(`${endpoints.asset}/${id}/links`, {
-        ...fetchOptions,
-      });
+      const res = await fetch<AssetLink[]>(
+        `${ENTITIES.asset.endpoint}/${id}/links`,
+        {
+          ...fetchOptions,
+        },
+      );
       return Array.isArray(res) ? res : [];
     },
 
     /**
      * Distinct, sorted tag set across all assets — feeds the tag-input
-     * suggestions. Read-only; failures surface inline, not via a toast.
+     * suggestions. Read-only; failures surface inline, not via a toast. Phase 1
+     * serves no `/tags` route, so this is unreachable until phase 2
+     * (`tagAutocomplete` gates every call site).
      */
     async listTags(fetchOptions?: RepoFetchOptions): Promise<string[]> {
-      return await fetch<string[]>(`${endpoints.asset}/tags`, {
+      return await fetch<string[]>(`${ENTITIES.asset.endpoint}/tags`, {
         ...fetchOptions,
       });
     },
@@ -272,7 +265,7 @@ export function assetRepo(
         });
         const fileByRef = new Map(batch.map((it) => [it.clientRef, it.file]));
 
-        const ticket = await fetch<UploadTicketResponse>(endpoints.tickets, {
+        const ticket = await fetch<UploadTicketResponse>(TICKETS_ENDPOINT, {
           method: 'POST',
           body: { files: claims },
           errorContext: { action: 'creating', entity: ENTITIES.asset.key },
@@ -307,7 +300,7 @@ export function assetRepo(
         );
 
         const done = await fetch<UploadCompleteResponse>(
-          `${endpoints.tickets}/${ticket.ticketId}/complete`,
+          `${TICKETS_ENDPOINT}/${ticket.ticketId}/complete`,
           {
             method: 'POST',
             body: { files: accepted.map((r) => r.clientRef) },
@@ -337,14 +330,15 @@ export function assetRepo(
     /**
      * Replace an asset's underlying file (multipart) — uploads the new file and
      * repoints the row's file columns, keeping the same id + metadata. Returns
-     * the updated asset.
+     * the updated asset. Geins.Media phase 1 serves no `/replace` route, so this
+     * is unreachable until phase 2 (`canReplaceFile` gates every call site).
      */
     async replace(
       id: string,
       formData: FormData,
       fetchOptions?: RepoFetchOptions,
     ): Promise<Asset> {
-      return await fetch<Asset>(`${endpoints.asset}/${id}/replace`, {
+      return await fetch<Asset>(`${ENTITIES.asset.endpoint}/${id}/replace`, {
         method: 'POST',
         body: formData,
         errorContext: { action: 'updating', entity: ENTITIES.asset.key },
@@ -358,20 +352,13 @@ export function assetRepo(
      * `folderId`. The updated asset comes back on `200` **or** `202` (the
      * backend may settle the move asynchronously), so callers refresh the
      * library read rather than trusting the returned row to be settled.
-     *
-     * cutover: REMOVE@cutover — the mock has no relocate route (rename + move
-     * go through its `PATCH /asset/:id`), so it falls back to `update` and its
-     * wire behaviour is unchanged. Drop the branch with the mock. Ledger:
-     * docs/domains/assets-cutover.md.
      */
     async relocate(
       id: string,
       data: AssetRelocate,
       fetchOptions?: RepoFetchOptions,
     ): Promise<Asset> {
-      if (backend === 'mock')
-        return await assets.update(id, data, undefined, fetchOptions);
-      return await fetch<Asset>(`${endpoints.asset}/${id}/relocate`, {
+      return await fetch<Asset>(`${ENTITIES.asset.endpoint}/${id}/relocate`, {
         method: 'POST',
         body: data,
         errorContext: { action: 'updating', entity: ENTITIES.asset.key },
@@ -382,13 +369,11 @@ export function assetRepo(
     /**
      * Restore a soft-deleted asset from trash — real
      * `POST /media/assets/{id}/restore`. Deleting is soft on Geins.Media (30-day
-     * retention), so this is the undo; the mock hard-deletes and therefore has
-     * no trash at all, which is why callers gate on `hasTrash`. The response
-     * body is not relied on (the backend may answer `200` or `204`) — callers
+     * retention), so this is the undo. The response body is not relied on (the backend may answer `200` or `204`) — callers
      * refresh the library read instead.
      */
     async restore(id: string, fetchOptions?: RepoFetchOptions): Promise<void> {
-      await fetch<unknown>(`${endpoints.asset}/${id}/restore`, {
+      await fetch<unknown>(`${ENTITIES.asset.endpoint}/${id}/restore`, {
         method: 'POST',
         errorContext: { action: 'updating', entity: ENTITIES.asset.key },
         ...fetchOptions,
@@ -406,7 +391,7 @@ export function assetRepo(
       assets: FolderDeleteAssets = 'move',
       fetchOptions?: RepoFetchOptions,
     ): Promise<void> {
-      await fetch<null>(`${endpoints.folder}/${id}`, {
+      await fetch<null>(`${ENTITIES.folder.endpoint}/${id}`, {
         method: 'DELETE',
         query: { assets },
         errorContext: { action: 'deleting', entity: ENTITIES.folder.key },

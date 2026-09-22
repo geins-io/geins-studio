@@ -32,4 +32,4 @@ The reconciliation logic lives in [`useUploadWizard`](/composables/useUploadWiza
 - **Tags** — `FormInputTagsSearch` bound to `bulkSharedTags`/`applyBulkTags`; chips show only the tags shared by every checked file. Adding a tag appends it to all; removing one strips it from all, leaving each file's non-shared tags intact.
 - **Remove from upload** — drops the checked files from the upload (not a delete).
 
-**Capability gating.** Channels + tags render in a disabled `<fieldset>` under a non-mock backend (`useAssetCapabilities` → `canEditChannels` / `canEditTags`), matching [`AssetWizardManage`](/components/asset/AssetWizardManage) — they have no phase-1 upload route. Folder stays editable (it persists via the ticket claim). (`cutover: REVISIT@phase2`.)
+**Capability gating.** Channels + tags render in a disabled `<fieldset>` (`useAssetCapabilities` → `canEditChannels` / `canEditTags`), matching [`AssetWizardManage`](/components/asset/AssetWizardManage) — they have no phase-1 upload route. Folder stays editable (it persists via the ticket claim). (`cutover: REVISIT@phase2`.)

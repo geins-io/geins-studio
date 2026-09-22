@@ -1,20 +1,17 @@
-import type { AssetCapabilities, AssetsBackend } from '#shared/types';
+import type { AssetCapabilities } from '#shared/types';
 import { assetCapabilities } from '#shared/utils/asset';
 
 /**
- * Which Assets Library features are available, derived from the configured
- * backend (`public.assetsBackend`). Gate the per-field metadata edits, delete,
- * replace, and tag autocomplete on these so the UI degrades cleanly against the
- * real Geins.Media phase-1 API (browse + upload + description/alt-text edit +
- * delete) while the Supabase mock keeps everything on.
+ * Which Assets Library features are available on the shipped Geins.Media
+ * surface. Gate the tag, channel and replace controls on these so what phase 1
+ * can't fulfil disables cleanly instead of erroring.
  *
  * cutover: REVISIT@phase2 — temporary gating; remove this composable and every
  * `useAssetCapabilities()` consumer once phase 2 restores the features. Ledger:
  * docs/domains/assets-cutover.md.
  */
 export function useAssetCapabilities(): AssetCapabilities {
-  const backend = useRuntimeConfig().public.assetsBackend as AssetsBackend;
-  return assetCapabilities(backend);
+  return assetCapabilities();
 }
 
 export type UseAssetCapabilitiesReturnType = AssetCapabilities;

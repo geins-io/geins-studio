@@ -45,7 +45,6 @@ const emit = defineEmits<{
 }>();
 
 const { formatDate } = useDate();
-const { canDeleteAsset } = useAssetCapabilities();
 const size = computed(() => formatFileSize(props.asset.sizeBytes));
 
 // In the picker, the tile is a selection target — clicking the thumbnail or
@@ -116,7 +115,6 @@ const activate = () => {
       >
         <AssetActionsMenu
           :asset="asset"
-          :can-delete="canDeleteAsset"
           :trashed="trashed"
           @open="emit('open')"
           @download="emit('download')"

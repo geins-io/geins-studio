@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
   assetCapabilities,
-  assetEndpoints,
   assetListOptions,
   folderIdForSelection,
   ROOT_FOLDER_KEY,
@@ -49,44 +48,17 @@ describe('mimeToAssetType', () => {
 });
 
 describe('assetCapabilities', () => {
-  it('enables every gated feature for the mock backend, except the real-only ones', () => {
-    const caps = assetCapabilities('mock');
-    expect(caps).toEqual({
-      backend: 'mock',
-      canEditDescriptionAltText: true,
-      canEditTags: true,
-      canEditChannels: true,
-      canDeleteAsset: true,
-      canDeleteFolderWithAssets: true,
-      canReplaceFile: true,
-      tagAutocomplete: true,
-      hasThumbnails: true,
-      // The mock hard-deletes, so there is nothing to restore.
-      hasTrash: false,
-      // The mock has no `{id}/links` route, so there is no usage to show.
-      hasUsageLinks: false,
+  it('reports only the features phase 1 does not serve yet', () => {
+    expect(assetCapabilities()).toEqual({
+      // Phase-1 folder delete is empty-only (409 FOLDER_NOT_EMPTY) — no
+      // disposition to choose.
+      canDeleteFolderWithAssets: false,
+      canEditTags: false,
+      canEditChannels: false,
+      canReplaceFile: false,
+      tagAutocomplete: false,
+      hasThumbnails: false,
     });
-  });
-
-  it('reflects the shipped phase-1 surface for media-phase1', () => {
-    const caps = assetCapabilities('media-phase1');
-    expect(caps.backend).toBe('media-phase1');
-    // PATCH (description/altText) + DELETE shipped in phase 1. Rename + move
-    // ship too (POST …/relocate) — they carry no flag, so there is none to assert.
-    expect(caps.canEditDescriptionAltText).toBe(true);
-    expect(caps.canDeleteAsset).toBe(true);
-    // Not in the phase-1 surface yet.
-    expect(caps.canEditTags).toBe(false);
-    expect(caps.canEditChannels).toBe(false);
-    // Phase-1 folder delete is empty-only (409 FOLDER_NOT_EMPTY) — no disposition.
-    expect(caps.canDeleteFolderWithAssets).toBe(false);
-    expect(caps.canReplaceFile).toBe(false);
-    expect(caps.tagAutocomplete).toBe(false);
-    expect(caps.hasThumbnails).toBe(false);
-    // DELETE is soft on Geins.Media — trash + restore is real-only.
-    expect(caps.hasTrash).toBe(true);
-    // `GET {id}/links` is real-only too.
-    expect(caps.hasUsageLinks).toBe(true);
   });
 });
 
@@ -124,30 +96,6 @@ describe('contentTypeForUpload', () => {
 
   it('falls back to octet-stream for an unknown extension', () => {
     expect(contentTypeForUpload('data.xyz')).toBe('application/octet-stream');
-  });
-});
-
-describe('assetEndpoints', () => {
-  it('points media-phase1 at the real Geins.Media routes', () => {
-    expect(assetEndpoints('media-phase1')).toEqual({
-      asset: '/media/assets',
-      folder: '/media/folders',
-      // Real folders list at the collection root and are replaced with PUT.
-      folderList: '/media/folders',
-      folderUpdateMethod: 'PUT',
-      // Tickets are a sibling of assets on the real API, not a child.
-      tickets: '/media/tickets',
-    });
-  });
-
-  it('overrides back to the mock routes', () => {
-    expect(assetEndpoints('mock')).toEqual({
-      asset: '/asset',
-      folder: '/asset/folder',
-      folderList: '/asset/folder/list',
-      folderUpdateMethod: 'PATCH',
-      tickets: '/asset/tickets',
-    });
   });
 });
 

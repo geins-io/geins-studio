@@ -10,15 +10,15 @@ beforeEach(() => {
 });
 
 describe('assetRepo', () => {
-  const api = assetRepo(mockFetch, 'mock');
+  const api = assetRepo(mockFetch);
 
-  describe('assets → /asset', () => {
-    it('list POSTs the fetch-all batch to /asset/query and unwraps items', async () => {
+  describe('assets → /media/assets', () => {
+    it('list POSTs the fetch-all batch to /media/assets/query and unwraps items', async () => {
       const items = [{ _id: 'a1', _type: 'geins.asset' }];
       mockFetch.mockResolvedValue({ items });
       await expect(api.list()).resolves.toEqual(items);
       // `all: true` is the fetch-all switch; no folderIds = every folder.
-      expect(mockFetch).toHaveBeenCalledWith('/asset/query', {
+      expect(mockFetch).toHaveBeenCalledWith('/media/assets/query', {
         method: 'POST',
         body: { all: true },
       });
@@ -27,7 +27,7 @@ describe('assetRepo', () => {
     it('list scopes to a folder via folderIds (search stays client-side)', async () => {
       mockFetch.mockResolvedValue({ items: [] });
       await api.list({ folderId: 'f1', search: 'logo' });
-      expect(mockFetch).toHaveBeenCalledWith('/asset/query', {
+      expect(mockFetch).toHaveBeenCalledWith('/media/assets/query', {
         method: 'POST',
         body: { all: true, folderIds: ['f1'] },
       });
@@ -37,7 +37,7 @@ describe('assetRepo', () => {
       mockFetch.mockResolvedValue({ items: [] });
       await api.list({ folderId: null });
       // `folderId: null` (Uncategorised) must not collapse into "no filter".
-      expect(mockFetch).toHaveBeenCalledWith('/asset/query', {
+      expect(mockFetch).toHaveBeenCalledWith('/media/assets/query', {
         method: 'POST',
         body: { all: true, folderIds: [null] },
       });
@@ -47,19 +47,21 @@ describe('assetRepo', () => {
       mockFetch.mockResolvedValue({ items: [] });
       await api.list({ trashed: true });
       // Either-or: `trashed: true` replaces the live set, so it rides alone.
-      expect(mockFetch).toHaveBeenCalledWith('/asset/query', {
+      expect(mockFetch).toHaveBeenCalledWith('/media/assets/query', {
         method: 'POST',
         body: { all: true, trashed: true },
       });
     });
 
-    it('get calls GET /asset/:id', async () => {
+    it('get calls GET /media/assets/:id', async () => {
       mockFetch.mockResolvedValue({ _id: '1', _type: 'asset' });
       await api.get('1');
-      expect(mockFetch).toHaveBeenCalledWith('/asset/1', { query: undefined });
+      expect(mockFetch).toHaveBeenCalledWith('/media/assets/1', {
+        query: undefined,
+      });
     });
 
-    it('create POSTs to /asset with asset errorContext', async () => {
+    it('create POSTs to /media/assets with asset errorContext', async () => {
       const body = {
         name: 'hero.jpg',
         type: 'image' as const,
@@ -69,7 +71,7 @@ describe('assetRepo', () => {
       };
       mockFetch.mockResolvedValue({ _id: '1', _type: 'asset', ...body });
       await api.create(body);
-      expect(mockFetch).toHaveBeenCalledWith('/asset', {
+      expect(mockFetch).toHaveBeenCalledWith('/media/assets', {
         method: 'POST',
         body,
         query: undefined,
@@ -77,10 +79,10 @@ describe('assetRepo', () => {
       });
     });
 
-    it('update PATCHes /asset/:id with asset errorContext', async () => {
+    it('update PATCHes /media/assets/:id with asset errorContext', async () => {
       mockFetch.mockResolvedValue({ _id: '1', _type: 'asset' });
       await api.update('1', { name: 'renamed.jpg' });
-      expect(mockFetch).toHaveBeenCalledWith('/asset/1', {
+      expect(mockFetch).toHaveBeenCalledWith('/media/assets/1', {
         method: 'PATCH',
         body: { name: 'renamed.jpg' },
         query: undefined,
@@ -88,32 +90,40 @@ describe('assetRepo', () => {
       });
     });
 
-    it('delete DELETEs /asset/:id with asset errorContext', async () => {
+    it('delete DELETEs /media/assets/:id with asset errorContext', async () => {
       mockFetch.mockResolvedValue(null);
       await api.delete('1');
-      expect(mockFetch).toHaveBeenCalledWith('/asset/1', {
+      expect(mockFetch).toHaveBeenCalledWith('/media/assets/1', {
         method: 'DELETE',
         errorContext: { action: 'deleting', entity: 'asset' },
       });
     });
 
-    it('relocate falls back to the mock PATCH (no relocate route there)', async () => {
+    it('relocate POSTs name + folder to /media/assets/:id/relocate', async () => {
       mockFetch.mockResolvedValue({ _id: '1', _type: 'asset' });
       await api.relocate('1', { name: 'renamed.jpg', folderId: 'f1' });
-      expect(mockFetch).toHaveBeenCalledWith('/asset/1', {
-        method: 'PATCH',
+      expect(mockFetch).toHaveBeenCalledWith('/media/assets/1/relocate', {
+        method: 'POST',
         body: { name: 'renamed.jpg', folderId: 'f1' },
-        query: undefined,
         errorContext: { action: 'updating', entity: 'asset' },
       });
     });
 
-    it('replace POSTs the form data to /asset/:id/replace', async () => {
+    it('restore POSTs to /media/assets/:id/restore', async () => {
+      mockFetch.mockResolvedValue(null);
+      await api.restore('1');
+      expect(mockFetch).toHaveBeenCalledWith('/media/assets/1/restore', {
+        method: 'POST',
+        errorContext: { action: 'updating', entity: 'asset' },
+      });
+    });
+
+    it('replace POSTs the form data to /media/assets/:id/replace', async () => {
       const form = new FormData();
       form.append('file', new File(['x'], 'b.jpg', { type: 'image/jpeg' }));
       mockFetch.mockResolvedValue({ _id: '1', _type: 'asset' });
       await api.replace('1', form);
-      expect(mockFetch).toHaveBeenCalledWith('/asset/1/replace', {
+      expect(mockFetch).toHaveBeenCalledWith('/media/assets/1/replace', {
         method: 'POST',
         body: form,
         errorContext: { action: 'updating', entity: 'asset' },
@@ -121,20 +131,20 @@ describe('assetRepo', () => {
     });
   });
 
-  describe('folder sub-repo → /asset/folder', () => {
-    it('folder.list calls GET /asset/folder/list', async () => {
+  describe('folder sub-repo → /media/folders', () => {
+    it('folder.list reads the collection root, not /list', async () => {
       mockFetch.mockResolvedValue([]);
       await api.folder.list();
-      expect(mockFetch).toHaveBeenCalledWith('/asset/folder/list', {
+      expect(mockFetch).toHaveBeenCalledWith('/media/folders', {
         query: undefined,
       });
     });
 
-    it('folder.create POSTs to /asset/folder with folder errorContext', async () => {
-      const body = { name: 'Marketing', parentFolderId: null, sortOrder: 0 };
+    it('folder.create POSTs to /media/folders with folder errorContext', async () => {
+      const body = { name: 'Marketing', parentFolderId: null };
       mockFetch.mockResolvedValue({ _id: 'f', _type: 'folder', ...body });
       await api.folder.create(body);
-      expect(mockFetch).toHaveBeenCalledWith('/asset/folder', {
+      expect(mockFetch).toHaveBeenCalledWith('/media/folders', {
         method: 'POST',
         body,
         query: undefined,
@@ -142,10 +152,10 @@ describe('assetRepo', () => {
       });
     });
 
-    it('folder.delete DELETEs /asset/folder/:id', async () => {
+    it('folder.delete DELETEs /media/folders/:id', async () => {
       mockFetch.mockResolvedValue(null);
       await api.folder.delete('f');
-      expect(mockFetch).toHaveBeenCalledWith('/asset/folder/f', {
+      expect(mockFetch).toHaveBeenCalledWith('/media/folders/f', {
         method: 'DELETE',
         errorContext: { action: 'deleting', entity: 'folder' },
       });
@@ -154,7 +164,7 @@ describe('assetRepo', () => {
     it('deleteFolder defaults to moving assets to uncategorised', async () => {
       mockFetch.mockResolvedValue(null);
       await api.deleteFolder('f');
-      expect(mockFetch).toHaveBeenCalledWith('/asset/folder/f', {
+      expect(mockFetch).toHaveBeenCalledWith('/media/folders/f', {
         method: 'DELETE',
         query: { assets: 'move' },
         errorContext: { action: 'deleting', entity: 'folder' },
@@ -164,7 +174,7 @@ describe('assetRepo', () => {
     it('deleteFolder forwards the delete disposition', async () => {
       mockFetch.mockResolvedValue(null);
       await api.deleteFolder('f', 'delete');
-      expect(mockFetch).toHaveBeenCalledWith('/asset/folder/f', {
+      expect(mockFetch).toHaveBeenCalledWith('/media/folders/f', {
         method: 'DELETE',
         query: { assets: 'delete' },
         errorContext: { action: 'deleting', entity: 'folder' },
@@ -172,7 +182,7 @@ describe('assetRepo', () => {
     });
   });
 
-  describe('uploadViaTickets → /asset/tickets', () => {
+  describe('uploadViaTickets → /media/tickets', () => {
     it('claims a ticket, PUTs accepted bytes, completes, and merges outcomes', async () => {
       const put = vi.fn().mockResolvedValue({ ok: true });
       vi.stubGlobal('fetch', put);
@@ -185,7 +195,7 @@ describe('assetRepo', () => {
               clientRef: 'a',
               status: 'accepted',
               assetId: 'id-a',
-              upload: { mode: 'single', url: '/api/asset/tickets/t1/blob/a' },
+              upload: { mode: 'single', url: '/api/media/tickets/t1/blob/a' },
             },
             {
               clientRef: 'b',
@@ -211,13 +221,13 @@ describe('assetRepo', () => {
       // Step 1: ticket claim.
       expect(mockFetch).toHaveBeenNthCalledWith(
         1,
-        '/asset/tickets',
+        '/media/tickets',
         expect.objectContaining({ method: 'POST' }),
       );
       // Step 2: PUT only the accepted file, with the Azure blob headers.
       expect(put).toHaveBeenCalledTimes(1);
       expect(put).toHaveBeenCalledWith(
-        '/api/asset/tickets/t1/blob/a',
+        '/api/media/tickets/t1/blob/a',
         expect.objectContaining({
           method: 'PUT',
           headers: {
@@ -230,7 +240,7 @@ describe('assetRepo', () => {
       // Step 3: complete with the accepted refs only.
       expect(mockFetch).toHaveBeenNthCalledWith(
         2,
-        '/asset/tickets/t1/complete',
+        '/media/tickets/t1/complete',
         expect.objectContaining({ method: 'POST', body: { files: ['a'] } }),
       );
       // Merged: completed 'a' + ticket-stage rejection 'b'.
@@ -271,7 +281,7 @@ describe('assetRepo', () => {
 
       expect(mockFetch).toHaveBeenNthCalledWith(
         1,
-        '/asset/tickets',
+        '/media/tickets',
         expect.objectContaining({
           body: {
             files: [
@@ -309,7 +319,7 @@ describe('assetRepo', () => {
       );
       // Each ticket claim accepts whatever it was sent; each complete echoes them.
       mockFetch.mockImplementation((url: string, opts: { body?: unknown }) => {
-        if (url === '/asset/tickets') {
+        if (url === '/media/tickets') {
           const body = opts.body as { files: { clientRef: string }[] };
           return Promise.resolve({
             ticketId: `t-${body.files.length}`,
@@ -338,7 +348,7 @@ describe('assetRepo', () => {
       );
 
       const ticketClaims = mockFetch.mock.calls.filter(
-        (c: unknown[]) => c[0] === '/asset/tickets',
+        (c: unknown[]) => c[0] === '/media/tickets',
       );
       expect(ticketClaims).toHaveLength(2); // 50 + 1
       expect(put).toHaveBeenCalledTimes(51);
@@ -389,146 +399,5 @@ describe('assetRepo', () => {
       ).rejects.toThrow(/Unsupported upload mode/);
       vi.unstubAllGlobals();
     });
-  });
-});
-
-// The mock and Geins.Media differ in more than a prefix — these pin the route
-// deltas the `media-phase1` flag has to get right. cutover: the `mock` describes
-// above drop when the Supabase mock does; this block becomes the only one.
-describe('assetRepo — media-phase1 transport', () => {
-  const api = assetRepo(mockFetch, 'media-phase1');
-
-  it('list POSTs to /media/assets/query', async () => {
-    mockFetch.mockResolvedValue({ items: [] });
-    await api.list({ folderId: 'f1' });
-    expect(mockFetch).toHaveBeenCalledWith('/media/assets/query', {
-      method: 'POST',
-      body: { all: true, folderIds: ['f1'] },
-    });
-  });
-
-  it('get / update / delete hang off /media/assets/:id', async () => {
-    mockFetch.mockResolvedValue({ _id: '1', _type: 'geins.asset' });
-    await api.get('1');
-    expect(mockFetch).toHaveBeenCalledWith('/media/assets/1', {
-      query: undefined,
-    });
-
-    await api.update('1', { description: 'x' });
-    expect(mockFetch).toHaveBeenCalledWith('/media/assets/1', {
-      method: 'PATCH',
-      body: { description: 'x' },
-      query: undefined,
-      errorContext: { action: 'updating', entity: 'asset' },
-    });
-
-    mockFetch.mockResolvedValue(null);
-    await api.delete('1');
-    expect(mockFetch).toHaveBeenCalledWith('/media/assets/1', {
-      method: 'DELETE',
-      errorContext: { action: 'deleting', entity: 'asset' },
-    });
-  });
-
-  it('restore POSTs to /media/assets/:id/restore', async () => {
-    mockFetch.mockResolvedValue(null);
-    await api.restore('1');
-    expect(mockFetch).toHaveBeenCalledWith('/media/assets/1/restore', {
-      method: 'POST',
-      errorContext: { action: 'updating', entity: 'asset' },
-    });
-  });
-
-  it('relocate POSTs name + folder to /media/assets/:id/relocate', async () => {
-    mockFetch.mockResolvedValue({ _id: '1', _type: 'geins.asset' });
-    await api.relocate(
-      '1',
-      { name: 'renamed.jpg', folderId: null },
-      { suppressErrorToast: true },
-    );
-    expect(mockFetch).toHaveBeenCalledWith('/media/assets/1/relocate', {
-      method: 'POST',
-      body: { name: 'renamed.jpg', folderId: null },
-      errorContext: { action: 'updating', entity: 'asset' },
-      suppressErrorToast: true,
-    });
-  });
-
-  it('folder.list reads the collection root, not /list', async () => {
-    mockFetch.mockResolvedValue([]);
-    await api.folder.list();
-    expect(mockFetch).toHaveBeenCalledWith('/media/folders', {
-      query: undefined,
-    });
-  });
-
-  it('folder.update PUTs (the real API replaces the folder)', async () => {
-    mockFetch.mockResolvedValue({ _id: 'f', _type: 'geins.folder' });
-    await api.folder.update('f', { name: 'Campaigns', parentFolderId: null });
-    expect(mockFetch).toHaveBeenCalledWith('/media/folders/f', {
-      method: 'PUT',
-      body: { name: 'Campaigns', parentFolderId: null },
-      query: undefined,
-      errorContext: { action: 'updating', entity: 'folder' },
-    });
-  });
-
-  it('folder.create / delete hang off /media/folders', async () => {
-    mockFetch.mockResolvedValue({ _id: 'f', _type: 'geins.folder' });
-    // `sortOrder` is still on FolderCreate (mock-only, REMOVE@cutover) — the
-    // route, not the body, is what this pins.
-    const body = { name: 'Campaigns', parentFolderId: null, sortOrder: 0 };
-    await api.folder.create(body);
-    expect(mockFetch).toHaveBeenCalledWith('/media/folders', {
-      method: 'POST',
-      body,
-      query: undefined,
-      errorContext: { action: 'creating', entity: 'folder' },
-    });
-
-    mockFetch.mockResolvedValue(null);
-    await api.folder.delete('f');
-    expect(mockFetch).toHaveBeenCalledWith('/media/folders/f', {
-      method: 'DELETE',
-      errorContext: { action: 'deleting', entity: 'folder' },
-    });
-  });
-
-  it('tickets sit at /media/tickets, not under assets', async () => {
-    const put = vi.fn().mockResolvedValue({ ok: true });
-    vi.stubGlobal('fetch', put);
-    mockFetch
-      .mockResolvedValueOnce({
-        ticketId: 't1',
-        expiresAt: 'x',
-        results: [
-          {
-            clientRef: 'a',
-            status: 'accepted',
-            assetId: 'id-a',
-            upload: { mode: 'single', url: 'https://blob/a' },
-          },
-        ],
-      })
-      .mockResolvedValueOnce({
-        results: [
-          { clientRef: 'a', status: 'completed', file: { _id: 'id-a' } },
-        ],
-      });
-
-    const file = new File(['x'], 'a.png', { type: 'image/png' });
-    await api.uploadViaTickets([{ file, clientRef: 'a' }]);
-
-    expect(mockFetch).toHaveBeenNthCalledWith(
-      1,
-      '/media/tickets',
-      expect.objectContaining({ method: 'POST' }),
-    );
-    expect(mockFetch).toHaveBeenNthCalledWith(
-      2,
-      '/media/tickets/t1/complete',
-      expect.objectContaining({ method: 'POST', body: { files: ['a'] } }),
-    );
-    vi.unstubAllGlobals();
   });
 });

@@ -263,8 +263,6 @@ export interface FolderBase {
   name: string;
   /** Parent folder id; `null` = top-level. Named to match Geins.Media. */
   parentFolderId: string | null;
-  /** Mock-only — real phase 1 has no manual ordering. REMOVE@cutover. */
-  sortOrder?: number;
 }
 
 export type FolderCreate = CreateEntity<FolderBase>;
@@ -285,11 +283,6 @@ export interface Folder extends ResponseEntity<FolderBase> {
   path: string;
   /** Depth in the tree — segment count of `path` (1 = top level). */
   depth: number;
-  /**
-   * Locked system folder (Uncategorised / Archived) — mock-only; real phase 1
-   * has no system folders, so it is absent there. REMOVE@cutover.
-   */
-  system?: boolean;
   createdBy?: string;
   createdAt: string;
   updatedAt?: string;
@@ -307,53 +300,17 @@ export type FolderDeleteAssets = 'move' | 'delete';
 // =============================================================================
 
 /**
- * Which Assets Library backend the client targets. `mock` is the full Supabase
- * mock; `media-phase1` is the real Geins.Media phase-1 API, which serves browse
- * + upload, metadata `PATCH`, `relocate` and `DELETE` (see the Phase 8
- * milestone).
- */
-export type AssetsBackend = 'mock' | 'media-phase1';
-
-/**
- * The wire routes for a given backend. The real Geins.Media surface and the
- * Supabase mock differ in more than a prefix: folders list at the collection
- * root (`GET /media/folders`) rather than the Management API's `/list`
- * convention, folder updates are a `PUT` replace, and upload tickets are a
- * sibling of assets, not a child. Derived from the backend via `assetEndpoints`.
- */
-export interface AssetEndpoints {
-  /** Asset collection base — `{base}/{id}` and `{base}/query` hang off it. */
-  asset: string;
-  /** Folder collection base — `{base}/{id}` for get/update/delete. */
-  folder: string;
-  /** Folder list route (real: the collection root; mock: `/list`). */
-  folderList: string;
-  /** Verb for a folder update — the real API replaces, the mock patches. */
-  folderUpdateMethod: 'PATCH' | 'PUT';
-  /** Upload-ticket base — `{base}/{ticketId}/complete` hangs off it. */
-  tickets: string;
-}
-
-/**
- * Feature availability per backend — the shipped UI gates on these so controls
- * the real phase-1 API can't fulfil disable cleanly instead of erroring, while
- * the mock keeps everything on. Derived from the backend via `assetCapabilities`.
- *
- * Real Geins.Media phase 1 ships browse + upload, `PATCH` (description/altText/
- * localizations only), `POST …/relocate` (rename + move) and `DELETE`
- * (+ restore). Those work on both backends and therefore carry no flag at all;
- * tags/channels/replace/thumbnails/tag-autocomplete and the folder-delete asset
- * disposition are still gated to the mock until phase 2.
+ * Feature availability for the shipped Geins.Media surface — the UI gates on
+ * these so controls phase 1 can't fulfil disable cleanly instead of erroring.
+ * Only still-gated features carry a flag: browse, upload, metadata `PATCH`,
+ * `relocate`, `DELETE` + restore and usage links all ship, so they have none.
+ * Read via `assetCapabilities`.
  */
 export interface AssetCapabilities {
-  backend: AssetsBackend;
-  /** Edit + save an asset's description and localized alt text (phase-1 PATCH). */
-  canEditDescriptionAltText: boolean;
   /** Edit an asset's tags. */
   canEditTags: boolean;
   /** Edit an asset's publication channels. */
   canEditChannels: boolean;
-  canDeleteAsset: boolean;
   /**
    * Folder delete can decide what happens to the assets inside (re-home to
    * uncategorised, or delete them too). Phase 1's `DELETE /media/folders/{id}`
@@ -361,17 +318,6 @@ export interface AssetCapabilities {
    */
   canDeleteFolderWithAssets: boolean;
   canReplaceFile: boolean;
-  /**
-   * `DELETE` is a soft delete: the asset goes to trash (30-day retention) and
-   * comes back via `POST /media/assets/{id}/restore`, with `assetQuery.trashed`
-   * listing it. The mock hard-deletes, so it has no trash to show.
-   */
-  hasTrash: boolean;
-  /**
-   * Asset usage ("Used in") is readable via `GET /media/assets/{id}/links`. The
-   * mock has no such route, so the section is real-only.
-   */
-  hasUsageLinks: boolean;
   /** Suggest existing tags from the distinct-tags source. */
   tagAutocomplete: boolean;
   /** Backend produces real thumbnails (`thumbUrl`); phase 1 returns null. */
