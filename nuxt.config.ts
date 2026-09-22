@@ -1,6 +1,10 @@
 import { readFileSync } from 'node:fs';
 import tailwindcss from '@tailwindcss/vite';
-import { getBaseUrl, getAuthBaseUrl } from './shared/utils/deployment';
+import {
+  getBaseUrl,
+  getAuthBaseUrl,
+  includeDevPages,
+} from './shared/utils/deployment';
 
 const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
 
@@ -41,7 +45,16 @@ export default defineNuxtConfig({
     normalizeComponentNames: true,
   },
 
-  ignore: ['.temp/**', '.agents/**', '.mint/**', '.claude/**'],
+  ignore: [
+    '.temp/**',
+    '.agents/**',
+    '.mint/**',
+    '.claude/**',
+    // Dev harnesses are excluded from the build itself, not gated at runtime,
+    // so their hardcoded copy never reaches a prod bundle. INCLUDE_DEV_PAGES=true
+    // brings them back for the QA + preview projects.
+    ...(includeDevPages() ? [] : ['app/pages/dev/**']),
+  ],
 
   modules: [
     '@sidebase/nuxt-auth',
