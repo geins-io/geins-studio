@@ -11,7 +11,7 @@ vi.mock('../log', () => ({
 }));
 
 // eslint-disable-next-line import/first
-import { getBaseUrl, getAuthBaseUrl } from '../deployment';
+import { getBaseUrl, getAuthBaseUrl, includeDevPages } from '../deployment';
 
 const ENV_KEYS = [
   'VERCEL',
@@ -32,6 +32,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  // NODE_ENV is read-only on process.env's type, so those cases stub instead.
+  vi.unstubAllEnvs();
   for (const key of ENV_KEYS) {
     if (saved[key] !== undefined) {
       (process.env as Record<string, string | undefined>)[key] = saved[key];
@@ -103,5 +105,29 @@ describe('getAuthBaseUrl', () => {
     process.env.BASE_URL = 'https://studio.geins.io';
     process.env.AUTH_PATH = '/auth/v2';
     expect(getAuthBaseUrl()).toBe('https://studio.geins.io/auth/v2');
+  });
+});
+
+describe('includeDevPages', () => {
+  it('includes dev pages in a dev build', () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    expect(includeDevPages()).toBe(true);
+  });
+
+  it('excludes dev pages from a production build by default', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    expect(includeDevPages()).toBe(false);
+  });
+
+  it('includes dev pages in a production build when opted in', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('INCLUDE_DEV_PAGES', 'true');
+    expect(includeDevPages()).toBe(true);
+  });
+
+  it('only accepts the literal string true', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('INCLUDE_DEV_PAGES', '1');
+    expect(includeDevPages()).toBe(false);
   });
 });

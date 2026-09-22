@@ -8,9 +8,10 @@ import { formatFileSize } from '#shared/utils/file';
  * the `<AssetPicker>` wrapper against the single global host. Copy is hardcoded
  * on purpose and must not pollute the locale files.
  *
- * Intentionally UNGUARDED so QA can reach it on the QA deploy (a separate Vercel
- * project that runs as prod, so an `import.meta.dev` gate would 404 it there
- * too). Must be removed or re-guarded before the prod merge — tracked separately.
+ * Everything under `app/pages/dev/` is dropped from the build unless
+ * `INCLUDE_DEV_PAGES=true` (always on in `nuxt dev`) — see `includeDevPages()`
+ * in shared/utils/deployment.ts. That flag is set on the QA and preview Vercel
+ * projects and never on prod, so this copy never ships there.
  */
 const { folderName } = useFolders();
 const { open: openPicker } = useAssetPicker();
