@@ -12,6 +12,10 @@ export const MAX_FILES_PER_TICKET = 50;
 export const MAX_FILE_BYTES = 1024 ** 3; // 1 GB per file
 export const MAX_TICKET_BYTES = 10 * 1024 ** 3; // 10 GB per ticket total
 
+// `assetQuery` caps `pageSize` here (default 100); the list fetches one page at
+// the cap and treats it as the whole library.
+export const ASSET_QUERY_PAGE_SIZE = 1000;
+
 // Extension → MIME for the upload path. The browser leaves `File.type` empty
 // for many types (e.g. `.svg`, some `.mp4`), and the ticket flow needs a
 // declared `mimeType`, so derive it from the name when the browser gives none.
