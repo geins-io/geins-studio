@@ -13,43 +13,47 @@ describe('assetRepo', () => {
   const api = assetRepo(mockFetch);
 
   describe('assets → /media/assets', () => {
-    it('list POSTs the fetch-all batch to /media/assets/query and unwraps items', async () => {
+    const page = { page: 1, pageSize: 1000 };
+
+    it('list POSTs the match-all batch to /media/assets/query and unwraps items', async () => {
       const items = [{ _id: 'a1', _type: 'geins.asset' }];
-      mockFetch.mockResolvedValue({ items });
+      mockFetch.mockResolvedValue({ _id: 'b1', pageCount: 1, items });
       await expect(api.list()).resolves.toEqual(items);
-      // `all: true` is the fetch-all switch; no folderIds = every folder.
+      // No filters = the "all assets" view, the only case `all: true` is sent.
       expect(mockFetch).toHaveBeenCalledWith('/media/assets/query', {
         method: 'POST',
-        body: { all: true },
+        body: { all: true, ...page },
       });
     });
 
-    it('list scopes to a folder via folderIds (search stays client-side)', async () => {
-      mockFetch.mockResolvedValue({ items: [] });
+    it('list scopes to a folder subtree without all (search stays client-side)', async () => {
+      mockFetch.mockResolvedValue({ _id: 'b1', pageCount: 1, items: [] });
       await api.list({ folderId: 'f1', search: 'logo' });
+      // `all: true` would override `folderIds`, so it must not ride along.
       expect(mockFetch).toHaveBeenCalledWith('/media/assets/query', {
         method: 'POST',
-        body: { all: true, folderIds: ['f1'] },
+        body: { folderIds: ['f1'], includeSubfolders: true, ...page },
       });
     });
 
     it('list scopes to the library root via a null folderIds entry', async () => {
-      mockFetch.mockResolvedValue({ items: [] });
+      mockFetch.mockResolvedValue({ _id: 'b1', pageCount: 1, items: [] });
       await api.list({ folderId: null });
-      // `folderId: null` (Uncategorised) must not collapse into "no filter".
+      // `folderId: null` (Uncategorised) must not collapse into "no filter", and
+      // is root-level only — no `includeSubfolders`.
       expect(mockFetch).toHaveBeenCalledWith('/media/assets/query', {
         method: 'POST',
-        body: { all: true, folderIds: [null] },
+        body: { folderIds: [null], ...page },
       });
     });
 
-    it('list asks for the trashed set', async () => {
-      mockFetch.mockResolvedValue({ items: [] });
+    it('list asks for the trashed set without all', async () => {
+      mockFetch.mockResolvedValue({ _id: 'b1', pageCount: 1, items: [] });
       await api.list({ trashed: true });
       // Either-or: `trashed: true` replaces the live set, so it rides alone.
       expect(mockFetch).toHaveBeenCalledWith('/media/assets/query', {
         method: 'POST',
-        body: { all: true, trashed: true },
+        body: { trashed: true, ...page },
       });
     });
 

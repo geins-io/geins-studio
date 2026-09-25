@@ -13,16 +13,16 @@ The Assets domain manages media files (images, SVGs, documents, PDFs, video, aud
 
 ## Key Concepts
 
-**Folder = backend category filter** — Folders are an adjacency list (`parentFolderId`, self-referential). A folder is not client-side tree math: selecting one sends a `folderId` filter to the API, which returns that folder **plus all descendants**.
+**Folder = backend category filter** — Folders are an adjacency list (`parentFolderId`, self-referential). A folder is not client-side tree math: selecting one sends a `folderIds` filter with `includeSubfolders: true`, so the API returns that folder **plus all descendants** (without the flag it returns only the folder's direct assets).
 
 **Four rail scopes** — the rail's selection maps to list options via `assetListOptions` (`#shared/utils/asset`):
 
-| Rail entry    | Selection         | List options       | Wire (`assetQuery`)   |
-| ------------- | ----------------- | ------------------ | --------------------- |
-| All assets    | `null`            | `undefined`        | no `folderIds`        |
-| Uncategorised | `ROOT_FOLDER_KEY` | `folderId: null`   | `folderIds: [null]`   |
-| A folder      | folder id         | `folderId: '<id>'` | `folderIds: ['<id>']` |
-| Trash         | `TRASH_KEY`       | `trashed: true`    | `trashed: true`       |
+| Rail entry    | Selection         | List options       | Wire (`assetQuery`)                              |
+| ------------- | ----------------- | ------------------ | ------------------------------------------------ |
+| All assets    | `null`            | `undefined`        | `all: true`                                      |
+| Uncategorised | `ROOT_FOLDER_KEY` | `folderId: null`   | `folderIds: [null]`                              |
+| A folder      | folder id         | `folderId: '<id>'` | `folderIds: ['<id>']`, `includeSubfolders: true` |
+| Trash         | `TRASH_KEY`       | `trashed: true`    | `trashed: true`                                  |
 
 **Uncategorised is a query, not a folder row** — assets with no folder are `folderId: null` on the real API, so the rail pins the entry itself. `folderId: null` and an omitted `folderId` must stay distinct all the way to the body; collapsing them turns the Uncategorised view into "everything". Geins.Media has no system folders at all; the old mock's `Archived` row is **gone for good** — its slot is now **Trash**, the real version of that idea.
 
@@ -67,26 +67,26 @@ The contract is **camelCase + `_id`/`_type`** (via `ResponseEntity`), mirroring 
 
 > **Wire fields.** `Asset._type` is `'geins.asset'`; each `Asset` carries `path` (= `folderPath`/`name`) and `folderPath` (owning folder's full path; `null` at root), and each `Folder` carries `path` + `depth` (segment count; 1 = top level). What remains temporary is logged in the [cutover ledger](./assets-cutover.md) (`grep cutover:`) so nothing rots when phase 2 lands.
 
-| Method & path                      | Repo call                           | Body / query                              | Returns                  |
-| ---------------------------------- | ----------------------------------- | ----------------------------------------- | ------------------------ |
-| `POST /asset/query`                | `assetApi.list(opts)`               | `assetQuery` (`all: true`, `folderIds[]`) | `Asset[]`                |
-| `GET /asset/:id`                   | `assetApi.get(id)`                  | —                                         | `Asset`                  |
-| `POST /asset`                      | `assetApi.create(data)`             | `AssetCreate`                             | `Asset`                  |
-| `PATCH /asset/:id`                 | `assetApi.update(id, data)`         | `AssetUpdate`                             | `Asset`                  |
-| `DELETE /asset/:id`                | `assetApi.delete(id)`               | —                                         | `null`                   |
-| `POST /asset/:id/relocate`         | `assetApi.relocate(id, d)`          | `AssetRelocate` (rename / move)           | `Asset`                  |
-| `POST /asset/tickets`              | `assetApi.uploadViaTickets(items)`  | `{ files: UploadTicketFile[] }`           | `UploadTicketResponse`   |
-| `PUT <plan url>` (bytes)           | ↳ raw `fetch` (no proxy)            | file bytes + Azure blob headers           | `—`                      |
-| `POST /asset/tickets/:id/complete` | ↳ same method                       | `{ files: clientRef[] }`                  | `UploadCompleteResponse` |
-| `POST /asset/:id/replace`          | `assetApi.replace(id, fd)`          | multipart single file                     | `Asset`                  |
-| `GET /asset/folder/list`           | `assetApi.folder.list()`            | —                                         | `Folder[]`               |
-| `GET /asset/folder/:id`            | `assetApi.folder.get(id)`           | —                                         | `Folder`                 |
-| `POST /asset/folder`               | `assetApi.folder.create(d)`         | `FolderCreate`                            | `Folder`                 |
-| `PATCH /asset/folder/:id`          | `assetApi.folder.update(…)`         | `FolderUpdate` (rename / move)            | `Folder`                 |
-| `DELETE /asset/folder/:id`         | `assetApi.deleteFolder(id, assets)` | `?assets=move\|delete` (default `move`)   | `null`                   |
+| Method & path                      | Repo call                           | Body / query                                     | Returns                  |
+| ---------------------------------- | ----------------------------------- | ------------------------------------------------ | ------------------------ |
+| `POST /asset/query`                | `assetApi.list(opts)`               | `assetQuery` (`folderIds[]` / `trashed` / `all`) | `Asset[]`                |
+| `GET /asset/:id`                   | `assetApi.get(id)`                  | —                                                | `Asset`                  |
+| `POST /asset`                      | `assetApi.create(data)`             | `AssetCreate`                                    | `Asset`                  |
+| `PATCH /asset/:id`                 | `assetApi.update(id, data)`         | `AssetUpdate`                                    | `Asset`                  |
+| `DELETE /asset/:id`                | `assetApi.delete(id)`               | —                                                | `null`                   |
+| `POST /asset/:id/relocate`         | `assetApi.relocate(id, d)`          | `AssetRelocate` (rename / move)                  | `Asset`                  |
+| `POST /asset/tickets`              | `assetApi.uploadViaTickets(items)`  | `{ files: UploadTicketFile[] }`                  | `UploadTicketResponse`   |
+| `PUT <plan url>` (bytes)           | ↳ raw `fetch` (no proxy)            | file bytes + Azure blob headers                  | `—`                      |
+| `POST /asset/tickets/:id/complete` | ↳ same method                       | `{ files: clientRef[] }`                         | `UploadCompleteResponse` |
+| `POST /asset/:id/replace`          | `assetApi.replace(id, fd)`          | multipart single file                            | `Asset`                  |
+| `GET /asset/folder/list`           | `assetApi.folder.list()`            | —                                                | `Folder[]`               |
+| `GET /asset/folder/:id`            | `assetApi.folder.get(id)`           | —                                                | `Folder`                 |
+| `POST /asset/folder`               | `assetApi.folder.create(d)`         | `FolderCreate`                                   | `Folder`                 |
+| `PATCH /asset/folder/:id`          | `assetApi.folder.update(…)`         | `FolderUpdate` (rename / move)                   | `Folder`                 |
+| `DELETE /asset/folder/:id`         | `assetApi.deleteFolder(id, assets)` | `?assets=move\|delete` (default `move`)          | `null`                   |
 
-- **List query:** `assetApi.list()` POSTs the real `assetQuery` shape to `POST /asset/query` and unwraps `BatchQueryResult.items`. Fetch-all is `all: true` (the real schema caps `pageSize` at 1000 — no huge page size); sort / paginate / search stay client-side via TanStack (app-wide convention). Still guard with `Array.isArray()` before `.map()` (per the repository rules in `CLAUDE.md`).
-- **`folderIds` filtering** goes over the wire as `folderIds: [id]` (a `null` element = library root) and resolves the selected folder + descendants server-side; omitted entirely for the "all assets" view.
+- **List query:** `assetApi.list()` POSTs the real `assetQuery` shape to `POST /asset/query` and unwraps `BatchQueryResult.items`. It requests a single `page: 1, pageSize: 1000` (the real schema's cap; default 100) and treats that as the whole library — a deliberate ceiling until the backend ships sort + search on the query endpoint and we move to server-side pagination. Sort / paginate / search stay client-side via TanStack (app-wide convention). **`all: true` is only sent for the unfiltered "all assets" view** — it matches every asset _regardless of_ the other filters, so pairing it with `folderIds` / `trashed` silently drops the scope. Still guard with `Array.isArray()` before `.map()` (per the repository rules in `CLAUDE.md`).
+- **`folderIds` filtering** goes over the wire as `folderIds: [id]` + `includeSubfolders: true` (the selected folder + descendants). The library root is `folderIds: [null]` **without** `includeSubfolders` — Uncategorised is root-level assets only, and "descendants of root" would be the whole library. Omitted entirely for the "all assets" view.
 - **Asset delete is soft.** `DELETE /media/assets/{id}` moves the asset to **trash**, recoverable via `POST /media/assets/{id}/restore`, with an **either-or** `trashed` filter on `assetQuery`: omitted (what we send) or `false` returns live assets only, `true` returns only trashed ones. Trashed assets are hard-deleted after a 30-day retention window (configurable, server-side). The asset drops out of the default library list, and `deleteAsset` refreshes `asset-library-list`. The copy is **neutral on permanence**: `asset_delete_confirm_description` overrides the shared `dialog.delete_confirm_description` ("permanently delete … cannot be undone") at both delete sites ([`AssetDetailPanel`](/components/asset/AssetDetailPanel) + the library page) via [`DialogDelete`](/components/dialog/DialogDelete)'s `description` prop.
 - **Trash view.** The rail's **Trash** entry swaps the query for `trashed: true` — no folder scope, every trashed asset. It is hidden in the picker (`readonly`), which must never browse deleted assets. A trashed asset offers **Restore only**: [`AssetActionsMenu`](/components/asset/AssetActionsMenu) collapses to one item, the grid tile and the list's name stop opening [`AssetDetailPanel`](/components/asset/AssetDetailPanel), and the upload button is hidden — a trashed asset can't be edited, replaced or re-deleted, and its stored file may already be unreachable. Restore calls `assetApi.restore(id)` (`POST /media/assets/{id}/restore`) through `useAssetActions().restoreAsset`, which refreshes `asset-library-list`, so the row leaves trash on its own. The 30-day retention (`TRASH_RETENTION_DAYS`) is **stated, not enforced** — it renders under the toolbar and as the empty-state description, and nothing branches on it. There is no "delete permanently" / empty-trash action: the backend has no endpoint for it today.
 - **Folder delete:** the caller picks what happens to the assets inside via `?assets`. `move` (default) re-homes them to uncategorised (`folder_id` FK is `ON DELETE SET NULL`); `delete` removes the whole folder + descendant subtree's assets first. Child folders cascade in both cases. The UI ([`AssetFolderDeleteDialog`](/components/asset/AssetFolderDeleteDialog)) only prompts for the choice when the subtree still holds assets; empty folders use the plain `DialogDelete` (`assetApi.folder.delete` — the move-only default).

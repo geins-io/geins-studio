@@ -38,6 +38,10 @@ const { batchQueryMatchAll } = useBatchQuery();
 console.log(batchQueryMatchAll.value); // { all: true }
 ```
 
+::: warning Never combine with filters
+`all: true` is a match criterion, not a paging switch — the backend matches **every** item regardless of any other filter in the body (`folderIds`, `trashed`, `categoryIds`, …). Only spread `batchQueryMatchAll` into unfiltered queries. Pairing it with `batchQueryNoPagination` is fine (criterion + paging); pairing it with a filter silently drops the filter.
+:::
+
 ### `batchQueryNoPagination`
 
 A `ref` containing a `BatchQuery` object configured with a very large page size to effectively disable pagination.
@@ -46,6 +50,8 @@ A `ref` containing a `BatchQuery` object configured with a very large page size 
 const { batchQueryNoPagination } = useBatchQuery();
 console.log(batchQueryNoPagination.value); // { page: 1, pageSize: 10000000 }
 ```
+
+Routes that cap `pageSize` reject this — Geins.Media's `assetQuery` caps it at 1000, so `assetApi.list()` requests a single 1000-item page instead (see [Assets](/domains/assets)).
 
 ## Performance Considerations
 

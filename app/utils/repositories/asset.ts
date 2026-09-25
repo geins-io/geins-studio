@@ -19,6 +19,7 @@ import type {
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
 import {
+  ASSET_QUERY_PAGE_SIZE,
   contentTypeForUpload,
   MAX_FILE_BYTES,
   MAX_FILES_PER_TICKET,
@@ -28,12 +29,6 @@ import { ENTITIES } from '#shared/utils/entities';
 import { entityRepo } from './entity';
 import type { RepoFetchOptions } from './entity-base';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
-
-// Module scope, mirroring the product repo: the auto-import for `useBatchQuery`
-// is only injected when it's called at the top level — calling it inside the
-// factory left it undefined and crashed app init (the account store builds the
-// repos on startup). Just a constant config ref, so sharing it is fine.
-const { batchQueryMatchAll } = useBatchQuery();
 
 /** One file to upload via the ticket flow, plus its optional per-file overrides. */
 export interface UploadTicketItem {
@@ -131,31 +126,40 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     /**
      * List assets via `POST /asset/query` (mirrors the real POST
      * /media/assets/query `assetQuery` schema + `BatchQueryResult` shape).
-     * `all: true` is the fetch-all switch (not a huge `pageSize`, which the real
-     * schema caps at 1000), so the grid + list sort / paginate / search
-     * client-side via TanStack — the app-wide pattern. Folder scope goes over the
-     * wire as `folderIds`: a folder id for that subtree, `null` for the library
-     * root (assets with no folder), and omitted entirely for the "all assets"
-     * view — so an explicit `folderId: null` is NOT the same as no options.
-     * `trashed: true` swaps the whole result set for the soft-deleted assets
-     * (either-or, not an include flag), so it is only sent when asked for.
-     * Returns the unwrapped items.
+     * Returns one page at the schema's `pageSize` cap (1000), treated as the
+     * whole set — the grid + list sort / paginate / search client-side via
+     * TanStack, the app-wide pattern. Libraries past 1000 assets are truncated.
+     *
+     * `all: true` matches every asset *regardless of the other filters*, so it
+     * is only sent for the unfiltered "all assets" view. Folder scope goes over
+     * the wire as `folderIds`: a folder id (+ `includeSubfolders`, so the view
+     * covers the subtree), `null` for the library root (root-level assets only
+     * — no `includeSubfolders`, whose "descendants of root" would be the whole
+     * library), and omitted entirely for "all assets" — so an explicit
+     * `folderId: null` is NOT the same as no options. `trashed: true` swaps the
+     * whole result set for the soft-deleted assets (either-or, not an include
+     * flag), so it is only sent when asked for.
      */
     async list(
       options?: AssetApiOptions,
       fetchOptions?: RepoFetchOptions,
     ): Promise<Asset[]> {
+      const folderId = options?.folderId;
+      const filters = {
+        ...(folderId !== undefined
+          ? {
+              folderIds: [folderId],
+              ...(folderId !== null ? { includeSubfolders: true } : {}),
+            }
+          : {}),
+        ...(options?.trashed ? { trashed: true } : {}),
+      };
+      const criteria = Object.keys(filters).length ? filters : { all: true };
       const res = await fetch<BatchQueryResult<Asset>>(
         `${ENTITIES.asset.endpoint}/query`,
         {
           method: 'POST',
-          body: {
-            ...batchQueryMatchAll.value,
-            ...(options && options.folderId !== undefined
-              ? { folderIds: [options.folderId] }
-              : {}),
-            ...(options?.trashed ? { trashed: true } : {}),
-          },
+          body: { ...criteria, page: 1, pageSize: ASSET_QUERY_PAGE_SIZE },
           ...fetchOptions,
         },
       );
