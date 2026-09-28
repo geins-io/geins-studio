@@ -6,7 +6,7 @@ import { segmentedButtonClass } from '@/utils/index';
 /**
  * Step 3 of the upload wizard — the review list. A read-only summary of every
  * file with its resolved metadata (folder, tags, channels), viewable flat,
- * grouped by folder, or grouped by the product each image links to. Read-only —
+ * grouped by folder, or grouped by the product each file links to. Read-only —
  * files are removed back in the manage step. Reads the shared wizard state via
  * {@link useUploadWizardContext}; the upload itself is triggered from the page.
  */
@@ -68,7 +68,7 @@ const folderGroups = computed(() => {
 });
 
 // ── Product-linking view ──────────────────────────────────────────────────────
-// Grouped by the product each row's image links to (by _id OR article number);
+// Grouped by the product each row's file links to (by _id OR article number);
 // unmatched rows fall into a "No match" group listed last. Group identity is the
 // product _id; the header shows the ref the filename actually linked by (so an
 // id-matched file reads as its id, not the product's article number) + name.

@@ -1,6 +1,8 @@
 # `AssetLinkedProduct`
 
-A compact, read-only **single row** shown at the top of the upload wizard's [manage step](/components/asset/AssetWizardManage.md) detail pane when the selected image links to a product (see [`useProductMatch`](/composables/useProductMatch.md)): product thumbnail + name (with a `Link2` marker), and the article number and id dot-separated in muted text beneath — a discreet confirmation of the match.
+A compact, read-only **single row** shown at the top of the upload wizard's [manage step](/components/asset/AssetWizardManage.md) detail pane when the selected file links to a product (see [`useProductMatch`](/composables/useProductMatch.md)), and per product row in [`AssetUsedIn`](/components/asset/AssetUsedIn.md): product thumbnail + name (with a `Link2` marker), and the article number and id dot-separated in muted text beneath — a discreet confirmation of the match.
+
+With `kind`, a trailing muted badge names the link kind — **Image** (`productimage`) or **File** (`productfile`). The wizard passes the kind the upload will link as (`productLinkTargetType` of the file's type); "Where it's used" passes the stored link's kind.
 
 The thumbnail is a [`ProductThumbnail`](/components/product/ProductThumbnail.md) (built-in placeholder fallback); the image data comes free from the product list `useProductMatch` already fetches.
 
@@ -10,12 +12,17 @@ Inherits STU-335's phase-2 caveat — the product data is fetched client-side fo
 
 ## Props
 
-| Prop      | Type           | Meaning                                                             |
-| --------- | -------------- | ------------------------------------------------------------------- |
-| `product` | `ProductMatch` | The matched product (`_id`, `name`, `articleNumber`, `thumbnail?`). |
+| Prop      | Type                   | Meaning                                                             |
+| --------- | ---------------------- | ------------------------------------------------------------------- |
+| `product` | `ProductMatch`         | The matched product (`_id`, `name`, `articleNumber`, `thumbnail?`). |
+| `kind`    | `AssetLinkTargetType?` | Link kind for the trailing badge; omitted → no badge.               |
 
 ## Usage
 
 ```vue
-<AssetLinkedProduct v-if="activeProduct" :product="activeProduct" />
+<AssetLinkedProduct
+  v-if="activeProduct"
+  :product="activeProduct"
+  :kind="productLinkTargetType(activeType)"
+/>
 ```

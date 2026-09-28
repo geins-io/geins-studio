@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * The whole-upload product-linking control shown above the manage-step file
- * list: a checkbox to auto-link images to products. Writes straight into the
+ * list: a checkbox to auto-link files to products. Writes straight into the
  * shared wizard state ({@link useUploadWizardContext}); the match itself —
  * against a product's article number or id — is resolved by
  * {@link useProductMatch} in the rows and the review step.

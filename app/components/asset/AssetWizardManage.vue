@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { EntityBaseWithName, LocalizedText } from '#shared/types';
-import { mimeToAssetType } from '#shared/utils/asset';
+import { mimeToAssetType, productLinkTargetType } from '#shared/utils/asset';
 import { formatFileSize } from '#shared/utils/file';
 
 /**
@@ -23,7 +23,7 @@ const { matchOf } = useProductMatch();
 // enables them.
 const caps = useAssetCapabilities();
 
-// An image whose filename ref resolves to a product (only when auto-link is on).
+// A file whose filename ref resolves to a product (only when auto-link is on).
 const isLinked = (file: File): boolean => linkProducts.value && !!matchOf(file);
 
 // The product the single active file links to — drives the detail-pane card.
@@ -245,7 +245,11 @@ const rowFolderName = (id: string): string | undefined => {
           </div>
 
           <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
-            <AssetLinkedProduct v-if="activeProduct" :product="activeProduct" />
+            <AssetLinkedProduct
+              v-if="activeProduct"
+              :product="activeProduct"
+              :kind="productLinkTargetType(activeType)"
+            />
 
             <div class="space-y-1.5">
               <Label>{{ $t('name', 1) }}</Label>

@@ -55,16 +55,14 @@ describe('useProductMatch', () => {
     expect(matchById('')).toBeNull();
   });
 
-  it('only matches image uploads with a filename ref', () => {
+  it('matches uploads of any type that carry a filename ref', () => {
     const image = new File([''], '33126_hero.jpg', { type: 'image/jpeg' });
     expect(matchOf(image)?.name).toBe('Padded jacket');
 
     const noRef = new File([''], 'hero.jpg', { type: 'image/jpeg' });
     expect(matchOf(noRef)).toBeNull();
 
-    const notImage = new File([''], '33126_spec.pdf', {
-      type: 'application/pdf',
-    });
-    expect(matchOf(notImage)).toBeNull();
+    const pdf = new File([''], '33126_spec.pdf', { type: 'application/pdf' });
+    expect(matchOf(pdf)?.name).toBe('Padded jacket');
   });
 });
