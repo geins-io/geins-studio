@@ -54,9 +54,9 @@ export interface AssetBase {
   /** Locale-keyed translatable fields, e.g. `{ en: { description, altText } }`. */
   localizations?: Localized<AssetLocalizations>;
   /**
-   * Both are mock-only in phase 1 — a real `media_response_asset` carries
-   * neither, so every read site must tolerate `undefined` (a missing array
-   * blanked the grid when the first real assets landed).
+   * A phase-1 `media_response_asset` carries neither, so every read site must
+   * tolerate `undefined` (a missing array blanked the grid when the first real
+   * assets landed).
    */
   tags?: string[];
   channels?: string[];
@@ -90,21 +90,34 @@ export interface AssetRelocate {
  * unused, there is no `_id` to pair it with (so `ResponseEntity` would lie), and
  * declaring `_type` on its own is a hard block.
  */
-export interface AssetLink {
+export interface AssetLink extends AssetLinkTarget<
+  AssetLinkTargetType | (string & {})
+> {
   assetId: string;
-  /**
-   * What the link points at. Only `product` can be written today, but the API
-   * documents that it returns values this release does not name — so this stays
-   * an open string and readers must tolerate an unknown one.
-   */
-  targetType: string;
+  createdBy?: string | null;
+  createdAt: string;
+}
+
+/**
+ * The writable link kinds. A product link is split by what the asset is to the
+ * product: `productimage` (image + svg only — anything else is a `422`, or
+ * `LINK_ASSET_TYPE_INVALID` on a ticket) or `productfile` (any type).
+ */
+export type AssetLinkTargetType = 'productimage' | 'productfile';
+
+/**
+ * What a link points at — the body of `POST /media/assets/{id}/links` and one
+ * item of a ticket claim's `links`. On a read `T` is widened: the API documents
+ * that it returns target types this release does not name, so readers must
+ * tolerate an unknown one.
+ */
+export interface AssetLinkTarget<T extends string = AssetLinkTargetType> {
+  targetType: T;
   /**
    * The target's id as stored. A product id has its leading zero stripped when
    * the link is written, so matching it back to a product must tolerate that.
    */
   targetId: string;
-  createdBy?: string | null;
-  createdAt: string;
 }
 
 // =============================================================================
@@ -113,9 +126,7 @@ export interface AssetLink {
 // Phase 1 uploads claim a ticket, PUT bytes straight to storage via a returned
 // plan URL, then confirm with `complete`. The claim carries metadata too —
 // description / alt text / localizations / product links are applied when the
-// ticket completes, so an upload needs no follow-up write. Mock-emulated today
-// (see server/api/asset/tickets*), which applies `localizations` and ignores
-// `productIds`.
+// ticket completes, so an upload needs no follow-up write.
 // =============================================================================
 
 /** One file's claim in a ticket request. */
@@ -140,8 +151,8 @@ export interface UploadTicketFile {
   altText?: string;
   /** Per-locale `{ description, altText }`, applied on complete. */
   localizations?: Localized<AssetLocalizations>;
-  /** Already-resolved products to link the published asset to (max 100). */
-  productIds?: string[];
+  /** Links created when the ticket completes (max 100 per file). */
+  links?: AssetLinkTarget[];
 }
 
 /** How to upload one accepted file's bytes. `single` now; `parts` is phase 2. */
@@ -160,7 +171,8 @@ export type UploadRejectionCode =
   | 'QUOTA_EXCEEDED'
   | 'BLOB_MISSING'
   | 'CONTENT_TYPE_MISMATCH'
-  | 'SCAN_REJECTED';
+  | 'SCAN_REJECTED'
+  | 'LINK_ASSET_TYPE_INVALID';
 
 export type UploadTicketResult =
   | {

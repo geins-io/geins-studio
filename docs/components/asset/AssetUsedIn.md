@@ -2,7 +2,7 @@
 
 The read-only **"Where it's used"** section of the [asset detail panel](/components/asset/AssetDetailPanel.md): what an asset is linked to outside the media library, read from `GET /media/assets/{id}/links`.
 
-Product targets render as an [`AssetLinkedProduct`](/components/asset/AssetLinkedProduct.md) row (thumbnail + name + `articleNumber · id`); anything else renders a plain `targetType · targetId` row.
+Product targets — both `productimage` and `productfile` — render as an [`AssetLinkedProduct`](/components/asset/AssetLinkedProduct.md) row (thumbnail + name + `articleNumber · id`) with an **Image** / **File** kind badge; an unresolved product link renders `Product · targetId` with the same badge, and any other target type a plain `targetType · targetId` row.
 
 ## What the API gives back
 
@@ -11,7 +11,9 @@ Product targets render as an [`AssetLinkedProduct`](/components/asset/AssetLinke
 - **The name is resolved client-side.** `targetId` goes through [`useProductMatch`](/composables/useProductMatch.md)'s `matchById`, which reads the products store. A product id has its leading zero stripped when the link is written (`033126` → `33126`), which `matchById` tolerates.
 - **A link can outlive its target.** A link to a since-deleted product is still returned. It won't resolve to a name, so it falls through to the plain `targetType · targetId` row rather than disappearing — the link genuinely exists, and hiding it would misreport usage.
 
-`targetType` is an **open string**. Only `product` can be written today, but the API documents that it returns values a given release doesn't name, so unknown types are rendered, never dropped.
+`targetType` is read as an **open string**. The writable kinds are `productimage` (image + svg only) and `productfile` (any type) — `isProductLink` recognises both — but the API documents that it returns values a given release doesn't name, so unknown types are rendered, never dropped.
+
+A **trashed** asset's links answer `404`. The detail panel never opens for a trashed asset, but the fetcher still maps a `404` to an empty list, so it reads as "not used anywhere" rather than the error state (a `GET` never raises the global toast).
 
 ## Props
 
@@ -42,4 +44,4 @@ The read uses `useAsyncData` under the stable key `asset-links`, watched on `ass
 
 ## Not included
 
-Linking and unlinking (`POST` / `DELETE .../links`) are not wired — Studio has no product edit page to drive them from. The [replace dialog](/components/asset/AssetReplaceDialog.md)'s "used everywhere" warning is still static: replace has no phase-1 route (`canReplaceFile` is off), so there is nothing to feed it from yet.
+Manual linking and unlinking (`POST` / `DELETE .../links`) are not wired — Studio has no product edit page to drive them from. The [replace dialog](/components/asset/AssetReplaceDialog.md)'s "used everywhere" warning is still static: replace has no phase-1 route (`canReplaceFile` is off), so there is nothing to feed it from yet.

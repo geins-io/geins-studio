@@ -1,6 +1,7 @@
 import type {
   AssetApiOptions,
   AssetCapabilities,
+  AssetLinkTargetType,
   AssetType,
   UploadRejectionCode,
 } from '#shared/types';
@@ -69,6 +70,8 @@ const UPLOAD_REJECTION_KEYS: Record<UploadRejectionCode, string> = {
   BLOB_MISSING: 'asset_library.upload_reject_blob_missing',
   CONTENT_TYPE_MISMATCH: 'asset_library.upload_reject_content_type_mismatch',
   SCAN_REJECTED: 'asset_library.upload_reject_scan_rejected',
+  LINK_ASSET_TYPE_INVALID:
+    'asset_library.upload_reject_link_asset_type_invalid',
 };
 
 /** i18n key for an upload rejection code's friendly reason (generic fallback). */
@@ -79,6 +82,32 @@ export function uploadRejectionMessageKey(code: UploadRejectionCode): string {
 // Asset types a browser can render in an `<img>`; everything else gets a type
 // icon. `svg` is separate from `image` in AssetType but renders the same way.
 const PREVIEWABLE_TYPES = new Set<AssetType>(['image', 'svg']);
+
+/**
+ * The product link kind for an asset type. `productimage` only accepts image +
+ * svg; `productfile` accepts anything, so an unrecognised type falls back safely.
+ */
+export function productLinkTargetType(type: AssetType): AssetLinkTargetType {
+  return PREVIEWABLE_TYPES.has(type) ? 'productimage' : 'productfile';
+}
+
+const PRODUCT_LINK_KIND_KEYS: Record<AssetLinkTargetType, string> = {
+  productimage: 'asset_library.asset_type.image',
+  productfile: 'file',
+};
+const PRODUCT_LINK_TYPES = new Set<string>(Object.keys(PRODUCT_LINK_KIND_KEYS));
+
+/** i18n key naming a product link's kind — "Image" or "File". */
+export function productLinkKindKey(kind: AssetLinkTargetType): string {
+  return PRODUCT_LINK_KIND_KEYS[kind];
+}
+
+/** Whether a read link points at a product (either kind). */
+export function isProductLink(
+  targetType: string,
+): targetType is AssetLinkTargetType {
+  return PRODUCT_LINK_TYPES.has(targetType);
+}
 
 /**
  * Preview source for an asset: the backend's thumbnail when there is one, else

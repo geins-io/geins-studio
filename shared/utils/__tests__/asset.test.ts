@@ -7,8 +7,10 @@ import {
   TRASH_KEY,
   assetPreviewUrl,
   contentTypeForUpload,
+  isProductLink,
   mimeToAssetType,
   parseProductRef,
+  productLinkTargetType,
 } from '../asset';
 
 describe('mimeToAssetType', () => {
@@ -59,6 +61,24 @@ describe('assetCapabilities', () => {
       tagAutocomplete: false,
       hasThumbnails: false,
     });
+  });
+});
+
+describe('productLinkTargetType', () => {
+  it('links image + svg as productimage and everything else as productfile', () => {
+    expect(productLinkTargetType('image')).toBe('productimage');
+    expect(productLinkTargetType('svg')).toBe('productimage');
+    expect(productLinkTargetType('pdf')).toBe('productfile');
+    expect(productLinkTargetType('other')).toBe('productfile');
+  });
+});
+
+describe('isProductLink', () => {
+  it('accepts both product link kinds and rejects anything else', () => {
+    expect(isProductLink('productimage')).toBe(true);
+    expect(isProductLink('productfile')).toBe(true);
+    expect(isProductLink('product')).toBe(false);
+    expect(isProductLink('category')).toBe(false);
   });
 });
 

@@ -1,14 +1,14 @@
 import type { ProductMatch } from '#shared/types';
-import { mimeToAssetType, parseProductRef } from '#shared/utils/asset';
+import { parseProductRef } from '#shared/utils/asset';
 import type { Ref } from 'vue';
 
 interface UseProductMatchReturnType {
   /** The products store hasn't finished its initial load yet. */
   pending: Ref<boolean>;
   /**
-   * Resolve the product an upload file links to, or null. Only images whose
-   * filename ref (see {@link parseProductRef}) matches a product's article
-   * number OR product id link; everything else returns null.
+   * Resolve the product an upload file links to, or null. A file of any type
+   * links when its filename ref (see {@link parseProductRef}) matches a
+   * product's article number OR product id.
    */
   matchOf: (file: File) => ProductMatch | null;
   /**
@@ -81,7 +81,6 @@ export function useProductMatch(): UseProductMatchReturnType {
   }
 
   function matchOf(file: File): ProductMatch | null {
-    if (mimeToAssetType(file.type) !== 'image') return null;
     const ref = parseProductRef(file.name);
     if (!ref) return null;
     return matchById(ref);

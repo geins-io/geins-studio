@@ -5,7 +5,11 @@ import type {
   LocalizedText,
   UploadRejectionCode,
 } from '#shared/types';
-import { uploadRejectionMessageKey } from '#shared/utils/asset';
+import {
+  mimeToAssetType,
+  productLinkTargetType,
+  uploadRejectionMessageKey,
+} from '#shared/utils/asset';
 import { entityListUrl } from '#shared/utils/entities';
 import { formatFileSize } from '#shared/utils/file';
 import { Card, CardContent } from '@/components/ui/card';
@@ -125,7 +129,18 @@ async function submit() {
       folderId: s.folderId ?? null,
       name: s.name || wf.file.name,
       localizations: buildLocalizations(s.description, s.altText ?? {}),
-      ...(product ? { productIds: [product._id] } : {}),
+      ...(product
+        ? {
+            links: [
+              {
+                targetType: productLinkTargetType(
+                  mimeToAssetType(wf.file.type),
+                ),
+                targetId: product._id,
+              },
+            ],
+          }
+        : {}),
     };
   });
 

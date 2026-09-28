@@ -5,7 +5,7 @@ Resolves a product from a reference — an upload's filename ref (`matchOf`) or 
 The ref is the leading digits before the first `_` (`9963010083_hero.jpg` → `9963010083`), parsed by `parseProductRef`. Parsing the ref from the name is the frontend's job; the lookup that turns it into a product match is the backend's.
 
 :::tip PHASE 2
-The lookup matches on the client over the **whole product list** (read from the products store) today. Phase 2 pushes the filter server-side (query by `articleNumber` / `productId`) so we don't scan the full catalogue — the `(file) → ProductMatch` seam stays. Tracked in the cutover ledger (`docs/domains/assets-cutover.md`, STU-335). The match is **persisted** at upload: the wizard sends it as `productIds` on the ticket claim.
+The lookup matches on the client over the **whole product list** (read from the products store) today. Phase 2 pushes the filter server-side (query by `articleNumber` / `productId`) so we don't scan the full catalogue — the `(file) → ProductMatch` seam stays. Tracked in the cutover ledger (`docs/domains/assets-cutover.md`, STU-335). The match is **persisted** at upload: the wizard sends it as a `links` item on the ticket claim — `productimage` for an image/svg, `productfile` for anything else (`productLinkTargetType`).
 :::
 
 ## Usage
@@ -13,7 +13,7 @@ The lookup matches on the client over the **whole product list** (read from the 
 ```ts
 const { matchOf } = useProductMatch();
 
-// In a row / group: only images whose ref resolves to a product match.
+// In a row / group: any file whose ref resolves to a product matches.
 const product = matchOf(file); // ProductMatch | null
 ```
 
@@ -27,7 +27,7 @@ It reads the shared **products store** (loaded + transformed once after auth), s
 | `matchOf`   | `(file) => ProductMatch \| null` | The product the file links to, or `null`.     |
 | `matchById` | `(id) => ProductMatch \| null`   | The product a bare reference resolves to.     |
 
-Only **images** with a filename ref that matches a product's **`_id`** (the id merchants use) **OR its `articleNumber`** link; everything else returns `null`. Matching is case-insensitive. `ProductMatch` extends `EntityBaseWithName` — `{ _id, name, articleNumber, thumbnail? }`.
+A file of **any type** with a filename ref that matches a product's **`_id`** (the id merchants use) **OR its `articleNumber`** link; everything else returns `null`. Matching is case-insensitive. `ProductMatch` extends `EntityBaseWithName` — `{ _id, name, articleNumber, thumbnail? }`.
 
 ### Leading zeros
 

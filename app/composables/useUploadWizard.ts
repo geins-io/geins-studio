@@ -35,7 +35,7 @@ interface UseUploadWizardReturnType {
   files: Ref<WizardFile[]>;
   settings: Ref<Record<string, WizardFileSettings>>;
   totalSize: ComputedRef<number>;
-  // Whole-upload toggle for auto-linking images to products, shared by the
+  // Whole-upload toggle for auto-linking files to products, shared by the
   // manage (indicator + control) and review (grouping) steps. Matching itself
   // (article number or product id) lives in useProductMatch.
   linkProducts: Ref<boolean>;

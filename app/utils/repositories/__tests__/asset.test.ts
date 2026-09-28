@@ -260,7 +260,7 @@ describe('assetRepo', () => {
       vi.unstubAllGlobals();
     });
 
-    it('forwards claim metadata + productIds, and omits folderId in path mode', async () => {
+    it('forwards claim metadata + links, and omits folderId in path mode', async () => {
       const put = vi.fn().mockResolvedValue({ ok: true });
       vi.stubGlobal('fetch', put);
       mockFetch
@@ -273,7 +273,7 @@ describe('assetRepo', () => {
           clientRef: 'a',
           folderId: null,
           localizations: { en: { altText: 'Logo' } },
-          productIds: ['p1'],
+          links: [{ targetType: 'productimage', targetId: 'p1' }],
         },
         {
           // No folderId at all → path mode: the backend creates `campaigns`.
@@ -297,7 +297,7 @@ describe('assetRepo', () => {
                 mimeType: 'image/png',
                 overwrite: false,
                 localizations: { en: { altText: 'Logo' } },
-                productIds: ['p1'],
+                links: [{ targetType: 'productimage', targetId: 'p1' }],
               },
               {
                 clientRef: 'b',

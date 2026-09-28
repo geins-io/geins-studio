@@ -2,6 +2,7 @@ import type {
   Asset,
   AssetCreate,
   AssetLink,
+  AssetLinkTarget,
   AssetLocalizations,
   AssetRelocate,
   AssetUpdate,
@@ -45,8 +46,8 @@ export interface UploadTicketItem {
   description?: string;
   altText?: string;
   localizations?: Localized<AssetLocalizations>;
-  /** Products to link the published asset to (resolved ids, max 100). */
-  productIds?: string[];
+  /** Links created when the ticket completes (max 100). */
+  links?: AssetLinkTarget[];
 }
 
 /**
@@ -204,7 +205,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
      * fetch, no auth header — like a signed storage URL), then confirm with
      * `complete`. Returns the per-file outcomes (ticket-stage rejections +
      * complete-stage results) keyed by `clientRef`. Metadata rides the claim —
-     * description / alt text / localizations / `productIds` are applied when the
+     * description / alt text / localizations / `links` are applied when the
      * ticket completes, so no follow-up `PATCH` per created asset.
      *
      * An item's `folderId` is forwarded as given (`null` = library root) and
@@ -264,7 +265,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
             ...(it.localizations && Object.keys(it.localizations).length
               ? { localizations: it.localizations }
               : {}),
-            ...(it.productIds?.length ? { productIds: it.productIds } : {}),
+            ...(it.links?.length ? { links: it.links } : {}),
           };
         });
         const fileByRef = new Map(batch.map((it) => [it.clientRef, it.file]));
