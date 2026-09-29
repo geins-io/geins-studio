@@ -5,7 +5,6 @@
 ### 🐛 Bug Fixes
 
 - **Channels** — applying an edited storefront schema no longer wipes saved settings. A new apply dialog offers "Apply only changes" (default: only new or changed fields are affected, settings without a field are kept unless you remove them) or "Apply and reset defaults" ([#386](https://github.com/geins-io/geins-studio/pull/386))
-- JSON editor — new active line gutter color, now also visible in dark mode ([#386](https://github.com/geins-io/geins-studio/pull/386))
 
 ### 🤖 CI
 
