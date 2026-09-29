@@ -10,6 +10,7 @@
 - Under "Apply only changes":
   - a list of values that will be reset because they no longer fit
   - a count of new fields that will get their default
+  - "No setting values are affected" when none of the above apply
   - when settings exist that no field covers ("orphans", including values of fields you just removed), a switch to remove them, and the keys and values listed under a "Settings not in schema" heading. The switch is off by default, because a storefront can read keys that were set straight through the API. While removal is on, rows are struck through and a warning `Feedback` says the storefront may stop working.
 - Resets to "Apply only changes", with the switch off, every time it opens
 - The description notes that nothing is saved until the channel is saved

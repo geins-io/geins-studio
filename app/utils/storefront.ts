@@ -300,8 +300,14 @@ export function applySchemaChange(
   );
 
   let result = current;
+  // Orphans go first: a removed one may be the value blocking a new default.
+  if (options.removeOrphans) {
+    for (const { key } of orphaned) result = deleteSettingValue(result, key);
+  }
   for (const { key, value } of added) {
-    result = setSettingValue(result, key, value);
+    if (!isPathBlocked(result, key)) {
+      result = setSettingValue(result, key, value);
+    }
   }
   for (const { key } of typeReset) {
     const fallback = defaultsByKey.get(key);
@@ -310,10 +316,22 @@ export function applySchemaChange(
         ? deleteSettingValue(result, key)
         : setSettingValue(result, key, fallback);
   }
-  if (options.removeOrphans) {
-    for (const { key } of orphaned) result = deleteSettingValue(result, key);
-  }
   return result;
+}
+
+/**
+ * Whether an ancestor of `key` holds a non-object value. Writing `key` would
+ * then replace that value, so a kept setting would be silently overwritten.
+ */
+function isPathBlocked(settings: StorefrontSettings, key: string): boolean {
+  const segments = key.split('.');
+  let current: unknown = settings;
+  for (const segment of segments.slice(0, -1)) {
+    if (!isPlainObject(current)) return true;
+    current = current[segment];
+    if (current === undefined) return false;
+  }
+  return current !== undefined && !isPlainObject(current);
 }
 
 /** Immutable deep delete — drops parent objects left empty by the removal. */

@@ -507,6 +507,33 @@ describe('applySchemaChange', () => {
     expect(removed).not.toHaveProperty('legacy');
   });
 
+  it('never overwrites a kept value that blocks a new default', () => {
+    const blocked = { theme: 'dark' };
+    const kept = applySchemaChange(
+      previousSchema(),
+      changeSchema,
+      blocked,
+      keep,
+    );
+    expect(kept.theme).toBe('dark');
+
+    const removed = applySchemaChange(previousSchema(), changeSchema, blocked, {
+      mode: 'changes',
+      removeOrphans: true,
+    });
+    expect(getSettingValue(removed, 'theme.colors.accent')).toBe('#FF0000');
+  });
+
+  it('keeps keys inside a boolean-choice object when removing orphans', () => {
+    const result = applySchemaChange(
+      changeSchema,
+      changeSchema,
+      { features: { priceVisibility: { enabled: true, legacy: 1 } } },
+      { mode: 'changes', removeOrphans: true },
+    );
+    expect(getSettingValue(result, 'features.priceVisibility.legacy')).toBe(1);
+  });
+
   it('replaces everything with defaults in reset mode', () => {
     const result = applySchemaChange(previousSchema(), changeSchema, current, {
       mode: 'reset',

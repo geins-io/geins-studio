@@ -984,6 +984,7 @@
     "schema_apply_reset_warning_description": "Custom values such as logo, favicon and colors are replaced by the schema's defaults when you save. Fields without a default value will be empty.",
     "schema_apply_type_reset": "{count} value no longer fits its changed field and gets the default value | {count} values no longer fit their changed fields and get the default value",
     "schema_apply_added": "{count} new field gets its default value | {count} new fields get their default value",
+    "schema_apply_no_changes": "No setting values are affected.",
     "schema_apply_remove_orphans": "Remove settings not in the schema",
     "schema_apply_remove_orphans_description": "{count} setting has no field in the schema. It's kept unless you remove it, since the storefront may still read it (for example if it was set through the API). | {count} settings have no field in the schema. They're kept unless you remove them, since the storefront may still read them (for example if they were set through the API).",
     "schema_apply_remove_orphans_warning_title": "The storefront may stop working",

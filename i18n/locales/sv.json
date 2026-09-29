@@ -981,6 +981,7 @@
     "schema_apply_reset_warning_description": "Egna värden som logotyp, favicon och färger ersätts med schemats standardvärden när du sparar. Fält utan standardvärde blir tomma.",
     "schema_apply_type_reset": "{count} värde passar inte längre sitt ändrade fält och får standardvärdet | {count} värden passar inte längre sina ändrade fält och får standardvärdet",
     "schema_apply_added": "{count} nytt fält får sitt standardvärde | {count} nya fält får sina standardvärden",
+    "schema_apply_no_changes": "Inga inställningsvärden påverkas.",
     "schema_apply_remove_orphans": "Ta bort inställningar som inte finns i schemat",
     "schema_apply_remove_orphans_description": "{count} inställning saknar fält i schemat. Den behålls om du inte tar bort den, eftersom butiken fortfarande kan läsa den (till exempel om den satts via API:et). | {count} inställningar saknar fält i schemat. De behålls om du inte tar bort dem, eftersom butiken fortfarande kan läsa dem (till exempel om de satts via API:et).",
     "schema_apply_remove_orphans_warning_title": "Butiken kan sluta fungera",

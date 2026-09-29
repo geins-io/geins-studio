@@ -35,6 +35,13 @@ const OPTIONS = [
 
 const { resolveIcon } = useLucideIcon();
 
+const hasChanges = computed(
+  () =>
+    props.analysis.added.length > 0 ||
+    props.analysis.typeReset.length > 0 ||
+    props.analysis.orphaned.length > 0,
+);
+
 function formatValue(entry: SchemaChangeEntry): string {
   return typeof entry.value === 'string'
     ? entry.value
@@ -114,6 +121,9 @@ function confirm() {
       </RadioGroup>
 
       <div v-if="mode === 'changes'" class="min-w-0 space-y-4">
+        <p v-if="!hasChanges" class="text-muted-foreground text-sm">
+          {{ t('channels.schema_apply_no_changes') }}
+        </p>
         <div v-if="analysis.typeReset.length" class="space-y-2">
           <p class="text-sm font-medium">
             {{
@@ -150,7 +160,7 @@ function confirm() {
                 {{
                   t(
                     'channels.schema_apply_remove_orphans_description',
-                    props.analysis.orphaned.length,
+                    analysis.orphaned.length,
                   )
                 }}
               </ItemDescription>
