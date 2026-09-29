@@ -9,6 +9,7 @@
   - "Invalid JSON" — parse error
   - "Invalid schema" — parses but isn't a non-empty object
 - Apply button is disabled while invalid
+- Apply opens [`ChannelSchemaApplyDialog`](/components/channel/ChannelSchemaApplyDialog) on top of the sheet. The edited schema is analyzed against the current `settings` so the dialog can show what will change. Cancelling the dialog returns to the editor with the JSON untouched
 - Warning banner at the top about destructive consequences of editing the schema directly
 - Lazy-loads the CodeMirror editor (`LazyJsonCodeEditor`) — the editor bundle isn't pulled in until the sheet opens
 
@@ -19,8 +20,14 @@
 const open = ref(false);
 const schema = ref<StorefrontSchema>(currentSchema);
 
-const onApply = (next: StorefrontSchema) => {
+const onApply = (next: StorefrontSchema, options: SchemaApplyOptions) => {
   schema.value = next;
+  settings.value = applySchemaChange(
+    schema.value,
+    next,
+    settings.value,
+    options,
+  );
 };
 </script>
 
@@ -28,6 +35,7 @@ const onApply = (next: StorefrontSchema) => {
   <ChannelSchemaEditorSheet
     :open="open"
     :schema="schema"
+    :settings="settings"
     @update:open="open = $event"
     @apply="onApply"
   />
@@ -52,6 +60,14 @@ schema: StorefrontSchema;
 
 The current schema — re-serialized into the editor each time the sheet opens.
 
+### `settings`
+
+```ts
+settings: StorefrontSettings;
+```
+
+The current settings values. Only read: the edited schema is compared with `schema` and these settings using `analyzeSchemaChange` before the apply dialog opens.
+
 ## Events
 
 ### `update:open`
@@ -63,13 +79,14 @@ The current schema — re-serialized into the editor each time the sheet opens.
 ### `apply`
 
 ```ts
-(schema: StorefrontSchema): void
+(schema: StorefrontSchema, options: SchemaApplyOptions): void
 ```
 
-Emitted on Apply with the parsed schema.
+Emitted when the user confirms the apply dialog, with the parsed schema and the chosen `{ mode, removeOrphans }`. Pass the previous schema, the new one, the current settings and the options to `applySchemaChange` (`app/utils/storefront.ts`) to get the new settings. Nothing persists until the page is saved.
 
 ## Dependencies
 
 - shadcn-vue [`Sheet`](/components/shadcn-vue), `Button`
 - [`Feedback`](/components/Feedback) — warning + invalid banners
+- [`ChannelSchemaApplyDialog`](/components/channel/ChannelSchemaApplyDialog)
 - [`JsonCodeEditor`](/components/JsonCodeEditor) (lazy)
