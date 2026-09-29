@@ -167,6 +167,8 @@
   --sidebar-accent-foreground: hsl(240 5.9% 10%);
   --sidebar-border: hsl(0 0 90%);
   --sidebar-ring: hsl(0 0 13%);
+
+  --code-active-line-gutter: #dfdfdf;
 }
 
 .dark {
@@ -215,6 +217,8 @@
   --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
   --sidebar-border: hsl(215 10% 24%);
   --sidebar-ring: hsl(217.2 91.2% 59.8%);
+
+  --code-active-line-gutter: hsl(0 0% 16%);
 }
 
 @utility container {
