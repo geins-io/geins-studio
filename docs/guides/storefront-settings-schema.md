@@ -464,7 +464,14 @@ The default Geins schema covers four tabs:
 
 ## Using a custom schema
 
-From the channel edit page, open the `...` menu on the Storefront Settings tab and choose **Edit schema**. This opens a JSON editor where you can paste a custom schema. Changes take effect immediately after clicking **Apply**.
+From the channel edit page, open the `...` menu on the Storefront Settings tab and choose **Edit schema**. This opens a JSON editor where you can paste a custom schema. Changes take effect immediately after clicking **Apply** and are persisted when you save the channel.
+
+Clicking **Apply** opens a dialog where you choose what happens to the channel's current settings:
+
+- **Apply only changes** (recommended): only what you changed in the schema is affected, so fields you didn't touch keep their values. New fields get their `default`. If you changed a field's type or options and its value no longer fits, it's reset to the `default`. Settings that no field covers, including values of fields you removed, are kept unless you turn on **Remove settings not in the schema**. The dialog lists them first, so you can see what would be removed.
+- **Apply and reset defaults**: every setting is replaced by the schema defaults. A good choice when setting up a new storefront; on an existing one, custom values (logo, favicon, colors, …) are lost.
+
+Nothing is saved until you save the channel, so discarding the unsaved changes undoes an apply.
 
 To revert to the Geins default, click **Reset to default** in the same panel.
 

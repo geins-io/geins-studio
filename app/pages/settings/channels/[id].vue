@@ -19,13 +19,18 @@ import {
   type ChannelMailType,
   type Language,
   type Market,
+  type SchemaApplyOptions,
   type StorefrontSchema,
   type StorefrontSettings,
 } from '#shared/types';
 import { ENTITIES } from '#shared/utils/entities';
 import defaultStorefrontSchema from '@/assets/schemas/storefront-settings-default.json';
 import { useToast } from '@/components/ui/toast/use-toast';
-import { deepMerge, getDefaultSettings } from '@/utils/storefront';
+import {
+  applySchemaChange,
+  deepMerge,
+  getDefaultSettings,
+} from '@/utils/storefront';
 
 // =====================================================================================
 // COMPOSABLES & STORES
@@ -514,9 +519,17 @@ const {
 // =====================================================================================
 // STOREFRONT SETTINGS HANDLERS
 // =====================================================================================
-function handleSchemaApply(schema: StorefrontSchema) {
+function handleSchemaApply(
+  schema: StorefrontSchema,
+  options: SchemaApplyOptions,
+) {
+  storefrontSettings.value = applySchemaChange(
+    activeSchema.value,
+    schema,
+    storefrontSettings.value,
+    options,
+  );
   activeSchema.value = schema;
-  storefrontSettings.value = getDefaultSettings(schema);
   schemaChanged.value = true;
 }
 
@@ -1142,6 +1155,7 @@ if (!createMode.value) {
             <ChannelSchemaEditorSheet
               v-model:open="schemaEditorOpen"
               :schema="activeSchema"
+              :settings="storefrontSettings"
               @apply="handleSchemaApply"
             />
           </ContentEditMainContent>

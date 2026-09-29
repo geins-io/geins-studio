@@ -1,4 +1,6 @@
 import type {
+  SchemaApplyOptions,
+  SchemaChangeAnalysis,
   StorefrontSchema,
   StorefrontSettings,
   SchemaFormField,
@@ -144,6 +146,193 @@ export function deepMerge(
     }
   }
   return result;
+}
+
+/** Every field that holds a value. Sub-sections only group, so they're skipped. */
+function collectValueFields(schema: StorefrontSchema): SchemaFormField[] {
+  const result: SchemaFormField[] = [];
+  function walk(fields: SchemaFormField[]) {
+    for (const field of fields) {
+      if (field.type === 'sub-section') walk(field.children ?? []);
+      else result.push(field);
+    }
+  }
+  for (const tab of Object.values(schema)) {
+    for (const section of tab.sections) walk(section.fields);
+  }
+  return result;
+}
+
+function isOption(options: { value: string }[] | undefined, value: unknown) {
+  return (
+    typeof value === 'string' &&
+    (!options?.length || options.some((o) => o.value === value))
+  );
+}
+
+/** Whether a stored value can still be rendered and edited by `field`. */
+export function isValueValidForField(
+  field: SchemaFormField,
+  value: unknown,
+): boolean {
+  switch (field.type) {
+    case 'string':
+    case 'textarea':
+    case 'color':
+    case 'font':
+    case 'image':
+      return typeof value === 'string';
+    case 'number':
+      return typeof value === 'number' && Number.isFinite(value);
+    case 'boolean':
+      return typeof value === 'boolean';
+    case 'select':
+    case 'radio':
+    case 'radio-cards':
+      return isOption(field.options, value);
+    case 'boolean-choice': {
+      if (!isPlainObject(value)) return false;
+      if (value.enabled !== undefined && typeof value.enabled !== 'boolean') {
+        return false;
+      }
+      const choiceValue = field.choice ? value[field.choice.key] : undefined;
+      return (
+        choiceValue === undefined ||
+        isOption(field.choice?.options, choiceValue)
+      );
+    }
+    default:
+      return true;
+  }
+}
+
+/** Signature of what a field accepts — two fields with the same one hold the same values. */
+function fieldShape(field: SchemaFormField): string {
+  return JSON.stringify([
+    field.type,
+    field.options?.map((o) => o.value) ?? [],
+    field.choice?.key ?? null,
+    field.choice?.options.map((o) => o.value) ?? [],
+  ]);
+}
+
+/**
+ * Compares a schema edit against the current settings. Only fields that are
+ * new or whose type/options changed are looked at, so untouched fields keep
+ * whatever they hold. Orphans are settings no field in `next` covers — a
+ * field key covers its whole subtree (e.g. a `boolean-choice` object).
+ */
+export function analyzeSchemaChange(
+  previous: StorefrontSchema,
+  next: StorefrontSchema,
+  current: StorefrontSettings,
+): SchemaChangeAnalysis {
+  const previousShapes = new Map(
+    collectValueFields(previous).map((f) => [f.key, fieldShape(f)]),
+  );
+  const analysis: SchemaChangeAnalysis = {
+    added: [],
+    typeReset: [],
+    orphaned: [],
+  };
+
+  const fieldKeys = new Set<string>();
+  const ancestorKeys = new Set<string>();
+  for (const field of collectValueFields(next)) {
+    fieldKeys.add(field.key);
+    const segments = field.key.split('.');
+    for (let i = 1; i < segments.length; i++) {
+      ancestorKeys.add(segments.slice(0, i).join('.'));
+    }
+
+    const previousShape = previousShapes.get(field.key);
+    if (previousShape === fieldShape(field)) continue;
+
+    const value = getSettingValue(current, field.key);
+    // `null` is how the API reports an unset value, so it counts as missing
+    if (value === undefined || value === null) {
+      if (previousShape === undefined && field.default !== undefined) {
+        analysis.added.push({ key: field.key, value: field.default });
+      }
+    } else if (!isValueValidForField(field, value)) {
+      analysis.typeReset.push({ key: field.key, value });
+    }
+  }
+
+  function walk(settings: Record<string, unknown>, prefix: string) {
+    for (const [segment, value] of Object.entries(settings)) {
+      const key = prefix ? `${prefix}.${segment}` : segment;
+      if (fieldKeys.has(key)) continue;
+      if (isPlainObject(value) && Object.keys(value).length > 0) {
+        walk(value, key);
+      } else if (!ancestorKeys.has(key) || !isPlainObject(value)) {
+        analysis.orphaned.push({ key, value });
+      }
+    }
+  }
+  walk(current, '');
+
+  return analysis;
+}
+
+/**
+ * Settings to use after replacing `previous` with `next`. `reset` replaces
+ * everything with the defaults of `next`. `changes` touches only what the
+ * edit changed: new fields get their default, values that no longer fit a
+ * changed field fall back to its default (or are removed without one), and
+ * settings without a field are kept unless `removeOrphans` is set.
+ */
+export function applySchemaChange(
+  previous: StorefrontSchema,
+  next: StorefrontSchema,
+  current: StorefrontSettings,
+  options: SchemaApplyOptions,
+): StorefrontSettings {
+  if (options.mode === 'reset') return getDefaultSettings(next);
+
+  const { added, typeReset, orphaned } = analyzeSchemaChange(
+    previous,
+    next,
+    current,
+  );
+  const defaultsByKey = new Map(
+    collectValueFields(next).map((f) => [f.key, f.default]),
+  );
+
+  let result = current;
+  for (const { key, value } of added) {
+    result = setSettingValue(result, key, value);
+  }
+  for (const { key } of typeReset) {
+    const fallback = defaultsByKey.get(key);
+    result =
+      fallback === undefined
+        ? deleteSettingValue(result, key)
+        : setSettingValue(result, key, fallback);
+  }
+  if (options.removeOrphans) {
+    for (const { key } of orphaned) result = deleteSettingValue(result, key);
+  }
+  return result;
+}
+
+/** Immutable deep delete — drops parent objects left empty by the removal. */
+export function deleteSettingValue(
+  settings: StorefrontSettings,
+  key: string,
+): StorefrontSettings {
+  const [head, ...rest] = key.split('.');
+  if (!head || !(head in settings)) return settings;
+  const without = () =>
+    Object.fromEntries(Object.entries(settings).filter(([k]) => k !== head));
+  if (rest.length === 0) return without();
+  const child = settings[head];
+  if (!isPlainObject(child)) return settings;
+  const next = deleteSettingValue(child, rest.join('.'));
+  if (next === child) return settings;
+  return Object.keys(next).length === 0
+    ? without()
+    : { ...settings, [head]: next };
 }
 
 /** Immutable deep set — clones along the path, leaves untouched branches shared. */

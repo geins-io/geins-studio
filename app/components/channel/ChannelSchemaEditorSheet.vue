@@ -1,13 +1,22 @@
 <script setup lang="ts">
-import type { StorefrontSchema } from '#shared/types';
+import type {
+  SchemaApplyOptions,
+  SchemaChangeAnalysis,
+  StorefrontSchema,
+  StorefrontSettings,
+} from '#shared/types';
+import { analyzeSchemaChange } from '@/utils/storefront';
+
 const props = defineProps<{
   open: boolean;
   schema: StorefrontSchema;
+  /** Current settings — analyzed against the edited schema before applying. */
+  settings: StorefrontSettings;
 }>();
 
 const emit = defineEmits<{
   'update:open': [value: boolean];
-  apply: [schema: StorefrontSchema];
+  apply: [schema: StorefrontSchema, options: SchemaApplyOptions];
 }>();
 
 const { t } = useI18n();
@@ -44,10 +53,31 @@ const jsonError = computed<string | null>(() => {
   }
 });
 
+const applyDialogOpen = ref(false);
+const pendingSchema = ref<StorefrontSchema | null>(null);
+const pendingAnalysis = ref<SchemaChangeAnalysis>({
+  added: [],
+  typeReset: [],
+  orphaned: [],
+});
+
+// The sheet stays open behind the dialog so cancelling keeps the edited JSON.
 function handleApply() {
   if (jsonError.value) return;
   const parsed = JSON.parse(editorContent.value) as StorefrontSchema;
-  emit('apply', parsed);
+  pendingSchema.value = parsed;
+  pendingAnalysis.value = analyzeSchemaChange(
+    props.schema,
+    parsed,
+    props.settings,
+  );
+  applyDialogOpen.value = true;
+}
+
+function handleConfirm(options: SchemaApplyOptions) {
+  if (!pendingSchema.value) return;
+  emit('apply', pendingSchema.value, options);
+  applyDialogOpen.value = false;
   emit('update:open', false);
 }
 </script>
@@ -91,6 +121,11 @@ function handleApply() {
           {{ t('channels.schema_editor_apply') }}
         </Button>
       </SheetFooter>
+      <ChannelSchemaApplyDialog
+        v-model:open="applyDialogOpen"
+        :analysis="pendingAnalysis"
+        @confirm="handleConfirm"
+      />
     </SheetContent>
   </Sheet>
 </template>
