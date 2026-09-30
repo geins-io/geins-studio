@@ -57,6 +57,113 @@ describe('assetRepo', () => {
       });
     });
 
+    describe('query', () => {
+      const state = {
+        page: 1,
+        pageSize: 50,
+        sort: null,
+        search: '',
+        filters: {},
+      };
+      const result = {
+        _id: 'b1',
+        page: 1,
+        pageSize: 50,
+        totalItemCount: 0,
+        pageCount: 0,
+        items: [],
+      };
+      const lastBody = () => mockFetch.mock.calls.at(-1)[1].body;
+
+      beforeEach(() => mockFetch.mockResolvedValue(result));
+
+      it('POSTs to /media/assets/query without the error toast and returns the full batch', async () => {
+        await expect(api.query(state)).resolves.toEqual(result);
+        expect(mockFetch).toHaveBeenCalledWith('/media/assets/query', {
+          method: 'POST',
+          body: { all: true, page: 1, pageSize: 50 },
+          suppressErrorToast: true,
+        });
+      });
+
+      it('omits search when empty or whitespace', async () => {
+        await api.query({ ...state, search: '   ' });
+        expect(lastBody()).not.toHaveProperty('search');
+        await api.query({ ...state, search: ' logo ' });
+        expect(lastBody()).toMatchObject({ search: 'logo' });
+      });
+
+      it('omits sortBy / sortDirection when sort is null', async () => {
+        await api.query(state);
+        expect(lastBody()).not.toHaveProperty('sortBy');
+        expect(lastBody()).not.toHaveProperty('sortDirection');
+      });
+
+      it('maps the sort column to sortBy and drops unknown columns', async () => {
+        await api.query({
+          ...state,
+          sort: { field: 'name', direction: 'asc' },
+        });
+        expect(lastBody()).toMatchObject({
+          sortBy: 'name',
+          sortDirection: 'asc',
+        });
+        await api.query({
+          ...state,
+          sort: { field: 'thumbnail', direction: 'asc' },
+        });
+        expect(lastBody()).not.toHaveProperty('sortBy');
+      });
+
+      it('never combines all with a filter, search or scope', async () => {
+        await api.query({ ...state, filters: { assetTypes: ['image'] } });
+        expect(lastBody()).toEqual({
+          assetTypes: ['image'],
+          page: 1,
+          pageSize: 50,
+        });
+        await api.query({ ...state, search: 'logo' });
+        expect(lastBody()).not.toHaveProperty('all');
+        await api.query(state, { folderId: 'f1' });
+        expect(lastBody()).toEqual({
+          folderIds: ['f1'],
+          includeSubfolders: true,
+          page: 1,
+          pageSize: 50,
+        });
+        await api.query(state, { trashed: true });
+        expect(lastBody()).toEqual({ trashed: true, page: 1, pageSize: 50 });
+      });
+
+      it('keeps all when filters are empty', async () => {
+        await api.query({
+          ...state,
+          filters: { assetTypes: [], channels: [], createdBy: '' },
+        });
+        expect(lastBody()).toEqual({ all: true, page: 1, pageSize: 50 });
+      });
+
+      it('passes the batch id through as _id', async () => {
+        await api.query({ ...state, page: 3 }, undefined, { batchId: 'b1' });
+        expect(lastBody()).toMatchObject({ _id: 'b1', page: 3 });
+        await api.query(state);
+        expect(lastBody()).not.toHaveProperty('_id');
+      });
+
+      it('clamps pageSize to the 1000 cap', async () => {
+        await api.query({ ...state, pageSize: 5000 });
+        expect(lastBody()).toMatchObject({ pageSize: 1000 });
+        await api.query({ ...state, pageSize: 0, page: 0 });
+        expect(lastBody()).toMatchObject({ pageSize: 1, page: 1 });
+      });
+
+      it('forwards the abort signal', async () => {
+        const { signal } = new AbortController();
+        await api.query(state, undefined, { signal });
+        expect(mockFetch.mock.calls.at(-1)[1].signal).toBe(signal);
+      });
+    });
+
     it('get calls GET /media/assets/:id', async () => {
       mockFetch.mockResolvedValue({ _id: '1', _type: 'asset' });
       await api.get('1');

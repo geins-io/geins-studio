@@ -15,3 +15,4 @@ export * from './Customer';
 export * from './Changelog';
 export * from './Workflow';
 export * from './Asset';
+export * from './ListQuery';

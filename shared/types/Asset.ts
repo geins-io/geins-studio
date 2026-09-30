@@ -4,6 +4,8 @@ import type {
   ResponseEntity,
   EntityBaseWithName,
   ApiOptions,
+  BatchQuery,
+  ListSortDirection,
   Localized,
 } from './index';
 
@@ -265,6 +267,52 @@ export interface AssetApiOptions extends ApiOptions<keyof AssetBase> {
   trashed?: boolean;
   search?: string;
   page?: string;
+}
+
+/** `sortBy` values accepted by `POST /media/assets/query`. */
+export type AssetSortField =
+  | 'name'
+  | 'type'
+  | 'folderPath'
+  | 'sizeBytes'
+  | 'mime'
+  | 'createdBy'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'deletedAt'
+  | 'purgeAfter';
+
+/** Filter-kit filters for the asset list — the `filters` of `ListQueryState`. */
+export interface AssetQueryFilters {
+  assetTypes?: AssetType[];
+  channels?: string[];
+  createdBy?: string;
+  /** ISO date-time, inclusive. */
+  modifiedFrom?: string;
+  /** ISO date-time, inclusive. */
+  modifiedTo?: string;
+}
+
+/** Folder / trash scope of an asset query — see `assetListOptions`. */
+export type AssetQueryScope = Pick<AssetApiOptions, 'folderId' | 'trashed'>;
+
+/**
+ * Request body of `POST /media/assets/query` (`media_request_assetQuery`).
+ * Filters combine with AND; `all` matches every asset regardless of them.
+ */
+export interface AssetQuery extends BatchQuery, AssetQueryFilters {
+  assetIds?: string[];
+  assetName?: string;
+  /** A `null` entry is the library root. */
+  folderIds?: (string | null)[];
+  folderName?: string;
+  includeSubfolders?: boolean;
+  trashed?: boolean;
+  languages?: string[];
+  /** Word-prefix match, not substring. */
+  search?: string;
+  sortBy?: AssetSortField;
+  sortDirection?: ListSortDirection;
 }
 
 // =============================================================================
