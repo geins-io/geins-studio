@@ -19,6 +19,29 @@ Tables in Geins Studio are built with TanStack Table wrapped by `TableView`. The
 
 Pass mode via `table.options.meta.mode`. Minimal-mode styling overrides live in scoped CSS on `.table-view--minimal` in `TableView.vue` — never modify UI primitives for mode-specific styling.
 
+## Client vs server data source
+
+`dataSource` (`'client'` default | `'server'`) is orthogonal to `mode`.
+
+- **Client** — fetch the whole set, TanStack sorts/pages/searches in the browser. Right for small, bounded sets (settings lists, nested tables, anything the endpoint returns whole).
+- **Server** — the set is large/unbounded or the endpoint pages (batch queries). Drive it with `useListQuery` and bind the models:
+
+```vue
+<TableView
+  v-model:pagination="pagination"
+  v-model:sorting="sorting"
+  v-model:search="searchInput"
+  data-source="server"
+  :data="items"
+  :row-count="total"
+  :loading="pending"
+  :filtered="hasActiveQuery"
+  @clear-filters="resetFilters"
+/>
+```
+
+Server-mode rules: mark columns the endpoint can't sort with `sortableColumns: { x: false }` (sort is single-column, `[]` = endpoint default); don't debounce search in the page (`useListQuery` does); pass `pending` straight to `loading` (the table only skeletons while `data` is empty); no `Minimal` mode, no expanding rows. Reference: `app/pages/dev/server-table.vue`, `docs/components/table/TableView.md#server-mode`.
+
 ## Building columns with useColumns
 
 Prefer `getColumns()` over hand-rolling `h()` calls — it handles header/cell styles, mode-awareness, and type inference automatically:

@@ -817,7 +817,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
         accessorKey: key,
         header: headerRenderer,
         cell: cellRenderer,
-        enableSorting: sortable,
+        enableSorting: colSortable,
         meta: { type: columnType, title: columnTitle, skipInactiveDim },
         ...columnSize,
       });

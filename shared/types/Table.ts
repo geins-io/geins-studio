@@ -12,6 +12,12 @@ export const enum TableMode {
   Minimal = 'minimal',
 }
 
+/**
+ * Who pages, sorts and searches the rows. Orthogonal to `TableMode`; `server`
+ * needs pagination, so it isn't supported with `TableMode.Minimal`.
+ */
+export type TableDataSource = 'client' | 'server';
+
 export type EditableColumnType =
   | 'string'
   | 'number'
