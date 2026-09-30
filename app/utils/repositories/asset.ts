@@ -4,6 +4,9 @@ import type {
   AssetLink,
   AssetLinkTarget,
   AssetLocalizations,
+  AssetQuery,
+  AssetQueryFilters,
+  AssetQueryScope,
   AssetRelocate,
   AssetUpdate,
   AssetApiOptions,
@@ -12,6 +15,8 @@ import type {
   FolderCreate,
   FolderUpdate,
   FolderDeleteAssets,
+  ListQueryRequestOptions,
+  ListQueryState,
   Localized,
   UploadCompleteResponse,
   UploadCompleteResult,
@@ -22,6 +27,7 @@ import { buildQueryObject } from '#shared/utils/api-query';
 import {
   ASSET_QUERY_PAGE_SIZE,
   contentTypeForUpload,
+  isAssetSortField,
   MAX_FILE_BYTES,
   MAX_FILES_PER_TICKET,
   MAX_TICKET_BYTES,
@@ -84,6 +90,67 @@ function chunkForTickets<T extends { file: File }>(items: T[]): T[][] {
 const TICKETS_ENDPOINT = '/media/tickets';
 
 /**
+ * Folder / trash scope as `assetQuery` criteria. A folder id covers its subtree
+ * (`includeSubfolders`); `null` is the library root only, since "descendants of
+ * root" would be the whole library; omitted means every folder. `trashed: true`
+ * swaps the result set for the trash (either-or), so it is only sent when set.
+ */
+function assetScopeCriteria(scope?: AssetQueryScope): AssetQuery {
+  const folderId = scope?.folderId;
+  return {
+    ...(folderId !== undefined
+      ? {
+          folderIds: [folderId],
+          ...(folderId !== null ? { includeSubfolders: true } : {}),
+        }
+      : {}),
+    ...(scope?.trashed ? { trashed: true } : {}),
+  };
+}
+
+function assetFilterCriteria(filters: AssetQueryFilters): AssetQueryFilters {
+  return {
+    ...(filters.assetTypes?.length ? { assetTypes: filters.assetTypes } : {}),
+    ...(filters.channels?.length ? { channels: filters.channels } : {}),
+    ...(filters.createdBy ? { createdBy: filters.createdBy } : {}),
+    ...(filters.modifiedFrom ? { modifiedFrom: filters.modifiedFrom } : {}),
+    ...(filters.modifiedTo ? { modifiedTo: filters.modifiedTo } : {}),
+  };
+}
+
+/**
+ * Map list state onto the `assetQuery` body. `all: true` matches every asset
+ * *regardless of* the other criteria, so it is only sent when there is no
+ * scope, filter or search at all. An unknown sort column is dropped (the
+ * backend would 400) and the default `updatedAt desc` applies.
+ */
+function assetQueryBody(
+  state: ListQueryState<AssetQueryFilters>,
+  scope?: AssetQueryScope,
+  batchId?: string,
+): AssetQuery {
+  const search = state.search.trim();
+  const criteria: AssetQuery = {
+    ...assetScopeCriteria(scope),
+    ...assetFilterCriteria(state.filters),
+    ...(search ? { search } : {}),
+  };
+  const sort = state.sort;
+  return {
+    ...(Object.keys(criteria).length ? criteria : { all: true }),
+    ...(sort && isAssetSortField(sort.field)
+      ? { sortBy: sort.field, sortDirection: sort.direction }
+      : {}),
+    ...(batchId ? { _id: batchId } : {}),
+    page: Math.max(1, Math.floor(state.page)),
+    pageSize: Math.min(
+      Math.max(1, Math.floor(state.pageSize)),
+      ASSET_QUERY_PAGE_SIZE,
+    ),
+  };
+}
+
+/**
  * Repository for the Assets Library — full CRUD for assets plus a `folder`
  * sub-repo. Both are standard `entityRepo`s, so create/update/delete
  * auto-attach the right `errorContext` (asset / folder) for the global error
@@ -132,29 +199,15 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
      * TanStack, the app-wide pattern. Libraries past 1000 assets are truncated.
      *
      * `all: true` matches every asset *regardless of the other filters*, so it
-     * is only sent for the unfiltered "all assets" view. Folder scope goes over
-     * the wire as `folderIds`: a folder id (+ `includeSubfolders`, so the view
-     * covers the subtree), `null` for the library root (root-level assets only
-     * — no `includeSubfolders`, whose "descendants of root" would be the whole
-     * library), and omitted entirely for "all assets" — so an explicit
-     * `folderId: null` is NOT the same as no options. `trashed: true` swaps the
-     * whole result set for the soft-deleted assets (either-or, not an include
-     * flag), so it is only sent when asked for.
+     * is only sent for the unfiltered "all assets" view; the folder / trash
+     * scope is built by `assetScopeCriteria`. Server-driven lists use
+     * {@link query} instead.
      */
     async list(
       options?: AssetApiOptions,
       fetchOptions?: RepoFetchOptions,
     ): Promise<Asset[]> {
-      const folderId = options?.folderId;
-      const filters = {
-        ...(folderId !== undefined
-          ? {
-              folderIds: [folderId],
-              ...(folderId !== null ? { includeSubfolders: true } : {}),
-            }
-          : {}),
-        ...(options?.trashed ? { trashed: true } : {}),
-      };
+      const filters = assetScopeCriteria(options);
       const criteria = Object.keys(filters).length ? filters : { all: true };
       const res = await fetch<BatchQueryResult<Asset>>(
         `${ENTITIES.asset.endpoint}/query`,
@@ -165,6 +218,30 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         },
       );
       return res.items;
+    },
+
+    /**
+     * One server-driven page of assets — `POST /media/assets/query` with the
+     * list's page, sort, search and filters (see `assetQueryBody`). Returns the
+     * full `BatchQueryResult`: pass its `_id` back as `batchId` to page the same
+     * batch, and drop it whenever the query itself changes. Errors surface in
+     * the list's error state; as a POST it would otherwise fire the global
+     * mutation toast.
+     */
+    async query(
+      state: ListQueryState<AssetQueryFilters>,
+      scope?: AssetQueryScope,
+      options?: ListQueryRequestOptions,
+    ): Promise<BatchQueryResult<Asset>> {
+      return await fetch<BatchQueryResult<Asset>>(
+        `${ENTITIES.asset.endpoint}/query`,
+        {
+          method: 'POST',
+          body: assetQueryBody(state, scope, options?.batchId),
+          suppressErrorToast: true,
+          ...(options?.signal ? { signal: options.signal } : {}),
+        },
+      );
     },
 
     /**

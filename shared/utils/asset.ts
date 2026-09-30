@@ -2,6 +2,7 @@ import type {
   AssetApiOptions,
   AssetCapabilities,
   AssetLinkTargetType,
+  AssetSortField,
   AssetType,
   UploadRejectionCode,
 } from '#shared/types';
@@ -16,6 +17,27 @@ export const MAX_TICKET_BYTES = 10 * 1024 ** 3; // 10 GB per ticket total
 // `assetQuery` caps `pageSize` here (default 100); the list fetches one page at
 // the cap and treats it as the whole library.
 export const ASSET_QUERY_PAGE_SIZE = 1000;
+
+const ASSET_SORT_FIELDS: ReadonlySet<string> = new Set<AssetSortField>([
+  'name',
+  'type',
+  'folderPath',
+  'sizeBytes',
+  'mime',
+  'createdBy',
+  'createdAt',
+  'updatedAt',
+  'deletedAt',
+  'purgeAfter',
+]);
+
+/**
+ * Whether a column id is a `sortBy` the asset query accepts. Column ids map to
+ * `sortBy` one-to-one; anything else would be a 400, so the adapter drops it.
+ */
+export function isAssetSortField(field: string): field is AssetSortField {
+  return ASSET_SORT_FIELDS.has(field);
+}
 
 // Extension → MIME for the upload path. The browser leaves `File.type` empty
 // for many types (e.g. `.svg`, some `.mp4`), and the ticket flow needs a
