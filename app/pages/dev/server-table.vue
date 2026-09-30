@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Asset, AssetQueryFilters } from '#shared/types';
+import type { Asset, AssetQueryFilters, AssetType } from '#shared/types';
 import type { ColumnDef } from '@tanstack/vue-table';
 
 /**
@@ -41,7 +41,10 @@ const {
   defaults: { filters: {}, pageSize: 10 },
   pageSizes: PAGE_SIZES,
   deps: () => forceError.value,
-  route: { sortFields: ['name', 'type', 'sizeBytes', 'updatedAt'] },
+  route: {
+    sortFields: ['name', 'type', 'sizeBytes', 'updatedAt'],
+    filters: { assetTypes: listParam<AssetType>(['image']) },
+  },
 });
 
 // `getColumns` derives the keys from a row, so keep the last set when a query
