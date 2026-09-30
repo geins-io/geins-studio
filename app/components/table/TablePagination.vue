@@ -10,6 +10,8 @@ interface DataTablePaginationProps {
   entityKey: string;
   advanced: boolean;
   pageSizes?: number[];
+  /** Overrides the row-model count — server mode selects across pages. */
+  selectedCount?: number;
 }
 
 const props = withDefaults(defineProps<DataTablePaginationProps>(), {
@@ -43,7 +45,9 @@ const setPageSize = (value: AcceptableValue) => {
           t(
             'rows_selected',
             {
-              selected: table.getFilteredSelectedRowModel().rows.length,
+              selected:
+                selectedCount ??
+                table.getFilteredSelectedRowModel().rows.length,
               total: totalRows,
               entityKey,
             },

@@ -62,6 +62,11 @@ watch(
   { immediate: true },
 );
 
+// Survives paging, sorting, search and filters; only Clear selection drops it.
+const selectedIds = ref<string[]>([]);
+const selectedNames = ref<string[]>([]);
+const tableView = ref<{ clearSelection: () => void }>();
+
 const imagesOnly = computed(() => !!filters.value.assetTypes?.length);
 const toggleImages = () =>
   setFilter('assetTypes', imagesOnly.value ? [] : ['image']);
@@ -87,14 +92,24 @@ const toggleImages = () =>
       Force error
     </Button>
     <Button variant="secondary" @click="refresh()">Refresh</Button>
+    <Button variant="secondary" @click="tableView?.clearSelection()">
+      Clear selection
+    </Button>
     <span class="text-muted-foreground text-xs">
       total {{ total }} · page {{ pagination.pageIndex + 1 }} · size
       {{ pagination.pageSize }} · sort {{ JSON.stringify(sorting) }} ·
       {{ pending ? 'pending' : 'idle' }}
     </span>
   </div>
+  <p class="text-muted-foreground mb-4 text-xs">
+    selected ids ({{ selectedIds.length }}):
+    {{ selectedIds.join(', ') || '—' }} · loaded rows:
+    {{ selectedNames.join(', ') || '—' }}
+  </p>
 
   <TableView
+    ref="tableView"
+    v-model:selected-ids="selectedIds"
     v-model:pagination="pagination"
     v-model:sorting="sorting"
     v-model:search="searchInput"
@@ -109,5 +124,6 @@ const toggleImages = () =>
     :error="!!error"
     :on-retry="refresh"
     @clear-filters="resetFilters"
+    @selection="(rows) => (selectedNames = rows.map((row) => row.name))"
   />
 </template>
