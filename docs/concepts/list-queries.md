@@ -42,7 +42,7 @@ The first page of a query creates a batch, and `_id` on the result identifies it
 
 ## State management
 
-[`useListQuery`](/composables/useListQuery) holds the state, calls the adapter and runs the batch lifecycle, including a retry on a rejected batch. Pages don't wire the adapter to `useAsyncData` themselves.
+[`useListQuery`](/composables/useListQuery) holds the state, calls the adapter and runs the batch lifecycle, including a retry on a rejected batch. Optionally it also syncs the state with the URL query. Pages don't wire the adapter to `useAsyncData` themselves.
 
 ## Adapters
 
