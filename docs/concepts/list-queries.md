@@ -40,6 +40,10 @@ Scope that has its own UI and URL key, such as the asset folder rail, is a **sep
 
 The first page of a query creates a batch, and `_id` on the result identifies it. To fetch later pages of the **same** query, pass that id back (`batchId`). Whenever sort, search, filters or scope change, drop the id so the backend starts a new batch. A batch expires 24 hours after it's created. Paging an expired batch answers `400 Batch not found.`
 
+## State management
+
+[`useListQuery`](/composables/useListQuery) holds the state, calls the adapter and runs the batch lifecycle, including a retry on a rejected batch. Pages don't wire the adapter to `useAsyncData` themselves.
+
 ## Adapters
 
 | Repository | Adapter                                  | Filters             | Scope                                                                                    |

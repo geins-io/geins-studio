@@ -73,6 +73,7 @@ export default defineConfig({
             text: 'Data Tables',
             items: [
               { text: 'useColumns', link: '/composables/useColumns.md' },
+              { text: 'useListQuery', link: '/composables/useListQuery.md' },
               { text: 'useTable', link: '/composables/useTable.md' },
             ],
           },
