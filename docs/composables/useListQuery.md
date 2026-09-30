@@ -48,6 +48,7 @@ Show skeletons only when `pending && items.length === 0`. While the next page lo
 | `pageSizes`        | `number[]`                                                          | —                | Allowed sizes. Any other value falls back to the default.                        |
 | `searchDebounceMs` | `number`                                                            | `300`            | Clearing the search applies at once.                                             |
 | `deps`             | `() => unknown`                                                     | —                | Outside inputs the fetcher reads (e.g. folder scope). A change resets the query. |
+| `route`            | `{ keys?, sortFields?, filters? }`                                  | —                | Two-way URL sync. See [URL sync](#url-sync).                                     |
 | `immediate`/`lazy` | `boolean`                                                           | `useAsyncData`'s | Passed through.                                                                  |
 
 The default page size is `defaults.pageSize`, then `pageSizes[0]`, then `30`.
@@ -81,6 +82,45 @@ Writable computeds for `TableView` server mode:
 - **Last request wins.** `useAsyncData` runs with `dedupe: 'cancel'`. A superseded request is aborted through `signal`, and its response is dropped.
 - **Shrunk sets clamp.** If a response reports `page > pageCount` (for example after deletes), the list steps to the last page and refetches.
 - **`refresh()`** keeps page, sort and search, and drops the `_id` so a mutation shows up.
+
+## URL sync
+
+Pass `route` to sync the state with the route query both ways, so a link reopens the exact page, sort, search and filters:
+
+```ts
+import { listParam } from '#shared/utils/list-query';
+
+useListQuery<Asset, AssetQueryFilters>({
+  // …
+  route: {
+    sortFields: ['name', 'type', 'sizeBytes', 'updatedAt'],
+    filters: { assetTypes: listParam<AssetType>(['image', 'svg', 'pdf']) },
+  },
+});
+```
+
+| State    | Default key | Format                                     |
+| -------- | ----------- | ------------------------------------------ |
+| `page`   | `page`      | `3`                                        |
+| pageSize | `perPage`   | `48`                                       |
+| `sort`   | `sort`      | `name` ascending, `-name` descending       |
+| `search` | `q`         | the debounced value                        |
+| filters  | filter name | the filter's `serialize`, e.g. `image,svg` |
+
+- **Restored before the first fetch.** The state starts from the URL, so the list doesn't fetch twice.
+- **Validated.** A non-numeric or `< 1` page reads as 1. A page size outside `pageSizes`, a sort field outside `sortFields` and an unparsable filter fall back to their defaults. Invalid values are then cleaned out of the URL.
+- **Written with `router.replace`.** No history entry per keystroke, and search is written after the debounce.
+- **Defaults are omitted.** No `?page=1` and no default sort. A value cleared from a non-empty default is written as an empty key (`?sort=`) so it survives a reload.
+- **Other params are left alone,** e.g. the asset page's `folder`.
+- **Back / forward** updates the state, which refetches.
+- **`keys`** overrides any key name, so two lists on one page don't collide: `route: { keys: { page: 'p', search: 's' } }`.
+
+Each filter's codec comes from the page, so the generic layer knows nothing about filter semantics. `#shared/utils/list-query` ships two:
+
+- `listParam(allowed?)`: a comma-separated array. Values outside `allowed` are dropped.
+- `stringParam()`: a trimmed string.
+
+For anything else, pass `{ parse(raw), serialize(value), key? }`. `parse` returns `undefined` for invalid input. Empty values (`undefined`, `''`, `[]`) are never serialized.
 
 ## Type Definitions
 

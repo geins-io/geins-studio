@@ -5,6 +5,15 @@ import type {
   ListQueryState,
   ListSort,
 } from '#shared/types';
+import {
+  DEFAULT_LIST_QUERY_ROUTE_KEYS,
+  listQueryRouteKeys,
+  readListQueryRoute,
+  writeListQueryRoute,
+  type ListQueryFilterParams,
+  type ListQueryRouteConfig,
+  type ListQueryRouteKeys,
+} from '#shared/utils/list-query';
 import type { NuxtError } from '#app';
 import type { PaginationState, SortingState } from '@tanstack/vue-table';
 import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
@@ -32,6 +41,17 @@ export interface UseListQueryOptions<T, TFilters> {
   deps?: () => unknown;
   immediate?: boolean;
   lazy?: boolean;
+  /**
+   * Two-way sync with the route query: restored before the first fetch,
+   * written back with `router.replace`, defaults omitted.
+   */
+  route?: {
+    /** Override to keep two lists on one page apart. */
+    keys?: Partial<ListQueryRouteKeys>;
+    /** Sortable column ids accepted from the URL; omitted accepts any. */
+    sortFields?: readonly string[];
+    filters?: ListQueryFilterParams<TFilters>;
+  };
 }
 
 export interface UseListQueryReturnType<T, TFilters> {
@@ -67,6 +87,28 @@ function isActiveFilterValue(value: unknown): boolean {
   return value !== undefined && value !== null && value !== '';
 }
 
+/** The query's string values for `keys` (`?q` with no value reads as ''). */
+function pickQuery(
+  query: Record<string, unknown>,
+  keys: string[],
+): Record<string, string> {
+  const picked: Record<string, string> = {};
+  for (const key of keys) {
+    const raw = query[key];
+    const value = Array.isArray(raw) ? raw[0] : raw;
+    if (typeof value === 'string') picked[key] = value;
+    else if (value === null) picked[key] = '';
+  }
+  return picked;
+}
+
+function sameQuery(a: Record<string, string>, b: Record<string, string>) {
+  const keys = Object.keys(a);
+  return (
+    keys.length === Object.keys(b).length && keys.every((k) => a[k] === b[k])
+  );
+}
+
 function statusOf(err: unknown): number | undefined {
   if (typeof err !== 'object' || err === null) return undefined;
   if ('statusCode' in err && typeof err.statusCode === 'number')
@@ -90,14 +132,37 @@ export function useListQuery<T, TFilters extends object>(
   const defaultPageSize =
     defaults.pageSize ?? pageSizes?.[0] ?? DEFAULT_PAGE_SIZE;
 
-  const page = ref(1);
-  const pageSize = ref(defaultPageSize);
-  const sort = shallowRef<ListSort | null>(defaults.sort ?? null);
-  const searchInput = ref('');
-  const search = ref('');
+  const routeConfig: ListQueryRouteConfig<TFilters> | undefined =
+    options.route && {
+      keys: { ...DEFAULT_LIST_QUERY_ROUTE_KEYS, ...options.route.keys },
+      defaults: {
+        pageSize: defaultPageSize,
+        sort: defaults.sort ?? null,
+        filters: defaults.filters,
+      },
+      pageSizes,
+      sortFields: options.route.sortFields,
+      filters: options.route.filters,
+    };
+  const route = routeConfig ? useRoute() : undefined;
+  // Seeded from the URL up front so the first fetch is already the right one.
+  const initial =
+    routeConfig && route
+      ? readListQueryRoute(route.query, routeConfig)
+      : undefined;
+
+  const page = ref(initial?.page ?? 1);
+  const pageSize = ref(initial?.pageSize ?? defaultPageSize);
+  const sort = shallowRef<ListSort | null>(
+    initial ? initial.sort : (defaults.sort ?? null),
+  );
+  const searchInput = ref(initial?.search ?? '');
+  const search = ref(initial?.search ?? '');
   // Boxed: `shallowRef<TFilters>` is a conditional type TS can't resolve for a
   // generic, so the box keeps it a plain `ShallowRef` and `filters` a `Ref`.
-  const filterBox = shallowRef({ current: { ...defaults.filters } });
+  const filterBox = shallowRef({
+    current: initial?.filters ?? { ...defaults.filters },
+  });
   const filters = computed<TFilters>({
     get: () => filterBox.value.current,
     set: (value) => (filterBox.value = { current: value }),
@@ -245,6 +310,53 @@ export function useListQuery<T, TFilters extends object>(
         : null;
     },
   });
+
+  if (routeConfig && route) {
+    const router = useRouter();
+    const ownKeys = listQueryRouteKeys(routeConfig);
+    const routeQuery = computed(() =>
+      writeListQueryRoute(
+        {
+          page: page.value,
+          pageSize: pageSize.value,
+          sort: sort.value,
+          search: search.value,
+          filters: filters.value,
+        },
+        routeConfig,
+      ),
+    );
+
+    // Immediate so invalid values from a pasted link are cleaned up too.
+    watch(
+      routeQuery,
+      (next) => {
+        if (sameQuery(pickQuery(route.query, ownKeys), next)) return;
+        const rest = Object.fromEntries(
+          Object.entries(route.query).filter(([k]) => !ownKeys.includes(k)),
+        );
+        router.replace({ query: { ...rest, ...next } });
+      },
+      { immediate: true },
+    );
+
+    // Back / forward (or any outside navigation) drives the state.
+    watch(
+      () => route.query,
+      (query) => {
+        const next = readListQueryRoute(query, routeConfig);
+        if (sameQuery(writeListQueryRoute(next, routeConfig), routeQuery.value))
+          return;
+        pageSize.value = next.pageSize;
+        sort.value = next.sort;
+        filters.value = next.filters;
+        searchInput.value = next.search;
+        search.value = next.search;
+        // Last: the query changes above reset the page to 1.
+        page.value = next.page;
+      },
+    );
+  }
 
   return {
     page,
