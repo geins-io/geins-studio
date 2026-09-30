@@ -142,3 +142,136 @@ describe('TableView — client mode', () => {
     expect(names(wrapper)).toEqual(['b', 'a', 'c']);
   });
 });
+
+describe('TableView — server mode selection', () => {
+  const selectColumns: ColumnDef<Row>[] = [
+    {
+      id: 'select',
+      header: ({ table }) =>
+        h('input', {
+          type: 'checkbox',
+          'data-test': 'select-page',
+          checked: table.getIsAllPageRowsSelected(),
+          onChange: (e: Event) =>
+            table.toggleAllPageRowsSelected(
+              (e.target as HTMLInputElement).checked,
+            ),
+        }),
+      cell: ({ row }) =>
+        h('input', {
+          type: 'checkbox',
+          'data-test': `select-${row.id}`,
+          checked: row.getIsSelected(),
+          onChange: (e: Event) =>
+            row.toggleSelected((e.target as HTMLInputElement).checked),
+        }),
+    },
+    ...columns,
+  ];
+
+  const page1: Row[] = [
+    { _id: '1', name: 'a' },
+    { _id: '2', name: 'b' },
+    { _id: '3', name: 'c' },
+  ];
+  const page2: Row[] = [
+    { _id: '4', name: 'd' },
+    { _id: '5', name: 'e' },
+  ];
+
+  const mountServer = async (seed?: string[]) => {
+    const data = ref(page1);
+    const selectedIds = ref(seed);
+    const selections: Row[][] = [];
+    const idUpdates: string[][] = [];
+    const tableRef = ref<{ clearSelection: () => void }>();
+    const Host = defineComponent({
+      setup: () => () =>
+        h(TableView<Row, unknown>, {
+          ref: tableRef,
+          columns: selectColumns,
+          data: data.value,
+          mode: TableMode.Simple,
+          dataSource: 'server',
+          rowCount: 5,
+          pagination: { pageIndex: 0, pageSize: 3 },
+          selectedIds: selectedIds.value,
+          onSelection: (selection: Row[]) => selections.push(selection),
+          'onUpdate:selectedIds': (ids: string[]) => idUpdates.push(ids),
+        }),
+    });
+    const wrapper = await mountWithContext(Host);
+    const selectedCount = () =>
+      wrapper.findComponent({ name: 'TablePagination' }).props('selectedCount');
+    return {
+      wrapper,
+      data,
+      selectedIds,
+      selections,
+      idUpdates,
+      tableRef,
+      selectedCount,
+    };
+  };
+
+  const ids = (selection: Row[] | undefined) => selection?.map((r) => r._id);
+
+  it('keeps rows selected on earlier pages', async () => {
+    const t = await mountServer();
+    await t.wrapper.find('[data-test="select-1"]').setValue(true);
+    t.data.value = page2;
+    await nextTick();
+    await t.wrapper.find('[data-test="select-4"]').setValue(true);
+
+    expect(ids(t.selections.at(-1))).toEqual(['1', '4']);
+    expect(t.idUpdates.at(-1)).toEqual(['1', '4']);
+    expect(t.selectedCount()).toBe(2);
+  });
+
+  it('counts seeded ids before their rows load, and emits them once they do', async () => {
+    const t = await mountServer(['4']);
+    expect(t.selectedCount()).toBe(1);
+    expect(t.selections).toHaveLength(0);
+
+    t.data.value = page2;
+    await nextTick();
+    expect(ids(t.selections.at(-1))).toEqual(['4']);
+    expect(
+      (t.wrapper.find('[data-test="select-4"]').element as HTMLInputElement)
+        .checked,
+    ).toBe(true);
+  });
+
+  it('deselects a row that is not loaded via selectedIds', async () => {
+    const t = await mountServer(['1', '4']);
+    t.selectedIds.value = ['1'];
+    await nextTick();
+    expect(t.selectedCount()).toBe(1);
+
+    t.data.value = page2;
+    await nextTick();
+    expect(
+      (t.wrapper.find('[data-test="select-4"]').element as HTMLInputElement)
+        .checked,
+    ).toBe(false);
+  });
+
+  it('toggles only the current page from the header checkbox', async () => {
+    const t = await mountServer(['4']);
+    await t.wrapper.find('[data-test="select-page"]').setValue(true);
+    expect(t.idUpdates.at(-1)).toEqual(['4', '1', '2', '3']);
+    expect(ids(t.selections.at(-1))).toEqual(['1', '2', '3']);
+
+    await t.wrapper.find('[data-test="select-page"]').setValue(false);
+    expect(t.idUpdates.at(-1)).toEqual(['4']);
+    expect(t.selectedCount()).toBe(1);
+  });
+
+  it('clears the whole selection via clearSelection()', async () => {
+    const t = await mountServer(['1', '4']);
+    t.tableRef.value?.clearSelection();
+    await nextTick();
+    expect(t.idUpdates.at(-1)).toEqual([]);
+    expect(t.selectedCount()).toBe(0);
+  });
+});

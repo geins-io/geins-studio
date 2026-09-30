@@ -117,6 +117,31 @@ How server mode differs from client mode:
 - **Loading** shows skeleton rows only when there are no rows yet. Later fetches keep the current page on screen, dimmed, with `aria-busy`.
 - **Not supported:** `TableMode.Minimal` (it has no pagination) and expanding rows. Both log a dev warning.
 
+#### Selection in server mode
+
+TanStack's row models only hold the loaded page, so `TableView` keeps the selected rows itself, keyed by `idColumn`. A selection survives page, sort, search and filter changes. The parent decides when to drop it and calls `clearSelection()`.
+
+- `selection` emits **every** selected row across pages, in selection order. A selected id whose row isn't loaded yet (e.g. seeded through `selectedIds`) still counts as selected, and is emitted once a page containing it loads.
+- `v-model:selected-ids` gives you the ids only, including rows that aren't loaded. Use it for bulk calls. Setting it from outside selects or deselects, including rows on other pages.
+- The header checkbox selects or clears **the current page** only. "Select all N matching" isn't part of the table.
+- The footer's "N selected" counts the whole selection. The total is `rowCount`.
+
+```vue
+<script setup lang="ts">
+const selectedIds = ref<string[]>([]);
+const tableView = ref<{ clearSelection: () => void }>();
+</script>
+
+<template>
+  <TableView
+    ref="tableView"
+    v-model:selected-ids="selectedIds"
+    data-source="server"
+    ...
+  />
+</template>
+```
+
 A working example lives at `/dev/server-table` (dev builds only).
 
 ## Props
@@ -267,7 +292,7 @@ Initial column pinning. Defaults to pinning `select` left and `actions` right.
 selectedIds?: string[]
 ```
 
-Pre-select rows by id. Two-way: changing this externally updates internal selection.
+Pre-select rows by id. Changing it from outside replaces the selection. In server mode it's also a model (`v-model:selected-ids`): the table emits `update:selectedIds` with every selected id, loaded or not.
 
 ### `emptyText` / `emptyDescription`
 
@@ -393,7 +418,25 @@ Emitted by the empty state's **Clear search** button, after the table has cleare
 (selection: TData[]): TData[]
 ```
 
-Emitted with the current selection. For expandable tables, only leaf rows (no children) are emitted.
+Emitted with the current selection. For expandable tables, only leaf rows (no children) are emitted. In server mode it holds every loaded selected row across pages. See [Selection in server mode](#selection-in-server-mode).
+
+### `update:selectedIds`
+
+```ts
+(ids: string[]) => void
+```
+
+Server mode only. Every selected id, in selection order, including rows that aren't loaded.
+
+## Exposed
+
+### `clearSelection`
+
+```ts
+clearSelection(): void
+```
+
+Deselects every row, including rows on other pages in server mode. Emits `selection` and, in server mode, `update:selectedIds`.
 
 ## Slots
 

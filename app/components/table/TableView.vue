@@ -15,6 +15,7 @@ import type {
   ColumnDef,
   ColumnFiltersState,
   PaginationState,
+  RowSelectionState,
   SortingState,
   VisibilityState,
   ColumnOrderState,
@@ -89,6 +90,7 @@ const pinnedState = toRef(props, 'pinnedState');
 
 const emit = defineEmits({
   selection: (selection: TData[]): TData[] => selection,
+  'update:selectedIds': (ids: string[]) => Array.isArray(ids),
   'clear-filters': () => true,
 });
 
@@ -186,7 +188,7 @@ onUnmounted(() => {
 const rowsSelectable = computed(() =>
   props.columns.some((column) => column.id === 'select'),
 );
-const rowSelection = ref(
+const rowSelection = ref<RowSelectionState>(
   props.selectedIds?.reduce((acc, _id) => ({ ...acc, [_id]: true }), {}) || {},
 );
 watch(
@@ -199,8 +201,65 @@ watch(
       (acc, _id) => ({ ...acc, [_id]: true }),
       {},
     );
+    if (serverMode) {
+      syncSelectedRows();
+      emitServerSelection();
+    }
   },
 );
+
+/**
+ * Server mode: row models only hold the current page, so selected rows are
+ * kept here across pages, in selection order. `undefined` = selected (e.g.
+ * seeded via `selectedIds`) but its row hasn't been loaded yet.
+ */
+const selectedRows = new Map<string, TData | undefined>();
+const rowIdOf = (row: TData) => String(row[props.idColumn as keyof TData]);
+const selectedCount = ref(0);
+
+const syncSelectedRows = () => {
+  const ids = Object.keys(rowSelection.value).filter(
+    (id) => rowSelection.value[id],
+  );
+  const idSet = new Set(ids);
+  for (const id of selectedRows.keys()) {
+    if (!idSet.has(id)) selectedRows.delete(id);
+  }
+  for (const id of ids) {
+    if (!selectedRows.has(id)) selectedRows.set(id, undefined);
+  }
+  // Re-setting an existing key keeps its place, so order is preserved.
+  for (const row of props.data) {
+    const id = rowIdOf(row);
+    if (selectedRows.has(id)) selectedRows.set(id, row);
+  }
+  selectedCount.value = selectedRows.size;
+};
+
+// Deduped on the loaded ids, so a parent echoing `selectedIds` back can't loop.
+const loadedSelectedRows = () =>
+  [...selectedRows.values()].filter((row): row is TData => row !== undefined);
+let lastEmittedSelection: string | undefined;
+const emitServerSelection = () => {
+  const loaded = loadedSelectedRows();
+  const signature = JSON.stringify(loaded.map(rowIdOf));
+  if (signature === lastEmittedSelection) return;
+  lastEmittedSelection = signature;
+  emit('selection', loaded);
+};
+
+if (serverMode) {
+  syncSelectedRows();
+  // Like client mode, no emit for the initial seed; only for later changes.
+  lastEmittedSelection = JSON.stringify(loadedSelectedRows().map(rowIdOf));
+  watch(
+    () => props.data,
+    () => {
+      syncSelectedRows();
+      emitServerSelection();
+    },
+  );
+}
 
 /**
  * Setup column visibility
@@ -414,7 +473,11 @@ const table = useVueTable({
   onRowSelectionChange: (updaterOrValue) => {
     valueUpdater(updaterOrValue, rowSelection);
 
-    if (props.enableExpanding && props.getSubRows) {
+    if (serverMode) {
+      syncSelectedRows();
+      emit('update:selectedIds', [...selectedRows.keys()]);
+      emitServerSelection();
+    } else if (props.enableExpanding && props.getSubRows) {
       // For expanding tables, getSelectedRowModel() doesn't include child rows properly
       // We need to manually collect all selected rows from the full hierarchy
       const collectSelectedRows = (rows: Row<unknown>[]): Row<unknown>[] => {
@@ -526,6 +589,10 @@ watch(
   },
   { immediate: false },
 );
+
+/** Deselects every row, including rows on other pages in server mode. */
+const clearSelection = () => table.setRowSelection({});
+defineExpose({ clearSelection });
 
 const emptyState = computed(() => {
   const hasActiveFilter =
@@ -734,6 +801,7 @@ const hasSearchableColumns = computed(() => {
       v-if="!minimalMode"
       :entity-key="entityKey"
       :rows-selectable="rowsSelectable"
+      :selected-count="serverMode ? selectedCount : undefined"
       :table="table"
       :advanced="advancedMode"
       :page-sizes="pageSizes"

@@ -40,7 +40,7 @@ Pass mode via `table.options.meta.mode`. Minimal-mode styling overrides live in 
 />
 ```
 
-Server-mode rules: mark columns the endpoint can't sort with `sortableColumns: { x: false }` (sort is single-column, `[]` = endpoint default); don't debounce search in the page (`useListQuery` does); pass `pending` straight to `loading` (the table only skeletons while `data` is empty); no `Minimal` mode, no expanding rows. Reference: `app/pages/dev/server-table.vue`, `docs/components/table/TableView.md#server-mode`.
+Server-mode rules: mark columns the endpoint can't sort with `sortableColumns: { x: false }` (sort is single-column, `[]` = endpoint default); don't debounce search in the page (`useListQuery` does); pass `pending` straight to `loading` (the table only skeletons while `data` is empty); no `Minimal` mode, no expanding rows. Selection spans pages: bind `v-model:selected-ids` for bulk calls (includes unloaded rows), clear it yourself via the exposed `clearSelection()` — the table never drops it on page/sort/search/filter changes. Reference: `app/pages/dev/server-table.vue`, `docs/components/table/TableView.md#server-mode`.
 
 ## Building columns with useColumns
 
