@@ -772,6 +772,10 @@ export default defineConfig({
                     link: '/components/channel/ChannelStorefrontSettings.md',
                   },
                   {
+                    text: 'ChannelSchemaApplyDialog',
+                    link: '/components/channel/ChannelSchemaApplyDialog.md',
+                  },
+                  {
                     text: 'ChannelSchemaEditorSheet',
                     link: '/components/channel/ChannelSchemaEditorSheet.md',
                   },

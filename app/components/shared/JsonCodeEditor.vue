@@ -110,7 +110,7 @@ const appTheme = EditorView.theme({
     padding: '0 10px',
   },
   '.cm-activeLineGutter': {
-    backgroundColor: 'var(--accent)',
+    backgroundColor: 'var(--code-active-line-gutter)',
   },
   '.cm-activeLine': {
     backgroundColor: 'color-mix(in srgb, var(--primary) 4%, transparent)',
