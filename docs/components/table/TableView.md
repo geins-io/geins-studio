@@ -5,6 +5,7 @@
 ## Features
 
 - Three layout modes (`Advanced`, `Simple`, `Minimal`) via the `TableMode` enum
+- Client or server data source: sort, page and search in the browser, or let the backend do it (see [Server mode](#server-mode))
 - Built-in global search with 300ms debounce and field allowlist
 - Column visibility + order persisted per user/route via cookies
 - Sticky pinned columns (left + right) with shadow indicators
@@ -66,6 +67,58 @@ For tables embedded inside cards or panels — no search, no pagination, no pinn
 </template>
 ```
 
+### Server mode
+
+With `data-source="server"`, `data` is one page the backend has already sorted, paged and searched. The table doesn't re-sort, re-page or filter the rows. It reads and writes page, sort and search through `v-model`s, so bind them to [`useListQuery`](/composables/useListQuery):
+
+```vue
+<script setup lang="ts">
+const {
+  items,
+  total,
+  pending,
+  error,
+  searchInput,
+  hasActiveQuery,
+  pagination,
+  sorting,
+  refresh,
+  resetFilters,
+} = useListQuery<Asset, AssetQueryFilters>({
+  key: 'asset-list',
+  fetcher: (state, options) => assetApi.query(state, undefined, options),
+  defaults: { filters: {} },
+});
+</script>
+
+<template>
+  <TableView
+    v-model:pagination="pagination"
+    v-model:sorting="sorting"
+    v-model:search="searchInput"
+    data-source="server"
+    entity-key="asset"
+    :columns="columns"
+    :data="items"
+    :row-count="total"
+    :loading="pending"
+    :filtered="hasActiveQuery"
+    :error="!!error"
+    :on-retry="refresh"
+    @clear-filters="resetFilters"
+  />
+</template>
+```
+
+How server mode differs from client mode:
+
+- **Sorting** is single-column. Clearing a header's sort sets `sorting` to `[]`, which means "the endpoint's default". Only columns the column definitions mark sortable can be sorted. Mark columns the backend can't sort as non-sortable with `useColumns`'s `sortableColumns`. `TableView` knows nothing about backend field names. `initSortingState` is ignored; set the initial sort in `useListQuery`'s `defaults.sort`.
+- **Search** writes `search` on every keystroke with no debounce. `useListQuery` owns the debounce. `searchableFields` doesn't apply.
+- **Loading** shows skeleton rows only when there are no rows yet. Later fetches keep the current page on screen, dimmed, with `aria-busy`.
+- **Not supported:** `TableMode.Minimal` (it has no pagination) and expanding rows. Both log a dev warning.
+
+A working example lives at `/dev/server-table` (dev builds only).
+
 ## Props
 
 ### `columns`
@@ -82,7 +135,7 @@ TanStack column definitions. Use [`useColumns`](/composables/useColumns) to comp
 data: TData[]
 ```
 
-Row data. While `loading` is `true`, skeleton rows replace this entirely.
+Row data. While `loading` is `true`, skeleton rows replace this entirely. In server mode that only happens while `data` is empty.
 
 ### `entityKey`
 
@@ -110,9 +163,47 @@ Field used as the stable row identifier for selection persistence.
 pageSize?: number
 ```
 
-Initial page size. Ignored in `Minimal` mode (no pagination).
+Page size in client mode. Later changes to the prop are applied too. Ignored in `Minimal` mode (no pagination). In server mode the size comes from the `pagination` model.
 
 - **Default:** `30`
+
+### `pageSizes`
+
+```ts
+pageSizes?: number[]
+```
+
+Options in the rows-per-page selector (`Advanced` mode). In server mode, match `useListQuery`'s `pageSizes`.
+
+- **Default:** `[30, 60, 120, 240]`
+
+### `dataSource`
+
+```ts
+dataSource?: TableDataSource // 'client' | 'server'
+```
+
+`'client'` sorts, pages and searches `data` in the browser. `'server'` treats `data` as a page the backend prepared. See [Server mode](#server-mode). Read once at setup.
+
+- **Default:** `'client'`
+
+### `rowCount`
+
+```ts
+rowCount?: number
+```
+
+Server mode: the total across all pages (`totalItemCount`). Drives the row counter and the page count.
+
+### `filtered`
+
+```ts
+filtered?: boolean
+```
+
+Filters outside the table are active. Shows the "no results" empty state (with **Clear search**, which emits `clear-filters`) even when the search is empty.
+
+- **Default:** `false`
 
 ### `loading`
 
@@ -240,6 +331,14 @@ initVisibilityState?: VisibilityState
 
 Initial column visibility map. In `Advanced` mode this is overlaid with the per-user cookie.
 
+### `initSortingState`
+
+```ts
+initSortingState?: SortingState
+```
+
+Client mode: the sort applied once loading finishes, if nothing is sorted yet. Ignored in server mode.
+
 ### `enableExpanding`
 
 ```ts
@@ -268,15 +367,25 @@ Renders rows where `row.original.active === false` at 50% opacity. Cells with `m
 
 - **Default:** `false`
 
+## Models
+
+Server mode only. Client mode keeps this state internal.
+
+| Model                | Type              | Notes                                            |
+| -------------------- | ----------------- | ------------------------------------------------ |
+| `v-model:pagination` | `PaginationState` | 0-based `pageIndex` + `pageSize`.                |
+| `v-model:sorting`    | `SortingState`    | At most one entry. `[]` is the endpoint default. |
+| `v-model:search`     | `string`          | Raw input, not debounced.                        |
+
 ## Events
 
-### `clicked`
+### `clear-filters`
 
 ```ts
-(row: TData): TData
+() => void
 ```
 
-Emitted when a row is clicked.
+Emitted by the empty state's **Clear search** button, after the table has cleared its own search. Reset any outside filters here (e.g. `useListQuery`'s `resetFilters`).
 
 ### `selection`
 
