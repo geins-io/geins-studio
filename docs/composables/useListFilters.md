@@ -126,7 +126,7 @@ draft.toggleValue('assetTypes', 'image'); // local only
 draft.apply(); // commits → refetch + URL
 ```
 
-Pinned state and options are shared with the parent, not staged.
+Pinned state and options are shared with the parent, not staged. Both the instance and a draft satisfy `ListFilterEditor` (the value actions plus `resolvedOptions`), which is what the value editors such as [`ListFilterValues`](/components/list/filter/ListFilterValues) take.
 
 ## URL sync
 

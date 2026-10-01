@@ -434,6 +434,24 @@ export default defineConfig({
             ],
           },
           {
+            text: 'List filters',
+            collapsed: true,
+            items: [
+              {
+                text: 'ListFilterValues',
+                link: '/components/list/filter/ListFilterValues.md',
+              },
+              {
+                text: 'ListFilterMultiSelect',
+                link: '/components/list/filter/ListFilterMultiSelect.md',
+              },
+              {
+                text: 'ListFilterDateRange',
+                link: '/components/list/filter/ListFilterDateRange.md',
+              },
+            ],
+          },
+          {
             text: 'Tables',
             collapsed: true,
             items: [
