@@ -115,10 +115,13 @@ useListQuery<Asset, AssetQueryFilters>({
 - **Back / forward** updates the state, which refetches.
 - **`keys`** overrides any key name, so two lists on one page don't collide: `route: { keys: { page: 'p', search: 's' } }`.
 
-Each filter's codec comes from the page, so the generic layer knows nothing about filter semantics. `#shared/utils/list-query` ships two:
+Each filter's codec comes from the page, so the generic layer knows nothing about filter semantics. `#shared/utils/list-query` ships three:
 
 - `listParam(allowed?)`: a comma-separated array. Values outside `allowed` are dropped.
 - `stringParam()`: a trimmed string.
+- `dateRangeParam()`: a `ListDateRange`, as a preset (`today`, `week`, `month`) or local days `from..to` (`2026-09-01..2026-09-30`, either end open).
+
+Filter-kit lists don't pick codecs by hand: `listFilterRouteParams(definitions)` derives them from the filter definitions. See [`useListFilters`](/composables/useListFilters#url-sync).
 
 For anything else, pass `{ parse(raw), serialize(value), key? }`. `parse` returns `undefined` for invalid input. Empty values (`undefined`, `''`, `[]`) are never serialized.
 

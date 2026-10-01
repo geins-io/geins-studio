@@ -1,4 +1,9 @@
-import type { ListQueryState, ListSort } from '#shared/types';
+import type {
+  ListDateRange,
+  ListDateRangePreset,
+  ListQueryState,
+  ListSort,
+} from '#shared/types';
 
 /** Encodes one filter value to and from a URL query string. */
 export interface ListQueryParam<V> {
@@ -64,6 +69,94 @@ export function stringParam(): ListQueryParam<string> {
   return {
     parse: (raw) => raw.trim() || undefined,
     serialize: (value) => value,
+  };
+}
+
+const DATE_RANGE_PRESETS: readonly ListDateRangePreset[] = [
+  'today',
+  'week',
+  'month',
+];
+
+const pad = (n: number) => String(n).padStart(2, '0');
+
+/** Local calendar day of an ISO date-time, as `YYYY-MM-DD`. */
+function localDay(iso: string): string | undefined {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return undefined;
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/** Local midnight of a `YYYY-MM-DD` day; `undefined` for a non-existent date. */
+function parseLocalDay(raw: string): Date | undefined {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+  if (!match) return undefined;
+  const [y, m, d] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  const date = new Date(y, m - 1, d);
+  // `new Date` rolls 2026-02-31 over to March — reject instead.
+  if (date.getMonth() !== m - 1 || date.getDate() !== d) return undefined;
+  return date;
+}
+
+function endOfDay(date: Date): Date {
+  const end = new Date(date);
+  end.setHours(23, 59, 59, 999);
+  return end;
+}
+
+/**
+ * The concrete, inclusive `from`/`to` of a range. Presets are calendar-based in
+ * local time (the week starts on Monday) and resolved against `now`, so call
+ * this when the query is sent — a stored preset never goes stale.
+ */
+export function resolveListDateRange(
+  range: ListDateRange,
+  now: Date = new Date(),
+): { from?: string; to?: string } {
+  if (!range.preset) return { from: range.from, to: range.to };
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let last = new Date(start);
+  if (range.preset === 'week') {
+    start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+    last = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6);
+  } else if (range.preset === 'month') {
+    start.setDate(1);
+    last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  }
+  const end = endOfDay(last);
+  return { from: start.toISOString(), to: end.toISOString() };
+}
+
+/**
+ * A date range as a preset (`today`, `week`, `month`) or `from..to` local days
+ * (`2026-09-01..2026-09-30`; either end may be open). `from` reads as the start
+ * of its day, `to` as the end.
+ */
+export function dateRangeParam(): ListQueryParam<ListDateRange> {
+  return {
+    parse: (raw) => {
+      const value = raw.trim();
+      const preset = DATE_RANGE_PRESETS.find((p) => p === value);
+      if (preset) return { preset };
+      const parts = value.split('..');
+      if (parts.length !== 2) return undefined;
+      const [rawFrom = '', rawTo = ''] = parts;
+      const from = rawFrom ? parseLocalDay(rawFrom) : undefined;
+      const to = rawTo ? parseLocalDay(rawTo) : undefined;
+      if ((rawFrom && !from) || (rawTo && !to) || (!from && !to))
+        return undefined;
+      if (from && to && from > to) return undefined;
+      return {
+        ...(from ? { from: from.toISOString() } : {}),
+        ...(to ? { to: endOfDay(to).toISOString() } : {}),
+      };
+    },
+    serialize: (value) => {
+      if (value.preset) return value.preset;
+      const from = value.from ? (localDay(value.from) ?? '') : '';
+      const to = value.to ? (localDay(value.to) ?? '') : '';
+      return from || to ? `${from}..${to}` : '';
+    },
   };
 }
 

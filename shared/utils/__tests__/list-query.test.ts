@@ -1,10 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import type { ListQueryState } from '#shared/types';
+import type { ListDateRange, ListQueryState } from '#shared/types';
 import {
   DEFAULT_LIST_QUERY_ROUTE_KEYS,
+  dateRangeParam,
   listParam,
   listQueryRouteKeys,
   readListQueryRoute,
+  resolveListDateRange,
   stringParam,
   writeListQueryRoute,
   type ListQueryRouteConfig,
@@ -185,5 +187,122 @@ describe('listQueryRouteKeys', () => {
       'types',
       'by',
     ]);
+  });
+});
+
+describe('dateRangeParam', () => {
+  const param = dateRangeParam();
+  const day = (y: number, m: number, d: number) => new Date(y, m - 1, d);
+  const endOf = (y: number, m: number, d: number) =>
+    new Date(y, m - 1, d, 23, 59, 59, 999);
+
+  it('reads and writes a preset', () => {
+    expect(param.parse('week')).toEqual({ preset: 'week' });
+    expect(param.serialize({ preset: 'month' })).toBe('month');
+  });
+
+  it('reads local days as the start and end of those days', () => {
+    expect(param.parse('2026-09-01..2026-09-30')).toEqual({
+      from: day(2026, 9, 1).toISOString(),
+      to: endOf(2026, 9, 30).toISOString(),
+    });
+  });
+
+  it('round-trips a custom range, including open ends', () => {
+    for (const raw of [
+      '2026-09-01..2026-09-30',
+      '2026-09-01..',
+      '..2026-09-30',
+      '2026-09-15..2026-09-15',
+    ]) {
+      const value = param.parse(raw);
+      expect(value).toBeDefined();
+      expect(param.serialize(value!)).toBe(raw);
+    }
+  });
+
+  it('rejects garbage', () => {
+    for (const raw of [
+      '',
+      'yesterday',
+      '..',
+      '2026-09-01',
+      '2026-09-01..2026-09-02..2026-09-03',
+      '2026-02-31..',
+      '2026-9-1..',
+      'abc..2026-09-01',
+      '2026-09-30..2026-09-01',
+    ])
+      expect(param.parse(raw)).toBeUndefined();
+  });
+
+  it('serializes an empty range as empty', () => {
+    expect(param.serialize({})).toBe('');
+  });
+
+  it('syncs through the route helpers', () => {
+    interface RangeFilters {
+      modified?: ListDateRange;
+    }
+    const rangeConfig: ListQueryRouteConfig<RangeFilters> = {
+      keys: DEFAULT_LIST_QUERY_ROUTE_KEYS,
+      defaults: { pageSize: 24, sort: null, filters: {} },
+      filters: { modified: dateRangeParam() },
+    };
+    const state = readListQueryRoute({ modified: 'today' }, rangeConfig);
+    expect(state.filters).toEqual({ modified: { preset: 'today' } });
+    expect(writeListQueryRoute(state, rangeConfig)).toEqual({
+      modified: 'today',
+    });
+  });
+});
+
+describe('resolveListDateRange', () => {
+  // Wednesday 2026-09-30, mid-afternoon local time.
+  const now = new Date(2026, 8, 30, 15, 42);
+  const iso = (
+    y: number,
+    m: number,
+    d: number,
+    h = 0,
+    min = 0,
+    sec = 0,
+    ms = 0,
+  ) => new Date(y, m - 1, d, h, min, sec, ms).toISOString();
+
+  it('resolves today to the whole local day', () => {
+    expect(resolveListDateRange({ preset: 'today' }, now)).toEqual({
+      from: iso(2026, 9, 30),
+      to: iso(2026, 9, 30, 23, 59, 59, 999),
+    });
+  });
+
+  it('resolves this week from Monday to Sunday', () => {
+    expect(resolveListDateRange({ preset: 'week' }, now)).toEqual({
+      from: iso(2026, 9, 28),
+      to: iso(2026, 10, 4, 23, 59, 59, 999),
+    });
+    // A Sunday still belongs to the week that started the Monday before.
+    expect(
+      resolveListDateRange({ preset: 'week' }, new Date(2026, 9, 4, 10)).from,
+    ).toBe(iso(2026, 9, 28));
+  });
+
+  it('resolves this month from the 1st to the last day', () => {
+    expect(resolveListDateRange({ preset: 'month' }, now)).toEqual({
+      from: iso(2026, 9, 1),
+      to: iso(2026, 9, 30, 23, 59, 59, 999),
+    });
+  });
+
+  it('resolves against the time it is called, not when it was picked', () => {
+    const range = { preset: 'today' as const };
+    const later = new Date(2026, 9, 1, 0, 5);
+    expect(resolveListDateRange(range, later).from).toBe(iso(2026, 10, 1));
+  });
+
+  it('passes a custom range through', () => {
+    const range = { from: iso(2026, 9, 1), to: iso(2026, 9, 2) };
+    expect(resolveListDateRange(range, now)).toEqual(range);
   });
 });
