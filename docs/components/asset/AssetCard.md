@@ -4,7 +4,7 @@
 
 In `selectable` mode (the asset picker) the tile becomes a selection target instead: a checkbox overlays the thumbnail, clicking the tile toggles selection rather than opening the detail panel, and `hideActions` drops the actions menu.
 
-In `trashed` mode (the library's Trash view) the tile is inert apart from its menu: the thumbnail button is disabled, the name renders as plain text, and the menu offers **Restore** only.
+In `trashed` mode (the library's Trash view) the tile is inert apart from its menu: the thumbnail button is disabled, the name renders as plain text, the menu offers **Restore** only, and the meta line shows "Moved to trash {date}" (`deletedAt`) in place of the modified date.
 
 :::tip NOTE
 The tile shows no usage. Usage lives in the detail panel's "Where it's used" section ([`AssetUsedIn`](/components/asset/AssetUsedIn)) — it needs a per-asset request, which a grid of tiles can't afford.
@@ -104,4 +104,4 @@ The picker's list view reuses [`TableView`](/components/table/TableView) (Simple
 
 - [`AssetThumbnail`](/components/asset/AssetThumbnail), [`AssetTypeBadge`](/components/asset/AssetTypeBadge), [`AssetActionsMenu`](/components/asset/AssetActionsMenu)
 - shadcn-vue [`Card`](/components/shadcn-vue), `Badge`, `Button`
-- [`useDate`](/composables/useDate) — modified date; `formatFileSize` (`#shared/utils/file`) — size
+- [`useDate`](/composables/useDate) — modified / moved-to-trash date; `formatFileSize` (`#shared/utils/file`) — size

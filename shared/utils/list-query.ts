@@ -165,7 +165,8 @@ function firstString(value: unknown): string | undefined {
   return typeof first === 'string' ? first : undefined;
 }
 
-function serializeSort(sort: ListSort | null): string {
+/** The `?sort` value: `field`, or `-field` for descending. */
+export function serializeSort(sort: ListSort | null): string {
   if (!sort) return '';
   return sort.direction === 'desc' ? `-${sort.field}` : sort.field;
 }

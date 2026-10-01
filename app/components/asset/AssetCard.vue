@@ -4,7 +4,7 @@ import { formatFileSize } from '#shared/utils/file';
 
 /**
  * Grid tile for a single asset: thumbnail, name, type badge, folder, tags, and
- * size/modified meta. Click (name or card) or the action menu opens the asset.
+ * size/modified meta (moved-to-trash date in `trashed` mode). Click (name or card) or the action menu opens the asset.
  *
  * In `selectable` mode (asset picker) the tile becomes a selection target: a
  * checkbox overlays the thumbnail, the whole tile toggles selection instead of
@@ -162,7 +162,16 @@ const activate = () => {
         class="text-muted-foreground mt-auto flex items-center justify-between text-xs"
       >
         <span>{{ size }}</span>
-        <span>{{ formatDate(asset.updatedAt, { dateStyle: 'medium' }) }}</span>
+        <span v-if="trashed && asset.deletedAt">
+          {{
+            $t('asset_library.moved_to_trash_on', {
+              date: formatDate(asset.deletedAt, { dateStyle: 'medium' }),
+            })
+          }}
+        </span>
+        <span v-else>
+          {{ formatDate(asset.updatedAt, { dateStyle: 'medium' }) }}
+        </span>
       </div>
     </div>
   </Card>

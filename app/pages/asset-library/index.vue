@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useMediaQuery } from '@vueuse/core';
-import type { Asset, AssetQueryFilters } from '#shared/types';
+import type { Asset, AssetQueryFilters, ListSort } from '#shared/types';
 import { TableMode } from '#shared/types';
 import {
   assetListOptions,
@@ -11,6 +11,7 @@ import {
 } from '#shared/utils/asset';
 import { ENTITIES } from '#shared/utils/entities';
 import { formatFileSize } from '#shared/utils/file';
+import { serializeSort } from '#shared/utils/list-query';
 import { cn, segmentedButtonClass } from '@/utils/index';
 import type { ColumnDef } from '@tanstack/vue-table';
 
@@ -27,6 +28,14 @@ const { resolveIcon } = useLucideIcon();
 const entityKey = ENTITIES.asset.key;
 const route = useRoute();
 const router = useRouter();
+const { formatRelativeDate } = useDate();
+
+// Trash lists most recently trashed first. Its date fields mean nothing on a
+// live folder, so leaving trash drops them.
+const TRASH_SORT: ListSort = { field: 'deletedAt', direction: 'desc' };
+const TRASH_SORT_FIELDS = ['deletedAt', 'purgeAfter'];
+const isTrashSort = (sort: ListSort | null) =>
+  !!sort && TRASH_SORT_FIELDS.includes(sort.field);
 
 const view = ref<'grid' | 'list'>('grid');
 // Open by default where the panel sits inline (sm+, the same 640px boundary the
@@ -45,13 +54,25 @@ const selectedFolder = computed<string | null>({
   },
   set: (folder) => {
     // A new folder starts on page 1; a leftover ?page would be read back as a
-    // navigation to that page.
+    // navigation to that page. Crossing into or out of trash swaps the sort in
+    // the same navigation, for the same reason.
+    const crossesTrash = (folder === TRASH_KEY) !== isTrash.value;
     const rest = Object.fromEntries(
       Object.entries(route.query).filter(
-        ([key]) => key !== 'folder' && key !== 'page',
+        ([key]) =>
+          key !== 'folder' &&
+          key !== 'page' &&
+          !(crossesTrash && key === 'sort'),
       ),
     );
-    router.replace({ query: folder ? { ...rest, folder } : rest });
+    const entersTrash = crossesTrash && folder === TRASH_KEY;
+    router.replace({
+      query: {
+        ...rest,
+        ...(folder ? { folder } : {}),
+        ...(entersTrash ? { sort: serializeSort(TRASH_SORT) } : {}),
+      },
+    });
   },
 });
 // Uncategorised is a query, not a folder, so uploads from there land at the root.
@@ -94,6 +115,7 @@ const {
   error,
   page,
   pageSize,
+  sort,
   searchInput,
   hasActiveQuery,
   pagination,
@@ -107,9 +129,19 @@ const {
   pageSizes: PAGE_SIZES,
   deps: () => selectedFolder.value,
   route: {
-    sortFields: ['name', 'type', 'folderPath', 'sizeBytes', 'updatedAt'],
+    sortFields: [
+      'name',
+      'type',
+      'folderPath',
+      'sizeBytes',
+      'updatedAt',
+      ...TRASH_SORT_FIELDS,
+    ],
   },
 });
+// A link into trash with no sort, or a live link carrying a trash sort.
+if (isTrash.value && !sort.value) sort.value = TRASH_SORT;
+else if (!isTrash.value && isTrashSort(sort.value)) sort.value = null;
 
 // Skeletons on the first load only; later fetches keep the rows on screen.
 const loading = computed(() => pending.value && !items.value.length);
@@ -146,6 +178,10 @@ const AssetActionsMenu = resolveComponent('AssetActionsMenu');
 // getColumns builds every column (consistent header / sort / cell style /
 // ordering); only the cell BODY is swapped for the asset-specific columns.
 function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
+  // Trash swaps "Modified" for when the asset was trashed and when it purges.
+  const dateColumns: (keyof Asset)[] = isTrash.value
+    ? ['deletedAt', 'purgeAfter']
+    : ['updatedAt'];
   const cols = getColumns(rows, {
     includeColumns: [
       'name',
@@ -153,7 +189,7 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
       'folderPath',
       'sizeBytes',
       'tags',
-      'updatedAt',
+      ...dateColumns,
     ],
     columnTitles: {
       name: t('name', 1),
@@ -162,8 +198,16 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
       sizeBytes: t('size'),
       tags: t('tag', 2),
       updatedAt: t('modified'),
+      deletedAt: t('asset_library.moved_to_trash'),
+      purgeAfter: t('asset_library.deleted_permanently'),
     },
-    columnTypes: { sizeBytes: 'filesize', tags: 'tags', updatedAt: 'date' },
+    columnTypes: {
+      sizeBytes: 'filesize',
+      tags: 'tags',
+      updatedAt: 'date',
+      deletedAt: 'date',
+      purgeAfter: 'date',
+    },
     // Column ids are the query's `sortBy`; tags isn't one.
     sortableColumns: { tags: false },
   });
@@ -176,6 +220,17 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
         'div',
         { class: getBasicCellStyle(table) },
         folderName(row.original.folderId) ?? '—',
+      );
+  }
+
+  // Relative ("in 12 days"): how long is left matters more than the date.
+  const purgeCol = cols.find((col) => col.id === 'purgeAfter');
+  if (purgeCol) {
+    purgeCol.cell = ({ table, row }) =>
+      h(
+        'div',
+        { class: getBasicCellStyle(table) },
+        formatRelativeDate(row.original.purgeAfter) || '---',
       );
   }
 
@@ -263,7 +318,7 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
     'folderPath',
     'sizeBytes',
     'tags',
-    'updatedAt',
+    ...dateColumns,
     'actions',
   ];
   return order
