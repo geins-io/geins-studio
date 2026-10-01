@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import type { Asset, AssetType } from '#shared/types';
+import type {
+  Asset,
+  AssetQueryFilters,
+  AssetType,
+  ListSort,
+} from '#shared/types';
 import { TableMode } from '#shared/types';
 import { assetListOptions } from '#shared/utils/asset';
 import { ENTITIES } from '#shared/utils/entities';
@@ -44,6 +49,7 @@ const emit = defineEmits<{
 const open = defineModel<boolean>('open', { default: false });
 
 const { t } = useI18n();
+const { geinsLogError } = useGeinsLog('AssetPickerPanel');
 const { assetApi } = useGeinsRepository();
 const { folderName } = useFolders();
 const { resolveIcon } = useLucideIcon();
@@ -56,18 +62,15 @@ const listMode = TableMode.Simple;
 // "Recently added" is a virtual folder — a sentinel that matches no real folder
 // id, so the tree highlights nothing while the quick item is active.
 const RECENT_SENTINEL = '__recent__';
+const RECENT_SORT: ListSort = { field: 'createdAt', direction: 'desc' };
 const PAGE_SIZES = [12, 24, 48];
 const DEFAULT_PAGE_SIZE = 24;
-const RECENT_LIMIT = 12;
 
 // ── Browse state (reset each time the panel opens) ──────────────────────────
 const view = ref<'grid' | 'list'>('grid');
 const recent = ref(false);
 const selectedFolder = ref<string | null>(props.folderId ?? null);
-const search = ref('');
 const selectedIds = ref<string[]>([]);
-const page = ref(1);
-const pageSize = ref(DEFAULT_PAGE_SIZE);
 const uploadOpen = ref(false);
 
 // Files-only pickers (no images) default to list — you pick documents by
@@ -76,54 +79,60 @@ const defaultView = (): 'grid' | 'list' =>
   props.types && !props.types.includes('image') ? 'list' : 'grid';
 
 // ── Data ────────────────────────────────────────────────────────────────────
-// Folder scope stays server-side (matches the library page); search / type /
-// sort / paginate are client-side over the fetched list.
-const { data, error, status, refresh } = useAsyncData<Asset[]>(
-  'asset-picker-list',
-  () => assetApi.list(assetListOptions(selectedFolder.value)),
-  { lazy: true, immediate: false, watch: [selectedFolder] },
-);
+// One server-driven query feeds both views. `types` is a fixed filter added in
+// the fetcher rather than a list filter, so it is always sent and never counts
+// as an active (clearable) query.
+const {
+  items,
+  total,
+  pending,
+  error,
+  page,
+  pageSize,
+  sort,
+  searchInput,
+  hasActiveQuery,
+  pagination,
+  sorting,
+  refresh,
+} = useListQuery<Asset, AssetQueryFilters>({
+  key: 'asset-picker-list',
+  fetcher: (state, options) =>
+    assetApi.query(
+      props.types
+        ? { ...state, filters: { ...state.filters, assetTypes: props.types } }
+        : state,
+      assetListOptions(selectedFolder.value),
+      options,
+    ),
+  defaults: { filters: {}, pageSize: DEFAULT_PAGE_SIZE },
+  pageSizes: PAGE_SIZES,
+  deps: () => [selectedFolder.value, props.types],
+  immediate: false,
+  lazy: true,
+});
 
-const loading = computed(() => status.value === 'pending');
+// The last open's rows may be for another scope or types, so skeleton until
+// this open's first fetch lands; after that, page changes keep rows on screen.
+const opening = ref(false);
+watch(pending, (isPending) => {
+  if (!isPending) opening.value = false;
+});
+const loading = computed(
+  () => pending.value && (opening.value || !items.value.length),
+);
 const fetchError = computed(() => !!error.value);
-const dataList = computed<Asset[]>(() =>
-  Array.isArray(data.value) ? data.value : [],
-);
 
-// Resolve selected ids to Asset objects across folder switches — the fetched
-// list only holds the current folder, so remember every asset we've seen.
+// Selection lives in `selectedIds` for both views. `seen` resolves ids to
+// assets across pages and folders; a selected id that was never loaded (e.g.
+// a preselected asset on another page) is resolved on confirm.
 const seen = ref<Record<string, Asset>>({});
-watch(dataList, (rows) => {
+function remember(assets: Asset[]) {
   const next = { ...seen.value };
-  for (const asset of rows) next[asset._id] = asset;
+  for (const asset of assets) next[asset._id] = asset;
   seen.value = next;
-});
-
-const chosen = computed(() =>
-  selectedIds.value
-    .map((id) => seen.value[id])
-    .filter((asset): asset is Asset => !!asset),
-);
-
-// ── Filtering ───────────────────────────────────────────────────────────────
-const pool = computed(() =>
-  props.types
-    ? dataList.value.filter((asset) => props.types!.includes(asset.type))
-    : dataList.value,
-);
-
-const visible = computed(() => {
-  const term = search.value.trim().toLowerCase();
-  let list = pool.value.filter(
-    (asset) => !term || asset.name.toLowerCase().includes(term),
-  );
-  if (recent.value) {
-    list = [...list]
-      .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
-      .slice(0, RECENT_LIMIT);
-  }
-  return list;
-});
+}
+watch(items, remember);
 
 // ── Selection ────────────────────────────────────────────────────────────────
 function toggle(id: string) {
@@ -136,18 +145,11 @@ function toggle(id: string) {
     : [...selectedIds.value, id];
 }
 
-// TableView reflects only the rows in its data; preserve picks made in other
-// folders (present in `selectedIds` but not in the current list).
-function onListSelection(rows: Asset[]) {
-  const ids = rows.map((row) => row._id);
-  if (!props.multiple) {
-    const added = ids.find((id) => !selectedIds.value.includes(id));
-    selectedIds.value = added ? [added] : ids.slice(-1);
-    return;
-  }
-  const inData = new Set(dataList.value.map((asset) => asset._id));
-  const preserved = selectedIds.value.filter((id) => !inData.has(id));
-  selectedIds.value = [...preserved, ...ids];
+// Server-mode TableView seeds its selection from `selectedIds` and emits the
+// whole set back, picks on other pages and folders included. Only multi-select
+// lists have a select column, so this never sees a single-select pick.
+function onListSelectedIds(ids: string[]) {
+  selectedIds.value = ids;
 }
 
 const isPreselected = (id: string) => props.preselectedIds.includes(id);
@@ -184,28 +186,14 @@ const panelTitle = computed(
   () => props.title || t('asset_library.picker_title'),
 );
 
-// ── Pagination (grid; the list view paginates inside TableView) ─────────────
-const pageCount = computed(() =>
-  Math.max(1, Math.ceil(visible.value.length / pageSize.value)),
-);
-const pagedAssets = computed(() => {
-  const current = Math.min(page.value, pageCount.value);
-  return visible.value.slice(
-    (current - 1) * pageSize.value,
-    current * pageSize.value,
-  );
-});
-
-// Any change to the result set / size goes back to page 1.
-watch([search, selectedFolder, recent, pageSize], () => {
-  page.value = 1;
-});
-
 // ── Folder rail ──────────────────────────────────────────────────────────────
-// "Recently added" is a client-side shortlist across folders, so it fetches all.
+// "Recently added" is every asset, newest first. Picking a folder drops that
+// sort unless the user has since sorted by a column.
 const treeSelected = computed<string | null>({
   get: () => (recent.value ? RECENT_SENTINEL : selectedFolder.value),
   set: (value) => {
+    if (recent.value && sort.value?.field === RECENT_SORT.field)
+      sort.value = null;
     recent.value = false;
     selectedFolder.value = value;
   },
@@ -213,6 +201,7 @@ const treeSelected = computed<string | null>({
 function selectRecent() {
   recent.value = true;
   selectedFolder.value = null;
+  sort.value = RECENT_SORT;
 }
 
 // ── List columns ─────────────────────────────────────────────────────────────
@@ -222,18 +211,19 @@ const AssetTypeBadge = resolveComponent('AssetTypeBadge');
 function buildListColumns(rows: Asset[]): ColumnDef<Asset>[] {
   const cols = getColumns(rows, {
     selectable: props.multiple,
-    includeColumns: ['name', 'type', 'folderId', 'sizeBytes', 'updatedAt'],
+    includeColumns: ['name', 'type', 'folderPath', 'sizeBytes', 'updatedAt'],
     columnTitles: {
       name: t('name', 1),
       type: t('type'),
-      folderId: t('folder', 1),
+      folderPath: t('folder', 1),
       sizeBytes: t('size'),
       updatedAt: t('modified'),
     },
     columnTypes: { sizeBytes: 'filesize', updatedAt: 'date' },
   });
 
-  const folderCol = cols.find((col) => col.id === 'folderId');
+  // Sorts by `folderPath` (the closest server field) but shows the folder name.
+  const folderCol = cols.find((col) => col.id === 'folderPath');
   if (folderCol) {
     folderCol.cell = ({ table, row }) =>
       h(
@@ -278,7 +268,7 @@ function buildListColumns(rows: Asset[]): ColumnDef<Asset>[] {
     'thumb',
     'name',
     'type',
-    'folderId',
+    'folderPath',
     'sizeBytes',
     'updatedAt',
   ];
@@ -287,23 +277,30 @@ function buildListColumns(rows: Asset[]): ColumnDef<Asset>[] {
     .filter((col): col is ColumnDef<Asset> => col !== undefined);
 }
 
+// `getColumns` derives the keys from a row, so keep the last set when a query
+// comes back empty — the empty state spans `columns.length`.
 const listColumns = ref<ColumnDef<Asset>[]>([]);
-watch(dataList, (rows) => (listColumns.value = buildListColumns(rows)), {
-  immediate: true,
-});
+watch(
+  items,
+  (rows) => {
+    if (rows.length || !listColumns.value.length)
+      listColumns.value = buildListColumns(rows);
+  },
+  { immediate: true },
+);
 
 // ── Empty state (grid; TableView owns the list one) ─────────────────────────
-const isSearching = computed(() => search.value.trim().length > 0);
 const emptyIcon = computed(
-  () => resolveIcon(isSearching.value ? 'SearchX' : 'FolderOpen') ?? undefined,
+  () =>
+    resolveIcon(hasActiveQuery.value ? 'SearchX' : 'FolderOpen') ?? undefined,
 );
 const emptyTitle = computed(() =>
-  isSearching.value
+  hasActiveQuery.value
     ? t('no_entity_found', { entityKey }, 2)
     : t('no_entity', { entityKey }, 2),
 );
 const emptyDescription = computed(() =>
-  isSearching.value
+  hasActiveQuery.value
     ? t('empty_filtered_description', { entityKey }, 2)
     : t('empty_description', { entityKey }, 2),
 );
@@ -316,12 +313,14 @@ watch(
     view.value = defaultView();
     recent.value = false;
     selectedFolder.value = props.folderId ?? null;
-    search.value = '';
+    searchInput.value = '';
+    sort.value = null;
+    pageSize.value = DEFAULT_PAGE_SIZE;
+    page.value = 1;
     selectedIds.value = [...props.preselectedIds];
     seen.value = {};
-    page.value = 1;
-    pageSize.value = DEFAULT_PAGE_SIZE;
     uploadOpen.value = false;
+    opening.value = true;
     refresh();
   },
   { immediate: true },
@@ -329,11 +328,9 @@ watch(
 
 // Quick-upload success: the new assets are already in the library. Seed them so
 // they resolve immediately, auto-select the ones matching this picker's types,
-// flip the rail to "Recently added" so the user sees them, and refetch the list.
+// flip the rail to "Recently added" (newest first, so they lead) and refetch.
 function handleUploaded(assets: Asset[]) {
-  const next = { ...seen.value };
-  for (const asset of assets) next[asset._id] = asset;
-  seen.value = next;
+  remember(assets);
 
   const matching = assets.filter(
     (asset) => !props.types || props.types!.includes(asset.type),
@@ -349,8 +346,29 @@ function handleUploaded(assets: Asset[]) {
   refresh();
 }
 
-function confirmSelection() {
-  emit('confirm', chosen.value);
+const confirming = ref(false);
+async function confirmSelection() {
+  const missing = selectedIds.value.filter((id) => !seen.value[id]);
+  if (missing.length) {
+    confirming.value = true;
+    try {
+      remember(await assetApi.byIds(missing));
+    } catch (err) {
+      // Stay open: confirming without them would unlink them from the entity.
+      // The global error toast reports the failure.
+      geinsLogError('could not resolve the selected assets', err);
+      return;
+    } finally {
+      confirming.value = false;
+    }
+  }
+  // Ids still unresolved are no longer live assets (trashed or deleted).
+  emit(
+    'confirm',
+    selectedIds.value
+      .map((id) => seen.value[id])
+      .filter((asset): asset is Asset => !!asset),
+  );
   open.value = false;
 }
 </script>
@@ -413,19 +431,13 @@ function confirmSelection() {
         <main class="flex min-h-0 min-w-0 flex-1 flex-col">
           <div class="flex flex-wrap items-center gap-2 border-b px-4 py-3">
             <Input
-              v-model="search"
+              v-model="searchInput"
               :placeholder="$t('search')"
               class="order-2 w-full sm:order-1 sm:w-64"
             />
 
             <span class="text-muted-foreground order-3 ml-auto text-xs">
-              {{
-                $t(
-                  'rows_total',
-                  { total: visible.length, entityKey },
-                  visible.length,
-                )
-              }}
+              {{ $t('rows_total', { total, entityKey }, total) }}
             </span>
 
             <ButtonGroup class="order-1 sm:order-4">
@@ -459,21 +471,27 @@ function confirmSelection() {
           >
             <NuxtErrorBoundary>
               <TableView
+                v-model:pagination="pagination"
+                v-model:sorting="sorting"
                 :loading="loading"
                 :entity-key="entityKey"
                 :columns="listColumns"
-                :data="visible"
+                data-source="server"
+                :data="items"
+                :row-count="total"
+                :filtered="hasActiveQuery"
+                :page-sizes="PAGE_SIZES"
                 :error="fetchError"
                 :on-retry="refresh"
                 :mode="listMode"
                 :show-search="false"
-                :page-size="pageSize"
                 :pinned-state="{}"
                 :selected-ids="selectedIds"
                 :empty-icon="emptyIcon"
                 :empty-text="emptyTitle"
                 :empty-description="emptyDescription"
-                @selection="onListSelection"
+                @update:selected-ids="onListSelectedIds"
+                @clear-filters="searchInput = ''"
               />
             </NuxtErrorBoundary>
           </div>
@@ -511,7 +529,7 @@ function confirmSelection() {
                 </EmptyContent>
               </Empty>
 
-              <Empty v-else-if="!visible.length" class="mt-12">
+              <Empty v-else-if="!items.length" class="mt-12">
                 <EmptyHeader>
                   <EmptyMedia variant="icon">
                     <component :is="emptyIcon" />
@@ -525,11 +543,7 @@ function confirmSelection() {
                 v-else
                 class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))]"
               >
-                <div
-                  v-for="asset in pagedAssets"
-                  :key="asset._id"
-                  class="relative"
-                >
+                <div v-for="asset in items" :key="asset._id" class="relative">
                   <Badge
                     v-if="isPreselected(asset._id)"
                     size="sm"
@@ -551,10 +565,10 @@ function confirmSelection() {
             </div>
 
             <PaginationBar
-              v-if="!loading && !fetchError && visible.length"
+              v-if="!loading && !fetchError && items.length"
               :page="page"
               :page-size="pageSize"
-              :total="visible.length"
+              :total="total"
               :entity-key="entityKey"
               :page-sizes="PAGE_SIZES"
               class="shrink-0"
@@ -576,6 +590,7 @@ function confirmSelection() {
           <Button
             data-test="asset-picker-confirm"
             :disabled="newCount === 0"
+            :loading="confirming"
             @click="confirmSelection"
           >
             {{ addLabel }}
