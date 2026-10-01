@@ -3,7 +3,7 @@
 The `useFolders` composable is the single shared source of Assets Library folders. It fetches the folder list once (by the stable `asset-folders` key, so every consumer shares the same data) and derives the nested tree and name-by-id lookup.
 
 :::tip NOTE
-Folder **filtering** is server-side — the library page sends `folderId` to `assetApi.list` and the backend resolves descendants. `descendantIds` here is only a client mirror for UI needs.
+Folder **filtering** is server-side — the library page and the asset picker scope `assetApi.query` by folder and the backend resolves descendants. `descendantIds` here is only a client mirror for UI needs.
 
 "Uncategorised" is **not** a folder row: it is the library-root query (`folderId: null`), built from `assetListOptions` / `ROOT_FOLDER_KEY` in `#shared/utils/asset`. See [`AssetFolderTree`](/components/asset/AssetFolderTree).
 :::

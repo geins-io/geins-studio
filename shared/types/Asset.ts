@@ -230,6 +230,13 @@ export interface Asset extends ResponseEntity<AssetBase> {
   createdBy: string | null;
   createdAt: string;
   updatedAt: string;
+  /** When the asset was moved to the trash; `null` while it's live. */
+  deletedAt: string | null;
+  /**
+   * When a trashed asset stops being restorable. Fixed at trash time, so a
+   * later change to the retention window doesn't move it.
+   */
+  purgeAfter: string | null;
 }
 
 /**
