@@ -82,6 +82,8 @@ Writable computeds for `TableView` server mode:
 - **Last request wins.** `useAsyncData` runs with `dedupe: 'cancel'`. A superseded request is aborted through `signal`, and its response is dropped.
 - **Shrunk sets clamp.** If a response reports `page > pageCount` (for example after deletes), the list steps to the last page and refetches.
 - **`refresh()`** keeps page, sort and search, and drops the `_id` so a mutation shows up.
+- **`refreshNuxtData(key)` does the same.** The composable listens to Nuxt's `app:data:refresh` hook for its `key`, so a component that mutates and refreshes the list by key (without access to `refresh()`) doesn't page a stale batch.
+- **Scope kept in the URL by hand must not race this sync.** `router.replace` merges into `route.query`, and a second `replace` in the same tick (e.g. a hand-rolled `?folder` watcher) works on a stale `route.query`, so the later navigation drops the other's keys. Derive the scope from `route.query` with a computed setter that writes the URL (and drops `page`), as the asset library does for `?folder`.
 
 ## URL sync
 
