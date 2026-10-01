@@ -225,6 +225,14 @@ export function useListQuery<T, TFilters extends object>(
       { batchId: batch, signal },
     );
 
+  // `refreshNuxtData(key)` re-runs the handler without going through
+  // `refresh()`, so a mutation elsewhere would page a stale batch. Registered
+  // before `useAsyncData`'s own listener, so the batch is gone before it fetches.
+  const unhookRefresh = useNuxtApp().hook('app:data:refresh', (keys) => {
+    if (!keys || keys.includes(options.key)) batchId = undefined;
+  });
+  if (getCurrentScope()) onScopeDispose(unhookRefresh);
+
   const {
     data,
     pending,

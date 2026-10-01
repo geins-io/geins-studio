@@ -281,6 +281,31 @@ describe('useListQuery', () => {
     expect(lastCall()[1].batchId).toBeUndefined();
   });
 
+  it('drops the batch when refreshed via refreshNuxtData(key)', async () => {
+    const { query, lastCall } = setup();
+    await settle();
+    query.page.value = 3;
+    await settle();
+    expect(lastCall()[1].batchId).toBe('b1');
+    await refreshNuxtData(`list-query-test-${seq}`);
+    await settle();
+    expect(lastCall()[0]).toMatchObject({ page: 3 });
+    expect(lastCall()[1].batchId).toBeUndefined();
+  });
+
+  it('keeps the batch when another key is refreshed', async () => {
+    const { query, spy, lastCall } = setup();
+    await settle();
+    query.page.value = 2;
+    await settle();
+    const calls = spy.mock.calls.length;
+    await refreshNuxtData('some-other-list');
+    query.page.value = 3;
+    await settle();
+    expect(spy.mock.calls.length).toBe(calls + 1);
+    expect(lastCall()[1].batchId).toBe('b1');
+  });
+
   it('falls back to the default page size for a disallowed value', async () => {
     const { query } = setup();
     query.pageSize.value = 15;
