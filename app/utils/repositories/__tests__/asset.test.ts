@@ -57,6 +57,21 @@ describe('assetRepo', () => {
       });
     });
 
+    it('byIds POSTs assetIds without all and sizes the page to the ids', async () => {
+      const items = [{ _id: 'a1', _type: 'geins.asset' }];
+      mockFetch.mockResolvedValue({ _id: 'b1', pageCount: 1, items });
+      await expect(api.byIds(['a1', 'a2'])).resolves.toEqual(items);
+      expect(mockFetch).toHaveBeenCalledWith('/media/assets/query', {
+        method: 'POST',
+        body: { assetIds: ['a1', 'a2'], page: 1, pageSize: 2 },
+      });
+    });
+
+    it('byIds skips the request when there are no ids', async () => {
+      await expect(api.byIds([])).resolves.toEqual([]);
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
     describe('query', () => {
       const state = {
         page: 1,

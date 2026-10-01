@@ -77,7 +77,7 @@ Initial folder scope (the server-side filter). `null` starts at all assets.
 defineModel<boolean>('open'); // default false
 ```
 
-Visibility. Each time it flips **true** the panel resets its transient state (view, folder, search, type chip, selection ← `preselectedIds`, page) and refetches.
+Visibility. Each time it flips **true** the panel resets its transient state (view, folder, search, sort, page, page size, selection ← `preselectedIds`) and refetches. Skeletons show until that first fetch lands, so rows from the previous open never flash.
 
 ## Events
 
@@ -87,7 +87,7 @@ Visibility. Each time it flips **true** the panel resets its transient state (vi
 confirm: [assets: Asset[]];
 ```
 
-Emitted from the footer's "add" button with the full selected `Asset` objects (including any still-selected preselected ones). The panel closes itself afterward.
+Emitted from the footer's "add" button with the full selected `Asset` objects (including any still-selected preselected ones). Selected ids that were never loaded into a page are fetched first (`assetApi.byIds`, the button shows a spinner); ids that no longer match a live asset are dropped. If that fetch fails the panel stays open and nothing is emitted. Otherwise it closes itself afterward.
 
 ## Inline quick-upload
 
@@ -102,7 +102,13 @@ On the dialog's `uploaded` event the panel:
 
 ## Data
 
-Reads `assetApi.list({ folderId })` via [`useGeinsRepository`](/composables/useGeinsRepository) in `useAsyncData` (folder scope stays server-side, matching the library page). Search, type filtering, "recently added" sorting, and pagination are client-side over the fetched list. Selected assets are remembered across folder switches so a confirm returns picks made in more than one folder.
+Server-driven: one [`useListQuery`](/composables/useListQuery) (`key: 'asset-picker-list'`, `immediate: false`, refreshed on open) over `assetApi.query`, scoped by `assetListOptions(folder)`. Page sizes are 12 / 24 / 48 (default 24).
+
+- **Types** — `types` is sent as a fixed `assetTypes` filter from the fetcher, so it never counts as an active query (the empty state reads "no assets", not "no matches").
+- **Search** — the backend's word-prefix search, not a substring match on the name.
+- **Recently added** — all assets, `createdAt desc`, paged like any folder. Picking a folder clears that sort unless the user has since sorted by a column.
+- **List view** — `TableView` with `data-source="server"`, bound to the query's `pagination` / `sorting`. The folder column sorts by `folderPath` and shows the folder name.
+- **Selection** — `selectedIds` is the single source for both views. The list's server-mode `TableView` seeds from it and writes the full set back through `update:selectedIds`; grid cards toggle it directly. A `seen` map, fed by every loaded page and by quick-upload, resolves ids to `Asset`s on confirm.
 
 ## Dependencies
 

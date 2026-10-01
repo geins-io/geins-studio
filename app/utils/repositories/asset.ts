@@ -245,6 +245,31 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
+     * The live assets with these ids — `assetIds` on `POST /media/assets/query`,
+     * one page at the schema's cap. Ids that don't match (trashed, deleted) are
+     * simply absent from the result.
+     */
+    async byIds(
+      ids: string[],
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<Asset[]> {
+      if (!ids.length) return [];
+      const res = await fetch<BatchQueryResult<Asset>>(
+        `${ENTITIES.asset.endpoint}/query`,
+        {
+          method: 'POST',
+          body: {
+            assetIds: ids,
+            page: 1,
+            pageSize: Math.min(ids.length, ASSET_QUERY_PAGE_SIZE),
+          },
+          ...fetchOptions,
+        },
+      );
+      return Array.isArray(res.items) ? res.items : [];
+    },
+
+    /**
      * What this asset is linked to outside the library — real
      * `GET /media/assets/{id}/links`. The backend resolves nothing: a link to a
      * since-deleted product still comes back, and no display name is included,
