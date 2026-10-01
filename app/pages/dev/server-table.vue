@@ -1,13 +1,19 @@
 <script setup lang="ts">
-import type { Asset, AssetQueryFilters, AssetType } from '#shared/types';
+import type {
+  Asset,
+  AssetType,
+  ListDateRange,
+  ListFilterDefinition,
+} from '#shared/types';
 import type { ColumnDef } from '@tanstack/vue-table';
 
 /**
  * Harness for `<TableView data-source="server">`. Not linked from the nav —
  * reach it at /dev/server-table. Drives the table from `useListQuery` +
  * `assetApi.query` against the real media API: paging, sorting, search, the
- * empty / filtered states and a forced fetch error. Copy is hardcoded on
- * purpose and must not pollute the locale files.
+ * filter kit (pinned popovers + "All filters" sheet), the empty / filtered
+ * states and a forced fetch error. Copy is hardcoded on purpose and must not
+ * pollute the locale files.
  *
  * Everything under `app/pages/dev/` is dropped from the build unless
  * `INCLUDE_DEV_PAGES=true` — see `includeDevPages()` in
@@ -15,6 +21,51 @@ import type { ColumnDef } from '@tanstack/vue-table';
  */
 const { assetApi } = useGeinsRepository();
 const { getColumns } = useColumns<Asset>();
+const { label, meta } = useAssetType();
+const accountStore = useAccountStore();
+const { channels } = storeToRefs(accountStore);
+
+// The list's own shape; `modified` is mapped onto the request in the fetcher.
+interface HarnessFilters {
+  assetTypes?: AssetType[];
+  channels?: string[];
+  modified?: ListDateRange;
+}
+
+const ASSET_TYPES: AssetType[] = [
+  'image',
+  'svg',
+  'doc',
+  'pdf',
+  'video',
+  'audio',
+  'other',
+];
+
+const definitions: ListFilterDefinition<HarnessFilters>[] = [
+  {
+    name: 'assetTypes',
+    label: 'type',
+    kind: 'multiselect',
+    urlKey: 'type',
+    options: ASSET_TYPES.map((type) => ({
+      value: type,
+      label: label(type),
+      icon: meta(type).icon,
+    })),
+  },
+  {
+    name: 'channels',
+    label: 'channel',
+    kind: 'multiselect',
+    options: async () =>
+      (channels.value.length
+        ? channels.value
+        : await accountStore.fetchChannels()
+      ).map((c) => ({ value: c._id, label: c.name || c.identifier })),
+  },
+  { name: 'modified', label: 'modified', kind: 'dateRange' },
+];
 
 const PAGE_SIZES = [10, 30, 60];
 const forceError = ref(false);
@@ -25,27 +76,43 @@ const {
   pending,
   error,
   filters,
-  setFilter,
   resetFilters,
   hasActiveQuery,
   searchInput,
   pagination,
   sorting,
   refresh,
-} = useListQuery<Asset, AssetQueryFilters>({
+} = useListQuery<Asset, HarnessFilters>({
   key: 'dev-server-table',
-  fetcher: (state, options) => {
+  fetcher: ({ filters: { modified, ...rest }, ...state }, options) => {
     if (forceError.value) throw new Error('Forced harness error');
-    return assetApi.query(state, undefined, options);
+    // Presets resolve here, at send time, so a long-open list stays current.
+    const range = modified ? resolveListDateRange(modified) : {};
+    return assetApi.query(
+      {
+        ...state,
+        filters: { ...rest, modifiedFrom: range.from, modifiedTo: range.to },
+      },
+      undefined,
+      options,
+    );
   },
   defaults: { filters: {}, pageSize: 10 },
   pageSizes: PAGE_SIZES,
   deps: () => forceError.value,
   route: {
     sortFields: ['name', 'type', 'sizeBytes', 'updatedAt'],
-    filters: { assetTypes: listParam<AssetType>(['image']) },
+    filters: listFilterRouteParams(definitions),
   },
 });
+
+const listFilters = useListFilters<HarnessFilters>({
+  definitions,
+  filters,
+  resetFilters,
+  defaultPinned: ['assetTypes', 'modified'],
+});
+const filterSheetOpen = ref(false);
 
 // `getColumns` derives the keys from a row, so keep the last set when a query
 // comes back empty — the empty state spans `columns.length`.
@@ -69,10 +136,6 @@ watch(
 const selectedIds = ref<string[]>([]);
 const selectedNames = ref<string[]>([]);
 const tableView = ref<{ clearSelection: () => void }>();
-
-const imagesOnly = computed(() => !!filters.value.assetTypes?.length);
-const toggleImages = () =>
-  setFilter('assetTypes', imagesOnly.value ? [] : ['image']);
 </script>
 
 <template>
@@ -82,12 +145,6 @@ const toggleImages = () =>
   />
 
   <div class="mb-4 flex flex-wrap items-center gap-2">
-    <Button
-      :variant="imagesOnly ? 'default' : 'secondary'"
-      @click="toggleImages"
-    >
-      Images only
-    </Button>
     <Button
       :variant="forceError ? 'destructive' : 'secondary'"
       @click="forceError = !forceError"
@@ -104,6 +161,10 @@ const toggleImages = () =>
       {{ pending ? 'pending' : 'idle' }}
     </span>
   </div>
+  <p class="text-muted-foreground mb-2 text-xs">
+    filters {{ JSON.stringify(filters) }} · pinned
+    {{ JSON.stringify(listFilters.pinned.value) }}
+  </p>
   <p class="text-muted-foreground mb-4 text-xs">
     selected ids ({{ selectedIds.length }}):
     {{ selectedIds.join(', ') || '—' }} · loaded rows:
@@ -126,7 +187,15 @@ const toggleImages = () =>
     :page-sizes="PAGE_SIZES"
     :error="!!error"
     :on-retry="refresh"
-    @clear-filters="resetFilters"
+    @clear-filters="listFilters.clearAll"
     @selection="(rows) => (selectedNames = rows.map((row) => row.name))"
-  />
+  >
+    <template #toolbar>
+      <ListFilterBar
+        :list-filters="listFilters"
+        @open-all="filterSheetOpen = true"
+      />
+    </template>
+  </TableView>
+  <ListFilterSheet v-model:open="filterSheetOpen" :list-filters="listFilters" />
 </template>

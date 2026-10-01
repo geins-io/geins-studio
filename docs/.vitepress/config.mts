@@ -446,6 +446,10 @@ export default defineConfig({
                 link: '/components/list/filter/ListFilterPinned.md',
               },
               {
+                text: 'ListFilterSheet',
+                link: '/components/list/filter/ListFilterSheet.md',
+              },
+              {
                 text: 'ListFilterValues',
                 link: '/components/list/filter/ListFilterValues.md',
               },

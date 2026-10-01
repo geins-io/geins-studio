@@ -1,6 +1,6 @@
 # `ListFilterBar`
 
-`ListFilterBar` is the filter strip next to a list's search field. It shows the pinned filters, an "All filters" button that opens the "All filters" sheet, and "Clear all filters" while any filter is active. It works above a [`TableView`](/components/table/TableView) (in its `toolbar` slot) or a grid.
+`ListFilterBar` is the filter strip next to a list's search field. It shows the pinned filters, an "All filters" button that opens the [`ListFilterSheet`](/components/list/filter/ListFilterSheet), and "Clear all filters" while any filter is active. It works above a [`TableView`](/components/table/TableView) (in its `toolbar` slot) or a grid.
 
 ## Features
 
@@ -40,6 +40,7 @@ const sheetOpen = ref(false);
       <ListFilterBar :list-filters="listFilters" @open-all="sheetOpen = true" />
     </template>
   </TableView>
+  <ListFilterSheet v-model:open="sheetOpen" :list-filters="listFilters" />
 </template>
 ```
 
@@ -61,9 +62,10 @@ The committed `useListFilters` instance. The bar reads the definitions, pins and
 () => void
 ```
 
-"All filters" was clicked. Open the "All filters" sheet.
+"All filters" was clicked. Open the `ListFilterSheet`.
 
 ## Dependencies
 
 - [`useListFilters`](/composables/useListFilters)
 - [`ListFilterPinned`](/components/list/filter/ListFilterPinned)
+- [`ListFilterSheet`](/components/list/filter/ListFilterSheet) (opened by the page)

@@ -42,6 +42,17 @@ Pass mode via `table.options.meta.mode`. Minimal-mode styling overrides live in 
 
 Server-mode rules: mark columns the endpoint can't sort with `sortableColumns: { x: false }` (sort is single-column, `[]` = endpoint default); don't debounce search in the page (`useListQuery` does); pass `pending` straight to `loading` (the table only skeletons while `data` is empty); no `Minimal` mode, no expanding rows. Selection spans pages: bind `v-model:selected-ids` for bulk calls (includes unloaded rows), clear it yourself via the exposed `clearSelection()` — the table never drops it on page/sort/search/filter changes. Reference: `app/pages/dev/server-table.vue`, `docs/components/table/TableView.md#server-mode`.
 
+### Filters (the filter kit)
+
+Filters outside the table's search come from the filter kit, never hand-rolled buttons:
+
+1. Type the list's filter shape (`string[]` multiselect, `ListDateRange` date range) and its `ListFilterDefinition[]` (`label` = i18n key).
+2. Server mode: `useListQuery({ route: { filters: listFilterRouteParams(definitions) } })` and map the shape to the adapter in the `fetcher` (`resolveListDateRange` there, at send time). Client mode: a local `ref` + `matchesListFilters`.
+3. `const listFilters = useListFilters({ definitions, filters, resetFilters, defaultPinned })`.
+4. Template: `<ListFilterBar>` in TableView's `#toolbar` slot (`@open-all` opens `<ListFilterSheet v-model:open>`), `@clear-filters="listFilters.clearAll"`, `:filtered="hasActiveQuery"` (client: `listFilters.totalActive.value > 0`).
+
+Pinned popovers apply live; the sheet stages on `stage()` until "Apply filters". Reference: `app/pages/dev/server-table.vue`, `docs/concepts/list-queries.md#adding-filters-to-a-list`.
+
 ## Building columns with useColumns
 
 Prefer `getColumns()` over hand-rolling `h()` calls — it handles header/cell styles, mode-awareness, and type inference automatically:
