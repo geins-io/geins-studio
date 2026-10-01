@@ -44,6 +44,19 @@ The first page of a query creates a batch, and `_id` on the result identifies it
 
 [`useListQuery`](/composables/useListQuery) holds the state, calls the adapter and runs the batch lifecycle, including a retry on a rejected batch. Optionally it also syncs the state with the URL query. Pages don't wire the adapter to `useAsyncData` themselves.
 
+## Filters
+
+`filters` is the list's own filter shape, not the endpoint's. The filter kit ([`useListFilters`](/composables/useListFilters)) builds it from **filter definitions** (`ListFilterDefinition`), one per filter:
+
+- a `multiselect` value is a `string[]`;
+- a `dateRange` value is a `ListDateRange`: a preset (`today`, `week`, `month`) or inclusive ISO `from`/`to`.
+
+The adapter maps each value onto its request fields. For assets, `modified` becomes `modifiedFrom`/`modifiedTo`. A preset is resolved with `resolveListDateRange` **when the query is sent**, never when it's picked, so a restored or long-open list stays correct.
+
+The semantics match the backend: values inside one filter OR, and filters AND. `matchesListFilters` applies the same rules to a client-side list, so moving a page from client to server mode doesn't change its results.
+
+Every committed filter is in the URL. Pass `listFilterRouteParams(definitions)` as `useListQuery`'s `route.filters`: it maps `multiselect` to `listParam(option values)` and `dateRange` to `dateRangeParam()`.
+
 ## Adapters
 
 | Repository | Adapter                                  | Filters             | Scope                                                                                    |
