@@ -53,10 +53,21 @@ export interface ListFilterActions<TFilters extends object> {
   clearAll: () => void;
 }
 
-/** A staged copy of the filters; nothing is committed until `apply()`. */
-export interface ListFiltersDraft<
+/** What a value editor needs — the committed instance or a draft. */
+export interface ListFilterEditor<
   TFilters extends object,
 > extends ListFilterActions<TFilters> {
+  /** A multiselect's options; async ones load on the first call, once. */
+  resolvedOptions: (name: ListFilterName<TFilters>) => ListFilterOptionsState;
+}
+
+/**
+ * A staged copy of the filters; nothing is committed until `apply()`. Options
+ * are shared with the instance it came from.
+ */
+export interface ListFiltersDraft<
+  TFilters extends object,
+> extends ListFilterEditor<TFilters> {
   /** The draft differs from the committed state. */
   dirty: ComputedRef<boolean>;
   apply: () => void;
@@ -66,7 +77,7 @@ export interface ListFiltersDraft<
 
 export interface UseListFiltersReturnType<
   TFilters extends object,
-> extends ListFilterActions<TFilters> {
+> extends ListFilterEditor<TFilters> {
   definitions: ComputedRef<readonly ListFilterDefinition<TFilters>[]>;
   definition: (
     name: ListFilterName<TFilters>,
@@ -78,9 +89,7 @@ export interface UseListFiltersReturnType<
   canPin: (name: ListFilterName<TFilters>) => boolean;
   /** A no-op for an unpinnable filter or past the limit. */
   togglePin: (name: ListFilterName<TFilters>) => void;
-  /** A multiselect's options; async ones load on the first call, once. */
-  resolvedOptions: (name: ListFilterName<TFilters>) => ListFilterOptionsState;
-  /** A staged copy for editors that apply later (popover close, sheet "Apply"). */
+  /** A staged copy for editors that apply later (the "All filters" sheet). */
   stage: () => ListFiltersDraft<TFilters>;
 }
 
@@ -260,6 +269,7 @@ export function useListFilters<TFilters extends object>(
     );
     return {
       ...draft,
+      resolvedOptions,
       dirty,
       apply: () => {
         if (!dirty.value) return;
