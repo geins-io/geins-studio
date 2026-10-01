@@ -264,14 +264,9 @@ if (serverMode) {
 /**
  * Setup column visibility
  **/
-const { path } = useRoute();
-const { user } = useUserStore();
-const userId = user?._id || 'default';
-const cookieKey = `${userId + path}`;
 const columnVisibilityCookie = advancedMode.value
-  ? useCookie<VisibilityState>(`geins-cols-${cookieKey}`, {
+  ? useUserRouteCookie<VisibilityState>('geins-cols', {
       default: () => props.initVisibilityState || {},
-      maxAge: 60 * 60 * 24 * 365,
     })
   : ref(props.initVisibilityState || {});
 const columnVisibility = ref(
@@ -290,10 +285,7 @@ watch(columnVisibility, updateVisibilityCookie, { deep: true });
  * Setup column order
  **/
 const columnOrderCookie = advancedMode.value
-  ? useCookie<ColumnOrderState>(`geins-order-${cookieKey}`, {
-      default: () => [],
-      maxAge: 60 * 60 * 24 * 365,
-    })
+  ? useUserRouteCookie<ColumnOrderState>('geins-order', { default: () => [] })
   : ref([]);
 const columnOrder = ref(advancedMode.value ? columnOrderCookie.value : []);
 const updateSortingCookie = () => {

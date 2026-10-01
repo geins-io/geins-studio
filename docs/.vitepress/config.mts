@@ -73,6 +73,10 @@ export default defineConfig({
             text: 'Data Tables',
             items: [
               { text: 'useColumns', link: '/composables/useColumns.md' },
+              {
+                text: 'useListFilters',
+                link: '/composables/useListFilters.md',
+              },
               { text: 'useListQuery', link: '/composables/useListQuery.md' },
               { text: 'useTable', link: '/composables/useTable.md' },
             ],
@@ -113,6 +117,10 @@ export default defineConfig({
               { text: 'usePageError', link: '/composables/usePageError.md' },
               { text: 'usePageTitle', link: '/composables/usePageTitle.md' },
               { text: 'usePrice', link: '/composables/usePrice.md' },
+              {
+                text: 'useUserRouteCookie',
+                link: '/composables/useUserRouteCookie.md',
+              },
               { text: 'usePanelStack', link: '/composables/usePanelStack.md' },
               { text: 'usePanelDirty', link: '/composables/usePanelDirty.md' },
               {
@@ -422,6 +430,24 @@ export default defineConfig({
                     link: '/components/form/input/FormInputTagsSearch.md',
                   },
                 ],
+              },
+            ],
+          },
+          {
+            text: 'List filters',
+            collapsed: true,
+            items: [
+              {
+                text: 'ListFilterValues',
+                link: '/components/list/filter/ListFilterValues.md',
+              },
+              {
+                text: 'ListFilterMultiSelect',
+                link: '/components/list/filter/ListFilterMultiSelect.md',
+              },
+              {
+                text: 'ListFilterDateRange',
+                link: '/components/list/filter/ListFilterDateRange.md',
               },
             ],
           },
