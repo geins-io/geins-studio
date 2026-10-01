@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useMediaQuery } from '@vueuse/core';
-import type { Asset } from '#shared/types';
+import type { Asset, AssetQueryFilters } from '#shared/types';
 import { TableMode } from '#shared/types';
 import {
   assetListOptions,
@@ -28,23 +28,32 @@ const entityKey = ENTITIES.asset.key;
 const route = useRoute();
 const router = useRouter();
 
-const loading = ref(true);
-const fetchError = ref(false);
-const dataList = ref<Asset[]>([]);
-
 const view = ref<'grid' | 'list'>('grid');
-const search = ref('');
 // Open by default where the panel sits inline (sm+, the same 640px boundary the
 // template uses to switch from overlay-drawer to inline) so the active folder
 // filter is always visible; below sm it starts closed and overlays on demand.
 const showFolders = ref(useMediaQuery('(min-width: 640px)').value);
 // Rail selection: a folder id, `null` for All assets, `ROOT_FOLDER_KEY` for
-// Uncategorised, or `TRASH_KEY` for the soft-deleted set — all four drive the
-// server-side query. Browse state (folder + page + page size) is restored from
-// / synced to the URL.
-const selectedFolder = ref<string | null>(
-  (route.query.folder as string) || null,
-);
+// Uncategorised, or `TRASH_KEY` for the soft-deleted set — all four scope the
+// server-side query. Read straight from `?folder`: a local ref synced by its
+// own `router.replace` would race useListQuery's write of the same query (both
+// merge a stale `route.query`, and the later navigation cancels the earlier).
+const selectedFolder = computed<string | null>({
+  get: () => {
+    const folder = route.query.folder;
+    return typeof folder === 'string' && folder ? folder : null;
+  },
+  set: (folder) => {
+    // A new folder starts on page 1; a leftover ?page would be read back as a
+    // navigation to that page.
+    const rest = Object.fromEntries(
+      Object.entries(route.query).filter(
+        ([key]) => key !== 'folder' && key !== 'page',
+      ),
+    );
+    router.replace({ query: folder ? { ...rest, folder } : rest });
+  },
+});
 // Uncategorised is a query, not a folder, so uploads from there land at the root.
 const uploadFolderId = computed(() =>
   folderIdForSelection(selectedFolder.value),
@@ -74,79 +83,57 @@ const detailAsset = ref<Asset | null>(null);
 const listMode = TableMode.Simple;
 const columns = ref<ColumnDef<Asset>[]>([]);
 
-const { data, error, refresh } = await useAsyncData<Asset[]>(
-  'asset-library-list',
-  () => assetApi.list(assetListOptions(selectedFolder.value)),
-  { watch: [selectedFolder] },
-);
-
-// Shared name filter across both views (the page owns search, so TableView's
-// built-in search is disabled below).
-const filtered = computed(() => {
-  const term = search.value.trim().toLowerCase();
-  if (!term) return dataList.value;
-  return dataList.value.filter((asset) =>
-    asset.name.toLowerCase().includes(term),
-  );
+// One query drives both views, so the grid and the list share page, page
+// size, sort and search (all mirrored to the URL). The grid has no sort control
+// of its own; it shows whatever the list set, or the backend's default.
+const PAGE_SIZES = [24, 48, 96];
+const {
+  items,
+  total,
+  pending,
+  error,
+  page,
+  pageSize,
+  searchInput,
+  hasActiveQuery,
+  pagination,
+  sorting,
+  refresh,
+} = useListQuery<Asset, AssetQueryFilters>({
+  key: 'asset-library-list',
+  fetcher: (state, options) =>
+    assetApi.query(state, assetListOptions(selectedFolder.value), options),
+  defaults: { filters: {} },
+  pageSizes: PAGE_SIZES,
+  deps: () => selectedFolder.value,
+  route: {
+    sortFields: ['name', 'type', 'folderPath', 'sizeBytes', 'updatedAt'],
+  },
 });
+
+// Skeletons on the first load only; later fetches keep the rows on screen.
+const loading = computed(() => pending.value && !items.value.length);
+const fetchError = computed(() => !!error.value);
 
 // Empty-state descriptor shared by the grid (inline <Empty>) and the list
 // (TableView props): a search with no matches reads differently from an empty
 // folder / empty library.
-const isSearching = computed(() => search.value.trim().length > 0);
 const emptyIcon = computed(() => {
-  if (isSearching.value) return resolveIcon('SearchX') ?? undefined;
+  if (hasActiveQuery.value) return resolveIcon('SearchX') ?? undefined;
   return resolveIcon(isTrash.value ? 'Trash2' : 'FolderOpen') ?? undefined;
 });
 const emptyTitle = computed(() => {
-  if (isSearching.value) return t('no_entity_found', { entityKey }, 2);
+  if (hasActiveQuery.value) return t('no_entity_found', { entityKey }, 2);
   if (isTrash.value) return t('asset_library.trash_empty');
   return selectedFolder.value && selectedFolder.value !== ROOT_FOLDER_KEY
     ? t('asset_library.no_assets_in_folder')
     : t('no_entity', { entityKey }, 2);
 });
 const emptyDescription = computed(() => {
-  if (isSearching.value)
+  if (hasActiveQuery.value)
     return t('empty_filtered_description', { entityKey }, 2);
   if (isTrash.value) return retentionNote.value;
   return t('empty_description', { entityKey }, 2);
-});
-
-// Grid pagination (list view paginates via TableView). Page + size live in the
-// URL (?page, ?perPage) so a link opens the exact page.
-const GRID_PAGE_SIZES = [24, 48, 96];
-const DEFAULT_PAGE_SIZE = 24;
-const clampPageSize = (value: number) =>
-  GRID_PAGE_SIZES.includes(value) ? value : DEFAULT_PAGE_SIZE;
-const pageSize = ref(clampPageSize(Number(route.query.perPage)));
-const page = ref(Math.max(1, Number(route.query.page) || 1));
-
-const pageCount = computed(() =>
-  Math.max(1, Math.ceil(filtered.value.length / pageSize.value)),
-);
-const pagedAssets = computed(() => {
-  const current = Math.min(page.value, pageCount.value);
-  return filtered.value.slice(
-    (current - 1) * pageSize.value,
-    current * pageSize.value,
-  );
-});
-
-// User-driven changes to the result set / size go back to page 1 (not on load,
-// so a deep-linked ?page survives the initial fetch).
-watch([search, selectedFolder, pageSize], () => {
-  page.value = 1;
-});
-
-// Mirror browse state to the URL (omit defaults to keep it clean).
-watch([selectedFolder, page, pageSize], () => {
-  const query: Record<string, string> = {};
-  if (selectedFolder.value) query.folder = selectedFolder.value;
-  if (page.value > 1) query.page = String(page.value);
-  if (pageSize.value !== DEFAULT_PAGE_SIZE) {
-    query.perPage = String(pageSize.value);
-  }
-  router.replace({ query });
 });
 
 // List columns — useColumns generates tags + modified; the type-badge,
@@ -163,7 +150,7 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
     includeColumns: [
       'name',
       'type',
-      'folderId',
+      'folderPath',
       'sizeBytes',
       'tags',
       'updatedAt',
@@ -171,15 +158,18 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
     columnTitles: {
       name: t('name', 1),
       type: t('type'),
-      folderId: t('folder', 1),
+      folderPath: t('folder', 1),
       sizeBytes: t('size'),
       tags: t('tag', 2),
       updatedAt: t('modified'),
     },
     columnTypes: { sizeBytes: 'filesize', tags: 'tags', updatedAt: 'date' },
+    // Column ids are the query's `sortBy`; tags isn't one.
+    sortableColumns: { tags: false },
   });
 
-  const folderCol = cols.find((col) => col.id === 'folderId');
+  // Sorts by `folderPath` (the closest server field) but shows the folder name.
+  const folderCol = cols.find((col) => col.id === 'folderPath');
   if (folderCol) {
     folderCol.cell = ({ table, row }) =>
       h(
@@ -270,7 +260,7 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
     'thumb',
     'name',
     'type',
-    'folderId',
+    'folderPath',
     'sizeBytes',
     'tags',
     'updatedAt',
@@ -281,26 +271,16 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
     .filter((col): col is ColumnDef<Asset> => col !== undefined);
 }
 
-onMounted(() => {
-  watch(
-    [data, error, isTrash],
-    ([newData, newError]) => {
-      if (newError) {
-        fetchError.value = true;
-        dataList.value = [];
-        columns.value = buildColumns([]);
-        return;
-      }
-      fetchError.value = false;
-      dataList.value = Array.isArray(newData) ? newData : [];
-      columns.value = buildColumns(dataList.value);
-      // Clamp a deep-linked / stale page once the data (and page count) is known.
-      if (page.value > pageCount.value) page.value = pageCount.value;
-    },
-    { immediate: true },
-  );
-  loading.value = false;
-});
+// `getColumns` derives the keys from a row, so keep the last set when a query
+// comes back empty — the empty state spans `columns.length`.
+watch(
+  [items, isTrash],
+  ([rows]) => {
+    if (rows.length || !columns.value.length)
+      columns.value = buildColumns(rows);
+  },
+  { immediate: true },
+);
 
 function openAsset(asset: Asset) {
   detailAsset.value = asset;
@@ -408,7 +388,7 @@ async function confirmDelete() {
       <LucideFolder class="size-4" aria-hidden="true" />
     </Button>
     <Input
-      v-model="search"
+      v-model="searchInput"
       :placeholder="$t('search')"
       class="order-2 w-full sm:order-1 sm:w-64"
     />
@@ -473,10 +453,16 @@ async function confirmDelete() {
     >
       <NuxtErrorBoundary>
         <TableView
+          v-model:pagination="pagination"
+          v-model:sorting="sorting"
           :loading="loading"
           :entity-key="entityKey"
           :columns="columns"
-          :data="filtered"
+          data-source="server"
+          :data="items"
+          :row-count="total"
+          :filtered="hasActiveQuery"
+          :page-sizes="PAGE_SIZES"
           :error="fetchError"
           :on-retry="refresh"
           :mode="listMode"
@@ -484,6 +470,7 @@ async function confirmDelete() {
           :empty-icon="emptyIcon"
           :empty-text="emptyTitle"
           :empty-description="emptyDescription"
+          @clear-filters="searchInput = ''"
         />
       </NuxtErrorBoundary>
     </div>
@@ -524,7 +511,7 @@ async function confirmDelete() {
           </EmptyContent>
         </Empty>
 
-        <Empty v-else-if="!filtered.length" class="mt-12">
+        <Empty v-else-if="!items.length" class="mt-12">
           <EmptyHeader>
             <EmptyMedia variant="icon">
               <component :is="emptyIcon" />
@@ -539,7 +526,7 @@ async function confirmDelete() {
           class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4 sm:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]"
         >
           <AssetCard
-            v-for="asset in pagedAssets"
+            v-for="asset in items"
             :key="asset._id"
             :asset="asset"
             :folder-name="folderName(asset.folderId)"
@@ -554,12 +541,12 @@ async function confirmDelete() {
       </div>
 
       <PaginationBar
-        v-if="!loading && !fetchError && filtered.length"
+        v-if="!loading && !fetchError && items.length"
         :page="page"
         :page-size="pageSize"
-        :total="filtered.length"
+        :total="total"
         :entity-key="entityKey"
-        :page-sizes="GRID_PAGE_SIZES"
+        :page-sizes="PAGE_SIZES"
         class="shrink-0"
         @update:page="page = $event"
         @update:page-size="pageSize = $event"
