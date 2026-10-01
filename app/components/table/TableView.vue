@@ -627,7 +627,8 @@ const hasSearchableColumns = computed(() => {
     v-if="showSearch"
     :class="
       cn(
-        'mb-3 flex origin-top transform items-center transition-transform',
+        'mb-3 flex origin-top transform items-center gap-2 transition-transform',
+        $slots.toolbar && 'flex-wrap @2xl:flex-nowrap',
         `${tableMaximized ? 'scale-y-0' : ''}`,
       )
     "
@@ -648,6 +649,15 @@ const hasSearchableColumns = computed(() => {
       >
         <LucideSearch class="text-foreground size-4" />
       </span>
+    </div>
+
+    <!-- Wraps below the search on narrow containers; the bar scrolls itself. -->
+    <div
+      v-if="$slots.toolbar"
+      class="w-full min-w-0 @2xl:w-auto @2xl:flex-1"
+      data-test="table-toolbar"
+    >
+      <slot name="toolbar" />
     </div>
 
     <TableColumnToggle v-if="advancedMode && columns?.length" :table="table" />

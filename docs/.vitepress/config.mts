@@ -438,6 +438,14 @@ export default defineConfig({
             collapsed: true,
             items: [
               {
+                text: 'ListFilterBar',
+                link: '/components/list/filter/ListFilterBar.md',
+              },
+              {
+                text: 'ListFilterPinned',
+                link: '/components/list/filter/ListFilterPinned.md',
+              },
+              {
                 text: 'ListFilterValues',
                 link: '/components/list/filter/ListFilterValues.md',
               },
