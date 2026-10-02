@@ -117,17 +117,35 @@ describe('ListFilterMultiSelect', () => {
     expect(optionLabels(wrapper)).toEqual(['Video']);
   });
 
-  it('turns searchable past 7 options by default', async () => {
-    const many = {
+  it('turns searchable past 10 options by default', async () => {
+    const withOptions = (length: number) => ({
       ...types,
-      options: Array.from({ length: 8 }, (_, i) => ({
+      options: Array.from({ length }, (_, i) => ({
         value: `v${i}`,
         label: `Option ${i}`,
       })),
-    };
-    const { listFilters } = setup([many]);
-    const wrapper = await mount(many, listFilters);
-    expect(wrapper.find('input').exists()).toBe(true);
+    });
+    const ten = withOptions(10);
+    const { listFilters } = setup([ten]);
+    expect((await mount(ten, listFilters)).find('input').exists()).toBe(false);
+
+    const eleven = withOptions(11);
+    const second = setup([eleven]);
+    expect(
+      (await mount(eleven, second.listFilters)).find('input').exists(),
+    ).toBe(true);
+  });
+
+  it('caps the list height unless it fills its container', async () => {
+    const { listFilters } = setup([types]);
+    const list = (w: Awaited<ReturnType<typeof mount>>) =>
+      w.find('[data-slot="command-list"]').classes();
+    expect(list(await mount(types, listFilters))).toContain('max-h-52');
+
+    const filled = await mountWithContext(ListFilterValues, {
+      props: { definition: types, listFilters, fill: true },
+    });
+    expect(list(filled)).toContain('max-h-none');
   });
 
   it('shows an error with retry for async options', async () => {

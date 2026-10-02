@@ -79,7 +79,7 @@ const toAssetState = ({ filters, ...rest }: ListQueryState<LibraryFilters>) => {
 | `pinnable`   | all         | Default `true`.                                                                          |
 | `urlKey`     | all         | URL query key. Defaults to `name`.                                                       |
 | `options`    | multiselect | `ListFilterOption[]` or `() => Promise<ListFilterOption[]>`. Labels are display text.    |
-| `searchable` | multiselect | Default: more than 7 options (`isListFilterSearchable`).                                 |
+| `searchable` | multiselect | Default: more than 10 options (`isListFilterSearchable`).                                |
 
 `ListDateRange` is `{ preset?: 'today' | 'week' | 'month'; from?: string; to?: string }`. `from`/`to` are inclusive ISO date-times. Presets are calendar-based in local time: this week starts on Monday, this month on the 1st.
 

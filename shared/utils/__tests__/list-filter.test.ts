@@ -142,12 +142,15 @@ describe('definition defaults', () => {
     expect(listFilterIcon({ ...modified, icon: 'Clock' })).toBe('Clock');
   });
 
-  it('is searchable past 7 options unless set', () => {
+  it('is searchable past 10 options unless set', () => {
     if (types.kind !== 'multiselect') throw new Error('kind');
-    expect(isListFilterSearchable(types, 7)).toBe(false);
-    expect(isListFilterSearchable(types, 8)).toBe(true);
+    expect(isListFilterSearchable(types, 10)).toBe(false);
+    expect(isListFilterSearchable(types, 11)).toBe(true);
     expect(isListFilterSearchable({ ...types, searchable: true }, 2)).toBe(
       true,
+    );
+    expect(isListFilterSearchable({ ...types, searchable: false }, 20)).toBe(
+      false,
     );
   });
 });

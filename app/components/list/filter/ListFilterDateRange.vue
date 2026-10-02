@@ -107,7 +107,7 @@ const customSummary = computed(() => {
       <label
         v-for="item in choices"
         :key="item.value"
-        class="hover:bg-muted flex cursor-pointer items-center gap-3 rounded-md px-1 py-2 text-sm"
+        class="flex cursor-pointer items-center gap-3 rounded-md px-1 py-2 text-sm"
       >
         <RadioGroupItem :value="item.value" />
         <span>{{ t(item.label) }}</span>

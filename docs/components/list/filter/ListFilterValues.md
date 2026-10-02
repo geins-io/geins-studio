@@ -47,6 +47,14 @@ listFilters: ListFilterEditor<TFilters>;
 
 The state the editor reads and writes: the `useListFilters` instance, or a draft from its `stage()`. Both carry the value actions plus `resolvedOptions`.
 
+### `fill`
+
+```ts
+fill?: boolean;
+```
+
+Passed to [`ListFilterMultiSelect`](/components/list/filter/ListFilterMultiSelect): fill the container's height instead of capping the list. The multiselect is keyed by the filter name, so switching filters starts with an empty search.
+
 ## Dependencies
 
 - [`useListFilters`](/composables/useListFilters)

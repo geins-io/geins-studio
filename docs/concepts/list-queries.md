@@ -57,6 +57,88 @@ The semantics match the backend: values inside one filter OR, and filters AND. `
 
 Every committed filter is in the URL. Pass `listFilterRouteParams(definitions)` as `useListQuery`'s `route.filters`: it maps `multiselect` to `listParam(option values)` and `dateRange` to `dateRangeParam()`.
 
+### Adding filters to a list
+
+1. **Type the list's filters** in the list's own shape: `string[]` for a multiselect and `ListDateRange` for a date range.
+2. **Define them.** `label` is an i18n key. Options are static or an async loader, which runs once on first open.
+3. **Hold the state.** In server mode use `useListQuery`'s `filters` and pass `listFilterRouteParams(definitions)` as `route.filters`. In client mode use a local `ref`.
+4. **Map them in the fetcher (server mode).** Turn the list's shape into the adapter's filters there. A date range goes through `resolveListDateRange` at send time.
+5. **Hand them to `useListFilters`,** then render `ListFilterBar` (in `TableView`'s `toolbar` slot) and `ListFilterSheet`.
+
+```ts
+interface LibraryFilters {
+  assetTypes?: AssetType[];
+  channels?: string[];
+  modified?: ListDateRange;
+}
+
+const definitions: ListFilterDefinition<LibraryFilters>[] = [
+  {
+    name: 'assetTypes',
+    label: 'type',
+    kind: 'multiselect',
+    urlKey: 'type',
+    options: types.map((t) => ({
+      value: t,
+      label: label(t),
+      icon: meta(t).icon,
+    })),
+  },
+  {
+    name: 'channels',
+    label: 'channel',
+    kind: 'multiselect',
+    options: loadChannels,
+  },
+  { name: 'modified', label: 'modified', kind: 'dateRange' },
+];
+
+const { filters, resetFilters, hasActiveQuery, ...query } = useListQuery<
+  Asset,
+  LibraryFilters
+>({
+  key: 'asset-list',
+  fetcher: ({ filters: { modified, ...rest }, ...state }, options) => {
+    const range = modified ? resolveListDateRange(modified) : {};
+    return assetApi.query(
+      {
+        ...state,
+        filters: { ...rest, modifiedFrom: range.from, modifiedTo: range.to },
+      },
+      undefined,
+      options,
+    );
+  },
+  defaults: { filters: {} },
+  route: { filters: listFilterRouteParams(definitions) },
+});
+
+const listFilters = useListFilters<LibraryFilters>({
+  definitions,
+  filters,
+  resetFilters,
+  defaultPinned: ['assetTypes', 'modified'],
+});
+```
+
+```vue
+<TableView
+  data-source="server"
+  :filtered="hasActiveQuery"
+  @clear-filters="listFilters.clearAll"
+  v-bind="tableProps"
+>
+  <template #toolbar>
+    <ListFilterBar :list-filters="listFilters" @open-all="sheetOpen = true" />
+  </template>
+</TableView>
+<ListFilterSheet v-model:open="sheetOpen" :list-filters="listFilters" />
+```
+
+**Client mode** skips the fetcher and the URL. Keep `filters` in a `ref`, pass it to `useListFilters`, and filter the rows with `matchesListFilters(row, definitions, filters.value, accessors)`. Pass `:filtered="listFilters.totalActive.value > 0"` to the table.
+
+The pinned popovers apply each change live. The sheet stages its edits until "Apply filters". Pins are saved per user and route. The working example is `app/pages/dev/server-table.vue`.
+
 ## Adapters
 
 | Repository | Adapter                                  | Filters             | Scope                                                                                    |

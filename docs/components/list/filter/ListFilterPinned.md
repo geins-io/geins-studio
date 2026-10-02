@@ -4,8 +4,8 @@
 
 ## Features
 
-- Dashed `outline` button with the filter label; when active, a count badge (labelled "2 selected" for screen readers) and a chevron
-- Popover header with the label, the value editor as body, and a "Clear" footer that clears only this filter
+- Dashed `secondary` button (white surface) with the filter label; when active, the count in parentheses ("Type (2)"; read as "2 selected"), then a chevron
+- Popover header with the label, the value editor as body (a search past 10 values, a capped list height), and a "Clear" footer that clears only this filter
 - **Applies live:** each toggle commits to the filter state straight away and the popover stays open, so several values can be picked in one go. A date preset applies on click, a custom range once both ends are picked. There is no Apply button. `useListQuery` cancels superseded requests, so rapid clicks refetch only once in effect.
 
 ## Usage
@@ -37,4 +37,4 @@ The committed `useListFilters` instance. Don't pass a `stage()` draft: nothing w
 ## Dependencies
 
 - [`ListFilterValues`](/components/list/filter/ListFilterValues)
-- shadcn-vue `Popover`, `Button`, `Badge`
+- shadcn-vue `Popover`, `Button`

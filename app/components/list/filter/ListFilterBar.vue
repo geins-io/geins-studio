@@ -33,20 +33,23 @@ const totalActive = computed(() => props.listFilters.totalActive.value);
       :list-filters="listFilters"
     />
     <Button
-      variant="outline"
+      variant="secondary"
       class="shrink-0 gap-2"
       data-test="list-filter-all"
       @click="emit('open-all')"
     >
       <LucideListFilter class="size-4" aria-hidden="true" />
       {{ t('all_entity', { entityKey: 'filter' }, 2) }}
-      <Badge
+      <span
         v-if="totalActive"
-        size="sm"
-        :aria-label="t('count_selected', { count: totalActive }, totalActive)"
+        class="text-muted-foreground tabular-nums"
+        data-test="list-filter-count"
       >
-        {{ totalActive }}
-      </Badge>
+        <span aria-hidden="true">({{ totalActive }})</span>
+        <span class="sr-only">
+          {{ t('count_selected', { count: totalActive }, totalActive) }}
+        </span>
+      </span>
     </Button>
     <Button
       v-if="totalActive"

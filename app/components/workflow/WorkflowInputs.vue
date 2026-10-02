@@ -610,7 +610,7 @@ const confirmAddGroup = () => {
         </Collapsible>
         <Button
           variant="secondary"
-          class="w-full border-dashed py-6"
+          class="border-border-dark hover:border-border-dark-hover hover:bg-card dark:hover:bg-secondary/80 w-full border-dashed py-6"
           @click="openAddGroup"
         >
           <LucidePlus class="mr-2 size-4" />
