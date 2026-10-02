@@ -57,13 +57,15 @@ mockNuxtImport(
 import { mountWithContext } from '../../../../../test/helpers';
 import { ListFilterSheet } from '#components';
 
-interface Filters {
+const EXTRA = ['x1', 'x2', 'x3', 'x4', 'x5', 'x6'] as const;
+
+type Filters = {
   types?: string[];
   channels?: string[];
   owners?: string[];
   tags?: string[];
   modified?: ListDateRange;
-}
+} & Partial<Record<(typeof EXTRA)[number], string[]>>;
 
 const options = (...values: string[]) =>
   values.map((value) => ({ value, label: value }));
@@ -155,21 +157,40 @@ describe('ListFilterSheet', () => {
   it('preselects the first definition', async () => {
     const { listFilters } = setup();
     const { wrapper } = await mount(listFilters);
-    expect(rows(wrapper)[0]!.classes()).toContain('bg-muted');
+    expect(rows(wrapper)[0]!.classes()).toContain('bg-secondary');
     expect(wrapper.findAll('[role="option"]').map((o) => o.text())).toEqual([
       'image',
       'video',
     ]);
   });
 
-  it('shows the selected definition and filters the rows by label', async () => {
+  it('shows the selected definition', async () => {
     const { listFilters } = setup();
     const { wrapper } = await mount(listFilters);
     await rows(wrapper)[4]!.trigger('click');
     expect(wrapper.findAll('[role="radio"]')).toHaveLength(4);
+  });
 
-    await wrapper.find('input').setValue('chan');
-    expect(rows(wrapper).map((r) => r.text())).toEqual(['channel']);
+  it('searches the filters only past 10 definitions', async () => {
+    const { listFilters } = setup();
+    const { wrapper } = await mount(listFilters);
+    expect(wrapper.find('input').exists()).toBe(false);
+
+    const many: ListFilterDefinition<Filters>[] = [
+      ...definitions,
+      ...EXTRA.map((name) => ({
+        name,
+        label: name,
+        kind: 'multiselect' as const,
+        options: [],
+      })),
+    ];
+    const longList = scope!.run(() =>
+      useListFilters<Filters>({ definitions: many, filters: ref({}) }),
+    )!;
+    const { wrapper: long } = await mount(longList);
+    await long.find('input').setValue('chan');
+    expect(rows(long).map((r) => r.text())).toEqual(['channel']);
   });
 
   it('stages edits and commits them once on Apply', async () => {

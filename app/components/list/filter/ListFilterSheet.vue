@@ -70,17 +70,22 @@ const atPinLimit = (name: ListFilterName<TFilters>) =>
           class="flex flex-col gap-4 border-b p-4 sm:overflow-y-auto sm:border-r sm:border-b-0 sm:p-6"
         >
           <p class="text-sm font-semibold">{{ t('filter_by') }}</p>
-          <div class="relative">
-            <LucideSearch
-              class="text-muted-foreground absolute inset-y-0 start-3 my-auto size-4"
-              aria-hidden="true"
-            />
+          <div
+            v-if="definitions.length > LIST_FILTER_SEARCH_THRESHOLD"
+            class="relative"
+          >
             <Input
               v-model="search"
-              class="pl-9"
+              size="md"
+              class="pl-8"
               :placeholder="t('search_entity', { entityKey: 'filter' }, 2)"
               :aria-label="t('search_entity', { entityKey: 'filter' }, 2)"
             />
+            <span
+              class="absolute inset-y-0 start-0 flex items-center justify-center px-3"
+            >
+              <LucideSearch class="text-foreground size-4" aria-hidden="true" />
+            </span>
           </div>
           <TooltipProvider :delay-duration="100">
             <ul class="flex flex-col gap-0.5">
@@ -89,8 +94,8 @@ const atPinLimit = (name: ListFilterName<TFilters>) =>
                 :key="definition.name"
                 :class="
                   cn(
-                    'group hover:bg-muted flex cursor-pointer items-center gap-2 rounded-md px-3 py-1.5',
-                    selectedName === definition.name && 'bg-muted',
+                    'group hover:bg-secondary flex cursor-pointer items-center gap-2 rounded-md px-3 py-1.5',
+                    selectedName === definition.name && 'bg-secondary',
                   )
                 "
                 data-test="list-filter-sheet-row"
@@ -166,10 +171,16 @@ const atPinLimit = (name: ListFilterName<TFilters>) =>
           </TooltipProvider>
         </div>
 
-        <div class="flex flex-col gap-4 p-4 sm:overflow-y-auto sm:p-6">
+        <div class="flex min-h-0 flex-col gap-4 p-4 sm:p-6">
           <p class="text-sm font-semibold">{{ t('filter_values') }}</p>
-          <div class="-mx-3">
-            <ListFilterValues :definition="selected" :list-filters="draft" />
+          <!-- A multiselect scrolls its own list (its search stays put); a date
+               range with the calendar open scrolls here. -->
+          <div class="-mx-3 min-h-0 flex-1 overflow-y-auto">
+            <ListFilterValues
+              :definition="selected"
+              :list-filters="draft"
+              fill
+            />
           </div>
         </div>
       </SheetBody>

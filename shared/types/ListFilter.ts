@@ -47,7 +47,7 @@ export interface ListFilterMultiselectDefinition<
   kind: 'multiselect';
   name: ListFilterKeysOfType<TFilters, string[]>;
   options: ListFilterOption[] | (() => Promise<ListFilterOption[]>);
-  /** Default: more than 7 options. */
+  /** Default: more than 10 options. */
   searchable?: boolean;
 }
 

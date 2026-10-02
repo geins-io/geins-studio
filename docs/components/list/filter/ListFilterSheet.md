@@ -5,7 +5,7 @@
 ## Features
 
 - **Staged edits:** the sheet edits a `stage()` draft of the filters. "Apply filters" calls `draft.apply()`, which replaces `filters` once, so there is one refetch and one URL write. "Cancel", Esc and clicking outside discard the draft. Each open reseeds it from the committed state, so changes made meanwhile in the pinned popovers show up.
-- **Filter by** pane: a search over the filter labels, then one row per definition with its icon (`listFilterIcon`), label, staged active count, a pin toggle and a chevron. The selected row is highlighted, and the first definition is preselected on every open.
+- **Filter by** pane: a search over the filter labels when there are more than 10 filters (`LIST_FILTER_SEARCH_THRESHOLD`), then one row per definition with its icon (`listFilterIcon`), label, staged active count, a pin toggle and a chevron. The selected row is highlighted, and the first definition is preselected on every open. The **Filter values** pane shows a search past 10 values, like any multiselect, and its list fills the pane's height (`fill`).
 - **Pins apply immediately** (`togglePin`): they're a per-user preference, not query state. The toggle shows on hover and focus, and stays visible with "Pinned" while pinned. At the limit (`LIST_FILTER_MAX_PINNED`) it's `aria-disabled` with a tooltip. Filters with `pinnable: false` have no toggle.
 - `SheetContent width="medium"`; two columns from `sm` up, stacked below.
 - Focus moves into the sheet on open and back to the "All filters" button on close (the dialog's focus scope).

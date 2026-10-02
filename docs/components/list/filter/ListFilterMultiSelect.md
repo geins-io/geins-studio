@@ -5,7 +5,7 @@
 ## Features
 
 - Built on the `Command` (listbox) and `Checkbox` primitives. Arrow keys move through the options, and Space or Enter toggles one.
-- A local search input when the filter is `searchable` (by default, when there are more than 7 options). The search survives toggles, so several matches can be picked in a row.
+- A local search input when the filter is `searchable` (by default, when there are more than 10 options — `LIST_FILTER_SEARCH_THRESHOLD`). It looks like an `Input size="md"` search, the same as the table search but shorter. The search survives toggles, so several matches can be picked in a row.
 - "No options found" when nothing matches
 - Async options through `resolvedOptions(name)`: skeleton rows while loading, and an inline error with **Retry**
 - Option icons (Lucide names) resolved with `useLucideIcon`
@@ -54,6 +54,14 @@ listFilters: ListFilterEditor<TFilters>;
 ```
 
 The committed `useListFilters` instance or a `stage()` draft.
+
+### `fill`
+
+```ts
+fill?: boolean;
+```
+
+Fill the container's height instead of capping the list at `max-h-52`. The list then scrolls inside whatever height it gets, under a fixed search. The sheet's values pane sets it; the pinned popover keeps the cap.
 
 ## Dependencies
 

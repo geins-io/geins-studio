@@ -21,6 +21,8 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
+  --color-border-dark: var(--border-dark);
+  --color-border-dark-hover: var(--border-dark-hover);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --radius-sm: calc(var(--radius) - 4px);
@@ -138,6 +140,9 @@
   --destructive-foreground: hsl(0 0% 100%);
 
   --border: hsl(0 0% 90%);
+  /* Dashed borders need more contrast than solid ones to read. */
+  --border-dark: hsl(0 0% 85%);
+  --border-dark-hover: hsl(0 0% 75%);
   --input: hsl(0 0% 100%);
   --ring: hsl(0 0% 13%);
   --link: hsl(178 14% 44%);
@@ -199,6 +204,8 @@
   --destructive-foreground: hsl(210 15% 92%);
 
   --border: hsl(0 0% 18%);
+  --border-dark: hsl(0 0% 28%);
+  --border-dark-hover: hsl(0 0% 38%);
   --input: hsl(0 0% 9%);
   --ring: hsl(210 15% 85%);
   --link: hsl(177 35% 71%);

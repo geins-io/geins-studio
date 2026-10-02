@@ -19,18 +19,21 @@ const count = computed(() =>
   <Popover>
     <PopoverTrigger as-child>
       <Button
-        variant="outline"
-        class="shrink-0 gap-1.5 border-dashed"
+        variant="secondary"
+        class="border-border-dark hover:border-border-dark-hover hover:bg-card dark:hover:bg-secondary/80 shrink-0 gap-1.5 border-dashed"
         data-test="list-filter-pinned"
       >
         {{ t(definition.label) }}
-        <Badge
+        <span
           v-if="count"
-          size="sm"
-          :aria-label="t('count_selected', { count }, count)"
+          class="text-muted-foreground tabular-nums"
+          data-test="list-filter-count"
         >
-          {{ count }}
-        </Badge>
+          <span aria-hidden="true">({{ count }})</span>
+          <span class="sr-only">
+            {{ t('count_selected', { count }, count) }}
+          </span>
+        </span>
         <LucideChevronDown class="size-3.5 opacity-60" aria-hidden="true" />
       </Button>
     </PopoverTrigger>

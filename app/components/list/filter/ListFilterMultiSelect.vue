@@ -6,6 +6,8 @@ import type { ListFilterEditor } from '@/composables/useListFilters';
 const props = defineProps<{
   definition: ListFilterMultiselectDefinition<TFilters>;
   listFilters: ListFilterEditor<TFilters>;
+  /** Fill the container's height instead of capping the list (the sheet). */
+  fill?: boolean;
 }>();
 
 const { t } = useI18n();
@@ -42,15 +44,21 @@ const toggle = (event: Event, value: string) => {
 <template>
   <Command multiple :model-value="selected" class="bg-transparent">
     <div v-if="searchable" class="border-b px-3 pt-3 pb-2">
+      <!-- Same look as an `Input size="md"` search; `ListboxFilter` keeps the
+           arrow keys moving into the options. -->
       <div
-        class="bg-input focus-within:border-primary flex items-center gap-2 rounded-lg border px-3"
+        class="bg-input focus-within:border-primary relative h-9 w-full rounded-lg border pl-8"
       >
-        <LucideSearch class="text-muted-foreground size-4 shrink-0" />
         <ListboxFilter
           v-model="search"
           :placeholder="t('global_search_placeholder')"
-          class="placeholder:text-muted-foreground flex h-9 w-full bg-transparent text-sm outline-hidden"
+          class="bg-input placeholder:text-muted-foreground flex h-full w-full rounded-lg px-2 py-1 text-sm outline-hidden sm:px-3"
         />
+        <span
+          class="absolute inset-y-0 start-0 flex items-center justify-center px-3"
+        >
+          <LucideSearch class="text-foreground size-4" aria-hidden="true" />
+        </span>
       </div>
     </div>
 
@@ -77,7 +85,10 @@ const toggle = (event: Event, value: string) => {
     >
       {{ t('no_entity_found', { entityKey: 'option' }, 2) }}
     </p>
-    <CommandList v-else class="max-h-52 px-2 py-2">
+    <CommandList
+      v-else
+      :class="cn('px-2 py-2', fill ? 'max-h-none min-h-0 flex-1' : 'max-h-52')"
+    >
       <CommandGroup>
         <CommandItem
           v-for="option in visible"

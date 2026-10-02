@@ -14,7 +14,8 @@ import {
 
 export const LIST_FILTER_MAX_PINNED = 3;
 
-const SEARCHABLE_MIN_OPTIONS = 8;
+/** Lists longer than this get a search: filter values, and the sheet's filters. */
+export const LIST_FILTER_SEARCH_THRESHOLD = 10;
 
 const DEFAULT_ICONS: Record<ListFilterKind, string> = {
   multiselect: 'ListFilter',
@@ -32,7 +33,7 @@ export function isListFilterSearchable<TFilters>(
   definition: ListFilterMultiselectDefinition<TFilters>,
   optionCount: number,
 ): boolean {
-  return definition.searchable ?? optionCount >= SEARCHABLE_MIN_OPTIONS;
+  return definition.searchable ?? optionCount > LIST_FILTER_SEARCH_THRESHOLD;
 }
 
 export function isListDateRange(value: unknown): value is ListDateRange {

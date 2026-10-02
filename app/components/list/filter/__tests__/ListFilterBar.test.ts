@@ -135,17 +135,16 @@ describe('ListFilterBar', () => {
       modified: { preset: 'week' },
     });
     const wrapper = await mount(listFilters);
-    const badge = wrapper
-      .find('[data-test="list-filter-pinned"]')
-      .find('[data-slot="badge"]');
-    expect(badge.text()).toBe('2');
-    expect(badge.attributes('aria-label')).toBe('count_selected');
+    const count = (selector: string) =>
+      wrapper.find(selector).find('[data-test="list-filter-count"]');
+    const pinned = count('[data-test="list-filter-pinned"]');
+    expect(pinned.find('[aria-hidden="true"]').text()).toBe('(2)');
+    expect(pinned.find('.sr-only').text()).toBe('count_selected');
     expect(
-      wrapper
-        .find('[data-test="list-filter-all"]')
-        .find('[data-slot="badge"]')
+      count('[data-test="list-filter-all"]')
+        .find('[aria-hidden="true"]')
         .text(),
-    ).toBe('2');
+    ).toBe('(2)');
   });
 
   it('emits open-all from "All filters"', async () => {
@@ -161,6 +160,8 @@ describe('ListFilterBar', () => {
       modified: { preset: 'today' },
     });
     const wrapper = await mount(listFilters);
+    // Two options: no search, same rule as anywhere else.
+    expect(wrapper.find('input').exists()).toBe(false);
     const clear = wrapper
       .findAll('button')
       .find((b) => b.text() === 'clear' && !b.attributes('disabled'))!;
