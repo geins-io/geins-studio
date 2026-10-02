@@ -410,7 +410,7 @@ Server mode only. Client mode keeps this state internal.
 () => void
 ```
 
-Emitted by the empty state's **Clear search** button, after the table has cleared its own search. Reset any outside filters here (e.g. `useListQuery`'s `resetFilters`).
+Emitted by the empty state's **Clear search** button, after the table has cleared its own search. Reset any outside filters here: `useListFilters`' `clearAll` with a filter kit, or `useListQuery`'s `resetFilters` without one.
 
 ### `selection`
 
@@ -439,6 +439,22 @@ clearSelection(): void
 Deselects every row, including rows on other pages in server mode. Emits `selection` and, in server mode, `update:selectedIds`.
 
 ## Slots
+
+### `toolbar`
+
+Extra controls in the search row, between the search input and the column options. Use it for a list's [`ListFilterBar`](/components/list/filter/ListFilterBar). The slot sits beside the search from the `@2xl` container width up and wraps below it on narrower containers. Pages with their own toolbar, such as the asset library, place the bar themselves.
+
+```vue
+<TableView
+  :filtered="hasActiveQuery"
+  @clear-filters="listFilters.clearAll"
+  v-bind="tableProps"
+>
+  <template #toolbar>
+    <ListFilterBar :list-filters="listFilters" @open-all="sheetOpen = true" />
+  </template>
+</TableView>
+```
 
 ### `empty-actions`
 
