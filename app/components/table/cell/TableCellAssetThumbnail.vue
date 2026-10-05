@@ -4,15 +4,15 @@ import { assetPreviewUrl } from '#shared/utils/asset';
 import { cn } from '@/utils/index';
 
 /**
- * Table cell rendering an asset thumbnail — the image when present, otherwise a
- * typed icon block tinted with the asset-type color. Matches the built-in
- * `image` column type's size + style (size-7, centered, 40px column). Pass
- * `className` from the column's `getBasicCellStyle(table)`.
+ * Table cell rendering an asset thumbnail — image/SVG assets render their file
+ * at the `row` CDN preset, otherwise a typed icon block tinted with the
+ * asset-type color. Matches the built-in `image` column type's size + style
+ * (size-7, centered, 40px column). Pass `className` from the column's
+ * `getBasicCellStyle(table)`.
  */
 const props = defineProps<{
   type: AssetType;
-  thumbUrl?: string | null;
-  /** Full-size file, used as the preview when there is no thumbnail. */
+  /** The asset's file; scaled to the `row` preset via `assetPreviewUrl`. */
   url?: string | null;
   alt?: string;
   className?: string;
@@ -24,9 +24,7 @@ const { resolveIcon } = useLucideIcon();
 const info = computed(() => meta(props.type));
 const icon = computed(() => resolveIcon(info.value.icon));
 
-const src = computed(() =>
-  assetPreviewUrl(props.type, props.thumbUrl, props.url),
-);
+const src = computed(() => assetPreviewUrl(props.type, props.url, 'row'));
 const broken = ref(false);
 watch(src, () => {
   broken.value = false;

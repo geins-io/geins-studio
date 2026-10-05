@@ -299,7 +299,6 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
     cell: ({ table, row }) =>
       h(TableCellAssetThumbnail, {
         type: row.original.type,
-        thumbUrl: row.original.thumbUrl,
         url: row.original.url,
         alt: row.original.name,
         className: getBasicCellStyle(table),

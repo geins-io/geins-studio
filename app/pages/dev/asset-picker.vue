@@ -113,7 +113,6 @@ const FILE_TYPES: AssetType[] = ['pdf', 'doc', 'video', 'audio', 'svg'];
       >
         <AssetThumbnail
           :type="asset.type"
-          :thumb-url="asset.thumbUrl"
           :url="asset.url"
           :alt="asset.name"
           size="row"

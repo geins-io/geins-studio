@@ -3,16 +3,15 @@ import type { AssetType } from '#shared/types';
 import { assetPreviewUrl } from '#shared/utils/asset';
 
 /**
- * Asset preview — the thumbnail when the backend serves one, the full-size file
- * for image/SVG assets when it doesn't, otherwise a typed icon block. `card`
- * (3:2, grid), `banner` (2:1, full-width panel preview), and `row` (small
- * square, list) sizes.
+ * Asset preview — image/SVG assets render their file, scaled to the size's
+ * CDN preset; anything else gets a typed icon block. `card` (3:2, grid),
+ * `banner` (2:1, full-width panel preview), and `row` (small square, list)
+ * sizes.
  */
 const props = withDefaults(
   defineProps<{
     type: AssetType;
-    thumbUrl?: string | null;
-    /** Full-size file, used as the preview when there is no thumbnail. */
+    /** The asset's file; scaled per `size` via `assetPreviewUrl`. */
     url?: string | null;
     alt?: string;
     size?: 'card' | 'banner' | 'row';
@@ -30,9 +29,7 @@ const isRow = computed(() => props.size === 'row');
 // Fall back to the type icon when there's nothing previewable OR the image
 // fails to load (a stale/removed object 404s). Reset on change since the panel
 // banner reuses one instance across assets.
-const src = computed(() =>
-  assetPreviewUrl(props.type, props.thumbUrl, props.url),
-);
+const src = computed(() => assetPreviewUrl(props.type, props.url, props.size));
 const broken = ref(false);
 watch(src, () => {
   broken.value = false;

@@ -1,25 +1,15 @@
 # `AssetThumbnail`
 
-`AssetThumbnail` renders an asset's preview: the thumbnail when the backend serves one, the full-size file for `image`/`svg` assets when it doesn't, otherwise a typed icon block (icon + label). The fallback matters against Geins.Media phase 1, which returns `thumbUrl: ''` on every asset but a usable `url` — without it the whole library renders as icons.
+`AssetThumbnail` renders an asset's preview: `image` assets load their file scaled by Fastly's image optimizer to the `size` preset, `svg` assets load their file as-is, and anything else gets a typed icon block (icon + label). Geins.Media serves no backend thumbnails — all scaling happens on the CDN through query params on `url`.
 
 ## Usage
 
 ```vue
 <!-- grid card -->
-<AssetThumbnail
-  :type="asset.type"
-  :thumb-url="asset.thumbUrl"
-  :url="asset.url"
-  :alt="asset.name"
-/>
+<AssetThumbnail :type="asset.type" :url="asset.url" :alt="asset.name" />
 
 <!-- list row -->
-<AssetThumbnail
-  :type="asset.type"
-  :thumb-url="asset.thumbUrl"
-  :url="asset.url"
-  size="row"
-/>
+<AssetThumbnail :type="asset.type" :url="asset.url" size="row" />
 ```
 
 ## Props
@@ -32,21 +22,13 @@ type: AssetType;
 
 Used for the icon-block fallback and its label.
 
-### `thumbUrl`
-
-```ts
-thumbUrl?: string | null
-```
-
-Thumbnail URL. Preferred when present (`object-cover`).
-
 ### `url`
 
 ```ts
 url?: string | null
 ```
 
-The asset's full-size file, used as the preview when there is no `thumbUrl` — but only for types a browser can render in an `<img>` (`image`, `svg`). A PDF or video falls through to the icon block. Source of truth: [`assetPreviewUrl`](shared/utils/asset.ts). An image that 404s also falls back to the icon.
+The asset's file. Only types a browser can render in an `<img>` (`image`, `svg`) preview; a PDF or video falls through to the icon block. `image` URLs get the `size` preset's Fastly params appended (the existing `?v=` cache-buster is kept, so a replaced file refreshes); SVGs are left untouched because the optimizer serves them unchanged. Source of truth: [`assetPreviewUrl`](shared/utils/asset.ts). An image that 404s also falls back to the icon.
 
 ### `alt`
 
@@ -59,12 +41,20 @@ Image alt text. Defaults to an empty string (decorative).
 ### `size`
 
 ```ts
-size?: 'card' | 'row'
+size?: 'card' | 'banner' | 'row'
 ```
 
 - **Default:** `'card'`
 
-`card` = 3:2 responsive tile (grid). `row` = small square (list rows); the label is hidden at `row` size.
+Sets both the box and the CDN preset (`ASSET_PREVIEW_PRESETS` in `shared/utils/asset.ts`), each rendered at `dpr=2` for retina:
+
+| Size     | Box                          | Preset (`fit=crop&dpr=2`) |
+| -------- | ---------------------------- | ------------------------- |
+| `card`   | 3:2 responsive tile (grid)   | `width=420&height=280`    |
+| `banner` | 2:1 full-width panel preview | `width=500&height=250`    |
+| `row`    | 40px square (list rows)      | `width=40&height=40`      |
+
+The label is hidden at `row` size. Every distinct query string is a separately cached and billed CDN variant, so the presets are a fixed set — don't add per-pixel sizes.
 
 ## Dependencies
 

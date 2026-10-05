@@ -22,19 +22,18 @@ if (caps.tagAutocomplete) await refreshTags();
 
 An `AssetCapabilities` object (plain, not reactive — the surface is fixed per session):
 
-| Field                       | Type      | Gates                                                     |
-| --------------------------- | --------- | --------------------------------------------------------- |
-| `canEditTags`               | `boolean` | Editing an asset's tags.                                  |
-| `canEditChannels`           | `boolean` | Editing an asset's publication channels.                  |
-| `canDeleteFolderWithAssets` | `boolean` | Choosing what happens to assets inside a deleted folder.  |
-| `canReplaceFile`            | `boolean` | Replace-file action.                                      |
-| `tagAutocomplete`           | `boolean` | Distinct-tags suggestions fetch.                          |
-| `hasThumbnails`             | `boolean` | Backend produces real `thumbUrl`s (phase 1 returns `''`). |
+| Field                       | Type      | Gates                                                    |
+| --------------------------- | --------- | -------------------------------------------------------- |
+| `canEditTags`               | `boolean` | Editing an asset's tags.                                 |
+| `canEditChannels`           | `boolean` | Editing an asset's publication channels.                 |
+| `canDeleteFolderWithAssets` | `boolean` | Choosing what happens to assets inside a deleted folder. |
+| `canReplaceFile`            | `boolean` | Replace-file action.                                     |
+| `tagAutocomplete`           | `boolean` | Distinct-tags suggestions fetch.                         |
 
 Every flag is `false` today — each one names a phase-2 feature.
 
 :::warning A FEATURE THE BACKEND SUPPORTS GETS NO FLAG
-There is no `canEditDescriptionAltText`, `canDeleteAsset`, `hasTrash` or `hasUsageLinks` — all of those ship in phase 1, so they were removed rather than left permanently `true`. An always-`true` flag is dead gating: when phase 2 restores a feature, delete its flag **and** its consumers instead of flipping it (see the [cutover ledger](/domains/assets-cutover)).
+There is no `canEditDescriptionAltText`, `canDeleteAsset`, `hasTrash`, `hasUsageLinks` or `hasThumbnails` — all of those ship (or, for thumbnails, were replaced by CDN scaling), so they were removed rather than left permanently `true`. An always-`true` flag is dead gating: when phase 2 restores a feature, delete its flag **and** its consumers instead of flipping it (see the [cutover ledger](/domains/assets-cutover)).
 :::
 
 The mapping is a pure function — `assetCapabilities()` in `#shared/utils/asset` — so it is unit-tested and reusable outside a component.
