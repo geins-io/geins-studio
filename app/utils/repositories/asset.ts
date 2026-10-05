@@ -245,6 +245,57 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
+     * Every id the list's query matches across all pages — for a bulk "select
+     * all". Pages the same batch at the 1000 cap until `totalItemCount` is
+     * reached, so the ids stay consistent with what the list counted.
+     */
+    async matchingIds(
+      state: ListQueryState<AssetQueryFilters>,
+      scope?: AssetQueryScope,
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<string[]> {
+      const ids: string[] = [];
+      let batchId: string | undefined;
+      for (let page = 1; ; page++) {
+        const res = await fetch<BatchQueryResult<Asset>>(
+          `${ENTITIES.asset.endpoint}/query`,
+          {
+            method: 'POST',
+            body: assetQueryBody(
+              { ...state, page, pageSize: ASSET_QUERY_PAGE_SIZE },
+              scope,
+              batchId,
+            ),
+            suppressErrorToast: true,
+            ...fetchOptions,
+          },
+        );
+        const items = Array.isArray(res.items) ? res.items : [];
+        ids.push(...items.map((asset) => asset._id));
+        batchId = res._id;
+        if (!items.length || page >= res.pageCount) return ids;
+      }
+    },
+
+    /**
+     * Move up to 100 assets to trash — real `POST /media/assets/bulk-delete`
+     * (`204`). All or nothing: one unknown id refuses the whole call with a
+     * `404` listing the ids. Already-trashed ids are left alone. Chunk larger
+     * selections with `runInChunks` (`#shared/utils/bulk`).
+     */
+    async bulkDelete(
+      assetIds: string[],
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<void> {
+      await fetch<unknown>(`${ENTITIES.asset.endpoint}/bulk-delete`, {
+        method: 'POST',
+        body: { assetIds },
+        errorContext: { action: 'deleting', entity: ENTITIES.asset.key },
+        ...fetchOptions,
+      });
+    },
+
+    /**
      * The live assets with these ids — `assetIds` on `POST /media/assets/query`,
      * one page at the schema's cap. Ids that don't match (trashed, deleted) are
      * simply absent from the result.

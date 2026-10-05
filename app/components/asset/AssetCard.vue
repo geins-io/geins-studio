@@ -6,9 +6,10 @@ import { formatFileSize } from '#shared/utils/file';
  * Grid tile for a single asset: thumbnail, name, type badge, folder, tags, and
  * size/modified meta (moved-to-trash date in `trashed` mode). Click (name or card) or the action menu opens the asset.
  *
- * In `selectable` mode (asset picker) the tile becomes a selection target: a
- * checkbox overlays the thumbnail, the whole tile toggles selection instead of
- * opening, and `hideActions` drops the per-card actions menu.
+ * In `selectable` mode a checkbox overlays the thumbnail. In the asset picker
+ * (`selectOnClick`, the default) the whole tile toggles selection instead of
+ * opening, and `hideActions` drops the per-card actions menu. The library turns
+ * `selectOnClick` off: the checkbox selects and the tile still opens.
  *
  * In `trashed` mode (trash view) the tile is inert apart from its menu, which
  * offers Restore only — there is no detail panel for a soft-deleted asset.
@@ -22,6 +23,8 @@ const props = withDefaults(
     selectable?: boolean;
     /** Reflected selected state (driven by the parent). */
     selected?: boolean;
+    /** With `selectable`, a tile click toggles selection instead of opening. */
+    selectOnClick?: boolean;
     /** Suppress the actions menu (the picker has selection only). */
     hideActions?: boolean;
     /** Trash view — the tile doesn't open, and the menu offers Restore only. */
@@ -30,6 +33,7 @@ const props = withDefaults(
   {
     selectable: false,
     selected: false,
+    selectOnClick: true,
     hideActions: false,
     trashed: false,
   },
@@ -49,9 +53,10 @@ const size = computed(() => formatFileSize(props.asset.sizeBytes));
 
 // In the picker, the tile is a selection target — clicking the thumbnail or
 // name toggles selection rather than opening the (nonexistent) detail panel.
+const togglesOnClick = computed(() => props.selectable && props.selectOnClick);
 const activate = () => {
   if (props.trashed) return;
-  if (props.selectable) {
+  if (togglesOnClick.value) {
     emit('toggleSelect');
   } else {
     emit('open');
@@ -76,7 +81,7 @@ const activate = () => {
         class="block w-full cursor-pointer disabled:cursor-default"
         :disabled="trashed"
         :aria-label="
-          selectable
+          togglesOnClick
             ? $t('select_named', { name: asset.name })
             : $t('asset_library.view_details')
         "
