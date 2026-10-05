@@ -14,11 +14,13 @@ export function cn(...inputs: ClassValue[]) {
  * holds its colour on hover; the rest sit on the gray `background` with muted
  * text. Structure — borders, joining — stays with `ButtonGroup` + the Button
  * `outline` variant; this only swaps the fill/text so the toggles read the same.
+ * The `dark:` fills are required: `outline` sets `dark:bg-muted`, which beats the
+ * plain fills and made both states identical in dark mode (twMerge swaps them).
  */
 export function segmentedButtonClass(active: boolean): string {
   return active
-    ? 'bg-card text-foreground hover:bg-card hover:text-foreground'
-    : 'bg-background text-muted-foreground hover:text-foreground';
+    ? 'bg-card text-foreground hover:bg-card hover:text-foreground dark:bg-secondary dark:hover:bg-secondary'
+    : 'bg-background text-muted-foreground hover:text-foreground dark:bg-background';
 }
 
 /**
