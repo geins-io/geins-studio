@@ -84,6 +84,39 @@ describe('useBulkRunner', () => {
     });
   });
 
+  it('passes the chunk responses to the success message', async () => {
+    const successMessage = vi.fn(() => 'done');
+    const run = vi.fn().mockResolvedValue(null);
+    await useBulkRunner().run(
+      { ...action(run), successMessage },
+      ids(2),
+      undefined,
+      'asset',
+    );
+    expect(successMessage).toHaveBeenCalledWith(2, [null]);
+  });
+
+  it('owns the failure toast for an action with describeError, even for one chunk', async () => {
+    const error = { statusCode: 409, data: { title: 'raw' } };
+    const run = vi.fn().mockRejectedValue(error);
+    const describeError = vi.fn(() => 'friendly');
+    await useBulkRunner().run(
+      { ...action(run), describeError },
+      ids(2),
+      undefined,
+      'asset',
+    );
+    expect(run).toHaveBeenCalledWith(ids(2), undefined, {
+      suppressErrorToast: true,
+    });
+    expect(describeError).toHaveBeenCalledWith(error);
+    expect(toast).toHaveBeenCalledWith({
+      title: 'bulk_action_failed',
+      description: 'friendly',
+      variant: 'negative',
+    });
+  });
+
   it('adds no toast of its own when the only chunk fails', async () => {
     const run = vi.fn().mockRejectedValue(new Error('boom'));
     const result = await useBulkRunner().run(

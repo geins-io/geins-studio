@@ -230,6 +230,27 @@ export function folderIdForSelection(selected: string | null): string | null {
 }
 
 /**
+ * The `asset_library.*` i18n key for a refused `POST /media/assets/bulk-move`.
+ * The backend tells its 409s apart only by problem title, so they're matched
+ * on the title's wording; `undefined` means show the backend title as is.
+ */
+export function bulkMoveErrorKey(
+  status: number,
+  title?: string,
+): string | undefined {
+  if (status === 404) return 'bulk_move_not_found';
+  if (status === 422) return 'bulk_move_path_too_long';
+  if (status !== 409) return undefined;
+  const text = title?.toLowerCase() ?? '';
+  if (text.includes('share a name')) return 'bulk_move_name_clash';
+  if (text.includes('already sits at')) return 'bulk_move_destination_taken';
+  if (text.includes('move of these assets')) return 'bulk_move_in_flight';
+  if (text.includes('upload is still') || text.includes('still delivering'))
+    return 'bulk_move_pending';
+  return 'bulk_move_conflict';
+}
+
+/**
  * Feature availability against the shipped Geins.Media surface. Phase 1 serves
  * browse + upload, `PATCH` (description/altText/localizations), `POST …/
  * relocate` (rename + move), `DELETE` (+ restore) and usage links — all

@@ -26,11 +26,16 @@ export async function runInChunks(
   call: (chunk: string[], index: number) => Promise<unknown>,
   size = BULK_CHUNK_SIZE,
 ): Promise<BulkRunResult> {
-  const result: BulkRunResult = { succeeded: [], failed: [], errors: [] };
+  const result: BulkRunResult = {
+    succeeded: [],
+    failed: [],
+    errors: [],
+    responses: [],
+  };
   const chunks = chunkIds(ids, size);
   for (const [index, chunk] of chunks.entries()) {
     try {
-      await call(chunk, index);
+      result.responses.push(await call(chunk, index));
       result.succeeded.push(...chunk);
     } catch (error) {
       result.failed.push(...chunk);

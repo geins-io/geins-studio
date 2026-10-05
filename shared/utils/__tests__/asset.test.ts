@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   assetCapabilities,
   assetListOptions,
+  bulkMoveErrorKey,
   folderIdForSelection,
   ROOT_FOLDER_KEY,
   TRASH_KEY,
@@ -176,6 +177,39 @@ describe('assetListOptions', () => {
 
   it('asks for the trashed set instead of a folder scope', () => {
     expect(assetListOptions(TRASH_KEY)).toEqual({ trashed: true });
+  });
+});
+
+describe('bulkMoveErrorKey', () => {
+  it('maps each bulk-move 409 by its problem title', () => {
+    expect(
+      bulkMoveErrorKey(409, 'A move of these assets is already in flight.'),
+    ).toBe('bulk_move_in_flight');
+    expect(bulkMoveErrorKey(409, 'Two listed assets share a name.')).toBe(
+      'bulk_move_name_clash',
+    );
+    expect(
+      bulkMoveErrorKey(409, 'Another asset already sits at the path.'),
+    ).toBe('bulk_move_destination_taken');
+    expect(bulkMoveErrorKey(409, 'An upload is still in flight.')).toBe(
+      'bulk_move_pending',
+    );
+    expect(bulkMoveErrorKey(409, 'A move is still delivering a file.')).toBe(
+      'bulk_move_pending',
+    );
+  });
+
+  it('falls back to a generic conflict for an unknown 409 title', () => {
+    expect(bulkMoveErrorKey(409, 'Entity already exists')).toBe(
+      'bulk_move_conflict',
+    );
+    expect(bulkMoveErrorKey(409)).toBe('bulk_move_conflict');
+  });
+
+  it('maps 404 and 422, and leaves other statuses to the backend title', () => {
+    expect(bulkMoveErrorKey(404)).toBe('bulk_move_not_found');
+    expect(bulkMoveErrorKey(422)).toBe('bulk_move_path_too_long');
+    expect(bulkMoveErrorKey(500, 'Server error')).toBeUndefined();
   });
 });
 

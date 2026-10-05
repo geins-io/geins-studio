@@ -296,6 +296,35 @@ describe('assetRepo', () => {
       });
     });
 
+    describe('bulkMove', () => {
+      it('POSTs the ids and folder and returns the move on 202', async () => {
+        mockFetch.mockResolvedValue({ moveId: 'm1' });
+        await expect(
+          api.bulkMove(['a1'], 'f1', { suppressErrorToast: true }),
+        ).resolves.toEqual({ moveId: 'm1' });
+        expect(mockFetch).toHaveBeenCalledWith('/media/assets/bulk-move', {
+          method: 'POST',
+          body: { assetIds: ['a1'], folderId: 'f1' },
+          errorContext: { action: 'updating', entity: 'asset' },
+          suppressErrorToast: true,
+        });
+      });
+
+      it('sends an explicit null folderId for the library root', async () => {
+        mockFetch.mockResolvedValue({ moveId: 'm1' });
+        await api.bulkMove(['a1'], null);
+        expect(mockFetch.mock.calls[0][1].body).toEqual({
+          assetIds: ['a1'],
+          folderId: null,
+        });
+      });
+
+      it('returns null on 204 (already in the folder)', async () => {
+        mockFetch.mockResolvedValue(undefined);
+        await expect(api.bulkMove(['a1'], 'f1')).resolves.toBeNull();
+      });
+    });
+
     it('restore POSTs to /media/assets/:id/restore', async () => {
       mockFetch.mockResolvedValue(null);
       await api.restore('1');

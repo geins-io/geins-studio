@@ -47,20 +47,21 @@ async function onDone(result: BulkRunResult) {
 
 ## `BulkAction`
 
-| Field                      | Type                      | Notes                                                                         |
-| -------------------------- | ------------------------- | ----------------------------------------------------------------------------- |
-| `key`                      | `string`                  | Unique per sheet.                                                             |
-| `label`                    | `string`                  | Translated.                                                                   |
-| `icon`                     | `string`                  | Lucide name, resolved with `useLucideIcon`.                                   |
-| `component`                | `Component`               | Properties pane, `v-model` to the value. Omit for no input.                   |
-| `componentProps`           | `Record<string, unknown>` | Bound onto `component`.                                                       |
-| `initialValue()`           | `TValue`                  | Fresh value on pick.                                                          |
-| `isValid(value)`           | `boolean`                 | Gates Run. Defaults to valid.                                                 |
-| `summary(value)`           | `string`                  | Confirm summary. Defaults to the label.                                       |
-| `note(value)`              | `string \| undefined`     | Extra confirm line, e.g. whether the change can be undone.                    |
-| `destructive`              | `boolean`                 | Destructive confirm button.                                                   |
-| `run(ids, value, options)` | `Promise<unknown>`        | One chunk (≤ 100 ids). Spread `options` into the fetch; let errors propagate. |
-| `successMessage(count)`    | `string`                  | Success toast title.                                                          |
+| Field                              | Type                      | Notes                                                                                              |
+| ---------------------------------- | ------------------------- | -------------------------------------------------------------------------------------------------- |
+| `key`                              | `string`                  | Unique per sheet.                                                                                  |
+| `label`                            | `string`                  | Translated.                                                                                        |
+| `icon`                             | `string`                  | Lucide name, resolved with `useLucideIcon`.                                                        |
+| `component`                        | `Component \| string`     | Properties pane, `v-model` to the value. Omit for no input.                                        |
+| `componentProps`                   | `Record<string, unknown>` | Bound onto `component`.                                                                            |
+| `initialValue()`                   | `TValue`                  | Fresh value on pick.                                                                               |
+| `isValid(value)`                   | `boolean`                 | Gates Run. Defaults to valid.                                                                      |
+| `summary(value)`                   | `string`                  | Confirm summary. Defaults to the label.                                                            |
+| `note(value)`                      | `string \| undefined`     | Extra confirm line, e.g. whether the change can be undone.                                         |
+| `destructive`                      | `boolean`                 | Destructive confirm button.                                                                        |
+| `run(ids, value, options)`         | `Promise<unknown>`        | One chunk (≤ 100 ids). Spread `options` into the fetch; let errors propagate.                      |
+| `describeError(error)`             | `string \| undefined`     | Friendly failure reason. When set, the action owns its failure toast (the global one is silenced). |
+| `successMessage(count, responses)` | `string`                  | Success toast title. `responses` are the successful chunks' results.                               |
 
 ## Props
 

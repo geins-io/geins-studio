@@ -81,6 +81,14 @@ export interface AssetRelocate {
 }
 
 /**
+ * `202` body of `POST /media/assets/bulk-move` — the copies run in the
+ * background; poll `GET media/moves/{moveId}` to see them land.
+ */
+export interface AssetBulkMove {
+  moveId: string;
+}
+
+/**
  * A link from an asset to something outside the media library
  * (`media_response_assetLink`, returned by `GET /media/assets/{id}/links`).
  *

@@ -16,8 +16,10 @@ import type { FolderNode } from '@/composables/useFolders';
  * `readonly` makes the rail selection-only — every folder mutation control
  * (hover create/delete, "New folder", delete dialogs) is gated off. Used by the
  * asset picker, where folder management must stay on the library page.
+ * `hideAll` drops "All assets" for a destination picker (e.g. bulk move), where
+ * it isn't a place an asset can go.
  */
-const props = defineProps<{ readonly?: boolean }>();
+const props = defineProps<{ readonly?: boolean; hideAll?: boolean }>();
 
 const selected = defineModel<string | null>('selected', { default: null });
 
@@ -156,7 +158,7 @@ async function confirmDelete(assets: FolderDeleteAssets = 'move') {
         {{ $t('folder', 2) }}
       </SidebarGroupLabel>
       <SidebarGroupContent>
-        <SidebarMenu>
+        <SidebarMenu v-if="!props.hideAll">
           <SidebarMenuItem>
             <SidebarMenuButton
               :is-active="selected === null"
@@ -175,7 +177,7 @@ async function confirmDelete(assets: FolderDeleteAssets = 'move') {
           </SidebarMenuItem>
         </SidebarMenu>
 
-        <SidebarMenu class="mt-2">
+        <SidebarMenu :class="!props.hideAll && 'mt-2'">
           <template v-if="loading">
             <SidebarMenuItem v-for="n in 4" :key="n">
               <SidebarMenuSkeleton />
