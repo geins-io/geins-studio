@@ -8,9 +8,12 @@ import {
   assetPreviewUrl,
   contentTypeForUpload,
   isProductLink,
+  isReplaceExtensionAllowed,
   mimeToAssetType,
   parseProductRef,
   productLinkTargetType,
+  replaceErrorMessageKey,
+  replaceExtensions,
 } from '../asset';
 
 describe('mimeToAssetType', () => {
@@ -57,7 +60,6 @@ describe('assetCapabilities', () => {
       canDeleteFolderWithAssets: false,
       canEditTags: false,
       canEditChannels: false,
-      canReplaceFile: false,
       tagAutocomplete: false,
     });
   });
@@ -187,5 +189,46 @@ describe('folderIdForSelection', () => {
     ['fld-1', 'fld-1'],
   ])('maps %s to %s', (selected, expected) => {
     expect(folderIdForSelection(selected)).toBe(expected);
+  });
+});
+
+describe('replaceExtensions', () => {
+  it("returns the asset's own extension, plus aliases for the same type", () => {
+    expect(replaceExtensions('hero.png')).toEqual(['.png']);
+    expect(replaceExtensions('hero.JPEG')).toEqual(['.jpg', '.jpeg']);
+    expect(replaceExtensions('scan.tif')).toEqual(['.tif', '.tiff']);
+    expect(replaceExtensions('archive.tar.gz')).toEqual(['.gz']);
+  });
+
+  it('is empty when the asset name has no extension', () => {
+    expect(replaceExtensions('README')).toEqual([]);
+    expect(replaceExtensions('.env')).toEqual([]);
+  });
+});
+
+describe('isReplaceExtensionAllowed', () => {
+  it('accepts the same extension or an alias, case-insensitively', () => {
+    expect(isReplaceExtensionAllowed('hero.jpg', 'new.jpg')).toBe(true);
+    expect(isReplaceExtensionAllowed('hero.jpeg', 'new.JPG')).toBe(true);
+  });
+
+  it('refuses a different type', () => {
+    expect(isReplaceExtensionAllowed('hero.jpg', 'new.png')).toBe(false);
+    expect(isReplaceExtensionAllowed('hero.jpg', 'new')).toBe(false);
+  });
+
+  it('leaves extensionless assets to the backend', () => {
+    expect(isReplaceExtensionAllowed('README', 'new.png')).toBe(true);
+  });
+});
+
+describe('replaceErrorMessageKey', () => {
+  it.each([
+    [404, 'asset_library.replace_error_not_found'],
+    [409, 'asset_library.upload_reject_path_move_pending'],
+    [422, 'asset_library.replace_error_invalid_file'],
+    [500, 'asset_library.upload_reject_generic'],
+  ])('maps %i → %s', (status, key) => {
+    expect(replaceErrorMessageKey(status)).toBe(key);
   });
 });

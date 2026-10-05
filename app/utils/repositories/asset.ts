@@ -7,6 +7,7 @@ import type {
   AssetQuery,
   AssetQueryFilters,
   AssetQueryScope,
+  AssetReplace,
   AssetRelocate,
   AssetUpdate,
   AssetApiOptions,
@@ -15,6 +16,7 @@ import type {
   FolderCreate,
   FolderUpdate,
   FolderDeleteAssets,
+  GeinsErrorAction,
   ListQueryRequestOptions,
   ListQueryState,
   Localized,
@@ -186,6 +188,76 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       });
     },
   };
+
+  /**
+   * Steps 2–3 of the ticket flow, for a ticket already claimed: PUT each
+   * accepted file's bytes straight to its plan URL, then `complete` the
+   * accepted refs (skipped when nothing was accepted). Returns the completion
+   * results merged with the ticket-stage rejections. Upload and replace both
+   * finish through here.
+   *
+   * The bytes PUT deliberately uses the global `fetch`, not `$geinsApi`: it
+   * targets the plan URL directly (a storage endpoint in production), so it
+   * must not go through the API proxy. Throws on an unknown upload `mode`.
+   */
+  async function sendTicketFiles(
+    ticket: UploadTicketResponse,
+    fileByRef: Map<string, File>,
+    action: GeinsErrorAction,
+    fetchOptions?: RepoFetchOptions,
+  ): Promise<UploadCompleteResult[]> {
+    const accepted = ticket.results.filter(
+      (r): r is Extract<typeof r, { status: 'accepted' }> =>
+        r.status === 'accepted',
+    );
+
+    const rejectedAtTicket: UploadCompleteResult[] = ticket.results
+      .filter((r) => r.status === 'rejected')
+      .map((r) => ({
+        clientRef: r.clientRef,
+        status: 'rejected',
+        code: (r as Extract<typeof r, { status: 'rejected' }>).code,
+        message: (r as Extract<typeof r, { status: 'rejected' }>).message,
+      }));
+
+    // Nothing accepted → skip `complete`, so a ticket-stage rejection comes back
+    // as-is instead of masked by whatever an empty `complete` answers.
+    if (!accepted.length) return rejectedAtTicket;
+
+    await Promise.all(
+      accepted.map(async (r) => {
+        const mode = r.upload.mode as string;
+        if (mode !== 'single')
+          throw new Error(`Unsupported upload mode: ${mode}`);
+        const file = fileByRef.get(r.clientRef)!;
+        const contentType =
+          file.type || contentTypeForUpload(file.name, undefined);
+        await globalThis.fetch(r.upload.url, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'content-type': contentType,
+            // Azure blob storage requires both of these alongside the body:
+            // the block-blob type and the content type it should serve with.
+            'x-ms-blob-type': 'BlockBlob',
+            'x-ms-blob-content-type': contentType,
+          },
+        });
+      }),
+    );
+
+    const done = await fetch<UploadCompleteResponse>(
+      `${TICKETS_ENDPOINT}/${ticket.ticketId}/complete`,
+      {
+        method: 'POST',
+        body: { files: accepted.map((r) => r.clientRef) },
+        errorContext: { action, entity: ENTITIES.asset.key },
+        ...fetchOptions,
+      },
+    );
+
+    return [...done.results, ...rejectedAtTicket];
+  }
 
   return {
     ...assets,
@@ -369,10 +441,6 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
      * the per-file cap is rejected client-side, and the rest are packed into
      * batches within the ≤50-files / ≤10 GB ticket caps (each batch is one
      * ticket), so a large selection never trips the claim's 400.
-     *
-     * The bytes PUT deliberately uses the global `fetch`, not `$geinsApi`: it
-     * targets the plan URL directly (a storage endpoint in production), so it
-     * must not go through the API proxy. Throws on an unknown upload `mode`.
      */
     async uploadViaTickets(
       items: UploadTicketItem[],
@@ -430,53 +498,12 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
           ...fetchOptions,
         });
 
-        const accepted = ticket.results.filter(
-          (r): r is Extract<typeof r, { status: 'accepted' }> =>
-            r.status === 'accepted',
+        return await sendTicketFiles(
+          ticket,
+          fileByRef,
+          'creating',
+          fetchOptions,
         );
-
-        await Promise.all(
-          accepted.map(async (r) => {
-            const mode = r.upload.mode as string;
-            if (mode !== 'single')
-              throw new Error(`Unsupported upload mode: ${mode}`);
-            const file = fileByRef.get(r.clientRef)!;
-            const contentType =
-              file.type || contentTypeForUpload(file.name, undefined);
-            await globalThis.fetch(r.upload.url, {
-              method: 'PUT',
-              body: file,
-              headers: {
-                'content-type': contentType,
-                // Azure blob storage requires both of these alongside the body:
-                // the block-blob type and the content type it should serve with.
-                'x-ms-blob-type': 'BlockBlob',
-                'x-ms-blob-content-type': contentType,
-              },
-            });
-          }),
-        );
-
-        const done = await fetch<UploadCompleteResponse>(
-          `${TICKETS_ENDPOINT}/${ticket.ticketId}/complete`,
-          {
-            method: 'POST',
-            body: { files: accepted.map((r) => r.clientRef) },
-            errorContext: { action: 'creating', entity: ENTITIES.asset.key },
-            ...fetchOptions,
-          },
-        );
-
-        const rejectedAtTicket: UploadCompleteResult[] = ticket.results
-          .filter((r) => r.status === 'rejected')
-          .map((r) => ({
-            clientRef: r.clientRef,
-            status: 'rejected',
-            code: (r as Extract<typeof r, { status: 'rejected' }>).code,
-            message: (r as Extract<typeof r, { status: 'rejected' }>).message,
-          }));
-
-        return [...done.results, ...rejectedAtTicket];
       };
 
       const batches = await Promise.all(
@@ -486,22 +513,45 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * Replace an asset's underlying file (multipart) — uploads the new file and
-     * repoints the row's file columns, keeping the same id + metadata. Returns
-     * the updated asset. Geins.Media phase 1 serves no `/replace` route, so this
-     * is unreachable until phase 2 (`canReplaceFile` gates every call site).
+     * Replace an asset's file in place — real `POST /media/assets/{id}/replace`
+     * claims a one-file ticket (its `clientRef` and `assetId` are the asset's
+     * id), then the bytes go through the same PUT + `complete` as an upload.
+     * Id, path, name, texts, tags, channels and links stay; `url` (its `v`),
+     * etag, size, MIME and type change, so callers refetch the asset.
+     *
+     * The claim itself throws on 404 (trashed / unknown), 409 (a move is
+     * running) and 422 (extension isn't the asset's own, or a bad name). A
+     * rejection at completion comes back as the `rejected` result, and the
+     * backend restores the previous file.
      */
     async replace(
       id: string,
-      formData: FormData,
+      file: File,
       fetchOptions?: RepoFetchOptions,
-    ): Promise<Asset> {
-      return await fetch<Asset>(`${ENTITIES.asset.endpoint}/${id}/replace`, {
-        method: 'POST',
-        body: formData,
-        errorContext: { action: 'updating', entity: ENTITIES.asset.key },
-        ...fetchOptions,
-      });
+    ): Promise<UploadCompleteResult> {
+      const body: AssetReplace = {
+        fileName: file.name,
+        sizeBytes: file.size,
+        mimeType: contentTypeForUpload(file.name, file.type),
+      };
+      const ticket = await fetch<UploadTicketResponse>(
+        `${ENTITIES.asset.endpoint}/${id}/replace`,
+        {
+          method: 'POST',
+          body,
+          errorContext: { action: 'updating', entity: ENTITIES.asset.key },
+          ...fetchOptions,
+        },
+      );
+      const fileByRef = new Map(ticket.results.map((r) => [r.clientRef, file]));
+      const [result] = await sendTicketFiles(
+        ticket,
+        fileByRef,
+        'updating',
+        fetchOptions,
+      );
+      if (!result) throw new Error('Replace ticket returned no result');
+      return result;
     },
 
     /**
