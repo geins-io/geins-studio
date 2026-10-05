@@ -14,7 +14,7 @@ It is rendered **inside** the [`AssetDetailPanel`](/components/asset/AssetDetail
 />
 ```
 
-The detail panel forwards `replaced` up so the page can update its `detailAsset` — the preview (new `url` / `thumbUrl`) refreshes immediately. The dialog also refreshes `asset-library-list` itself.
+The detail panel forwards `replaced` up so the page can update its `detailAsset` — the preview refreshes immediately, because the new `url` carries a new `?v=` that `assetPreviewUrl` keeps. The dialog also refreshes `asset-library-list` itself.
 
 ## Props
 

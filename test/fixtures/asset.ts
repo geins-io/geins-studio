@@ -19,7 +19,6 @@ export function buildAsset(overrides?: Partial<Asset>): Asset {
     sizeBytes: 2_400_000,
     mime: 'image/jpeg',
     url: 'https://cdn.example.com/hero-spring.jpg',
-    thumbUrl: 'https://cdn.example.com/hero-spring-thumb.jpg',
     createdBy: 'olivia',
     createdAt: '2026-08-17T00:00:00.000Z',
     updatedAt: '2026-08-17T00:00:00.000Z',

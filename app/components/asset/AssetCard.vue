@@ -84,7 +84,6 @@ const activate = () => {
       >
         <AssetThumbnail
           :type="asset.type"
-          :thumb-url="asset.thumbUrl"
           :url="asset.url"
           :alt="asset.name"
           size="card"
