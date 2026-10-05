@@ -177,7 +177,7 @@ async function confirmDelete(assets: FolderDeleteAssets = 'move') {
           </SidebarMenuItem>
         </SidebarMenu>
 
-        <SidebarMenu :class="!props.hideAll && 'mt-2'">
+        <SidebarMenu :class="{ 'mt-2': !props.hideAll }">
           <template v-if="loading">
             <SidebarMenuItem v-for="n in 4" :key="n">
               <SidebarMenuSkeleton />

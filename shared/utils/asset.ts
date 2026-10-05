@@ -232,7 +232,9 @@ export function folderIdForSelection(selected: string | null): string | null {
 /**
  * The `asset_library.*` i18n key for a refused `POST /media/assets/bulk-move`.
  * The backend tells its 409s apart only by problem title, so they're matched
- * on the title's wording; `undefined` means show the backend title as is.
+ * on the title's wording (taken from the media API changelog, not the OpenAPI
+ * spec). A reworded title falls back to the generic `bulk_move_conflict`;
+ * `undefined` means show the backend title as is.
  */
 export function bulkMoveErrorKey(
   status: number,

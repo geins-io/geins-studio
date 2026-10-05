@@ -25,8 +25,11 @@ export interface BulkAction<TValue = unknown> {
   label: string;
   /** Lucide icon name, resolved with `useLucideIcon`. */
   icon: string;
-  /** Properties pane, bound with `v-model` to the action's value. Omit when the action takes no input. */
-  // `string` too: `resolveComponent` can return the name when unresolved.
+  /**
+   * Properties pane, bound with `v-model` to the action's value. Omit when the
+   * action takes no input. A `string` is accepted because `resolveComponent`
+   * can return the name when unresolved.
+   */
   component?: Component | string;
   componentProps?: Record<string, unknown>;
   /** Fresh value each time the action is picked. */

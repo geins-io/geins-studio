@@ -82,7 +82,8 @@ export interface AssetRelocate {
 
 /**
  * `202` body of `POST /media/assets/bulk-move` — the copies run in the
- * background; poll `GET media/moves/{moveId}` to see them land.
+ * background, and `GET media/moves/{moveId}` reports when they land. The
+ * client doesn't poll it yet; callers refresh once instead.
  */
 export interface AssetBulkMove {
   moveId: string;
