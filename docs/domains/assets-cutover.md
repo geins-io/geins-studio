@@ -39,7 +39,7 @@ Only one disposition is left. Everything marked `REMOVE@cutover` has been delete
 2. Delete `useAssetCapabilities.ts`, `assetCapabilities`, and the `AssetCapabilities` type.
 3. `grep -rn "cutover:"` returns nothing → the ledger is discharged and this file can go.
 
-Two features also need a copy pass when their disposition is settled: `folder_delete_delete_description` still says "permanently" (accurate only if phase 2 restores folder-delete-with-assets), and the [replace dialog](/components/asset/AssetReplaceDialog)'s "used everywhere" warning is static until it is fed from the links endpoint.
+One feature also needs a copy pass when its disposition is settled: `folder_delete_delete_description` still says "permanently" (accurate only if phase 2 restores folder-delete-with-assets).
 
 ## Discharged
 

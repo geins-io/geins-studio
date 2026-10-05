@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Asset, UploadCompleteResult } from '#shared/types';
+import type { Asset, AssetLink, UploadCompleteResult } from '#shared/types';
 import {
   isReplaceExtensionAllowed,
   replaceErrorMessageKey,
@@ -12,9 +12,9 @@ import { useToast } from '@/components/ui/toast/use-toast';
  * Replace an asset's underlying file: drop/pick a single file, confirm, and
  * `assetApi.replace` overwrites the bytes in place — same id, path and
  * metadata. The path never changes, so the new file must keep the asset's
- * extension (or an alias). On success the asset is refetched (new `url`
- * version + etag) and emitted. Rendered inside the detail panel so it stays in
- * the panel's modal subtree.
+ * extension (or an alias). The warning counts the asset's usage links. On
+ * success the asset is refetched (new `url` version + etag) and emitted.
+ * Rendered inside the detail panel so it stays in the panel's modal subtree.
  */
 const props = defineProps<{ asset: Asset | null }>();
 const open = defineModel<boolean>('open', { default: false });
@@ -45,11 +45,32 @@ const extensionMismatch = computed(
     !isReplaceExtensionAllowed(props.asset.name, file.value.name),
 );
 
+// Only the count is shown — the panel behind the dialog already lists the links.
+const {
+  data: links,
+  status: linksStatus,
+  execute: loadLinks,
+} = useAsyncData<AssetLink[]>(
+  'asset-replace-links',
+  () => (props.asset ? assetApi.links(props.asset._id) : Promise.resolve([])),
+  { default: () => [], immediate: false },
+);
+// A floor, not a total: links don't cover use by URL, and a link can outlive
+// its target. Matching `assetId` drops a previous asset's still-cached read;
+// pending, failed (incl. 404 for a trashed asset) or empty all fall back to the
+// static warning.
+const linkCount = computed(() =>
+  linksStatus.value === 'success'
+    ? (links.value ?? []).filter((l) => l.assetId === props.asset?._id).length
+    : 0,
+);
+
 watch(open, (value) => {
   if (value) {
     file.value = null;
     failure.value = null;
     dragOver.value = false;
+    loadLinks();
   }
 });
 
@@ -127,7 +148,15 @@ async function replace() {
             {{ $t('asset_library.replacing_everywhere') }}
           </template>
           <template #description>
-            {{ $t('asset_library.replace_warning') }}
+            {{
+              linkCount
+                ? $t(
+                    'asset_library.replace_warning_count',
+                    { count: linkCount },
+                    linkCount,
+                  )
+                : $t('asset_library.replace_warning')
+            }}
           </template>
         </Feedback>
 
