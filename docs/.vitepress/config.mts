@@ -142,6 +142,10 @@ export default defineConfig({
               },
               { text: 'useAssetType', link: '/composables/useAssetType.md' },
               {
+                text: 'useAssetListFilters',
+                link: '/composables/useAssetListFilters.md',
+              },
+              {
                 text: 'useAssetPicker',
                 link: '/composables/useAssetPicker.md',
               },
