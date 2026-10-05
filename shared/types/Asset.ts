@@ -210,6 +210,17 @@ export interface UploadCompleteResponse {
   results: UploadCompleteResult[];
 }
 
+/**
+ * Body of `POST /media/assets/{id}/replace` — claims a one-file ticket that
+ * overwrites the asset's bytes in place. `fileName`'s extension must be the
+ * asset's own (or an alias for the same type); the path never changes.
+ */
+export interface AssetReplace {
+  fileName: string;
+  sizeBytes: number;
+  mimeType?: string;
+}
+
 /** Asset as returned by the API — base + identity + server-managed fields. */
 export interface Asset extends ResponseEntity<AssetBase> {
   /**
@@ -381,7 +392,8 @@ export type FolderDeleteAssets = 'move' | 'delete';
  * Feature availability for the shipped Geins.Media surface — the UI gates on
  * these so controls phase 1 can't fulfil disable cleanly instead of erroring.
  * Only still-gated features carry a flag: browse, upload, metadata `PATCH`,
- * `relocate`, `DELETE` + restore and usage links all ship, so they have none.
+ * `relocate`, `DELETE` + restore, replace and usage links all ship, so they
+ * have none.
  * Read via `assetCapabilities`.
  */
 export interface AssetCapabilities {
@@ -395,7 +407,6 @@ export interface AssetCapabilities {
    * is empty-only and answers `409 FOLDER_NOT_EMPTY` instead.
    */
   canDeleteFolderWithAssets: boolean;
-  canReplaceFile: boolean;
   /** Suggest existing tags from the distinct-tags source. */
   tagAutocomplete: boolean;
   /** Backend produces real thumbnails (`thumbUrl`); phase 1 returns null. */

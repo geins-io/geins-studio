@@ -112,6 +112,60 @@ export function uploadRejectionMessageKey(code: UploadRejectionCode): string {
   return UPLOAD_REJECTION_KEYS[code] ?? 'asset_library.upload_reject_generic';
 }
 
+// Extensions the backend treats as the same type. Replace keeps the asset's
+// path, so a new file must carry the asset's own extension or one of these
+// aliases — anything else is a 422 before a ticket is issued.
+const EXTENSION_ALIASES: readonly (readonly string[])[] = [
+  ['jpg', 'jpeg'],
+  ['tif', 'tiff'],
+  ['htm', 'html'],
+];
+
+/** Lower-cased extension of a file name, without the dot; `''` when none. */
+export function fileExtension(name: string): string {
+  const dot = name.lastIndexOf('.');
+  return dot > 0 ? name.slice(dot + 1).toLowerCase() : '';
+}
+
+/**
+ * Extensions (with the dot) a replacement file may carry for an asset: its own
+ * plus any alias for the same type. Empty when the asset name has no
+ * extension — then nothing is checked client-side and the backend decides.
+ */
+export function replaceExtensions(assetName: string): string[] {
+  const ext = fileExtension(assetName);
+  if (!ext) return [];
+  const group = EXTENSION_ALIASES.find((g) => g.includes(ext)) ?? [ext];
+  return group.map((e) => `.${e}`);
+}
+
+/** Whether `fileName` may replace the file of an asset named `assetName`. */
+export function isReplaceExtensionAllowed(
+  assetName: string,
+  fileName: string,
+): boolean {
+  const allowed = replaceExtensions(assetName);
+  return !allowed.length || allowed.includes(`.${fileExtension(fileName)}`);
+}
+
+/**
+ * i18n key for why `POST /media/assets/{id}/replace` refused before issuing a
+ * ticket: 404 (trashed / unknown), 409 (a move is running), 422 (extension or
+ * file name). Anything else gets the generic upload line.
+ */
+export function replaceErrorMessageKey(status: number): string {
+  switch (status) {
+    case 404:
+      return 'asset_library.replace_error_not_found';
+    case 409:
+      return 'asset_library.upload_reject_path_move_pending';
+    case 422:
+      return 'asset_library.replace_error_invalid_file';
+    default:
+      return 'asset_library.upload_reject_generic';
+  }
+}
+
 // Asset types a browser can render in an `<img>`; everything else gets a type
 // icon. `svg` is separate from `image` in AssetType but renders the same way.
 const PREVIEWABLE_TYPES = new Set<AssetType>(['image', 'svg']);
@@ -212,10 +266,10 @@ export function folderIdForSelection(selected: string | null): string | null {
 /**
  * Feature availability against the shipped Geins.Media surface. Phase 1 serves
  * browse + upload, `PATCH` (description/altText/localizations), `POST …/
- * relocate` (rename + move), `DELETE` (+ restore) and usage links — all
- * unconditional, so none of them carry a flag. Tags, channels, replace,
- * thumbnails, tag autocomplete and the folder-delete asset disposition stay off
- * until phase 2. Pure so it can be unit-tested and reused by
+ * relocate` (rename + move), `DELETE` (+ restore), replace and usage links —
+ * all unconditional, so none of them carry a flag. Tags, channels, thumbnails,
+ * tag autocomplete and the folder-delete asset disposition stay off until
+ * phase 2. Pure so it can be unit-tested and reused by
  * `useAssetCapabilities`.
  *
  * cutover: REVISIT@phase2 — the whole capability mechanism is temporary; remove
@@ -227,7 +281,6 @@ export function assetCapabilities(): AssetCapabilities {
     canEditTags: false,
     canEditChannels: false,
     canDeleteFolderWithAssets: false,
-    canReplaceFile: false,
     tagAutocomplete: false,
     hasThumbnails: false,
   };

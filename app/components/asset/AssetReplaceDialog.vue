@@ -1,12 +1,20 @@
 <script setup lang="ts">
 import type { Asset } from '#shared/types';
+import {
+  isReplaceExtensionAllowed,
+  replaceErrorMessageKey,
+  replaceExtensions,
+  uploadRejectionMessageKey,
+} from '#shared/utils/asset';
 import { useToast } from '@/components/ui/toast/use-toast';
 
 /**
  * Replace an asset's underlying file: drop/pick a single file, confirm, and
- * `assetApi.replace` swaps it while keeping the same asset id + metadata. The
- * updated asset is emitted so the opener can refresh its preview. Rendered
- * inside the detail panel so it stays in the panel's modal subtree.
+ * `assetApi.replace` overwrites the bytes in place — same id, path and
+ * metadata. The path never changes, so the new file must keep the asset's
+ * extension (or an alias). On success the asset is refetched (new `url`
+ * version + etag) and emitted. Rendered inside the detail panel so it stays in
+ * the panel's modal subtree.
  */
 const props = defineProps<{ asset: Asset | null }>();
 const open = defineModel<boolean>('open', { default: false });
@@ -21,17 +29,36 @@ const file = ref<File | null>(null);
 const replacing = ref(false);
 const dragOver = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
+// i18n key for why the last attempt failed; the original file is kept either
+// way (a rejected replacement is rolled back server-side).
+const failure = ref<string | null>(null);
+
+const allowedExtensions = computed(() =>
+  replaceExtensions(props.asset?.name ?? ''),
+);
+const extensionList = computed(() => allowedExtensions.value.join(', '));
+// A drop bypasses the input's `accept`, so the extension is re-checked here.
+const extensionMismatch = computed(
+  () =>
+    !!file.value &&
+    !!props.asset &&
+    !isReplaceExtensionAllowed(props.asset.name, file.value.name),
+);
 
 watch(open, (value) => {
   if (value) {
     file.value = null;
+    failure.value = null;
     dragOver.value = false;
   }
 });
 
 function pickFile(list: FileList | null | undefined) {
   const next = list?.[0];
-  if (next) file.value = next;
+  if (next) {
+    file.value = next;
+    failure.value = null;
+  }
 }
 function onDrop(event: DragEvent) {
   dragOver.value = false;
@@ -44,17 +71,31 @@ function onPick(event: Event) {
 }
 
 async function replace() {
-  if (!props.asset || !file.value) return;
+  if (!props.asset || !file.value || extensionMismatch.value) return;
+  const id = props.asset._id;
   replacing.value = true;
-  const form = new FormData();
-  form.append('file', file.value);
+  failure.value = null;
   try {
-    const updated = await assetApi.replace(props.asset._id, form);
+    // Failures are explained inline next to the file, not as a global toast.
+    const result = await assetApi.replace(id, file.value, {
+      suppressErrorToast: true,
+    });
+    if (result.status === 'rejected') {
+      failure.value = uploadRejectionMessageKey(result.code);
+      return;
+    }
+    // Refetch so the preview picks up the new `url` version and the next PATCH
+    // sends the new etag; the completed row is the fallback.
+    const updated = await assetApi.get(id).catch(() => result.file);
     await refreshNuxtData('asset-library-list');
-    toast({ title: t('asset_library.file_replaced'), variant: 'positive' });
+    toast({
+      title: t('entity_replaced', { entityKey: 'file' }),
+      variant: 'positive',
+    });
     emit('replaced', updated);
     open.value = false;
   } catch (error) {
+    failure.value = replaceErrorMessageKey(getErrorStatus(error));
     geinsLogError('replace', getErrorMessage(error));
   } finally {
     replacing.value = false;
@@ -97,12 +138,45 @@ async function replace() {
             {{ $t('asset_library.drop_file_here') }}
           </span>
           <span class="text-muted-foreground text-xs">
-            {{ $t('asset_library.upload_accepted_types') }}
+            {{
+              extensionList
+                ? $t('asset_library.replace_accepted_types', {
+                    extensions: extensionList,
+                  })
+                : $t('asset_library.upload_accepted_types')
+            }}
           </span>
         </button>
-        <input ref="fileInput" type="file" class="hidden" @change="onPick" />
+        <input
+          ref="fileInput"
+          type="file"
+          class="hidden"
+          :accept="extensionList || undefined"
+          @change="onPick"
+        />
 
         <AssetFileRow v-if="file" :file="file" @remove="file = null" />
+
+        <Feedback v-if="extensionMismatch" type="negative">
+          <template #title>
+            {{ $t('asset_library.replace_extension_mismatch_title') }}
+          </template>
+          <template #description>
+            {{
+              $t('asset_library.replace_extension_mismatch', {
+                extensions: extensionList,
+              })
+            }}
+          </template>
+        </Feedback>
+        <Feedback v-else-if="failure" type="negative">
+          <template #title>
+            {{ $t('asset_library.replace_failed') }}
+          </template>
+          <template #description>
+            {{ $t(failure) }} {{ $t('asset_library.replace_original_kept') }}
+          </template>
+        </Feedback>
       </div>
 
       <DialogFooter class="sm:justify-between">
@@ -112,7 +186,7 @@ async function replace() {
         <ButtonIcon
           icon="RefreshCw"
           :loading="replacing"
-          :disabled="!file"
+          :disabled="!file || extensionMismatch"
           @click="replace"
         >
           {{ $t('asset_library.replace_everywhere') }}

@@ -243,17 +243,126 @@ describe('assetRepo', () => {
         errorContext: { action: 'updating', entity: 'asset' },
       });
     });
+  });
 
-    it('replace POSTs the form data to /media/assets/:id/replace', async () => {
-      const form = new FormData();
-      form.append('file', new File(['x'], 'b.jpg', { type: 'image/jpeg' }));
-      mockFetch.mockResolvedValue({ _id: '1', _type: 'asset' });
-      await api.replace('1', form);
-      expect(mockFetch).toHaveBeenCalledWith('/media/assets/1/replace', {
+  describe('replace → /media/assets/:id/replace', () => {
+    const ticket = (result: object) => ({
+      ticketId: 't1',
+      expiresAt: 'x',
+      results: [result],
+    });
+
+    it('claims a replace ticket with a JSON body, PUTs the bytes, completes', async () => {
+      const put = vi.fn().mockResolvedValue({ ok: true });
+      vi.stubGlobal('fetch', put);
+      mockFetch
+        .mockResolvedValueOnce(
+          ticket({
+            clientRef: '1',
+            status: 'accepted',
+            assetId: '1',
+            upload: { mode: 'single', url: 'https://blob/1' },
+          }),
+        )
+        .mockResolvedValueOnce({
+          results: [
+            { clientRef: '1', status: 'completed', file: { _id: '1' } },
+          ],
+        });
+
+      const file = new File(['xy'], 'b.jpg', { type: 'image/jpeg' });
+      const out = await api.replace('1', file);
+
+      expect(mockFetch).toHaveBeenNthCalledWith(1, '/media/assets/1/replace', {
         method: 'POST',
-        body: form,
+        body: { fileName: 'b.jpg', sizeBytes: 2, mimeType: 'image/jpeg' },
         errorContext: { action: 'updating', entity: 'asset' },
       });
+      expect(put).toHaveBeenCalledWith(
+        'https://blob/1',
+        expect.objectContaining({
+          method: 'PUT',
+          body: file,
+          headers: {
+            'content-type': 'image/jpeg',
+            'x-ms-blob-type': 'BlockBlob',
+            'x-ms-blob-content-type': 'image/jpeg',
+          },
+        }),
+      );
+      expect(mockFetch).toHaveBeenNthCalledWith(
+        2,
+        '/media/tickets/t1/complete',
+        {
+          method: 'POST',
+          body: { files: ['1'] },
+          errorContext: { action: 'updating', entity: 'asset' },
+        },
+      );
+      expect(out).toEqual({
+        clientRef: '1',
+        status: 'completed',
+        file: { _id: '1' },
+      });
+      vi.unstubAllGlobals();
+    });
+
+    it('returns a completion rejection and forwards fetch options', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
+      mockFetch
+        .mockResolvedValueOnce(
+          ticket({
+            clientRef: '1',
+            status: 'accepted',
+            assetId: '1',
+            upload: { mode: 'single', url: 'https://blob/1' },
+          }),
+        )
+        .mockResolvedValueOnce({
+          results: [
+            {
+              clientRef: '1',
+              status: 'rejected',
+              code: 'FILE_TYPE_NOT_ALLOWED',
+              message: 'nope',
+            },
+          ],
+        });
+
+      const out = await api.replace(
+        '1',
+        new File(['x'], 'b.jpg', { type: 'image/jpeg' }),
+        { suppressErrorToast: true },
+      );
+
+      expect(out).toMatchObject({
+        status: 'rejected',
+        code: 'FILE_TYPE_NOT_ALLOWED',
+      });
+      expect(mockFetch).toHaveBeenNthCalledWith(
+        1,
+        '/media/assets/1/replace',
+        expect.objectContaining({ suppressErrorToast: true }),
+      );
+      expect(mockFetch).toHaveBeenNthCalledWith(
+        2,
+        '/media/tickets/t1/complete',
+        expect.objectContaining({ suppressErrorToast: true }),
+      );
+      vi.unstubAllGlobals();
+    });
+
+    it('lets a refused claim (404 / 409 / 422) throw before any upload', async () => {
+      const put = vi.fn();
+      vi.stubGlobal('fetch', put);
+      mockFetch.mockRejectedValueOnce({ status: 422 });
+
+      await expect(
+        api.replace('1', new File(['x'], 'b.png', { type: 'image/png' })),
+      ).rejects.toEqual({ status: 422 });
+      expect(put).not.toHaveBeenCalled();
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      vi.unstubAllGlobals();
     });
   });
 

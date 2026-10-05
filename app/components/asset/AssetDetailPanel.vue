@@ -242,6 +242,13 @@ async function handleSave() {
   }
 }
 
+// A replace changes the etag, and the open-time seed would otherwise make the
+// next save fail its precondition (412).
+function onReplaced(updated: Asset) {
+  etag.value = updated.etag ?? null;
+  emit('replaced', updated);
+}
+
 // Discard the stale local copy and reload: the list refresh re-fetches with the
 // current etag, so reopening the panel edits fresh data.
 function handleReloadStale() {
@@ -343,7 +350,6 @@ async function handleDelete() {
           variant="outline"
           size="sm"
           class="flex-1 bg-transparent dark:bg-transparent"
-          :disabled="!caps.canReplaceFile"
           @click="replaceOpen = true"
         >
           {{ $t('replace') }}
@@ -510,7 +516,7 @@ async function handleDelete() {
       <AssetReplaceDialog
         v-model:open="replaceOpen"
         :asset="asset"
-        @replaced="emit('replaced', $event)"
+        @replaced="onReplaced"
       />
 
       <DialogDelete
