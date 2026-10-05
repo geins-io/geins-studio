@@ -44,4 +44,4 @@ The read uses `useAsyncData` under the stable key `asset-links`, watched on `ass
 
 ## Not included
 
-Manual linking and unlinking (`POST` / `DELETE .../links`) are not wired — Studio has no product edit page to drive them from. The [replace dialog](/components/asset/AssetReplaceDialog.md)'s "used everywhere" warning is still static — it is not yet fed from these links.
+Manual linking and unlinking (`POST` / `DELETE .../links`) are not wired — Studio has no product edit page to drive them from. The [replace dialog](/components/asset/AssetReplaceDialog.md) reads the same endpoint to count these links in its "used everywhere" warning.

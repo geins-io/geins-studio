@@ -1777,6 +1777,7 @@
     "replace_file_hint": "Upload a new file to replace this one. The asset keeps its name, metadata, and references.",
     "replacing_everywhere": "Replacing everywhere",
     "replace_warning": "Replacing the file updates this asset everywhere it's used.",
+    "replace_warning_count": "This asset is linked in {count} place. Replacing the file updates it everywhere it's used. | This asset is linked in {count} places. Replacing the file updates it everywhere it's used.",
     "replace_everywhere": "Replace everywhere",
     "replace_accepted_types": "{extensions} files only",
     "replace_extension_mismatch_title": "This file type can't be used",
