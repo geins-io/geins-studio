@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { useMediaQuery } from '@vueuse/core';
-import type { Asset, AssetListFilters, ListSort } from '#shared/types';
+import type {
+  Asset,
+  AssetListFilters,
+  BulkAction,
+  BulkRunResult,
+  ListSort,
+} from '#shared/types';
 import { TableMode } from '#shared/types';
 import {
   assetListOptions,
@@ -12,6 +18,7 @@ import {
 import { ENTITIES } from '#shared/utils/entities';
 import { formatFileSize } from '#shared/utils/file';
 import { serializeSort } from '#shared/utils/list-query';
+import { useToast } from '@/components/ui/toast/use-toast';
 import { cn, segmentedButtonClass } from '@/utils/index';
 import type { ColumnDef } from '@tanstack/vue-table';
 
@@ -29,6 +36,8 @@ const entityKey = ENTITIES.asset.key;
 const route = useRoute();
 const router = useRouter();
 const { formatRelativeDate } = useDate();
+const { toast } = useToast();
+const { geinsLogError } = useGeinsLog('pages/asset-library');
 
 // Trash lists most recently trashed first. Its date fields mean nothing on a
 // live folder, so leaving trash drops them.
@@ -118,6 +127,7 @@ const {
   page,
   pageSize,
   sort,
+  search,
   searchInput,
   filters,
   resetFilters,
@@ -205,6 +215,7 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
     ? ['deletedAt', 'purgeAfter']
     : ['updatedAt'];
   const cols = getColumns(rows, {
+    selectable: !isTrash.value,
     includeColumns: [
       'name',
       'type',
@@ -334,6 +345,7 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
   });
 
   const order = [
+    'select',
     'thumb',
     'name',
     'type',
@@ -358,6 +370,107 @@ watch(
   },
   { immediate: true },
 );
+
+// Bulk selection — one id list for both views, so it survives view switches,
+// paging, sort, search and filters (the bar counts the selection, not the rows
+// on screen). A folder change clears it: the actions assume one scope. Trash
+// has no bulk actions yet, so it has no selection either.
+const selectedIds = ref<string[]>([]);
+const selectedSet = computed(() => new Set(selectedIds.value));
+const selectable = computed(() => !isTrash.value);
+// Select-all in a folder also takes its subfolders' assets (the folder query
+// includes them); the confirm step says so.
+const selectedWithSubfolders = ref(false);
+
+const clearSelection = () => {
+  selectedIds.value = [];
+};
+watch(selectedFolder, clearSelection);
+watch(selectedIds, (ids) => {
+  if (!ids.length) selectedWithSubfolders.value = false;
+});
+
+function toggleSelect(id: string) {
+  selectedIds.value = selectedSet.value.has(id)
+    ? selectedIds.value.filter((selected) => selected !== id)
+    : [...selectedIds.value, id];
+}
+
+const pageIds = computed(() => items.value.map((asset) => asset._id));
+const pageSelected = computed(
+  () =>
+    pageIds.value.length > 0 &&
+    pageIds.value.every((id) => selectedSet.value.has(id)),
+);
+const pageCheckState = computed<boolean | 'indeterminate'>(() => {
+  if (pageSelected.value) return true;
+  return pageIds.value.some((id) => selectedSet.value.has(id))
+    ? 'indeterminate'
+    : false;
+});
+function togglePage() {
+  const onPage = new Set(pageIds.value);
+  selectedIds.value = pageSelected.value
+    ? selectedIds.value.filter((id) => !onPage.has(id))
+    : [...new Set([...selectedIds.value, ...pageIds.value])];
+}
+
+const canSelectAll = computed(
+  () => pageSelected.value && selectedIds.value.length < total.value,
+);
+const selectingAll = ref(false);
+async function selectAllMatching() {
+  selectingAll.value = true;
+  try {
+    const ids = await assetApi.matchingIds(
+      {
+        page: 1,
+        pageSize: pageSize.value,
+        sort: sort.value,
+        search: search.value,
+        filters: toQueryFilters(filters.value),
+      },
+      assetListOptions(selectedFolder.value),
+    );
+    selectedIds.value = [...new Set([...selectedIds.value, ...ids])];
+    selectedWithSubfolders.value =
+      !!selectedFolder.value && selectedFolder.value !== ROOT_FOLDER_KEY;
+  } catch (err) {
+    geinsLogError('selectAllMatching', getErrorMessage(err));
+    toast({
+      title: t('error_fetching_entity', { entityKey }, 2),
+      variant: 'negative',
+    });
+  } finally {
+    selectingAll.value = false;
+  }
+}
+
+const bulkSheetOpen = ref(false);
+const bulkTrashOpen = ref(false);
+const trashAction = computed<BulkAction>(() => ({
+  key: 'move-to-trash',
+  label: t('asset_library.move_to_trash'),
+  icon: 'Trash2',
+  destructive: true,
+  note: () =>
+    t('asset_library.bulk_trash_note', { days: TRASH_RETENTION_DAYS }),
+  run: (ids, _value, options) => assetApi.bulkDelete(ids, options),
+  successMessage: (count) =>
+    t('asset_library.bulk_moved_to_trash', { count }, count),
+}));
+const bulkActions = computed(() => [trashAction.value]);
+const bulkScopeNote = computed(() =>
+  selectedWithSubfolders.value
+    ? t('asset_library.bulk_includes_subfolders')
+    : undefined,
+);
+
+// Failed chunks stay selected so the user can retry just those.
+async function onBulkDone(result: BulkRunResult) {
+  selectedIds.value = result.failed;
+  await refresh();
+}
 
 function openAsset(asset: Asset) {
   detailAsset.value = asset;
@@ -454,6 +567,23 @@ async function confirmDelete() {
 
   <ListFilterSheet v-model:open="filterSheetOpen" :list-filters="listFilters" />
 
+  <ListBulkActionSheet
+    v-model:open="bulkSheetOpen"
+    :actions="bulkActions"
+    :ids="selectedIds"
+    :entity-key="entityKey"
+    :scope-note="bulkScopeNote"
+    @done="onBulkDone"
+  />
+  <ListBulkActionConfirm
+    v-model:open="bulkTrashOpen"
+    :action="trashAction"
+    :ids="selectedIds"
+    :entity-key="entityKey"
+    :scope-note="bulkScopeNote"
+    @done="onBulkDone"
+  />
+
   <!-- Toolbar: folder toggle + search + filters (left), view toggle (right) -->
   <div class="flex flex-wrap items-center gap-2">
     <Button
@@ -476,6 +606,29 @@ async function confirmDelete() {
       class="order-3 w-full sm:order-1 sm:w-auto"
       @open-all="filterSheetOpen = true"
     />
+    <ListBulkBar
+      v-if="selectable && selectedIds.length"
+      :count="selectedIds.length"
+      :total="total"
+      :can-select-all="canSelectAll"
+      :selecting-all="selectingAll"
+      class="order-4 w-full sm:order-1 sm:w-auto"
+      @select-all="selectAllMatching"
+      @clear="clearSelection"
+    >
+      <Button variant="link" size="sm" @click="bulkSheetOpen = true">
+        {{ $t('choose_action') }}
+      </Button>
+      <Button
+        variant="link"
+        size="sm"
+        class="gap-1"
+        @click="bulkTrashOpen = true"
+      >
+        <LucideTrash2 class="size-3.5" aria-hidden="true" />
+        {{ $t('asset_library.move_to_trash') }}
+      </Button>
+    </ListBulkBar>
     <ButtonGroup class="order-1 ml-auto sm:order-2">
       <Button
         variant="outline"
@@ -537,6 +690,7 @@ async function confirmDelete() {
     >
       <NuxtErrorBoundary>
         <TableView
+          v-model:selected-ids="selectedIds"
           v-model:pagination="pagination"
           v-model:sorting="sorting"
           :loading="loading"
@@ -561,10 +715,21 @@ async function confirmDelete() {
 
     <!-- GRID VIEW: only the grid body scrolls; pagination is a fixed footer -->
     <div v-else class="flex min-h-0 min-w-0 flex-1 flex-col">
+      <label
+        v-if="selectable && !loading && !fetchError && items.length"
+        class="text-muted-foreground flex w-fit cursor-pointer items-center gap-2 pb-3 text-xs"
+      >
+        <Checkbox
+          :model-value="pageCheckState"
+          data-test="asset-grid-select-page"
+          @update:model-value="togglePage"
+        />
+        {{ $t('select_all_on_page') }}
+      </label>
       <div class="min-h-0 flex-1 overflow-y-auto pb-4">
         <div
           v-if="loading"
-          class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4 sm:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]"
+          class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4 p-0.5 sm:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]"
         >
           <Skeleton
             v-for="n in 8"
@@ -612,7 +777,7 @@ async function confirmDelete() {
 
         <div
           v-else
-          class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4 sm:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]"
+          class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4 p-0.5 sm:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]"
         >
           <AssetCard
             v-for="asset in items"
@@ -620,11 +785,15 @@ async function confirmDelete() {
             :asset="asset"
             :folder-name="folderName(asset.folderId)"
             :trashed="isTrash"
+            :selectable="selectable"
+            :select-on-click="false"
+            :selected="selectedSet.has(asset._id)"
             @open="openAsset(asset)"
             @download="download(asset)"
             @copy-url="copyUrl(asset)"
             @delete="requestDelete(asset)"
             @restore="restore(asset)"
+            @toggle-select="toggleSelect(asset._id)"
           />
         </div>
       </div>

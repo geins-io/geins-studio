@@ -17,3 +17,4 @@ export * from './Workflow';
 export * from './Asset';
 export * from './ListFilter';
 export * from './ListQuery';
+export * from './Bulk';

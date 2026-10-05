@@ -235,6 +235,67 @@ describe('assetRepo', () => {
       });
     });
 
+    describe('matchingIds', () => {
+      const state = {
+        page: 3,
+        pageSize: 24,
+        sort: null,
+        search: 'logo',
+        filters: {},
+      };
+      const batch = (page: number, pageCount: number, ids: string[]) => ({
+        _id: 'b1',
+        page,
+        pageSize: 1000,
+        totalItemCount: 0,
+        pageCount,
+        items: ids.map((_id) => ({ _id })),
+      });
+
+      it('pages the same batch at the cap and collects every id', async () => {
+        mockFetch
+          .mockResolvedValueOnce(batch(1, 2, ['a1', 'a2']))
+          .mockResolvedValueOnce(batch(2, 2, ['a3']));
+        await expect(
+          api.matchingIds(state, { folderId: 'f1' }),
+        ).resolves.toEqual(['a1', 'a2', 'a3']);
+        expect(mockFetch).toHaveBeenCalledTimes(2);
+        // The list's own page / pageSize are replaced; scope + search kept.
+        expect(mockFetch.mock.calls[0][1]).toEqual({
+          method: 'POST',
+          body: {
+            folderIds: ['f1'],
+            includeSubfolders: true,
+            search: 'logo',
+            page: 1,
+            pageSize: 1000,
+          },
+          suppressErrorToast: true,
+        });
+        expect(mockFetch.mock.calls[1][1].body).toMatchObject({
+          _id: 'b1',
+          page: 2,
+        });
+      });
+
+      it('stops on an empty page', async () => {
+        mockFetch.mockResolvedValueOnce(batch(1, 5, []));
+        await expect(api.matchingIds(state)).resolves.toEqual([]);
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    it('bulkDelete POSTs the ids to /media/assets/bulk-delete', async () => {
+      mockFetch.mockResolvedValue(null);
+      await api.bulkDelete(['a1', 'a2'], { suppressErrorToast: true });
+      expect(mockFetch).toHaveBeenCalledWith('/media/assets/bulk-delete', {
+        method: 'POST',
+        body: { assetIds: ['a1', 'a2'] },
+        errorContext: { action: 'deleting', entity: 'asset' },
+        suppressErrorToast: true,
+      });
+    });
+
     it('restore POSTs to /media/assets/:id/restore', async () => {
       mockFetch.mockResolvedValue(null);
       await api.restore('1');

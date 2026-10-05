@@ -62,6 +62,7 @@ export default defineConfig({
             text: 'API ',
             items: [
               { text: 'useBatchQuery', link: '/composables/useBatchQuery.md' },
+              { text: 'useBulkRunner', link: '/composables/useBulkRunner.md' },
               { text: 'useGeinsApi', link: '/composables/useGeinsApi.md' },
               {
                 text: 'useGeinsRepository',
@@ -434,6 +435,24 @@ export default defineConfig({
                     link: '/components/form/input/FormInputTagsSearch.md',
                   },
                 ],
+              },
+            ],
+          },
+          {
+            text: 'List bulk actions',
+            collapsed: true,
+            items: [
+              {
+                text: 'ListBulkBar',
+                link: '/components/list/bulk/ListBulkBar.md',
+              },
+              {
+                text: 'ListBulkActionSheet',
+                link: '/components/list/bulk/ListBulkActionSheet.md',
+              },
+              {
+                text: 'ListBulkActionConfirm',
+                link: '/components/list/bulk/ListBulkActionConfirm.md',
               },
             ],
           },
