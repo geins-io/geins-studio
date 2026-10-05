@@ -49,6 +49,14 @@ Selection-only mode. When `true`, every folder **mutation** control is gated off
 
 The [`AssetPickerPanel`](/components/asset/AssetPickerPanel) passes `readonly` so a user browsing to pick an asset can't accidentally create or delete folders — folder management stays on the asset library page, which renders the tree with actions on (the default).
 
+### `hideAll`
+
+```ts
+hideAll?: boolean // default: false
+```
+
+Hides the **All assets** entry, for when the tree picks a destination rather than a browse scope (an asset can't be moved to "all"). With `readonly` the tree then offers only real folders and **Uncategorised** (`ROOT_FOLDER_KEY`). Used by [`AssetBulkMoveFolder`](/components/asset/AssetBulkMoveFolder).
+
 ## Deleting a folder
 
 Which delete flow runs is gated on `useAssetCapabilities().canDeleteFolderWithAssets`:

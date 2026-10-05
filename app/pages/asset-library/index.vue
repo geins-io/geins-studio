@@ -10,6 +10,7 @@ import type {
 import { TableMode } from '#shared/types';
 import {
   assetListOptions,
+  bulkMoveErrorKey,
   folderIdForSelection,
   ROOT_FOLDER_KEY,
   TRASH_KEY,
@@ -458,7 +459,41 @@ const trashAction = computed<BulkAction>(() => ({
   successMessage: (count) =>
     t('asset_library.bulk_moved_to_trash', { count }, count),
 }));
-const bulkActions = computed(() => [trashAction.value]);
+const AssetBulkMoveFolder = resolveComponent('AssetBulkMoveFolder');
+// The value is the folder tree's selection (a folder id or ROOT_FOLDER_KEY).
+// A 202 means the copies are still landing, so the refresh after the run may
+// still show some assets in their old folder.
+const moveAction = computed<BulkAction<string | null>>(() => ({
+  key: 'move-to-folder',
+  label: t('asset_library.move_to_folder'),
+  icon: 'FolderInput',
+  component: AssetBulkMoveFolder,
+  initialValue: () => null,
+  isValid: (value) => !!value && value !== TRASH_KEY,
+  summary: (value) =>
+    value === ROOT_FOLDER_KEY
+      ? t('asset_library.uncategorised')
+      : (folderName(value) ?? ''),
+  note: () => t('asset_library.bulk_move_url_description'),
+  describeError: (error) => {
+    const key = bulkMoveErrorKey(
+      getErrorStatus(error),
+      getApiErrorTitle(error),
+    );
+    return key ? t(`asset_library.${key}`) : undefined;
+  },
+  run: (ids, value, options) =>
+    assetApi.bulkMove(ids, folderIdForSelection(value), options),
+  // Every chunk answering 204 means nothing had to move.
+  successMessage: (count, responses) =>
+    responses.every((response) => response === null)
+      ? t('asset_library.bulk_already_in_folder')
+      : t('asset_library.bulk_moved_to_folder', { count }, count),
+}));
+const bulkActions = computed<BulkAction[]>(() => [
+  moveAction.value,
+  trashAction.value,
+]);
 const bulkScopeNote = computed(() =>
   selectedWithSubfolders.value
     ? t('asset_library.bulk_includes_subfolders')

@@ -38,7 +38,18 @@ describe('runInChunks', () => {
     const result = await runInChunks(ids(5), call, 2);
     expect(call).toHaveBeenCalledTimes(3);
     expect(order).toEqual(['a0', 'a2', 'a4']);
-    expect(result).toEqual({ succeeded: ids(5), failed: [], errors: [] });
+    expect(result).toEqual({
+      succeeded: ids(5),
+      failed: [],
+      errors: [],
+      responses: [undefined, undefined, undefined],
+    });
+  });
+
+  it("collects each successful chunk's response", async () => {
+    const call = vi.fn(async (chunk: string[]) => ({ first: chunk[0] }));
+    const result = await runInChunks(ids(3), call, 2);
+    expect(result.responses).toEqual([{ first: 'a0' }, { first: 'a2' }]);
   });
 
   it('fails a whole chunk when its call rejects and keeps going', async () => {
@@ -59,6 +70,7 @@ describe('runInChunks', () => {
       succeeded: [],
       failed: [],
       errors: [],
+      responses: [],
     });
     expect(call).not.toHaveBeenCalled();
   });

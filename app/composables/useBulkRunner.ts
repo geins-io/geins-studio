@@ -16,6 +16,7 @@ export interface UseBulkRunnerReturnType {
  * Chunked runner for bulk actions. A single chunk leaves a failure to the global
  * API error toast; several chunks silence it per call and give one summary
  * toast ("X of N updated") instead, so a long run can't stack a toast per chunk.
+ * An action with `describeError` always owns its failure toast.
  */
 export function useBulkRunner(): UseBulkRunnerReturnType {
   const { t } = useI18n();
@@ -29,7 +30,8 @@ export function useBulkRunner(): UseBulkRunnerReturnType {
     entityKey: string,
   ): Promise<BulkRunResult> {
     const multi = chunkIds(ids).length > 1;
-    const options = multi ? { suppressErrorToast: true } : {};
+    const ownsErrors = !!action.describeError;
+    const options = multi || ownsErrors ? { suppressErrorToast: true } : {};
     const result = await runInChunks(ids, (chunk) =>
       action.run(chunk, value, options),
     );
@@ -40,17 +42,26 @@ export function useBulkRunner(): UseBulkRunnerReturnType {
     }
 
     if (!result.failed.length) {
-      toast({ title: action.successMessage(total), variant: 'positive' });
-    } else if (multi) {
-      // Title only: a 404's detail is the raw list of refused ids.
-      const reason = getApiErrorTitle(result.errors[0]);
       toast({
-        title: t(
-          'bulk_action_partial',
-          { succeeded: result.succeeded.length, total, entityKey },
-          total,
-        ),
-        description: composeErrorMessage(reason, t('bulk_action_failed_kept')),
+        title: action.successMessage(total, result.responses),
+        variant: 'positive',
+      });
+    } else if (multi || ownsErrors) {
+      // Never the detail: the bulk routes list the refused ids there.
+      const firstError = result.errors[0];
+      const reason =
+        action.describeError?.(firstError) ?? getApiErrorTitle(firstError);
+      toast({
+        title: multi
+          ? t(
+              'bulk_action_partial',
+              { succeeded: result.succeeded.length, total, entityKey },
+              total,
+            )
+          : t('bulk_action_failed'),
+        description: multi
+          ? composeErrorMessage(reason, t('bulk_action_failed_kept'))
+          : reason,
         variant: 'negative',
       });
     }

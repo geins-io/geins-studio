@@ -11,6 +11,7 @@ import type {
   AssetRelocate,
   AssetUpdate,
   AssetApiOptions,
+  AssetBulkMove,
   BatchQueryResult,
   Folder,
   FolderCreate,
@@ -365,6 +366,30 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         errorContext: { action: 'deleting', entity: ENTITIES.asset.key },
         ...fetchOptions,
       });
+    },
+
+    /**
+     * Move up to 100 assets into one folder — real `POST /media/assets/bulk-move`.
+     * `folderId: null` is the library root. Usually `202` with a `moveId` (the
+     * copies land in the background, so refresh rather than trust the list);
+     * `204` (→ `null`) when every asset already sits in the folder. All or
+     * nothing; a 409's problem title says which conflict refused it.
+     */
+    async bulkMove(
+      assetIds: string[],
+      folderId: string | null,
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<AssetBulkMove | null> {
+      const res = await fetch<AssetBulkMove | null | undefined>(
+        `${ENTITIES.asset.endpoint}/bulk-move`,
+        {
+          method: 'POST',
+          body: { assetIds, folderId },
+          errorContext: { action: 'updating', entity: ENTITIES.asset.key },
+          ...fetchOptions,
+        },
+      );
+      return res && typeof res === 'object' && 'moveId' in res ? res : null;
     },
 
     /**

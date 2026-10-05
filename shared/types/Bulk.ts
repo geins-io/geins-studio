@@ -11,6 +11,8 @@ export interface BulkRunResult {
   failed: string[];
   /** One entry per failed chunk, in run order. */
   errors: unknown[];
+  /** What each successful chunk's call resolved to, in run order. */
+  responses: unknown[];
 }
 
 /**
@@ -23,8 +25,12 @@ export interface BulkAction<TValue = unknown> {
   label: string;
   /** Lucide icon name, resolved with `useLucideIcon`. */
   icon: string;
-  /** Properties pane, bound with `v-model` to the action's value. Omit when the action takes no input. */
-  component?: Component;
+  /**
+   * Properties pane, bound with `v-model` to the action's value. Omit when the
+   * action takes no input. A `string` is accepted because `resolveComponent`
+   * can return the name when unresolved.
+   */
+  component?: Component | string;
   componentProps?: Record<string, unknown>;
   /** Fresh value each time the action is picked. */
   initialValue?(): TValue;
@@ -36,12 +42,17 @@ export interface BulkAction<TValue = unknown> {
   note?(value: TValue): string | undefined;
   /** Destructive styling on the confirm button. */
   destructive?: boolean;
+  /**
+   * Friendly reason for a refused call. When set, the global API error toast is
+   * silenced for every chunk and the runner toasts this instead.
+   */
+  describeError?(error: unknown): string | undefined;
   /** One chunk's request. Let errors propagate. */
   run(
     ids: string[],
     value: TValue,
     options: BulkRunFetchOptions,
   ): Promise<unknown>;
-  /** Success toast title for `count` ids. */
-  successMessage(count: number): string;
+  /** Success toast title for `count` ids; `responses` are the chunks' results. */
+  successMessage(count: number, responses: unknown[]): string;
 }
