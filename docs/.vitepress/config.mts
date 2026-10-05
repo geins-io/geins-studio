@@ -253,6 +253,10 @@ export default defineConfig({
             items: [
               { text: 'AssetCard', link: '/components/asset/AssetCard.md' },
               {
+                text: 'AssetCardSkeleton',
+                link: '/components/asset/AssetCardSkeleton.md',
+              },
+              {
                 text: 'AssetPicker',
                 link: '/components/asset/AssetPicker.md',
               },
