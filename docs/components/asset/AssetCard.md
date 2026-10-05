@@ -46,7 +46,15 @@ Resolved folder name — the asset only carries `folderId`, so the page resolves
 selectable?: boolean; // default false
 ```
 
-Picker mode. Renders a selection checkbox over the thumbnail (top-left) and makes the thumbnail + name toggle selection (emitting [`toggle-select`](#toggle-select)) instead of opening. Omitted → the default library tile.
+Renders a selection checkbox over the thumbnail (top-left; shown on hover, focus or while selected). With [`selectOnClick`](#selectonclick) (the default, picker mode) the thumbnail + name toggle selection too, instead of opening. Omitted → no checkbox.
+
+### `selectOnClick`
+
+```ts
+selectOnClick?: boolean; // default true
+```
+
+Only with `selectable`. `true` (asset picker): the whole tile toggles selection. `false` (library bulk selection): only the checkbox toggles, and the tile still opens the detail panel.
 
 ### `selected`
 
@@ -94,7 +102,7 @@ Request deletion — the page opens the confirm dialog for this asset.
 
 ### `toggle-select`
 
-Emitted in `selectable` mode from the checkbox, the thumbnail, or the name — the picker adds/removes the asset from its selection.
+Emitted in `selectable` mode from the checkbox (and, with `selectOnClick`, the thumbnail or the name). The parent adds/removes the asset from its selection.
 
 ## List-view selection
 

@@ -256,7 +256,6 @@ function buildListColumns(rows: Asset[]): ColumnDef<Asset>[] {
     cell: ({ table, row }) =>
       h(TableCellAssetThumbnail, {
         type: row.original.type,
-        thumbUrl: row.original.thumbUrl,
         url: row.original.url,
         alt: row.original.name,
         className: getBasicCellStyle(table),
@@ -503,11 +502,7 @@ async function confirmSelection() {
                 v-if="loading"
                 class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))]"
               >
-                <Skeleton
-                  v-for="n in 8"
-                  :key="n"
-                  class="aspect-[4/5] w-full rounded-xl"
-                />
+                <AssetCardSkeleton v-for="n in 8" :key="n" />
               </div>
 
               <Empty v-else-if="fetchError" class="mt-12">

@@ -238,7 +238,6 @@ export interface Asset extends ResponseEntity<AssetBase> {
   sizeBytes: number;
   mime: string | null;
   url: string | null;
-  thumbUrl: string | null;
   createdBy: string | null;
   createdAt: string;
   updatedAt: string;
@@ -409,8 +408,6 @@ export interface AssetCapabilities {
   canDeleteFolderWithAssets: boolean;
   /** Suggest existing tags from the distinct-tags source. */
   tagAutocomplete: boolean;
-  /** Backend produces real thumbnails (`thumbUrl`); phase 1 returns null. */
-  hasThumbnails: boolean;
 }
 
 /**

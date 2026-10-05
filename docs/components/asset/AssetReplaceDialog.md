@@ -34,7 +34,7 @@ It is rendered **inside** the [`AssetDetailPanel`](/components/asset/AssetDetail
 />
 ```
 
-The detail panel advances its held etag from the emitted asset (so its next `PATCH` doesn't fail `If-Match`) and forwards `replaced` up so the page can update its `detailAsset` — the preview refreshes immediately.
+The detail panel advances its held etag from the emitted asset (so its next `PATCH` doesn't fail `If-Match`) and forwards `replaced` up so the page can update its `detailAsset` — the preview refreshes, because the new `url` carries a new `?v=` that `assetPreviewUrl` keeps.
 
 ## Props
 

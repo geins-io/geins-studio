@@ -317,7 +317,6 @@ async function handleDelete() {
       <div class="mb-6">
         <AssetThumbnail
           :type="asset.type"
-          :thumb-url="asset.thumbUrl"
           :url="asset.url"
           :alt="asset.name"
           size="banner"

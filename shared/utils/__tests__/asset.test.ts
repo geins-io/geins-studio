@@ -61,7 +61,6 @@ describe('assetCapabilities', () => {
       canEditTags: false,
       canEditChannels: false,
       tagAutocomplete: false,
-      hasThumbnails: false,
     });
   });
 });
@@ -122,25 +121,44 @@ describe('contentTypeForUpload', () => {
 });
 
 describe('assetPreviewUrl', () => {
-  it('prefers the thumbnail when the backend serves one', () => {
-    expect(assetPreviewUrl('image', '/thumb.jpg', '/full.jpg')).toBe(
-      '/thumb.jpg',
+  const cdn = 'https://cdn-qa.geins.media/acme/hero.jpg';
+
+  it('adds the preset params for each surface', () => {
+    expect(assetPreviewUrl('image', cdn, 'row')).toBe(
+      `${cdn}?width=40&height=40&fit=crop&dpr=2`,
+    );
+    expect(assetPreviewUrl('image', cdn, 'card')).toBe(
+      `${cdn}?width=420&height=280&fit=crop&dpr=2`,
+    );
+    expect(assetPreviewUrl('image', cdn, 'banner')).toBe(
+      `${cdn}?width=500&height=250&fit=crop&dpr=2`,
     );
   });
 
-  it('falls back to the full file for renderable types (phase-1 has no thumbs)', () => {
-    expect(assetPreviewUrl('image', '', '/full.jpg')).toBe('/full.jpg');
-    expect(assetPreviewUrl('svg', null, '/logo.svg')).toBe('/logo.svg');
+  it('keeps the existing ?v= cache-buster', () => {
+    expect(assetPreviewUrl('image', `${cdn}?v=abc123`, 'row')).toBe(
+      `${cdn}?v=abc123&width=40&height=40&fit=crop&dpr=2`,
+    );
+  });
+
+  it('leaves SVGs untouched (the optimizer serves them as-is)', () => {
+    const svg = 'https://cdn-qa.geins.media/acme/logo.svg?v=1';
+    expect(assetPreviewUrl('svg', svg, 'card')).toBe(svg);
+  });
+
+  it('returns a url it cannot parse unchanged', () => {
+    expect(assetPreviewUrl('image', '/full.jpg', 'card')).toBe('/full.jpg');
   });
 
   it('never previews a type an <img> cannot render', () => {
-    expect(assetPreviewUrl('pdf', '', '/doc.pdf')).toBeNull();
-    expect(assetPreviewUrl('video', null, '/clip.mp4')).toBeNull();
+    expect(assetPreviewUrl('pdf', 'https://cdn/doc.pdf', 'card')).toBeNull();
+    expect(assetPreviewUrl('video', 'https://cdn/clip.mp4', 'row')).toBeNull();
   });
 
-  it('returns null when there is nothing to show', () => {
-    expect(assetPreviewUrl('image', '', '')).toBeNull();
-    expect(assetPreviewUrl('image')).toBeNull();
+  it('returns null when there is no url', () => {
+    expect(assetPreviewUrl('image', '', 'card')).toBeNull();
+    expect(assetPreviewUrl('image', null, 'card')).toBeNull();
+    expect(assetPreviewUrl('image', undefined, 'row')).toBeNull();
   });
 });
 

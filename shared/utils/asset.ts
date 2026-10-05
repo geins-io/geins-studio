@@ -197,19 +197,39 @@ export function isProductLink(
 }
 
 /**
- * Preview source for an asset: the backend's thumbnail when there is one, else
- * the full-size file for types an `<img>` can render. Geins.Media phase 1 serves
- * no thumbnails (`thumbUrl: ''`) but does return a usable `url`, so without the
- * fallback the whole library renders as type icons. Returns null when there is
- * nothing previewable — the caller shows the icon block.
+ * Fastly image-optimizer params per preview surface, sized to the rendered box
+ * at 2× for retina. Every distinct query string is its own cached + billed CDN
+ * variant, so keep this a small fixed set — never derive sizes per pixel.
+ */
+export const ASSET_PREVIEW_PRESETS = {
+  /** List rows + table cells: 40px square. */
+  row: { width: 40, height: 40, fit: 'crop', dpr: 2 },
+  /** Grid cards (3:2): columns top out ~406px wide. */
+  card: { width: 420, height: 280, fit: 'crop', dpr: 2 },
+  /** Detail panel banner (2:1): narrow panel content is ~502px wide. */
+  banner: { width: 500, height: 250, fit: 'crop', dpr: 2 },
+} as const;
+
+export type AssetPreviewPreset = keyof typeof ASSET_PREVIEW_PRESETS;
+
+/**
+ * Preview source for an asset, scaled by Fastly via query params on its `url`.
+ * SVGs are served unchanged by the optimizer, so they get the raw `url`; types
+ * an `<img>` can't render return null and the caller shows the icon block. The
+ * existing `?v=` cache-buster is kept, so a replaced file refreshes its preview.
  */
 export function assetPreviewUrl(
   type: AssetType,
-  thumbUrl?: string | null,
-  url?: string | null,
+  url: string | null | undefined,
+  preset: AssetPreviewPreset,
 ): string | null {
-  if (thumbUrl) return thumbUrl;
-  return PREVIEWABLE_TYPES.has(type) && url ? url : null;
+  if (!url || !PREVIEWABLE_TYPES.has(type)) return null;
+  if (type === 'svg' || !URL.canParse(url)) return url;
+  const scaled = new URL(url);
+  for (const [key, value] of Object.entries(ASSET_PREVIEW_PRESETS[preset])) {
+    scaled.searchParams.set(key, String(value));
+  }
+  return scaled.toString();
 }
 
 // ── Folder rail selection ────────────────────────────────────────────────────
@@ -267,9 +287,9 @@ export function folderIdForSelection(selected: string | null): string | null {
  * Feature availability against the shipped Geins.Media surface. Phase 1 serves
  * browse + upload, `PATCH` (description/altText/localizations), `POST …/
  * relocate` (rename + move), `DELETE` (+ restore), replace and usage links —
- * all unconditional, so none of them carry a flag. Tags, channels, thumbnails,
- * tag autocomplete and the folder-delete asset disposition stay off until
- * phase 2. Pure so it can be unit-tested and reused by
+ * all unconditional, so none of them carry a flag. Tags, channels, tag
+ * autocomplete and the folder-delete asset disposition stay off until phase 2.
+ * Pure so it can be unit-tested and reused by
  * `useAssetCapabilities`.
  *
  * cutover: REVISIT@phase2 — the whole capability mechanism is temporary; remove
@@ -282,7 +302,6 @@ export function assetCapabilities(): AssetCapabilities {
     canEditChannels: false,
     canDeleteFolderWithAssets: false,
     tagAutocomplete: false,
-    hasThumbnails: false,
   };
 }
 
