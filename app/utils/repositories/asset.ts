@@ -192,8 +192,9 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   /**
    * Steps 2–3 of the ticket flow, for a ticket already claimed: PUT each
    * accepted file's bytes straight to its plan URL, then `complete` the
-   * accepted refs. Returns the completion results merged with the ticket-stage
-   * rejections. Upload and replace both finish through here.
+   * accepted refs (skipped when nothing was accepted). Returns the completion
+   * results merged with the ticket-stage rejections. Upload and replace both
+   * finish through here.
    *
    * The bytes PUT deliberately uses the global `fetch`, not `$geinsApi`: it
    * targets the plan URL directly (a storage endpoint in production), so it
@@ -209,6 +210,19 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       (r): r is Extract<typeof r, { status: 'accepted' }> =>
         r.status === 'accepted',
     );
+
+    const rejectedAtTicket: UploadCompleteResult[] = ticket.results
+      .filter((r) => r.status === 'rejected')
+      .map((r) => ({
+        clientRef: r.clientRef,
+        status: 'rejected',
+        code: (r as Extract<typeof r, { status: 'rejected' }>).code,
+        message: (r as Extract<typeof r, { status: 'rejected' }>).message,
+      }));
+
+    // Nothing accepted → skip `complete`, so a ticket-stage rejection comes back
+    // as-is instead of masked by whatever an empty `complete` answers.
+    if (!accepted.length) return rejectedAtTicket;
 
     await Promise.all(
       accepted.map(async (r) => {
@@ -241,15 +255,6 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         ...fetchOptions,
       },
     );
-
-    const rejectedAtTicket: UploadCompleteResult[] = ticket.results
-      .filter((r) => r.status === 'rejected')
-      .map((r) => ({
-        clientRef: r.clientRef,
-        status: 'rejected',
-        code: (r as Extract<typeof r, { status: 'rejected' }>).code,
-        message: (r as Extract<typeof r, { status: 'rejected' }>).message,
-      }));
 
     return [...done.results, ...rejectedAtTicket];
   }

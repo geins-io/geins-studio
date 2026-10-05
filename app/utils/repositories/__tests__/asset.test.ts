@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { assetRepo } from '../asset';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -7,6 +7,11 @@ const mockFetch: any = vi.fn();
 
 beforeEach(() => {
   mockFetch.mockReset();
+});
+
+// Per-test `vi.stubGlobal('fetch')` must not leak when an assertion fails first.
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe('assetRepo', () => {
@@ -411,6 +416,33 @@ describe('assetRepo', () => {
         expect.objectContaining({ suppressErrorToast: true }),
       );
       vi.unstubAllGlobals();
+    });
+
+    it('returns a ticket-stage rejection without uploading or completing', async () => {
+      const put = vi.fn();
+      vi.stubGlobal('fetch', put);
+      mockFetch.mockResolvedValueOnce(
+        ticket({
+          clientRef: '1',
+          status: 'rejected',
+          code: 'FILE_TOO_LARGE',
+          message: 'too big',
+        }),
+      );
+
+      const out = await api.replace(
+        '1',
+        new File(['x'], 'b.jpg', { type: 'image/jpeg' }),
+      );
+
+      expect(out).toEqual({
+        clientRef: '1',
+        status: 'rejected',
+        code: 'FILE_TOO_LARGE',
+        message: 'too big',
+      });
+      expect(put).not.toHaveBeenCalled();
+      expect(mockFetch).toHaveBeenCalledTimes(1);
     });
 
     it('lets a refused claim (404 / 409 / 422) throw before any upload', async () => {

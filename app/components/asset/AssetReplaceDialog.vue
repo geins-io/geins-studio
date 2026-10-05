@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Asset } from '#shared/types';
+import type { Asset, UploadCompleteResult } from '#shared/types';
 import {
   isReplaceExtensionAllowed,
   replaceErrorMessageKey,
@@ -75,17 +75,27 @@ async function replace() {
   const id = props.asset._id;
   replacing.value = true;
   failure.value = null;
+  let result: UploadCompleteResult;
   try {
     // Failures are explained inline next to the file, not as a global toast.
-    const result = await assetApi.replace(id, file.value, {
+    result = await assetApi.replace(id, file.value, {
       suppressErrorToast: true,
     });
-    if (result.status === 'rejected') {
-      failure.value = uploadRejectionMessageKey(result.code);
-      return;
-    }
-    // Refetch so the preview picks up the new `url` version and the next PATCH
-    // sends the new etag; the completed row is the fallback.
+  } catch (error) {
+    failure.value = replaceErrorMessageKey(getErrorStatus(error));
+    geinsLogError('replace', getErrorMessage(error));
+    replacing.value = false;
+    return;
+  }
+  if (result.status === 'rejected') {
+    failure.value = uploadRejectionMessageKey(result.code);
+    replacing.value = false;
+    return;
+  }
+  // The file is replaced from here on, so nothing below may surface as a
+  // replace failure. Refetch so the preview picks up the new `url` version and
+  // the next PATCH sends the new etag; the completed row is the fallback.
+  try {
     const updated = await assetApi.get(id).catch(() => result.file);
     await refreshNuxtData('asset-library-list');
     toast({
@@ -94,9 +104,6 @@ async function replace() {
     });
     emit('replaced', updated);
     open.value = false;
-  } catch (error) {
-    failure.value = replaceErrorMessageKey(getErrorStatus(error));
-    geinsLogError('replace', getErrorMessage(error));
   } finally {
     replacing.value = false;
   }
