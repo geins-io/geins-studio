@@ -18,6 +18,17 @@ export const MAX_TICKET_BYTES = 10 * 1024 ** 3; // 10 GB per ticket total
 // the cap and treats it as the whole library.
 export const ASSET_QUERY_PAGE_SIZE = 1000;
 
+/** Every {@link AssetType}, in display order (filter options, pickers). */
+export const ASSET_TYPES: readonly AssetType[] = [
+  'image',
+  'svg',
+  'doc',
+  'pdf',
+  'video',
+  'audio',
+  'other',
+];
+
 const ASSET_SORT_FIELDS: ReadonlySet<string> = new Set<AssetSortField>([
   'name',
   'type',

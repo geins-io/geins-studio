@@ -1,10 +1,5 @@
 <script setup lang="ts">
-import type {
-  Asset,
-  AssetType,
-  ListDateRange,
-  ListFilterDefinition,
-} from '#shared/types';
+import type { Asset, AssetListFilters } from '#shared/types';
 import type { ColumnDef } from '@tanstack/vue-table';
 
 /**
@@ -21,51 +16,7 @@ import type { ColumnDef } from '@tanstack/vue-table';
  */
 const { assetApi } = useGeinsRepository();
 const { getColumns } = useColumns<Asset>();
-const { label, meta } = useAssetType();
-const accountStore = useAccountStore();
-const { channels } = storeToRefs(accountStore);
-
-// The list's own shape; `modified` is mapped onto the request in the fetcher.
-interface HarnessFilters {
-  assetTypes?: AssetType[];
-  channels?: string[];
-  modified?: ListDateRange;
-}
-
-const ASSET_TYPES: AssetType[] = [
-  'image',
-  'svg',
-  'doc',
-  'pdf',
-  'video',
-  'audio',
-  'other',
-];
-
-const definitions: ListFilterDefinition<HarnessFilters>[] = [
-  {
-    name: 'assetTypes',
-    label: 'type',
-    kind: 'multiselect',
-    urlKey: 'type',
-    options: ASSET_TYPES.map((type) => ({
-      value: type,
-      label: label(type),
-      icon: meta(type).icon,
-    })),
-  },
-  {
-    name: 'channels',
-    label: 'channel',
-    kind: 'multiselect',
-    options: async () =>
-      (channels.value.length
-        ? channels.value
-        : await accountStore.fetchChannels()
-      ).map((c) => ({ value: c._id, label: c.name || c.identifier })),
-  },
-  { name: 'modified', label: 'modified', kind: 'dateRange' },
-];
+const { definitions, toQueryFilters } = useAssetListFilters();
 
 const PAGE_SIZES = [10, 30, 60];
 const forceError = ref(false);
@@ -82,17 +33,12 @@ const {
   pagination,
   sorting,
   refresh,
-} = useListQuery<Asset, HarnessFilters>({
+} = useListQuery<Asset, AssetListFilters>({
   key: 'dev-server-table',
-  fetcher: ({ filters: { modified, ...rest }, ...state }, options) => {
+  fetcher: ({ filters, ...state }, options) => {
     if (forceError.value) throw new Error('Forced harness error');
-    // Presets resolve here, at send time, so a long-open list stays current.
-    const range = modified ? resolveListDateRange(modified) : {};
     return assetApi.query(
-      {
-        ...state,
-        filters: { ...rest, modifiedFrom: range.from, modifiedTo: range.to },
-      },
+      { ...state, filters: toQueryFilters(filters) },
       undefined,
       options,
     );
@@ -106,7 +52,7 @@ const {
   },
 });
 
-const listFilters = useListFilters<HarnessFilters>({
+const listFilters = useListFilters<AssetListFilters>({
   definitions,
   filters,
   resetFilters,

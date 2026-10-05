@@ -5,6 +5,7 @@ import type {
   EntityBaseWithName,
   ApiOptions,
   BatchQuery,
+  ListDateRange,
   ListSortDirection,
   Localized,
 } from './index';
@@ -298,6 +299,16 @@ export interface AssetQueryFilters {
   modifiedFrom?: string;
   /** ISO date-time, inclusive. */
   modifiedTo?: string;
+}
+
+/**
+ * The library's filter-bar state — `AssetQueryFilters` with the modified range
+ * kept as a `ListDateRange` (a preset resolves only when the query is sent).
+ */
+export interface AssetListFilters {
+  assetTypes?: AssetType[];
+  channels?: string[];
+  modified?: ListDateRange;
 }
 
 /** Folder / trash scope of an asset query — see `assetListOptions`. */

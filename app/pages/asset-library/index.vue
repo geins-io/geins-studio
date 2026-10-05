@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useMediaQuery } from '@vueuse/core';
-import type { Asset, AssetQueryFilters, ListSort } from '#shared/types';
+import type { Asset, AssetListFilters, ListSort } from '#shared/types';
 import { TableMode } from '#shared/types';
 import {
   assetListOptions,
@@ -108,6 +108,8 @@ const columns = ref<ColumnDef<Asset>[]>([]);
 // size, sort and search (all mirrored to the URL). The grid has no sort control
 // of its own; it shows whatever the list set, or the backend's default.
 const PAGE_SIZES = [24, 48, 96];
+const { definitions: filterDefinitions, toQueryFilters } =
+  useAssetListFilters();
 const {
   items,
   total,
@@ -117,14 +119,20 @@ const {
   pageSize,
   sort,
   searchInput,
+  filters,
+  resetFilters,
   hasActiveQuery,
   pagination,
   sorting,
   refresh,
-} = useListQuery<Asset, AssetQueryFilters>({
+} = useListQuery<Asset, AssetListFilters>({
   key: 'asset-library-list',
-  fetcher: (state, options) =>
-    assetApi.query(state, assetListOptions(selectedFolder.value), options),
+  fetcher: ({ filters, ...state }, options) =>
+    assetApi.query(
+      { ...state, filters: toQueryFilters(filters) },
+      assetListOptions(selectedFolder.value),
+      options,
+    ),
   defaults: { filters: {} },
   pageSizes: PAGE_SIZES,
   deps: () => selectedFolder.value,
@@ -137,11 +145,25 @@ const {
       'updatedAt',
       ...TRASH_SORT_FIELDS,
     ],
+    filters: listFilterRouteParams(filterDefinitions),
   },
 });
 // A link into trash with no sort, or a live link carrying a trash sort.
 if (isTrash.value && !sort.value) sort.value = TRASH_SORT;
 else if (!isTrash.value && isTrashSort(sort.value)) sort.value = null;
+
+// Filters scope trash too — a folder change keeps them.
+const listFilters = useListFilters<AssetListFilters>({
+  definitions: filterDefinitions,
+  filters,
+  resetFilters,
+  defaultPinned: ['assetTypes'],
+});
+const filterSheetOpen = ref(false);
+const clearQuery = () => {
+  searchInput.value = '';
+  listFilters.clearAll();
+};
 
 // Skeletons on the first load only; later fetches keep the rows on screen.
 const loading = computed(() => pending.value && !items.value.length);
@@ -430,7 +452,9 @@ async function confirmDelete() {
 
   <AssetStoragePanel v-model:open="storageOpen" />
 
-  <!-- Toolbar: folder toggle + search (left), view toggle (right) -->
+  <ListFilterSheet v-model:open="filterSheetOpen" :list-filters="listFilters" />
+
+  <!-- Toolbar: folder toggle + search + filters (left), view toggle (right) -->
   <div class="flex flex-wrap items-center gap-2">
     <Button
       variant="outline"
@@ -446,6 +470,11 @@ async function confirmDelete() {
       v-model="searchInput"
       :placeholder="$t('search')"
       class="order-2 w-full sm:order-1 sm:w-64"
+    />
+    <ListFilterBar
+      :list-filters="listFilters"
+      class="order-3 w-full sm:order-1 sm:w-auto"
+      @open-all="filterSheetOpen = true"
     />
     <ButtonGroup class="order-1 ml-auto sm:order-2">
       <Button
@@ -525,7 +554,7 @@ async function confirmDelete() {
           :empty-icon="emptyIcon"
           :empty-text="emptyTitle"
           :empty-description="emptyDescription"
-          @clear-filters="searchInput = ''"
+          @clear-filters="clearQuery"
         />
       </NuxtErrorBoundary>
     </div>
@@ -574,6 +603,11 @@ async function confirmDelete() {
             <EmptyTitle>{{ emptyTitle }}</EmptyTitle>
             <EmptyDescription>{{ emptyDescription }}</EmptyDescription>
           </EmptyHeader>
+          <EmptyContent v-if="hasActiveQuery">
+            <Button variant="secondary" @click="clearQuery">
+              {{ $t('clear_search') }}
+            </Button>
+          </EmptyContent>
         </Empty>
 
         <div
