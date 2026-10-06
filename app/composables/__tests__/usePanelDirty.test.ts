@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { nextTick, ref } from 'vue';
 import { usePanelDirty } from '../usePanelDirty';

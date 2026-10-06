@@ -1,3 +1,4 @@
+// @vitest-environment node
 /* eslint-disable import/order, import/first */
 import { mockNuxtImport } from '@nuxt/test-utils/runtime';
 import { describe, it, expect, vi, beforeEach } from 'vitest';

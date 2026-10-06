@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { mockNuxtImport } from '@nuxt/test-utils/runtime';
 import { describe, it, expect } from 'vitest';
 import { ref } from 'vue';
