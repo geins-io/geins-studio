@@ -3,6 +3,8 @@ import { describe, it, expect } from 'vitest';
 import {
   assetCapabilities,
   normalizeAssetLabels,
+  assetLabelLimitError,
+  countAssetIds,
   sameAssetLabels,
   assetListOptions,
   bulkMoveErrorKey,
@@ -77,6 +79,41 @@ describe('normalizeAssetLabels', () => {
 
   it('keeps order', () => {
     expect(normalizeAssetLabels(['b', 'a'])).toEqual(['b', 'a']);
+  });
+});
+
+describe('assetLabelLimitError', () => {
+  it('passes a list within the limits', () => {
+    expect(assetLabelLimitError(['a', 'b'], 'tags')).toBeNull();
+  });
+
+  it('flags too many values after normalizing', () => {
+    const many = Array.from({ length: 51 }, (_, i) => `c${i}`);
+    expect(assetLabelLimitError(many, 'channels')).toBe('count');
+    // Case-insensitive duplicates don't count twice.
+    expect(
+      assetLabelLimitError([...many.slice(0, 50), 'C0'], 'channels'),
+    ).toBeNull();
+  });
+
+  it('flags a value over the max length', () => {
+    expect(assetLabelLimitError(['x'.repeat(65)], 'tags')).toBe('length');
+    expect(assetLabelLimitError([` ${'x'.repeat(64)} `], 'tags')).toBeNull();
+  });
+});
+
+describe('countAssetIds', () => {
+  it('counts distinct guids in a problem detail', () => {
+    const a = '3f2504e0-4f89-11d3-9a0c-0305e82c3301';
+    const b = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+    expect(
+      countAssetIds(`Would exceed the limit: ${a}, ${b}, ${a.toUpperCase()}`),
+    ).toBe(2);
+  });
+
+  it('is 0 without ids', () => {
+    expect(countAssetIds('Too many tags.')).toBe(0);
+    expect(countAssetIds(undefined)).toBe(0);
   });
 });
 

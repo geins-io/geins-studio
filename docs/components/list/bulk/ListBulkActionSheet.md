@@ -4,7 +4,7 @@
 
 ## Features
 
-- **Actions are config** (`BulkAction` from `#shared/types`), so each domain plugs in its own. An action with a `component` gets a properties pane bound with `v-model` to its value. `initialValue()` seeds that value each time the action is picked, so switching actions drops the old value.
+- **Actions are config** (`BulkAction` from `#shared/types`), so each domain plugs in its own. An action with a `component` gets a properties pane bound with `v-model` to its value. `initialValue()` seeds that value each time the action is picked, so switching actions drops the old value. The pane is keyed by the action's `key`, so two actions sharing one component (e.g. add tags / add channels) each get a fresh instance.
 - **Run is gated**: disabled until an action is picked, the selection isn't empty, and `isValid(value)` passes (no `isValid` = always valid).
 - `SheetContent width="medium"`: a fixed `w-60` action list and a `flex-1` properties pane from `sm` up, stacked below.
 - Not a `PanelEdit`: there is nothing to keep, so closing just drops the draft. Each open starts with no action picked.

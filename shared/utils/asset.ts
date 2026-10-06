@@ -349,6 +349,32 @@ export function normalizeAssetLabels(values: readonly string[]): string[] {
   return out;
 }
 
+/**
+ * Which backend limit a tag/channel list breaks, checked on its normalized
+ * values: `count` (too many) or `length` (a value too long). `null` when valid.
+ */
+export function assetLabelLimitError(
+  values: readonly string[],
+  kind: keyof typeof ASSET_LABEL_LIMITS,
+): 'count' | 'length' | null {
+  const { maxCount, maxLength } = ASSET_LABEL_LIMITS[kind];
+  const normalized = normalizeAssetLabels(values);
+  if (normalized.length > maxCount) return 'count';
+  if (normalized.some((value) => value.length > maxLength)) return 'length';
+  return null;
+}
+
+const GUID_PATTERN =
+  /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+
+/**
+ * How many distinct asset ids a bulk route's problem `detail` names — the
+ * routes list the refused ids there rather than in a structured field.
+ */
+export function countAssetIds(detail: string | undefined): number {
+  return new Set(detail?.toLowerCase().match(GUID_PATTERN) ?? []).size;
+}
+
 /** Whether two tag/channel sets hold the same values, ignoring order. */
 export function sameAssetLabels(
   a: readonly string[],

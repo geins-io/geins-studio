@@ -326,6 +326,10 @@ export default defineConfig({
                 link: '/components/asset/AssetUsedIn.md',
               },
               {
+                text: 'AssetBulkLabels',
+                link: '/components/asset/AssetBulkLabels.md',
+              },
+              {
                 text: 'AssetBulkMoveFolder',
                 link: '/components/asset/AssetBulkMoveFolder.md',
               },

@@ -110,9 +110,12 @@ function onDone(result: BulkRunResult) {
           class="flex min-h-0 flex-1 flex-col gap-4 p-4 sm:overflow-y-auto sm:p-6"
         >
           <p class="text-sm font-semibold">{{ $t('properties') }}</p>
+          <!-- Keyed per action: two actions can share a pane component, and
+               each needs a fresh instance (its own setup and input state). -->
           <component
             :is="selected.component"
             v-if="selected?.component"
+            :key="selected.key"
             v-model="value"
             v-bind="selected.componentProps"
           />

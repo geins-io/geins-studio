@@ -9,12 +9,16 @@ import type {
 } from '#shared/types';
 import { TableMode } from '#shared/types';
 import {
+  ASSET_LABEL_LIMITS,
+  assetLabelLimitError,
   assetListOptions,
   bulkMoveErrorKey,
+  countAssetIds,
   folderIdForSelection,
   ROOT_FOLDER_KEY,
   TRASH_KEY,
   TRASH_RETENTION_DAYS,
+  normalizeAssetLabels,
 } from '#shared/utils/asset';
 import { ENTITIES } from '#shared/utils/entities';
 import { formatFileSize } from '#shared/utils/file';
@@ -490,7 +494,56 @@ const moveAction = computed<BulkAction<string | null>>(() => ({
       ? t('asset_library.bulk_already_in_folder')
       : t('asset_library.bulk_moved_to_folder', { count }, count),
 }));
+const AssetBulkLabels = resolveComponent('AssetBulkLabels');
+const { channels: accountChannels } = storeToRefs(useAccountStore());
+const channelName = (id: string) => {
+  const channel = accountChannels.value.find((c) => c._id === id);
+  return channel?.name || id;
+};
+// Both routes add to each asset's set and never remove, so the confirm says the
+// run can't be undone in bulk. Values are normalized the way the backend stores
+// them; a 422 names the assets that would pass the per-asset limit.
+function labelsAction(kind: 'tags' | 'channels'): BulkAction<string[]> {
+  const entityKey = kind === 'tags' ? 'tag' : 'channel';
+  const display = (value: string) =>
+    kind === 'channels' ? channelName(value) : value;
+  return {
+    key: `add-${kind}`,
+    label: t('add_entity', { entityKey }, 2),
+    icon: kind === 'tags' ? 'Tag' : 'Globe',
+    component: AssetBulkLabels,
+    componentProps: { kind },
+    initialValue: () => [],
+    isValid: (value) =>
+      normalizeAssetLabels(value).length > 0 &&
+      !assetLabelLimitError(value, kind),
+    summary: (value) => normalizeAssetLabels(value).map(display).join(', '),
+    note: () => t('asset_library.bulk_add_note'),
+    describeError: (error) => {
+      if (getErrorStatus(error) !== 422) return undefined;
+      const count = countAssetIds(getApiErrorDetail(error));
+      return t(
+        `asset_library.bulk_${entityKey}_limit`,
+        { count, max: ASSET_LABEL_LIMITS[kind].maxCount },
+        count,
+      );
+    },
+    run: (ids, value, options) =>
+      kind === 'tags'
+        ? assetApi.bulkTag(ids, normalizeAssetLabels(value), options)
+        : assetApi.bulkAssignChannels(
+            ids,
+            normalizeAssetLabels(value),
+            options,
+          ),
+    successMessage: () => t('entity_added', { entityKey }, 2),
+  };
+}
+const tagsAction = computed(() => labelsAction('tags'));
+const channelsAction = computed(() => labelsAction('channels'));
 const bulkActions = computed<BulkAction[]>(() => [
+  tagsAction.value,
+  channelsAction.value,
   moveAction.value,
   trashAction.value,
 ]);
@@ -501,9 +554,11 @@ const bulkScopeNote = computed(() =>
 );
 
 // Failed chunks stay selected so the user can retry just those.
+// `asset-tags` too: a bulk tag can coin new tags, and trashing can drop the
+// last asset carrying one.
 async function onBulkDone(result: BulkRunResult) {
   selectedIds.value = result.failed;
-  await refresh();
+  await Promise.all([refresh(), refreshNuxtData('asset-tags')]);
 }
 
 function openAsset(asset: Asset) {
