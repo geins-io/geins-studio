@@ -55,15 +55,21 @@ pnpm lint:check && pnpm typecheck && pnpm test --run
 
 ## 4. Present → approve → merge
 
-1. **Present** a diff-shaped summary: what changed + file paths, verification results, any follow-ups filed.
+1. **Present** a diff-shaped summary: what changed + file paths, verification results, any follow-ups filed. Ask in the same message whether this one gets a **Claude PR review** (step 3). The user decides; offer it for bigger changes (new composables/components, data-flow or API changes, many files) and don't push it on small fixes.
 2. On explicit approval:
    - `git add -A`; commit with a Conventional Commit (`feat(scope): …` / `fix(scope): …`), body explains the *why* when non-obvious, end with the `Co-Authored-By` trailer.
    - `git push -u origin {branch}`.
    - `gh pr create --base next` — body: what/why, a **Verification** section (lint/typecheck/build/tests + manual), and the Claude Code footer.
-   - `gh pr merge {n} --squash --delete-branch`.
-   - `git checkout next && git pull --ff-only`.
-3. If pre-commit hooks (prettier/eslint) reformat a file, re-check the result — Vue whitespace/`{{ ' ' }}` separators and import order can shift. Amend + force-push the feature branch if needed.
-4. Set status → **Ready for QA testing**.
+   - No review requested → straight to merge (step 4).
+3. **Claude PR review** (only when the user asked for it):
+   - `gh pr comment {n} --body "@claude review"` — this triggers `.github/workflows/claude.yml`, which answers as a PR comment.
+   - Don't poll or sleep-loop for it. Tell the user it's requested; when they say it's done (or on their next message), read it with `gh pr view {n} --comments`.
+   - **Triage every finding yourself** — implement, or skip with a one-line reason (out of scope → follow-up issue per §5; wrong/nitpick → say why). Present the triage as a short table (finding → decision → why) before pushing fixes.
+   - Fixes: new commit on the branch (not an amend), re-run §3 preflight, push. Then merge — the user's PR approval covers merging after the triage unless a fix changes behaviour beyond the review's scope, in which case confirm first.
+4. Merge: `gh pr merge {n} --squash --delete-branch` → `git checkout next && git pull --ff-only`.
+5. If pre-commit hooks (prettier/eslint) reformat a file, re-check the result — Vue whitespace/`{{ ' ' }}` separators and import order can shift. Amend + force-push the feature branch if needed.
+6. Set status → **Ready for QA testing**.
+7. **Always end with the next issue.** Look at the project's open issues in milestone order, skip blocked ones (check `blockedBy`), respect `Context group:` markers, and name **one** recommended next issue with a one-line why — plus whether it should continue in this context (same context group) or start in a fresh one. If it's a fresh context, give a ready-to-paste opener (e.g. `build issue STU-123`). Fix stale text in that issue (phase names, line refs, things since built) while you have the context, if the user agrees.
 
 ## 5. Projects, milestones & follow-up issues
 
@@ -80,7 +86,26 @@ Part of every change, and always before/at merge:
 - **Keep `CLAUDE.md` lean.** Add durable learnings, but dedup, group, and prune stale guidance rather than appending; do a quick staleness pass when touching it (`claude-md-management` / `revise-claude-md` helps).
 - Record user preferences/feedback in memory too (why + how to apply).
 
+## 7. Parallel worktrees (chips)
+
+When the user asks what can run in parallel (separate worktrees / spawned task chips):
+
+1. **Pick for low conflict.** For each candidate issue, check against the work already in flight:
+   - **Files:** the pages, components, repos and capability flags it will touch. Shared hot spots — `i18n/locales/*.json`, `docs/domains/*.md`, `docs/.vitepress/config.mts` — conflict trivially; overlap in the same component/page block is a real risk.
+   - **Dependencies:** `blockedBy`, and soft ones (a helper, vocabulary or endpoint another in-flight issue introduces or relies on).
+   - **Context groups:** an issue's group goes into the same chip, built back-to-back.
+   - **Backend blockers:** skip anything waiting on the platform.
+   Present the picks *and* the excluded ones with a one-line reason each.
+2. **One chip per independent unit** (a single issue or a context group). Each chip prompt must stand alone:
+   - Absolute paths to the skills it must Read, under its own worktree root (`<worktree>/.agents/skills/geins-linear/SKILL.md`, `implementation-plan`) — never just the skill name; spawned sessions otherwise fall back to a marketplace skill.
+   - Environment: Node 24 on PATH; copy `.env` from the main checkout (`.env` is gitignored, so a fresh worktree has none); a **distinct dev port** per chip (3001, 3002, …; the main checkout keeps 3000).
+   - Branch names, the issue ids, which open questions to ask about, and the usual rules (In Progress + assignee, no commit without approval, ask before browser checks).
+   - Merge discipline: merge one session at a time, sync with the latest `next` before merging, expect small conflicts in the hot spots above and keep both sides.
+3. **Clean up after merge** (when asked): confirm each PR is merged and the worktree has no uncommitted changes, archive the session, `git worktree remove` it if the folder is left behind, and `git branch -D` its local branches (squash merges leave them looking unmerged — check the PR, not `git branch --merged`).
+
 ## One-line shortcuts
 
+
 - `build issue STU-52` / `prep issue STU-*` → pull issue → readiness checks → `implementation-plan` → update the issue with the ready plan.
-- `merge issue` → run §3 preflight, then §4 (present → on approval → PR → squash-merge → Ready for QA).
+- `merge issue` → run §3 preflight, then §4 (present → on approval → PR → optional `@claude review` + triage → squash-merge → Ready for QA → suggest next issue).
+- `what can run in parallel?` → §7 (conflict check → one chip per unit → cleanup after merge).
