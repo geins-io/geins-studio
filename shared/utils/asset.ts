@@ -307,25 +307,56 @@ export function bulkMoveErrorKey(
 }
 
 /**
- * Feature availability against the shipped Geins.Media surface. Phase 1 serves
- * browse + upload, `PATCH` (description/altText/localizations), `POST …/
- * relocate` (rename + move), `DELETE` (+ restore), replace and usage links —
- * all unconditional, so none of them carry a flag. Tags, channels, tag
- * autocomplete and the folder-delete asset disposition stay off until phase 2.
- * Pure so it can be unit-tested and reused by
- * `useAssetCapabilities`.
+ * Feature availability against the shipped Geins.Media surface. Browse,
+ * upload, `PATCH` (incl. tags + channels), `relocate`, `DELETE` (+ restore),
+ * replace, usage links and `GET media/tags` all ship unconditionally, so none
+ * of them carry a flag. Tags/channels on the upload ticket and the
+ * folder-delete asset disposition stay off. Pure so it can be unit-tested and
+ * reused by `useAssetCapabilities`.
  *
  * cutover: REVISIT@phase2 — the whole capability mechanism is temporary; remove
- * it (+ its consumers) once phase 2 restores the gated features. Ledger:
+ * it (+ its consumers) once the gated features land. Ledger:
  * docs/domains/assets-cutover.md.
  */
 export function assetCapabilities(): AssetCapabilities {
   return {
-    canEditTags: false,
-    canEditChannels: false,
+    canUploadTagsAndChannels: false,
     canDeleteFolderWithAssets: false,
-    tagAutocomplete: false,
   };
+}
+
+/** Backend limits on an asset's tags and channels (a breach is a `422`). */
+export const ASSET_LABEL_LIMITS = {
+  tags: { maxCount: 100, maxLength: 64 },
+  channels: { maxCount: 50, maxLength: 50 },
+} as const;
+
+/**
+ * Tags / channels the way the backend stores them: trimmed, blanks dropped, and
+ * values that differ only by case collapsed to the first one (the backend
+ * rejects case-insensitive duplicates with a `422`).
+ */
+export function normalizeAssetLabels(values: readonly string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of values) {
+    const value = raw.trim();
+    const key = value.toLowerCase();
+    if (!value || seen.has(key)) continue;
+    seen.add(key);
+    out.push(value);
+  }
+  return out;
+}
+
+/** Whether two tag/channel sets hold the same values, ignoring order. */
+export function sameAssetLabels(
+  a: readonly string[],
+  b: readonly string[],
+): boolean {
+  if (a.length !== b.length) return false;
+  const set = new Set(a);
+  return b.every((value) => set.has(value));
 }
 
 /**

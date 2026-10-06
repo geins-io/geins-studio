@@ -1,9 +1,9 @@
 # `useAssetCapabilities`
 
-The `useAssetCapabilities` composable reports which Assets Library features the backend can serve. The shipped UI gates on it so controls **Geins.Media phase 1** can't fulfil yet — tags, channels, replace, tag autocomplete — disable cleanly instead of erroring.
+The `useAssetCapabilities` composable reports which Assets Library features the backend can serve. The shipped UI gates on it so controls **Geins.Media** can't fulfil yet — tags + channels on the upload ticket, the folder-delete asset disposition — disable cleanly instead of erroring.
 
 :::tip WHY
-Studio built the full v0 UI against a mock backend. Phase 1 of the real API serves **browse + upload, description/alt-text edit (`PATCH`), rename + move (`POST …/relocate`), delete (`DELETE` + restore) and usage links**; the rest arrives in phase 2. Rather than delete the UI that outran the backend, we gate it per field.
+Studio built the full v0 UI against a mock backend. The real API serves **browse + upload, metadata edit incl. tags + channels (`PATCH`), tag suggestions (`GET media/tags`), rename + move (`POST …/relocate`), delete (`DELETE` + restore), replace and usage links**; the rest arrives later. Rather than delete the UI that outran the backend, we gate it per field.
 :::
 
 ## Usage
@@ -12,10 +12,7 @@ Studio built the full v0 UI against a mock backend. Phase 1 of the real API serv
 const caps = useAssetCapabilities();
 
 // disable a control
-<fieldset :disabled="!caps.canEditTags">…</fieldset>
-
-// skip a fetch the backend can't answer
-if (caps.tagAutocomplete) await refreshTags();
+<fieldset :disabled="!caps.canUploadTagsAndChannels">…</fieldset>
 ```
 
 ## Returns
@@ -24,15 +21,13 @@ An `AssetCapabilities` object (plain, not reactive — the surface is fixed per 
 
 | Field                       | Type      | Gates                                                    |
 | --------------------------- | --------- | -------------------------------------------------------- |
-| `canEditTags`               | `boolean` | Editing an asset's tags.                                 |
-| `canEditChannels`           | `boolean` | Editing an asset's publication channels.                 |
+| `canUploadTagsAndChannels`  | `boolean` | Sending tags + channels on the upload ticket (wizard).   |
 | `canDeleteFolderWithAssets` | `boolean` | Choosing what happens to assets inside a deleted folder. |
-| `tagAutocomplete`           | `boolean` | Distinct-tags suggestions fetch.                         |
 
-Every flag is `false` today — each one names a phase-2 feature.
+Every flag is `false` today — each one names a feature the backend doesn't serve yet.
 
 :::warning A FEATURE THE BACKEND SUPPORTS GETS NO FLAG
-There is no `canEditDescriptionAltText`, `canDeleteAsset`, `hasTrash`, `hasUsageLinks`, `canReplaceFile` or `hasThumbnails` — all of those ship (or, for thumbnails, were replaced by CDN scaling), so they were removed rather than left permanently `true`. An always-`true` flag is dead gating: when phase 2 restores a feature, delete its flag **and** its consumers instead of flipping it (see the [cutover ledger](/domains/assets-cutover)).
+There is no `canEditDescriptionAltText`, `canDeleteAsset`, `hasTrash`, `hasUsageLinks`, `canReplaceFile`, `hasThumbnails`, `canEditTags`, `canEditChannels` or `tagAutocomplete` — all of those ship (or, for thumbnails, were replaced by CDN scaling), so they were removed rather than left permanently `true`. An always-`true` flag is dead gating: when phase 2 restores a feature, delete its flag **and** its consumers instead of flipping it (see the [cutover ledger](/domains/assets-cutover)).
 :::
 
 The mapping is a pure function — `assetCapabilities()` in `#shared/utils/asset` — so it is unit-tested and reusable outside a component.
@@ -40,4 +35,4 @@ The mapping is a pure function — `assetCapabilities()` in `#shared/utils/asset
 ## See also
 
 - [`useAssetActions`](/composables/useAssetActions.md) — the copy / download / delete actions.
-- [`AssetDetailPanel`](/components/asset/AssetDetailPanel.md) — the primary consumer.
+- [`AssetWizardManage`](/components/asset/AssetWizardManage.md) — the primary consumer.

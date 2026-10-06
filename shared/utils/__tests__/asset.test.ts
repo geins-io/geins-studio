@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   assetCapabilities,
+  normalizeAssetLabels,
+  sameAssetLabels,
   assetListOptions,
   bulkMoveErrorKey,
   folderIdForSelection,
@@ -59,10 +61,33 @@ describe('assetCapabilities', () => {
       // Phase-1 folder delete is empty-only (409 FOLDER_NOT_EMPTY) — no
       // disposition to choose.
       canDeleteFolderWithAssets: false,
-      canEditTags: false,
-      canEditChannels: false,
-      tagAutocomplete: false,
+      // The upload ticket doesn't take tags/channels yet.
+      canUploadTagsAndChannels: false,
     });
+  });
+});
+
+describe('normalizeAssetLabels', () => {
+  it('trims, drops blanks and keeps the first of case-insensitive duplicates', () => {
+    expect(
+      normalizeAssetLabels([' Summer ', 'summer', '', '  ', 'SALE', 'Sale']),
+    ).toEqual(['Summer', 'SALE']);
+  });
+
+  it('keeps order', () => {
+    expect(normalizeAssetLabels(['b', 'a'])).toEqual(['b', 'a']);
+  });
+});
+
+describe('sameAssetLabels', () => {
+  it('ignores order', () => {
+    expect(sameAssetLabels(['a', 'b'], ['b', 'a'])).toBe(true);
+  });
+
+  it('detects added, removed and changed values', () => {
+    expect(sameAssetLabels(['a'], ['a', 'b'])).toBe(false);
+    expect(sameAssetLabels(['a', 'b'], ['a'])).toBe(false);
+    expect(sameAssetLabels(['a'], ['A'])).toBe(false);
   });
 });
 
