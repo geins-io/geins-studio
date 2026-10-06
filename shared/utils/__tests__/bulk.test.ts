@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi } from 'vitest';
 import { BULK_CHUNK_SIZE, chunkIds, runInChunks } from '../bulk';
 

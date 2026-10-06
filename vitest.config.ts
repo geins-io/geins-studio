@@ -4,6 +4,9 @@ export default defineVitestConfig({
   test: {
     environment: 'nuxt',
     setupFiles: ['./test/vitest.setup.ts'],
+    // The nuxt environment boots the full app in a beforeAll hook; each worker's first
+    // file pays a cold transform that exceeds the 10s default under load (~20s measured)
+    hookTimeout: 60_000,
     exclude: ['**/node_modules/**', '**/dist/**', '**/.claude/**'],
     coverage: {
       provider: 'v8',

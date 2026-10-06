@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { nextTick } from 'vue';
 import { buildAsset } from '../../../test/fixtures';
