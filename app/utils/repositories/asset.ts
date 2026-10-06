@@ -393,6 +393,43 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
+     * Add tags to up to 100 assets — real `POST /media/assets/bulk-tag`. Adds to
+     * each asset's set and never removes, so repeating a body is safe; a new tag
+     * is created on the fly. All or nothing: a `422` names the assets that would
+     * pass 100 tags.
+     */
+    async bulkTag(
+      assetIds: string[],
+      tags: string[],
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<void> {
+      await fetch<unknown>(`${ENTITIES.asset.endpoint}/bulk-tag`, {
+        method: 'POST',
+        body: { assetIds, tags },
+        errorContext: { action: 'updating', entity: ENTITIES.asset.key },
+        ...fetchOptions,
+      });
+    },
+
+    /**
+     * Add channels to up to 100 assets — real
+     * `POST /media/assets/bulk-assign-channels`. Same add-only, all-or-nothing
+     * rules as {@link bulkTag}; a `422` names the assets that would pass 50.
+     */
+    async bulkAssignChannels(
+      assetIds: string[],
+      channels: string[],
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<void> {
+      await fetch<unknown>(`${ENTITIES.asset.endpoint}/bulk-assign-channels`, {
+        method: 'POST',
+        body: { assetIds, channels },
+        errorContext: { action: 'updating', entity: ENTITIES.asset.key },
+        ...fetchOptions,
+      });
+    },
+
+    /**
      * The live assets with these ids — `assetIds` on `POST /media/assets/query`,
      * one page at the schema's cap. Ids that don't match (trashed, deleted) are
      * simply absent from the result.

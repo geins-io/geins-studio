@@ -301,6 +301,30 @@ describe('assetRepo', () => {
       });
     });
 
+    it('bulkTag POSTs the ids and tags to /media/assets/bulk-tag', async () => {
+      mockFetch.mockResolvedValue(null);
+      await api.bulkTag(['a1', 'a2'], ['hero'], { suppressErrorToast: true });
+      expect(mockFetch).toHaveBeenCalledWith('/media/assets/bulk-tag', {
+        method: 'POST',
+        body: { assetIds: ['a1', 'a2'], tags: ['hero'] },
+        errorContext: { action: 'updating', entity: 'asset' },
+        suppressErrorToast: true,
+      });
+    });
+
+    it('bulkAssignChannels POSTs the ids and channels', async () => {
+      mockFetch.mockResolvedValue(null);
+      await api.bulkAssignChannels(['a1'], ['1|se']);
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/media/assets/bulk-assign-channels',
+        {
+          method: 'POST',
+          body: { assetIds: ['a1'], channels: ['1|se'] },
+          errorContext: { action: 'updating', entity: 'asset' },
+        },
+      );
+    });
+
     describe('bulkMove', () => {
       it('POSTs the ids and folder and returns the move on 202', async () => {
         mockFetch.mockResolvedValue({ moveId: 'm1' });
