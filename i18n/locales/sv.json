@@ -109,6 +109,8 @@
   "error_fetching_entity": "Något gick fel när @.lower:{entityKey} hämtades",
   "error_running_entity": "Något gick fel när @.lower:{entityKey} kördes",
   "quick_add_entity": "Lägg till @.lower:{entityKey}..",
+  "max_count_entity": "Lägg till högst {max} @.lower:{entityKey}",
+  "max_length_entity": "Varje @.lower:{entityKey} får vara högst {max} tecken",
   "no_entity_found": "Inga @.lower:{entityKey} hittades",
   "no_entity": "Inga @.lower:{entityKey}",
   "no_entity_selected": "Ingen/Inget @.lower:{entityKey} vald/valt | Inga @.lower:{entityKey} valda",

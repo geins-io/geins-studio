@@ -17,10 +17,9 @@ const { folderName } = useFolders();
 const { files, settingsOf, patchSettings, removeFiles, linkProducts } =
   useUploadWizardContext();
 const { matchOf } = useProductMatch();
-// Name, folder, description and alt text all ride the ticket claim; tags +
-// channels have no route yet, so those fields are disabled under a real backend.
-// Values still live in the wizard state — nothing is lost if a later phase
-// enables them.
+// Name, folder, description and alt text all ride the ticket claim; the ticket
+// doesn't take tags + channels yet, so those fields are disabled. Values still
+// live in the wizard state — nothing is lost once the ticket accepts them.
 const caps = useAssetCapabilities();
 
 // A file whose filename ref resolves to a product (only when auto-link is on).
@@ -35,7 +34,7 @@ const activeProduct = computed(() =>
 const { data: allTags } = useAsyncData<string[]>(
   'asset-tags',
   () => assetApi.listTags(),
-  { default: () => [], immediate: caps.tagAutocomplete },
+  { default: () => [] },
 );
 const tagOptions = computed<EntityBaseWithName[]>(() =>
   (allTags.value ?? []).map((tag) => ({ _id: tag, name: tag })),
@@ -282,9 +281,9 @@ const rowFolderName = (id: string): string | undefined => {
             </div>
 
             <fieldset
-              :disabled="!caps.canEditChannels"
+              :disabled="!caps.canUploadTagsAndChannels"
               class="m-0 min-w-0 space-y-1.5 border-0 p-0"
-              :class="{ 'opacity-60': !caps.canEditChannels }"
+              :class="{ 'opacity-60': !caps.canUploadTagsAndChannels }"
             >
               <Label>
                 {{ $t('channel', 2) }}
@@ -294,7 +293,7 @@ const rowFolderName = (id: string): string | undefined => {
               </Label>
               <FormInputChannels v-model="channels" />
               <p
-                v-if="!caps.canEditChannels"
+                v-if="!caps.canUploadTagsAndChannels"
                 class="text-muted-foreground text-xs"
               >
                 {{ $t('asset_library.wizard_field_not_saved') }}
@@ -312,9 +311,9 @@ const rowFolderName = (id: string): string | undefined => {
             </div>
 
             <fieldset
-              :disabled="!caps.canEditTags"
+              :disabled="!caps.canUploadTagsAndChannels"
               class="m-0 min-w-0 space-y-1.5 border-0 p-0"
-              :class="{ 'opacity-60': !caps.canEditTags }"
+              :class="{ 'opacity-60': !caps.canUploadTagsAndChannels }"
             >
               <Label>
                 {{ $t('tag', 2) }}
@@ -328,7 +327,10 @@ const rowFolderName = (id: string): string | undefined => {
                 :data-set="tagOptions"
                 :allow-custom-tags="true"
               />
-              <p v-if="!caps.canEditTags" class="text-muted-foreground text-xs">
+              <p
+                v-if="!caps.canUploadTagsAndChannels"
+                class="text-muted-foreground text-xs"
+              >
                 {{ $t('asset_library.wizard_field_not_saved') }}
               </p>
             </fieldset>

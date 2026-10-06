@@ -109,6 +109,8 @@
   "error_fetching_entity": "Something went wrong while fetching @.lower:{entityKey}",
   "error_running_entity": "Something went wrong while running @.lower:{entityKey}",
   "quick_add_entity": "Quick add @.lower:{entityKey}..",
+  "max_count_entity": "Add at most {max} @.lower:{entityKey}",
+  "max_length_entity": "Each @.lower:{entityKey} can be at most {max} characters",
   "no_entity_found": "No @.lower:{entityKey} found",
   "no_entity": "No @.lower:{entityKey}",
   "no_entity_selected": "No @.lower:{entityKey} selected",

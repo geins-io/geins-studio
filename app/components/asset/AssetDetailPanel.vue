@@ -10,6 +10,11 @@ import type {
   Localized,
   LocalizedText,
 } from '#shared/types';
+import {
+  ASSET_LABEL_LIMITS,
+  normalizeAssetLabels,
+  sameAssetLabels,
+} from '#shared/utils/asset';
 import { ENTITIES } from '#shared/utils/entities';
 import { formatFileSize } from '#shared/utils/file';
 
@@ -32,17 +37,16 @@ const { formatDate } = useDate();
 const { geinsLogError } = useGeinsLog('components/AssetDetailPanel.vue');
 const { copyUrl, download, deleteAsset } = useAssetActions();
 const { hasPending, commitPending } = providePendingCommits();
-const caps = useAssetCapabilities();
 
 const entityKey = ENTITIES.asset.key;
 
-// Distinct tags across all assets feed the tags field's autocomplete (custom
+// Distinct tags across live assets feed the tags field's autocomplete (custom
 // tags can still be typed). Shaped as `{ _id, name }` for FormInputTagsSearch;
 // refreshed each open so freshly coined tags appear as options.
 const { data: allTags, refresh: refreshTags } = useAsyncData<string[]>(
   'asset-tags',
   () => assetApi.listTags(),
-  { default: () => [], immediate: caps.tagAutocomplete },
+  { default: () => [] },
 );
 const tagOptions = computed<EntityBaseWithName[]>(() =>
   (allTags.value ?? []).map((tag) => ({ _id: tag, name: tag })),
@@ -60,10 +64,31 @@ const stale = ref(false);
 // target folder already holds that name), `error` is anything else. Shown
 // inline — the call suppresses the toast so the reason sits by the fields.
 const relocateFailed = ref<'conflict' | 'error' | null>(null);
+// Set when the metadata PATCH fails (anything but the 412 above): the backend's
+// reason, e.g. a 422 on a tag the client-side rules let through. Shown inline
+// by the fields — the call suppresses the toast.
+const saveError = ref<string | null>(null);
 // The etag this panel last wrote against. Seeded on open and advanced by a
 // successful PATCH, so retrying after a failed relocate isn't rejected as stale
 // by the etag the first PATCH already consumed.
 const etag = ref<string | null>(null);
+
+// Checked on the normalized values — what's actually sent — so a duplicate that
+// differs only by case doesn't count against the limit.
+function labelsSchema(
+  entityKey: string,
+  limits: { maxCount: number; maxLength: number },
+) {
+  return z
+    .array(z.string())
+    .refine((v) => normalizeAssetLabels(v).length <= limits.maxCount, {
+      message: t('max_count_entity', { entityKey, max: limits.maxCount }, 2),
+    })
+    .refine(
+      (v) => normalizeAssetLabels(v).every((x) => x.length <= limits.maxLength),
+      { message: t('max_length_entity', { entityKey, max: limits.maxLength }) },
+    );
+}
 
 const formSchema = toTypedSchema(
   z.object({
@@ -77,8 +102,8 @@ const formSchema = toTypedSchema(
     folderId: z.string().nullable(),
     description: z.record(z.string(), z.string()),
     altText: z.record(z.string(), z.string()),
-    tags: z.array(z.string()),
-    channels: z.array(z.string()),
+    tags: labelsSchema('tag', ASSET_LABEL_LIMITS.tags),
+    channels: labelsSchema('channel', ASSET_LABEL_LIMITS.channels),
   }),
 );
 const form = useForm({ validationSchema: formSchema });
@@ -136,8 +161,9 @@ watch(open, (value) => {
   if (value && props.asset) {
     stale.value = false;
     relocateFailed.value = null;
+    saveError.value = null;
     etag.value = props.asset.etag ?? null;
-    if (caps.tagAutocomplete) refreshTags();
+    refreshTags();
     // Edit description + alt text as locale→string maps; localizations is the
     // wire shape (only non-empty fields are kept).
     const localizations = props.asset.localizations ?? {};
@@ -157,8 +183,8 @@ watch(open, (value) => {
       folderId: props.asset.folderId,
       description: descriptions,
       altText: altTexts,
-      tags: [...(props.asset.tags ?? [])],
-      channels: [...(props.asset.channels ?? [])],
+      tags: [...props.asset.tags],
+      channels: [...props.asset.channels],
     };
     form.resetForm({ values });
     captureBaseline();
@@ -181,8 +207,12 @@ async function handleSave() {
   const asset = props.asset;
   const name = form.values.name ?? asset.name;
   const folderId = form.values.folderId ?? null;
+  const tags = normalizeAssetLabels(form.values.tags ?? []);
+  const channels = normalizeAssetLabels(form.values.channels ?? []);
+  const tagsChanged = !sameAssetLabels(tags, asset.tags);
   loading.value = true;
   relocateFailed.value = null;
+  saveError.value = null;
   try {
     const payload: AssetUpdate = {
       // Description + alt text both round-trip through localizations (the
@@ -191,21 +221,20 @@ async function handleSave() {
         (form.values.description as LocalizedText | undefined) ?? {},
         (form.values.altText as LocalizedText | undefined) ?? {},
       ),
-      tags: form.values.tags ?? [],
-      channels: form.values.channels ?? [],
+      // Each set is a full replace, so only send one the user changed — an
+      // omitted field keeps what's stored. A cleared set goes as `[]`.
+      ...(tagsChanged && { tags }),
+      ...(!sameAssetLabels(channels, asset.channels) && { channels }),
     };
     // Round-trip the loaded etag as If-Match so a concurrent change is caught
     // (412) instead of silently overwritten. Omitted when the backend gave none.
-    const fetchOptions = etag.value
-      ? { headers: { 'If-Match': etag.value } }
-      : undefined;
-    const updated = await assetApi.update(
-      asset._id,
-      payload,
-      undefined,
-      fetchOptions,
-    );
+    const updated = await assetApi.update(asset._id, payload, undefined, {
+      suppressErrorToast: true,
+      ...(etag.value ? { headers: { 'If-Match': etag.value } } : {}),
+    });
     etag.value = updated?.etag ?? etag.value;
+    // Sending a new tag creates it, so the suggestions may have grown.
+    if (tagsChanged) refreshTags();
 
     if (name !== asset.name || folderId !== asset.folderId) {
       try {
@@ -237,6 +266,9 @@ async function handleSave() {
       return;
     }
     geinsLogError('updateAsset', getErrorMessage(error));
+    saveError.value =
+      composeErrorMessage(getApiErrorTitle(error), getApiErrorDetail(error)) ??
+      t('error_try_again');
   } finally {
     loading.value = false;
   }
@@ -294,6 +326,14 @@ async function handleDelete() {
             {{ $t('reload') }}
           </Button>
         </AlertDescription>
+      </Alert>
+
+      <Alert v-if="saveError" variant="warning" class="mb-6">
+        <LucideTriangleAlert class="size-4" />
+        <AlertTitle>
+          {{ $t('error_updating_entity', { entityKey }) }}
+        </AlertTitle>
+        <AlertDescription>{{ saveError }}</AlertDescription>
       </Alert>
 
       <Alert v-if="relocateFailed" variant="warning" class="mb-6">
@@ -358,11 +398,6 @@ async function handleDelete() {
       <div class="border-border -mx-3 mt-4 mb-6 border-b sm:-mx-6" />
 
       <form @submit.prevent>
-        <!-- Metadata edit is gated per field, not as one block: name, folder,
-             description and alt text ship in phase 1, while tags / channels
-             wait for phase 2. Each gated group is wrapped in its own <fieldset>
-             (which reliably disables the nested custom controls). See
-             useAssetCapabilities. -->
         <FormGridWrap>
           <FormGrid design="1">
             <FormField v-slot="{ componentField }" name="name" keep-value>
@@ -418,50 +453,38 @@ async function handleDelete() {
               </FormItem>
             </FormField>
 
-            <fieldset
-              :disabled="!caps.canEditTags"
-              class="m-0 min-w-0 border-0 p-0"
-              :class="{ 'opacity-60': !caps.canEditTags }"
-            >
-              <FormField v-slot="{ componentField }" name="tags" keep-value>
-                <FormItem>
-                  <FormLabel :optional="true">{{ $t('tag', 2) }}</FormLabel>
-                  <FormControl>
-                    <FormInputTagsSearch
-                      :model-value="componentField.modelValue"
-                      entity-key="tag"
-                      :data-set="tagOptions"
-                      :allow-custom-tags="true"
-                      @update:model-value="
-                        componentField['onUpdate:modelValue']
-                      "
-                    />
-                  </FormControl>
-                </FormItem>
-              </FormField>
-            </fieldset>
+            <FormField v-slot="{ componentField }" name="tags" keep-value>
+              <FormItem>
+                <FormLabel :optional="true">{{ $t('tag', 2) }}</FormLabel>
+                <FormControl>
+                  <FormInputTagsSearch
+                    :model-value="componentField.modelValue"
+                    entity-key="tag"
+                    :data-set="tagOptions"
+                    :allow-custom-tags="true"
+                    @update:model-value="componentField['onUpdate:modelValue']"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
 
-            <fieldset
-              :disabled="!caps.canEditChannels"
-              class="m-0 min-w-0 border-0 p-0"
-              :class="{ 'opacity-60': !caps.canEditChannels }"
+            <FormField
+              v-slot="{ value, handleChange }"
+              name="channels"
+              keep-value
             >
-              <FormField
-                v-slot="{ value, handleChange }"
-                name="channels"
-                keep-value
-              >
-                <FormItem>
-                  <FormLabel :optional="true">{{ $t('channel', 2) }}</FormLabel>
-                  <FormControl>
-                    <FormInputChannels
-                      :model-value="value"
-                      @update:model-value="handleChange"
-                    />
-                  </FormControl>
-                </FormItem>
-              </FormField>
-            </fieldset>
+              <FormItem>
+                <FormLabel :optional="true">{{ $t('channel', 2) }}</FormLabel>
+                <FormControl>
+                  <FormInputChannels
+                    :model-value="value"
+                    @update:model-value="handleChange"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
           </FormGrid>
         </FormGridWrap>
       </form>

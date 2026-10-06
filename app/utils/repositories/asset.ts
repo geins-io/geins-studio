@@ -438,15 +438,12 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * Distinct, sorted tag set across all assets — feeds the tag-input
-     * suggestions. Read-only; failures surface inline, not via a toast. Phase 1
-     * serves no `/tags` route, so this is unreachable until phase 2
-     * (`tagAutocomplete` gates every call site).
+     * Distinct tags on live assets, sorted by name — real `GET media/tags`.
+     * Feeds the tag-input suggestions; a tag only on trashed assets drops out.
      */
     async listTags(fetchOptions?: RepoFetchOptions): Promise<string[]> {
-      return await fetch<string[]>(`${ENTITIES.asset.endpoint}/tags`, {
-        ...fetchOptions,
-      });
+      const res = await fetch<string[]>('/media/tags', { ...fetchOptions });
+      return Array.isArray(res) ? res : [];
     },
 
     /**

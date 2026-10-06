@@ -57,9 +57,8 @@ export interface AssetBase {
   /** Locale-keyed translatable fields, e.g. `{ en: { description, altText } }`. */
   localizations?: Localized<AssetLocalizations>;
   /**
-   * A phase-1 `media_response_asset` carries neither, so every read site must
-   * tolerate `undefined` (a missing array blanked the grid when the first real
-   * assets landed).
+   * On `PATCH` each one replaces the whole set: omit it to keep what's stored,
+   * send `[]` to clear. A response always carries both (see {@link Asset}).
    */
   tags?: string[];
   channels?: string[];
@@ -250,6 +249,10 @@ export interface Asset extends ResponseEntity<AssetBase> {
   createdBy: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Always present on a read — empty when unset. */
+  tags: string[];
+  /** Channel ids. Always present on a read — empty when unset. */
+  channels: string[];
   /** When the asset was moved to the trash; `null` while it's live. */
   deletedAt: string | null;
   /**
@@ -405,18 +408,17 @@ export type FolderDeleteAssets = 'move' | 'delete';
  * Read via `assetCapabilities`.
  */
 export interface AssetCapabilities {
-  /** Edit an asset's tags. */
-  canEditTags: boolean;
-  /** Edit an asset's publication channels. */
-  canEditChannels: boolean;
+  /**
+   * The upload ticket accepts tags + channels. Until it does, the wizard holds
+   * them in state but can't send them (the detail panel `PATCH` already can).
+   */
+  canUploadTagsAndChannels: boolean;
   /**
    * Folder delete can decide what happens to the assets inside (re-home to
    * uncategorised, or delete them too). Phase 1's `DELETE /media/folders/{id}`
    * is empty-only and answers `409 FOLDER_NOT_EMPTY` instead.
    */
   canDeleteFolderWithAssets: boolean;
-  /** Suggest existing tags from the distinct-tags source. */
-  tagAutocomplete: boolean;
 }
 
 /**
