@@ -94,6 +94,10 @@ const completedCount = computed(
 const rejectedOutcomes = computed(() =>
   outcomes.value.filter((o) => o.status === 'rejected'),
 );
+// A restored row's path is held again, so re-sending it would just clash.
+const retryableOutcomes = computed(() =>
+  rejectedOutcomes.value.filter((o) => !o.restored),
+);
 
 // Wizard alt text (per-locale) + description (single, default-language) → the
 // wire `localizations` shape, dropping blanks. Rides the ticket claim, which
@@ -206,9 +210,9 @@ async function restoreConflict(row: OutcomeRow) {
 // Back to the manage step with only the files that failed, so they can be
 // renamed (or moved) and sent again.
 function retryRejected() {
-  const rejectedRefs = new Set(rejectedOutcomes.value.map((o) => o.clientRef));
+  const retryRefs = new Set(retryableOutcomes.value.map((o) => o.clientRef));
   removeFiles(
-    files.value.filter((wf) => !rejectedRefs.has(wf.id)).map((wf) => wf.id),
+    files.value.filter((wf) => !retryRefs.has(wf.id)).map((wf) => wf.id),
   );
   outcomes.value = [];
   done.value = false;
@@ -358,7 +362,7 @@ function leave() {
 
           <div class="flex items-center gap-3">
             <Button
-              v-if="rejectedOutcomes.length"
+              v-if="retryableOutcomes.length"
               variant="outline"
               @click="retryRejected"
             >

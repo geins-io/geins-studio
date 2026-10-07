@@ -69,6 +69,7 @@ const uploading = ref(false);
 // Per-file rejections shown inline when nothing uploaded (so the user can fix).
 // `trashed` is the trashed asset holding the path, when that's why it failed.
 interface RejectedRow {
+  file?: File;
   name: string;
   code: UploadRejectionCode;
   trashed?: Asset | null;
@@ -114,12 +115,15 @@ function removeFile(index: number) {
 
 // A trashed asset still holds its path, so the upload is refused like a live
 // conflict; find which ones are in the trash so the row can offer a restore.
-async function markTrashedConflicts(rows: RejectedRow[]) {
+async function markTrashedConflicts(
+  rows: RejectedRow[],
+  target: string | null,
+) {
   const conflicts = rows.filter((r) => r.code === 'PATH_ALREADY_EXISTS');
   if (!conflicts.length) return;
   try {
     const found = await assetApi.trashedAtPaths(
-      conflicts.map((r) => ({ folderId: folderId.value, name: r.name })),
+      conflicts.map((r) => ({ folderId: target, name: r.name })),
       { suppressErrorToast: true },
     );
     conflicts.forEach((r, i) => (r.trashed = found[i]));
@@ -134,6 +138,11 @@ async function restoreConflict(row: RejectedRow, index: number) {
   restoringIndex.value = index;
   row.restored = await restoreAsset(row.trashed);
   restoringIndex.value = null;
+  // The restored asset holds the path again — drop the file so a re-upload
+  // doesn't clash on it.
+  if (row.restored && row.file) {
+    files.value = files.value.filter((f) => f !== row.file);
+  }
 }
 
 async function upload() {
@@ -145,10 +154,11 @@ async function upload() {
     // so the files land in it instead of silently at the library root.
     if (!(await commitPending())) return;
     // Index as clientRef so a rejection maps back to its file (for the reason list).
+    const target = folderId.value;
     const items = files.value.map((file, i) => ({
       file,
       clientRef: String(i),
-      folderId: folderId.value,
+      folderId: target,
     }));
     const results = await assetApi.uploadViaTickets(items);
     await refreshNuxtData('asset-library-list');
@@ -176,11 +186,11 @@ async function upload() {
 
     // Nothing uploaded → keep the dialog open and show why; otherwise close.
     if (fails.length && !created.length) {
-      const rows: RejectedRow[] = fails.map((r) => ({
-        name: files.value[Number(r.clientRef)]?.name ?? r.clientRef,
-        code: r.code,
-      }));
-      await markTrashedConflicts(rows);
+      const rows: RejectedRow[] = fails.map((r) => {
+        const file = files.value[Number(r.clientRef)];
+        return { file, name: file?.name ?? r.clientRef, code: r.code };
+      });
+      await markTrashedConflicts(rows, target);
       rejected.value = rows;
     } else {
       open.value = false;
