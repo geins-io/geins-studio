@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { createReusableTemplate } from '@vueuse/core';
 import type {
   AssetLink,
   AssetLinkTargetType,
@@ -87,6 +88,11 @@ const linkedProductIds = computed<Record<AssetLinkTargetType, string[]>>(() => {
 
 const linkOpen = ref(false);
 
+// One remove button for both the resolved and the unresolved product row.
+const [DefineRemoveButton, ReuseRemoveButton] = createReusableTemplate<{
+  row: ProductRow;
+}>();
+
 const pendingRemove = ref<ProductRow | null>(null);
 const removeOpen = ref(false);
 const removing = ref(false);
@@ -127,6 +133,26 @@ const removeDescription = computed(() =>
 
 <template>
   <section>
+    <DefineRemoveButton v-slot="{ row }">
+      <Tooltip>
+        <TooltipTrigger as-child>
+          <Button
+            variant="ghost"
+            size="icon"
+            class="size-7 shrink-0"
+            :aria-label="$t('remove_entity', { entityKey: 'link' })"
+            data-test="used-in-remove"
+            @click="requestRemove(row)"
+          >
+            <LucideX class="size-4" aria-hidden="true" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          {{ $t('remove_entity', { entityKey: 'link' }) }}
+        </TooltipContent>
+      </Tooltip>
+    </DefineRemoveButton>
+
     <ContentCardHeader
       size="md"
       heading-level="h3"
@@ -185,23 +211,7 @@ const removeDescription = computed(() =>
                 :product="row.product"
                 :kind="row.kind"
               >
-                <Tooltip>
-                  <TooltipTrigger as-child>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      class="size-7 shrink-0"
-                      :aria-label="$t('remove_entity', { entityKey: 'link' })"
-                      data-test="used-in-remove"
-                      @click="requestRemove(row)"
-                    >
-                      <LucideX class="size-4" aria-hidden="true" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {{ $t('remove_entity', { entityKey: 'link' }) }}
-                  </TooltipContent>
-                </Tooltip>
+                <ReuseRemoveButton :row="row" />
               </AssetLinkedProduct>
               <div
                 v-else
@@ -217,23 +227,7 @@ const removeDescription = computed(() =>
                 <Badge variant="secondary" size="sm">
                   {{ $t(productLinkKindKey(row.kind)) }}
                 </Badge>
-                <Tooltip>
-                  <TooltipTrigger as-child>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      class="size-7 shrink-0"
-                      :aria-label="$t('remove_entity', { entityKey: 'link' })"
-                      data-test="used-in-remove"
-                      @click="requestRemove(row)"
-                    >
-                      <LucideX class="size-4" aria-hidden="true" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {{ $t('remove_entity', { entityKey: 'link' }) }}
-                  </TooltipContent>
-                </Tooltip>
+                <ReuseRemoveButton :row="row" />
               </div>
             </li>
           </ul>

@@ -34,11 +34,15 @@ const kind = ref<AssetLinkTargetType>('productimage');
 const selected = ref<string[]>([]);
 const linking = ref(false);
 
-watch(open, (isOpen) => {
-  if (!isOpen) return;
-  kind.value = productLinkTargetType(props.assetType);
-  selected.value = [];
-});
+watch(
+  open,
+  (isOpen) => {
+    if (!isOpen) return;
+    kind.value = productLinkTargetType(props.assetType);
+    selected.value = [];
+  },
+  { immediate: true },
+);
 
 // Switching kind can turn a pick into an existing link; drop it so the count
 // on the button stays honest.
@@ -66,7 +70,8 @@ async function link() {
     emit('linked');
   } catch (err) {
     // The global API error toast already told the user; a partial run is
-    // safe to repeat (linking only adds).
+    // safe to repeat (linking only adds). The refetch locks what did land,
+    // and the `locked` watcher prunes those from the selection.
     geinsLogError('link', getErrorMessage(err));
     emit('linked');
   } finally {
