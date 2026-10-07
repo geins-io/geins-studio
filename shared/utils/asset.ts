@@ -209,6 +209,7 @@ export function productLinkKindKey(kind: AssetLinkTargetType): string {
 export function assetSelectionKind(
   types: readonly (AssetType | undefined)[],
 ): AssetSelectionKind {
+  if (!types.length) return 'files';
   const images = types.filter(
     (type) => type && productLinkTargetType(type) === 'productimage',
   ).length;

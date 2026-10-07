@@ -362,6 +362,9 @@ describe('assetSelectionKind', () => {
     expect(assetSelectionKind(['image', 'pdf'])).toBe('mixed');
     expect(assetSelectionKind(['image', undefined])).toBe('mixed');
   });
+  it('is files for an empty selection', () => {
+    expect(assetSelectionKind([])).toBe('files');
+  });
 });
 
 describe('bulkLinkCalls', () => {
