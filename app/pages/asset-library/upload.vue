@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type {
+  Asset,
   AssetLocalizations,
   Localized,
   LocalizedText,
@@ -67,6 +68,7 @@ const canProceed = computed(
 );
 
 const { assetApi } = useGeinsRepository();
+const { restoreAsset } = useAssetActions();
 const { geinsLogError } = useGeinsLog('pages/asset-library/upload.vue');
 const { currentLanguage } = storeToRefs(useAccountStore());
 const { matchOf } = useProductMatch();
@@ -77,9 +79,13 @@ const done = ref(false);
 // Per-file outcome for the result screen. `clientRef` is the WizardFile id we
 // send as the ticket clientRef, so it maps each result back to its source file.
 interface OutcomeRow {
+  clientRef: string;
   name: string;
   status: 'completed' | 'rejected';
   code?: UploadRejectionCode;
+  /** The trashed asset holding this file's path, when that's why it failed. */
+  trashed?: Asset | null;
+  restored?: boolean;
 }
 const outcomes = ref<OutcomeRow[]>([]);
 const completedCount = computed(
@@ -147,11 +153,14 @@ async function submit() {
   try {
     const results = await assetApi.uploadViaTickets(items);
     await refreshNuxtData('asset-library-list');
-    outcomes.value = results.map((r) => ({
+    const rows: OutcomeRow[] = results.map((r) => ({
+      clientRef: r.clientRef,
       name: nameByRef.get(r.clientRef) ?? r.clientRef,
       status: r.status,
       code: r.status === 'rejected' ? r.code : undefined,
     }));
+    await markTrashedConflicts(rows, items);
+    outcomes.value = rows;
     done.value = true;
   } catch (error) {
     // A hard failure (e.g. a ticket claim threw) flows to the global error
@@ -160,6 +169,50 @@ async function submit() {
   } finally {
     uploading.value = false;
   }
+}
+
+// A trashed asset still holds its path, so the upload is refused like a live
+// conflict; find which ones are in the trash so the row can offer a restore.
+async function markTrashedConflicts(
+  rows: OutcomeRow[],
+  items: { clientRef: string; folderId: string | null; name: string }[],
+) {
+  const conflicts = rows.filter((r) => r.code === 'PATH_ALREADY_EXISTS');
+  if (!conflicts.length) return;
+  const itemByRef = new Map(items.map((it) => [it.clientRef, it]));
+  try {
+    const found = await assetApi.trashedAtPaths(
+      conflicts.map((r) => {
+        const it = itemByRef.get(r.clientRef);
+        return { folderId: it?.folderId ?? null, name: it?.name ?? r.name };
+      }),
+      { suppressErrorToast: true },
+    );
+    conflicts.forEach((r, i) => (r.trashed = found[i]));
+  } catch (error) {
+    // Without the lookup the row falls back to the plain conflict copy.
+    geinsLogError('markTrashedConflicts', getErrorMessage(error));
+  }
+}
+
+const restoringRef = ref<string | null>(null);
+async function restoreConflict(row: OutcomeRow) {
+  if (!row.trashed) return;
+  restoringRef.value = row.clientRef;
+  row.restored = await restoreAsset(row.trashed);
+  restoringRef.value = null;
+}
+
+// Back to the manage step with only the files that failed, so they can be
+// renamed (or moved) and sent again.
+function retryRejected() {
+  const rejectedRefs = new Set(rejectedOutcomes.value.map((o) => o.clientRef));
+  removeFiles(
+    files.value.filter((wf) => !rejectedRefs.has(wf.id)).map((wf) => wf.id),
+  );
+  outcomes.value = [];
+  done.value = false;
+  currentStep.value = 2;
 }
 
 function leave() {
@@ -271,25 +324,50 @@ function leave() {
             class="w-full max-w-md space-y-1.5 text-left"
           >
             <div
-              v-for="(row, i) in rejectedOutcomes"
-              :key="i"
+              v-for="row in rejectedOutcomes"
+              :key="row.clientRef"
               class="bg-muted/40 flex items-start gap-2 rounded-md px-3 py-2 text-sm"
             >
               <LucideFileX
                 class="text-muted-foreground mt-0.5 size-4 shrink-0"
               />
-              <div class="min-w-0">
+              <div class="min-w-0 flex-1">
                 <p class="truncate font-medium">{{ row.name }}</p>
                 <p class="text-muted-foreground text-xs">
-                  {{ $t(uploadRejectionMessageKey(row.code!)) }}
+                  {{
+                    row.restored
+                      ? $t('asset_library.upload_restored_from_trash')
+                      : $t(uploadRejectionMessageKey(row.code!, !!row.trashed))
+                  }}
                 </p>
               </div>
+              <ButtonIcon
+                v-if="row.trashed && !row.restored"
+                icon="Undo2"
+                variant="outline"
+                size="sm"
+                class="shrink-0"
+                :loading="restoringRef === row.clientRef"
+                :disabled="!!restoringRef"
+                @click="restoreConflict(row)"
+              >
+                {{ $t('restore') }}
+              </ButtonIcon>
             </div>
           </div>
 
-          <Button @click="leave">
-            {{ $t('asset_library.go_to_library') }}
-          </Button>
+          <div class="flex items-center gap-3">
+            <Button
+              v-if="rejectedOutcomes.length"
+              variant="outline"
+              @click="retryRejected"
+            >
+              {{ $t('asset_library.upload_retry_rejected') }}
+            </Button>
+            <Button @click="leave">
+              {{ $t('asset_library.go_to_library') }}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
