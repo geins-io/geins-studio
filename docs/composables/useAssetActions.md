@@ -46,9 +46,9 @@ Triggers an anchor download of the asset's `url` (cross-origin storage URLs fall
 deleteAsset: (asset: Asset) => Promise<boolean>;
 ```
 
-Deletes the asset (`assetApi.delete`), refreshes `asset-library-list`, and toasts (`entity_deleted`). Returns `true` on success, `false` on failure (the error surfaces via the global API-error toast). Callers close their dialog / panel on `true`.
+Moves the asset to trash (`assetApi.delete`), refreshes `asset-library-list`, and toasts (`entity_moved_to_trash`). Returns `true` on success, `false` on failure (the error surfaces via the global API-error toast). Callers close their dialog / panel on `true`.
 
-`Geins.Media` moves the asset to **trash** rather than dropping it, so the delete copy stays neutral on permanence — see [assets](/domains/assets).
+`Geins.Media` moves the asset to **trash** rather than dropping it, so every caller uses the soft "Move to trash" copy — see [assets](/domains/assets#delete-vocabulary).
 
 ### `restoreAsset`
 

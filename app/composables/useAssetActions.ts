@@ -7,7 +7,7 @@ export interface UseAssetActionsReturnType {
   copyUrl: (asset: Asset) => Promise<void>;
   /** Download the file from its `url` (new-tab fallback). No-op if unset. */
   download: (asset: Asset) => void;
-  /** Delete the asset, refresh the library list, toast. Returns success. */
+  /** Move the asset to trash, refresh the library list, toast. Returns success. */
   deleteAsset: (asset: Asset) => Promise<boolean>;
   /** Restore a trashed asset, refresh the library list, toast. Returns success. */
   restoreAsset: (asset: Asset) => Promise<boolean>;
@@ -56,7 +56,10 @@ export function useAssetActions(): UseAssetActionsReturnType {
     try {
       await assetApi.delete(asset._id);
       await refreshNuxtData('asset-library-list');
-      toast({ title: t('entity_deleted', { entityKey }), variant: 'positive' });
+      toast({
+        title: t('entity_moved_to_trash', { entityKey }),
+        variant: 'positive',
+      });
       return true;
     } catch (error) {
       geinsLogError('deleteAsset', getErrorMessage(error));

@@ -2,13 +2,14 @@
 import type { Asset } from '#shared/types';
 
 /**
- * Shared asset context menu (view / download / copy URL / delete) so the grid
- * card and the list-view actions column render identical items + emits.
+ * Shared asset context menu (view / download / copy URL / move to trash) so
+ * the grid card and the list-view actions column render identical items +
+ * emits.
  * Download / copy URL are disabled when the asset has no public `url`.
  *
  * In `trashed` mode the menu collapses to a single **Restore** item: a trashed
  * asset can only come back, and its stored file may already be unreachable, so
- * offering details / download / delete there would be dead ends.
+ * offering details / download / trash there would be dead ends.
  */
 withDefaults(
   defineProps<{
@@ -69,7 +70,7 @@ const emit = defineEmits<{
         <DropdownMenuSeparator />
         <DropdownMenuItem @click="emit('delete')">
           <LucideTrash2 class="mr-2 size-4" aria-hidden="true" />
-          <span>{{ $t('delete_entity', { entityKey: 'asset' }) }}</span>
+          <span>{{ $t('asset_library.move_to_trash') }}</span>
         </DropdownMenuItem>
       </template>
     </DropdownMenuContent>

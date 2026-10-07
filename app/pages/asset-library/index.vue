@@ -456,9 +456,10 @@ const trashAction = computed<BulkAction>(() => ({
   key: 'move-to-trash',
   label: t('asset_library.move_to_trash'),
   icon: 'Trash2',
-  destructive: true,
+  description: (count) =>
+    t('asset_library.bulk_trash_description', { count }, count),
   note: () =>
-    t('asset_library.bulk_trash_note', { days: TRASH_RETENTION_DAYS }),
+    t('asset_library.trash_restore_note', { days: TRASH_RETENTION_DAYS }, 2),
   run: (ids, _value, options) => assetApi.bulkDelete(ids, options),
   successMessage: (count) =>
     t('asset_library.bulk_moved_to_trash', { count }, count),
@@ -609,7 +610,12 @@ async function confirmDelete() {
     v-model:open="deleteOpen"
     :entity-key="entityKey"
     :loading="deleting"
-    :description="$t('asset_library.asset_delete_confirm_description')"
+    :title="$t('asset_library.trash_confirm_title')"
+    :description="
+      $t('asset_library.trash_restore_note', { days: TRASH_RETENTION_DAYS }, 1)
+    "
+    :confirm-label="$t('asset_library.move_to_trash')"
+    confirm-variant="default"
     :warning-title="$t('asset_library.removing_everywhere')"
     :warning-description="$t('asset_library.remove_everywhere_description', 1)"
     @confirm="confirmDelete"

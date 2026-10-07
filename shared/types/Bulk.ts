@@ -40,6 +40,11 @@ export interface BulkAction<TValue = unknown> {
   summary?(value: TValue): string;
   /** Extra line under the summary, e.g. whether the change can be undone. */
   note?(value: TValue): string | undefined;
+  /**
+   * Properties-pane line for an action with no `component`, saying what Run
+   * will do to `count` items. Defaults to a generic "no properties" line.
+   */
+  description?(count: number): string;
   /** Destructive styling on the confirm button. */
   destructive?: boolean;
   /**

@@ -14,6 +14,7 @@ import {
   ASSET_LABEL_LIMITS,
   normalizeAssetLabels,
   sameAssetLabels,
+  TRASH_RETENTION_DAYS,
 } from '#shared/utils/asset';
 import { ENTITIES } from '#shared/utils/entities';
 import { formatFileSize } from '#shared/utils/file';
@@ -521,16 +522,22 @@ async function handleDelete() {
           <ContentCardHeader
             size="md"
             heading-level="h3"
-            :title="$t('delete_entity', { entityKey })"
-            :description="$t('asset_library.asset_remove_description')"
+            :title="$t('asset_library.move_to_trash')"
+            :description="
+              $t(
+                'asset_library.trash_restore_note',
+                { days: TRASH_RETENTION_DAYS },
+                1,
+              )
+            "
           />
           <Button
             size="sm"
-            variant="destructive"
+            variant="secondary"
             :disabled="deleting"
             @click.stop="deleteOpen = true"
           >
-            {{ $t('delete') }}
+            {{ $t('asset_library.move_to_trash') }}
           </Button>
         </div>
       </div>
@@ -545,7 +552,16 @@ async function handleDelete() {
         v-model:open="deleteOpen"
         :entity-key="entityKey"
         :loading="deleting"
-        :description="$t('asset_library.asset_delete_confirm_description')"
+        :title="$t('asset_library.trash_confirm_title')"
+        :description="
+          $t(
+            'asset_library.trash_restore_note',
+            { days: TRASH_RETENTION_DAYS },
+            1,
+          )
+        "
+        :confirm-label="$t('asset_library.move_to_trash')"
+        confirm-variant="default"
         :warning-title="$t('asset_library.removing_everywhere')"
         :warning-description="
           $t('asset_library.remove_everywhere_description', 1)
