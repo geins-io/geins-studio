@@ -23,7 +23,10 @@ const { t } = useI18n();
 const { toast } = useToast();
 const { assetApi } = useGeinsRepository();
 const { geinsLogError } = useGeinsLog('components/AssetLinkProductsDialog.vue');
-const { products } = storeToRefs(useProductsStore());
+const productsStore = useProductsStore();
+const { products, initialized } = storeToRefs(productsStore);
+// The store loads lazily; init() is idempotent.
+productsStore.init();
 
 // `productimage` on anything but image/svg is a 422, so only those get the
 // choice; everything else links as a file.
@@ -110,13 +113,11 @@ async function link() {
             </Button>
           </ButtonGroup>
         </div>
-        <p v-else class="text-muted-foreground text-sm">
-          {{ $t('asset_library.link_as_file_only') }}
-        </p>
 
         <ProductMultiSelect
           v-model="selected"
           :products="products"
+          :loading="!initialized"
           :locked-ids="locked"
           :locked-label="$t('asset_library.picker_linked')"
         />

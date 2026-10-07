@@ -7,8 +7,9 @@ import type { Product, Category, Brand } from '#shared/types';
  * Fetches and transforms product data from the API, providing thumbnail URLs
  * and localized names. Responds to language changes by re-fetching.
  *
- * Initialization: call `init()` once after authentication. The `geins-global.ts`
- * plugin handles this automatically.
+ * Initialization is lazy: every consumer calls `init()` (idempotent; concurrent
+ * calls share one load). Nothing loads it at login — only `reset()` runs on
+ * logout (`geins-global.ts`).
  *
  * @example
  * ```ts
@@ -54,8 +55,16 @@ export const useProductsStore = defineStore('products', () => {
     return brands.value;
   }
 
-  async function init(): Promise<void> {
-    if (initialized.value) return;
+  let loading: Promise<void> | null = null;
+  function init(): Promise<void> {
+    if (initialized.value) return Promise.resolve();
+    loading ??= load().finally(() => {
+      loading = null;
+    });
+    return loading;
+  }
+
+  async function load(): Promise<void> {
     const results = await Promise.allSettled([
       fetchProducts(),
       fetchCategories(),
@@ -134,6 +143,7 @@ export const useProductsStore = defineStore('products', () => {
     categories,
     brands,
     ready,
+    initialized,
     fetchProducts,
     fetchCategories,
     fetchBrands,

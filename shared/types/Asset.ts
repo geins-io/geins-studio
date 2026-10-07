@@ -131,6 +131,31 @@ export interface AssetLinkTarget<T extends string = AssetLinkTargetType> {
   targetId: string;
 }
 
+/**
+ * What a bulk link selection holds: only images (image/svg), no images, or
+ * both — decides which "Link as" choices the bulk pane offers.
+ */
+export type AssetSelectionKind = 'images' | 'files' | 'mixed';
+
+/**
+ * How a bulk link treats the selection: `byType` links images/svg as product
+ * images and everything else as files; `file` links everything as files.
+ * There is no "all as image" — a non-image can't be one (`422`).
+ */
+export type BulkLinkMode = 'byType' | 'file';
+
+/** The bulk "Link to products" action's value. */
+export interface AssetBulkLinkValue {
+  mode: BulkLinkMode;
+  productIds: string[];
+}
+
+/** One `POST media/assets/bulk-link` body. */
+export interface BulkLinkCall {
+  assetIds: string[];
+  links: AssetLinkTarget[];
+}
+
 // =============================================================================
 // Upload ticket flow (Geins.Media 3-step upload: ticket → PUT bytes → complete)
 //

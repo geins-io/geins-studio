@@ -2,8 +2,11 @@ import type {
   AssetApiOptions,
   AssetCapabilities,
   AssetLinkTargetType,
+  AssetSelectionKind,
   AssetSortField,
   AssetType,
+  BulkLinkCall,
+  BulkLinkMode,
   UploadRejectionCode,
 } from '#shared/types';
 
@@ -187,6 +190,56 @@ const PRODUCT_LINK_TYPES = new Set<string>(Object.keys(PRODUCT_LINK_KIND_KEYS));
 /** i18n key naming a product link's kind — "Image" or "File". */
 export function productLinkKindKey(kind: AssetLinkTargetType): string {
   return PRODUCT_LINK_KIND_KEYS[kind];
+}
+
+/**
+ * What a bulk link selection holds. An asset whose type is unknown counts as a
+ * non-image — linking it as a file is always accepted.
+ */
+export function assetSelectionKind(
+  types: readonly (AssetType | undefined)[],
+): AssetSelectionKind {
+  const images = types.filter(
+    (type) => type && productLinkTargetType(type) === 'productimage',
+  ).length;
+  if (images === types.length) return 'images';
+  return images ? 'mixed' : 'files';
+}
+
+/**
+ * The bulk-link calls that link `assetIds` to every product in `productIds`:
+ * one group per link kind (an image and a file can't share a call — a
+ * `productimage` link on the file fails the whole call), each split so no call
+ * carries more than `maxLinks` links.
+ */
+export function bulkLinkCalls(
+  assetIds: readonly string[],
+  typeOf: (id: string) => AssetType | undefined,
+  mode: BulkLinkMode,
+  productIds: readonly string[],
+  maxLinks = 100,
+): BulkLinkCall[] {
+  const byKind = new Map<AssetLinkTargetType, string[]>();
+  for (const id of assetIds) {
+    const type = typeOf(id);
+    const kind =
+      mode === 'byType' && type ? productLinkTargetType(type) : 'productfile';
+    byKind.set(kind, [...(byKind.get(kind) ?? []), id]);
+  }
+  const calls: BulkLinkCall[] = [];
+  for (const kind of ['productimage', 'productfile'] as const) {
+    const ids = byKind.get(kind);
+    if (!ids?.length) continue;
+    for (let i = 0; i < productIds.length; i += maxLinks) {
+      calls.push({
+        assetIds: ids,
+        links: productIds
+          .slice(i, i + maxLinks)
+          .map((targetId) => ({ targetType: kind, targetId })),
+      });
+    }
+  }
+  return calls;
 }
 
 /** Whether a read link points at a product (either kind). */

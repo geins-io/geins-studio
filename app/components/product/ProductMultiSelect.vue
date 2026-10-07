@@ -7,13 +7,16 @@ import type { SelectorEntity } from '#shared/types';
  * a checkbox row per product (thumbnail, name, article number · id). Renders
  * inline (no popover), so it works inside a sheet or dialog without fighting
  * their focus trap. `lockedIds` render checked and disabled with `lockedLabel`
- * — e.g. products an asset is already linked to.
+ * — e.g. products an asset is already linked to. `loading` shows skeleton
+ * rows while the caller's product list loads.
  */
 const props = withDefaults(
   defineProps<{
     products: SelectorEntity[];
     lockedIds?: string[];
     lockedLabel?: string;
+    /** The product list is still loading — rows render as skeletons. */
+    loading?: boolean;
   }>(),
   { lockedIds: () => [], lockedLabel: undefined },
 );
@@ -78,8 +81,15 @@ const refs = (product: SelectorEntity) =>
       </div>
     </div>
 
+    <div v-if="loading" class="space-y-1 px-3 py-2">
+      <div v-for="i in 4" :key="i" class="flex items-center gap-3 px-1 py-1.5">
+        <Skeleton class="size-4 rounded-sm" />
+        <Skeleton class="size-6 rounded-md" />
+        <Skeleton class="h-4 w-40" />
+      </div>
+    </div>
     <p
-      v-if="!visible.length"
+      v-else-if="!visible.length"
       class="text-muted-foreground px-3 py-6 text-center text-sm"
     >
       {{ t('no_entity_found', { entityKey: 'product' }, 2) }}

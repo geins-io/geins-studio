@@ -318,16 +318,17 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * Every id the list's query matches across all pages — for a bulk "select
-     * all". Pages the same batch at the 1000 cap until `totalItemCount` is
-     * reached, so the ids stay consistent with what the list counted.
+     * Every asset the list's query matches across all pages (id + type) — for a
+     * bulk "select all"; the type lets a bulk link split images from files.
+     * Pages the same batch at the 1000 cap until `pageCount`, so the result
+     * stays consistent with what the list counted.
      */
-    async matchingIds(
+    async matchingAssets(
       state: ListQueryState<AssetQueryFilters>,
       scope?: AssetQueryScope,
       fetchOptions?: RepoFetchOptions,
-    ): Promise<string[]> {
-      const ids: string[] = [];
+    ): Promise<Pick<Asset, '_id' | 'type'>[]> {
+      const ids: Pick<Asset, '_id' | 'type'>[] = [];
       let batchId: string | undefined;
       for (let page = 1; ; page++) {
         const res = await fetch<BatchQueryResult<Asset>>(
@@ -344,7 +345,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
           },
         );
         const items = Array.isArray(res.items) ? res.items : [];
-        ids.push(...items.map((asset) => asset._id));
+        ids.push(...items.map(({ _id, type }) => ({ _id, type })));
         batchId = res._id;
         if (!items.length || page >= res.pageCount) return ids;
       }
