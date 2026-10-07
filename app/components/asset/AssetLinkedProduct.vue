@@ -3,12 +3,13 @@ import type { AssetLinkTargetType, ProductMatch } from '#shared/types';
 import { productLinkKindKey } from '#shared/utils/asset';
 
 /**
- * Compact, read-only card shown at the top of the manage step's detail pane when
+ * Compact card shown at the top of the manage step's detail pane when
  * the selected file links to a product (see {@link useProductMatch}), and per
  * product row in [AssetUsedIn](/components/asset/AssetUsedIn). A single row:
  * product thumbnail + name, followed inline by the article number and id
  * (dot-separated, muted) — a discreet confirmation of the match. With `kind`,
- * a trailing badge says whether the asset is the product's image or a file.
+ * a trailing badge says whether the asset is the product's image or a file;
+ * the default slot renders after it (e.g. a remove action).
  */
 const props = defineProps<{
   product: ProductMatch;
@@ -41,5 +42,6 @@ const refs = computed(() =>
     <Badge v-if="kind" variant="secondary" size="sm">
       {{ $t(productLinkKindKey(kind)) }}
     </Badge>
+    <slot />
   </div>
 </template>

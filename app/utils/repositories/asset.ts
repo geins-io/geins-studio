@@ -475,6 +475,42 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
+     * Link assets to targets — real `POST /media/assets/bulk-link`. Every asset
+     * gets every link (at most 100 links per call). Only adds, never removes, so
+     * repeating a body is safe. All or nothing: a `productimage` link on a
+     * non-image/svg asset is a `422` naming those assets.
+     */
+    async bulkLink(
+      assetIds: string[],
+      links: AssetLinkTarget[],
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<void> {
+      await fetch<unknown>(`${ENTITIES.asset.endpoint}/bulk-link`, {
+        method: 'POST',
+        body: { assetIds, links },
+        errorContext: { action: 'updating', entity: ENTITIES.asset.key },
+        ...fetchOptions,
+      });
+    },
+
+    /** Remove one link — real `DELETE /media/assets/{id}/links/{type}/{target}`. */
+    async removeLink(
+      id: string,
+      targetType: string,
+      targetId: string,
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<void> {
+      await fetch<unknown>(
+        `${ENTITIES.asset.endpoint}/${id}/links/${encodeURIComponent(targetType)}/${encodeURIComponent(targetId)}`,
+        {
+          method: 'DELETE',
+          errorContext: { action: 'updating', entity: ENTITIES.asset.key },
+          ...fetchOptions,
+        },
+      );
+    },
+
+    /**
      * Distinct tags on live assets, sorted by name — real `GET media/tags`.
      * Feeds the tag-input suggestions; a tag only on trashed assets drops out.
      */

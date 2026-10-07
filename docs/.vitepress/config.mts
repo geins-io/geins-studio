@@ -326,6 +326,10 @@ export default defineConfig({
                 link: '/components/asset/AssetUsedIn.md',
               },
               {
+                text: 'AssetLinkProductsDialog',
+                link: '/components/asset/AssetLinkProductsDialog.md',
+              },
+              {
                 text: 'AssetBulkLabels',
                 link: '/components/asset/AssetBulkLabels.md',
               },
@@ -362,6 +366,10 @@ export default defineConfig({
               {
                 text: 'ProductThumbnail',
                 link: '/components/product/ProductThumbnail.md',
+              },
+              {
+                text: 'ProductMultiSelect',
+                link: '/components/product/ProductMultiSelect.md',
               },
             ],
           },

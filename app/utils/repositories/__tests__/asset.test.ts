@@ -312,6 +312,29 @@ describe('assetRepo', () => {
       });
     });
 
+    it('bulkLink POSTs the ids and links to /media/assets/bulk-link', async () => {
+      mockFetch.mockResolvedValue(null);
+      const links = [{ targetType: 'productfile' as const, targetId: 'p1' }];
+      await api.bulkLink(['a1'], links);
+      expect(mockFetch).toHaveBeenCalledWith('/media/assets/bulk-link', {
+        method: 'POST',
+        body: { assetIds: ['a1'], links },
+        errorContext: { action: 'updating', entity: 'asset' },
+      });
+    });
+
+    it('removeLink DELETEs the link by type and target', async () => {
+      mockFetch.mockResolvedValue(null);
+      await api.removeLink('a1', 'productimage', '033126');
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/media/assets/a1/links/productimage/033126',
+        {
+          method: 'DELETE',
+          errorContext: { action: 'updating', entity: 'asset' },
+        },
+      );
+    });
+
     it('bulkAssignChannels POSTs the ids and channels', async () => {
       mockFetch.mockResolvedValue(null);
       await api.bulkAssignChannels(['a1'], ['1|se']);
