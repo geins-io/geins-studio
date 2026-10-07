@@ -513,7 +513,7 @@ async function handleDelete() {
       </dl>
 
       <div class="mt-6 border-t pt-6">
-        <AssetUsedIn :asset-id="asset._id" />
+        <AssetUsedIn :asset-id="asset._id" :asset-type="asset.type" />
       </div>
 
       <div class="mt-6 border-t pt-6">
