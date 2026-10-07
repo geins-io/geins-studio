@@ -41,6 +41,7 @@ const open = defineModel<boolean>('open', { default: false });
 const emit = defineEmits<{ uploaded: [assets: Asset[]] }>();
 
 const { assetApi } = useGeinsRepository();
+const { restoreAsset } = useAssetActions();
 const { commitPending } = providePendingCommits();
 const { resolveIcon } = useLucideIcon();
 const { toast } = useToast();
@@ -66,7 +67,16 @@ const files = ref<File[]>([]);
 const folderId = ref<string | null>(props.defaultFolderId ?? null);
 const uploading = ref(false);
 // Per-file rejections shown inline when nothing uploaded (so the user can fix).
-const rejected = ref<{ name: string; code: UploadRejectionCode }[]>([]);
+// `trashed` is the trashed asset holding the path, when that's why it failed.
+interface RejectedRow {
+  file?: File;
+  name: string;
+  code: UploadRejectionCode;
+  trashed?: Asset | null;
+  restored?: boolean;
+}
+const rejected = ref<RejectedRow[]>([]);
+const restoringIndex = ref<number | null>(null);
 
 watch(open, (value) => {
   if (value) {
@@ -103,6 +113,38 @@ function removeFile(index: number) {
   files.value.splice(index, 1);
 }
 
+// A trashed asset still holds its path, so the upload is refused like a live
+// conflict; find which ones are in the trash so the row can offer a restore.
+async function markTrashedConflicts(
+  rows: RejectedRow[],
+  target: string | null,
+) {
+  const conflicts = rows.filter((r) => r.code === 'PATH_ALREADY_EXISTS');
+  if (!conflicts.length) return;
+  try {
+    const found = await assetApi.trashedAtPaths(
+      conflicts.map((r) => ({ folderId: target, name: r.name })),
+      { suppressErrorToast: true },
+    );
+    conflicts.forEach((r, i) => (r.trashed = found[i]));
+  } catch (error) {
+    // Without the lookup the row falls back to the plain conflict copy.
+    geinsLogError('markTrashedConflicts', getErrorMessage(error));
+  }
+}
+
+async function restoreConflict(row: RejectedRow, index: number) {
+  if (!row.trashed) return;
+  restoringIndex.value = index;
+  row.restored = await restoreAsset(row.trashed);
+  restoringIndex.value = null;
+  // The restored asset holds the path again — drop the file so a re-upload
+  // doesn't clash on it.
+  if (row.restored && row.file) {
+    files.value = files.value.filter((f) => f !== row.file);
+  }
+}
+
 async function upload() {
   if (!files.value.length) return;
   uploading.value = true;
@@ -112,10 +154,11 @@ async function upload() {
     // so the files land in it instead of silently at the library root.
     if (!(await commitPending())) return;
     // Index as clientRef so a rejection maps back to its file (for the reason list).
+    const target = folderId.value;
     const items = files.value.map((file, i) => ({
       file,
       clientRef: String(i),
-      folderId: folderId.value,
+      folderId: target,
     }));
     const results = await assetApi.uploadViaTickets(items);
     await refreshNuxtData('asset-library-list');
@@ -143,10 +186,12 @@ async function upload() {
 
     // Nothing uploaded → keep the dialog open and show why; otherwise close.
     if (fails.length && !created.length) {
-      rejected.value = fails.map((r) => ({
-        name: files.value[Number(r.clientRef)]?.name ?? r.clientRef,
-        code: r.code,
-      }));
+      const rows: RejectedRow[] = fails.map((r) => {
+        const file = files.value[Number(r.clientRef)];
+        return { file, name: file?.name ?? r.clientRef, code: r.code };
+      });
+      await markTrashedConflicts(rows, target);
+      rejected.value = rows;
     } else {
       open.value = false;
     }
@@ -276,12 +321,28 @@ async function upload() {
               class="bg-destructive/10 text-destructive flex items-start gap-2 rounded-md px-3 py-2 text-sm"
             >
               <LucideFileX class="mt-0.5 size-4 shrink-0" />
-              <div class="min-w-0">
+              <div class="min-w-0 flex-1">
                 <p class="truncate font-medium">{{ row.name }}</p>
                 <p class="text-xs opacity-90">
-                  {{ $t(uploadRejectionMessageKey(row.code)) }}
+                  {{
+                    row.restored
+                      ? $t('asset_library.upload_restored_from_trash')
+                      : $t(uploadRejectionMessageKey(row.code, !!row.trashed))
+                  }}
                 </p>
               </div>
+              <ButtonIcon
+                v-if="row.trashed && !row.restored"
+                icon="Undo2"
+                variant="outline"
+                size="sm"
+                class="shrink-0"
+                :loading="restoringIndex === i"
+                :disabled="restoringIndex !== null"
+                @click="restoreConflict(row, i)"
+              >
+                {{ $t('restore') }}
+              </ButtonIcon>
             </div>
           </div>
         </div>
