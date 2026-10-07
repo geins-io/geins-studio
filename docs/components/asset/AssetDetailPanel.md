@@ -78,7 +78,7 @@ Preview ([`AssetThumbnail`](/components/asset/AssetThumbnail)), type badge, size
 
 ## Where it's used
 
-Between the info list and the remove section the panel shows a **"Where it's used"** section — [`AssetUsedIn`](/components/asset/AssetUsedIn), a read-only list of what the asset is linked to (products today).
+Between the info list and the remove section the panel shows a **"Where it's used"** section — [`AssetUsedIn`](/components/asset/AssetUsedIn), what the asset is linked to (products today), where it can also be linked to a product as an image or a file, or have a product link removed.
 
 ## Not here
 
