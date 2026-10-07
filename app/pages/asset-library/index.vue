@@ -2,7 +2,9 @@
 import { useMediaQuery } from '@vueuse/core';
 import type {
   Asset,
+  AssetBulkLinkValue,
   AssetListFilters,
+  AssetType,
   BulkAction,
   BulkRunResult,
   ListSort,
@@ -12,6 +14,8 @@ import {
   ASSET_LABEL_LIMITS,
   assetLabelLimitError,
   assetListOptions,
+  assetSelectionKind,
+  bulkLinkCalls,
   bulkMoveErrorKey,
   countAssetIds,
   folderIdForSelection,
@@ -389,6 +393,16 @@ const selectedWithSubfolders = ref(false);
 const clearSelection = () => {
   selectedIds.value = [];
 };
+
+// Type of every asset that could be selected, so a bulk link can split images
+// from files without a fetch. Filled from each loaded page and from select-all
+// before ids reach the selection; plain (non-reactive) because it only grows.
+const assetTypes = new Map<string, AssetType>();
+watch(
+  items,
+  (rows) => rows.forEach((asset) => assetTypes.set(asset._id, asset.type)),
+  { immediate: true },
+);
 watch(selectedFolder, clearSelection);
 watch(selectedIds, (ids) => {
   if (!ids.length) selectedWithSubfolders.value = false;
@@ -426,7 +440,7 @@ const selectingAll = ref(false);
 async function selectAllMatching() {
   selectingAll.value = true;
   try {
-    const ids = await assetApi.matchingIds(
+    const assets = await assetApi.matchingAssets(
       {
         page: 1,
         pageSize: pageSize.value,
@@ -436,7 +450,10 @@ async function selectAllMatching() {
       },
       assetListOptions(selectedFolder.value),
     );
-    selectedIds.value = [...new Set([...selectedIds.value, ...ids])];
+    assets.forEach((asset) => assetTypes.set(asset._id, asset.type));
+    selectedIds.value = [
+      ...new Set([...selectedIds.value, ...assets.map((asset) => asset._id)]),
+    ];
     selectedWithSubfolders.value =
       !!selectedFolder.value && selectedFolder.value !== ROOT_FOLDER_KEY;
   } catch (err) {
@@ -539,11 +556,59 @@ function labelsAction(kind: 'tags' | 'channels'): BulkAction<string[]> {
     successMessage: () => t('entity_added', { entityKey }, 2),
   };
 }
+const AssetBulkLinkProducts = resolveComponent('AssetBulkLinkProducts');
+const bulkLinkSummary = (value: AssetBulkLinkValue) => {
+  const assets = selectedIds.value.length;
+  const products = value.productIds.length;
+  const links = assets * products;
+  return t('asset_library.bulk_link_summary', {
+    assets: t('count_entity', { count: assets, entityKey: 'asset' }, assets),
+    products: t(
+      'count_entity',
+      { count: products, entityKey: 'product' },
+      products,
+    ),
+    links: t('count_entity', { count: links, entityKey: 'link' }, links),
+  });
+};
+// Images and files go in separate calls (a productimage link on a file fails
+// the whole call), each capped at 100 links. Linking only adds.
+const linkAction = computed<BulkAction<AssetBulkLinkValue>>(() => {
+  const composition = assetSelectionKind(
+    selectedIds.value.map((id) => assetTypes.get(id)),
+  );
+  return {
+    key: 'link-to-products',
+    label: t('asset_library.link_to_products'),
+    icon: 'Link2',
+    component: AssetBulkLinkProducts,
+    componentProps: { composition, summary: bulkLinkSummary },
+    initialValue: () => ({
+      mode: composition === 'files' ? 'file' : 'byType',
+      productIds: [],
+    }),
+    isValid: (value) => value.productIds.length > 0,
+    summary: bulkLinkSummary,
+    note: () => t('asset_library.bulk_add_note'),
+    run: async (ids, value, options) => {
+      const calls = bulkLinkCalls(
+        ids,
+        (id) => assetTypes.get(id),
+        value.mode,
+        value.productIds,
+      );
+      for (const call of calls)
+        await assetApi.bulkLink(call.assetIds, call.links, options);
+    },
+    successMessage: () => t('entity_added', { entityKey: 'link' }, 2),
+  };
+});
 const tagsAction = computed(() => labelsAction('tags'));
 const channelsAction = computed(() => labelsAction('channels'));
 const bulkActions = computed<BulkAction[]>(() => [
   tagsAction.value,
   channelsAction.value,
+  linkAction.value,
   moveAction.value,
   trashAction.value,
 ]);
@@ -555,10 +620,13 @@ const bulkScopeNote = computed(() =>
 
 // Failed chunks stay selected so the user can retry just those.
 // `asset-tags` too: a bulk tag can coin new tags, and trashing can drop the
-// last asset carrying one.
+// last asset carrying one. `asset-links` so a detail panel shows new links.
 async function onBulkDone(result: BulkRunResult) {
   selectedIds.value = result.failed;
-  await Promise.all([refresh(), refreshNuxtData('asset-tags')]);
+  await Promise.all([
+    refresh(),
+    refreshNuxtData(['asset-tags', 'asset-links']),
+  ]);
 }
 
 function openAsset(asset: Asset) {

@@ -240,7 +240,7 @@ describe('assetRepo', () => {
       });
     });
 
-    describe('matchingIds', () => {
+    describe('matchingAssets', () => {
       const state = {
         page: 3,
         pageSize: 24,
@@ -254,16 +254,20 @@ describe('assetRepo', () => {
         pageSize: 1000,
         totalItemCount: 0,
         pageCount,
-        items: ids.map((_id) => ({ _id })),
+        items: ids.map((_id) => ({ _id, type: 'image', name: _id })),
       });
 
-      it('pages the same batch at the cap and collects every id', async () => {
+      it('pages the same batch at the cap and collects every id + type', async () => {
         mockFetch
           .mockResolvedValueOnce(batch(1, 2, ['a1', 'a2']))
           .mockResolvedValueOnce(batch(2, 2, ['a3']));
         await expect(
-          api.matchingIds(state, { folderId: 'f1' }),
-        ).resolves.toEqual(['a1', 'a2', 'a3']);
+          api.matchingAssets(state, { folderId: 'f1' }),
+        ).resolves.toEqual([
+          { _id: 'a1', type: 'image' },
+          { _id: 'a2', type: 'image' },
+          { _id: 'a3', type: 'image' },
+        ]);
         expect(mockFetch).toHaveBeenCalledTimes(2);
         // The list's own page / pageSize are replaced; scope + search kept.
         expect(mockFetch.mock.calls[0][1]).toEqual({
@@ -285,7 +289,7 @@ describe('assetRepo', () => {
 
       it('stops on an empty page', async () => {
         mockFetch.mockResolvedValueOnce(batch(1, 5, []));
-        await expect(api.matchingIds(state)).resolves.toEqual([]);
+        await expect(api.matchingAssets(state)).resolves.toEqual([]);
         expect(mockFetch).toHaveBeenCalledTimes(1);
       });
     });

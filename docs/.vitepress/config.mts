@@ -338,6 +338,10 @@ export default defineConfig({
                 link: '/components/asset/AssetBulkMoveFolder.md',
               },
               {
+                text: 'AssetBulkLinkProducts',
+                link: '/components/asset/AssetBulkLinkProducts.md',
+              },
+              {
                 text: 'AssetFolderTree',
                 link: '/components/asset/AssetFolderTree.md',
               },

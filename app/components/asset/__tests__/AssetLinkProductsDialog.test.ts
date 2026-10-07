@@ -56,7 +56,7 @@ describe('AssetLinkProductsDialog', () => {
     );
   });
 
-  it('forces File for a non-image, without the choice', async () => {
+  it('links a non-image as File, with no choice shown', async () => {
     const dialog = await mountDialog('pdf');
     expect(dialog.findAll('[aria-pressed]')).toHaveLength(0);
 

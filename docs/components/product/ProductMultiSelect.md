@@ -6,16 +6,19 @@ A searchable, always-open product multi-select: a search field over a checkbox l
 - **At most 100 rows render**; past that a footer says to search to narrow it down. The full catalogue would be slow to render.
 - **`lockedIds`** render checked and disabled, with `lockedLabel` as a trailing badge — e.g. products an asset is already linked to. They're never in the model.
 
-Used by [`AssetLinkProductsDialog`](/components/asset/AssetLinkProductsDialog.md).
+The products store loads lazily, so callers call `useProductsStore().init()` and pass `loading` until it's `initialized`.
+
+Used by [`AssetLinkProductsDialog`](/components/asset/AssetLinkProductsDialog.md) and the bulk [`AssetBulkLinkProducts`](/components/asset/AssetBulkLinkProducts.md) pane.
 
 ## Props
 
-| Prop                     | Type               | Meaning                                           |
-| ------------------------ | ------------------ | ------------------------------------------------- |
-| `products`               | `SelectorEntity[]` | The products to choose from (the products store). |
-| `lockedIds`              | `string[]?`        | Shown checked + disabled.                         |
-| `lockedLabel`            | `string?`          | Badge on locked rows.                             |
-| `modelValue` (`v-model`) | `string[]`         | Selected product ids.                             |
+| Prop                     | Type               | Meaning                                              |
+| ------------------------ | ------------------ | ---------------------------------------------------- |
+| `products`               | `SelectorEntity[]` | The products to choose from (the products store).    |
+| `lockedIds`              | `string[]?`        | Shown checked + disabled.                            |
+| `lockedLabel`            | `string?`          | Badge on locked rows.                                |
+| `loading`                | `boolean?`         | Skeleton rows while the caller's product list loads. |
+| `modelValue` (`v-model`) | `string[]`         | Selected product ids.                                |
 
 ## Usage
 
