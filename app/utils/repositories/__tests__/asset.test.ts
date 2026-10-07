@@ -389,6 +389,45 @@ describe('assetRepo', () => {
         errorContext: { action: 'updating', entity: 'asset' },
       });
     });
+
+    describe('trashedAtPaths', () => {
+      it('queries the trash per folder + name and matches the name exactly', async () => {
+        mockFetch
+          .mockResolvedValueOnce({
+            _id: 'b1',
+            pageCount: 1,
+            // `assetName` is a substring match — only the exact name counts.
+            items: [
+              { _id: 'a0', name: 'old_hero.jpg' },
+              { _id: 'a1', name: 'Hero.JPG' },
+            ],
+          })
+          .mockResolvedValueOnce({ _id: 'b2', pageCount: 1, items: [] });
+
+        const found = await api.trashedAtPaths(
+          [
+            { folderId: 'f1', name: 'hero.jpg' },
+            { folderId: null, name: 'logo.svg' },
+          ],
+          { suppressErrorToast: true },
+        );
+
+        expect(found.map((a) => a?._id ?? null)).toEqual(['a1', null]);
+        expect(mockFetch).toHaveBeenNthCalledWith(1, '/media/assets/query', {
+          method: 'POST',
+          body: {
+            trashed: true,
+            folderIds: ['f1'],
+            assetName: 'hero.jpg',
+            page: 1,
+            pageSize: 1000,
+          },
+          suppressErrorToast: true,
+        });
+        // The library root is a null folderIds entry, not "every folder".
+        expect(mockFetch.mock.calls[1][1].body.folderIds).toEqual([null]);
+      });
+    });
   });
 
   describe('replace → /media/assets/:id/replace', () => {

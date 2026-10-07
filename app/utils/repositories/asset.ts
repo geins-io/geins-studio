@@ -685,6 +685,40 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
+     * The trashed asset holding each `{ folderId, name }` path, or `null` when
+     * none does. A trashed asset keeps its bytes at its path until purged, so
+     * the ticket rejects that path with `PATH_ALREADY_EXISTS` — this tells such
+     * a conflict apart from a live one. `assetName` is a substring match, so the
+     * name is compared exactly (paths are case-insensitive) on the client.
+     */
+    async trashedAtPaths(
+      paths: { folderId: string | null; name: string }[],
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<(Asset | null)[]> {
+      return await Promise.all(
+        paths.map(async ({ folderId, name }) => {
+          const res = await fetch<BatchQueryResult<Asset>>(
+            `${ENTITIES.asset.endpoint}/query`,
+            {
+              method: 'POST',
+              body: {
+                trashed: true,
+                folderIds: [folderId],
+                assetName: name,
+                page: 1,
+                pageSize: ASSET_QUERY_PAGE_SIZE,
+              },
+              ...fetchOptions,
+            },
+          );
+          const items = Array.isArray(res.items) ? res.items : [];
+          const wanted = name.toLowerCase();
+          return items.find((a) => a.name.toLowerCase() === wanted) ?? null;
+        }),
+      );
+    },
+
+    /**
      * Delete a folder and its subtree, choosing what happens to the assets
      * inside via `assets`: `'move'` (default) re-homes them to uncategorised;
      * `'delete'` permanently removes them too. `folder.delete` (the plain

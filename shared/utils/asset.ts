@@ -110,8 +110,18 @@ const UPLOAD_REJECTION_KEYS: Record<UploadRejectionCode, string> = {
     'asset_library.upload_reject_link_asset_type_invalid',
 };
 
-/** i18n key for an upload rejection code's friendly reason (generic fallback). */
-export function uploadRejectionMessageKey(code: UploadRejectionCode): string {
+/**
+ * i18n key for an upload rejection code's friendly reason (generic fallback).
+ * `inTrash` marks a `PATH_ALREADY_EXISTS` held by a trashed asset (see
+ * `assetApi.trashedAtPaths`), which gets its own restore-or-rename copy.
+ */
+export function uploadRejectionMessageKey(
+  code: UploadRejectionCode,
+  inTrash = false,
+): string {
+  if (code === 'PATH_ALREADY_EXISTS' && inTrash) {
+    return 'asset_library.upload_reject_path_in_trash';
+  }
   return UPLOAD_REJECTION_KEYS[code] ?? 'asset_library.upload_reject_generic';
 }
 

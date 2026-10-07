@@ -22,6 +22,7 @@ import {
   productLinkTargetType,
   replaceErrorMessageKey,
   replaceExtensions,
+  uploadRejectionMessageKey,
 } from '../asset';
 
 describe('mimeToAssetType', () => {
@@ -183,6 +184,24 @@ describe('contentTypeForUpload', () => {
 
   it('falls back to octet-stream for an unknown extension', () => {
     expect(contentTypeForUpload('data.xyz')).toBe('application/octet-stream');
+  });
+});
+
+describe('uploadRejectionMessageKey', () => {
+  it('maps a code to its friendly reason', () => {
+    expect(uploadRejectionMessageKey('PATH_ALREADY_EXISTS')).toBe(
+      'asset_library.upload_reject_path_already_exists',
+    );
+  });
+
+  it('gives a path held by a trashed asset its own copy', () => {
+    expect(uploadRejectionMessageKey('PATH_ALREADY_EXISTS', true)).toBe(
+      'asset_library.upload_reject_path_in_trash',
+    );
+    // Only a path conflict can be "in the trash".
+    expect(uploadRejectionMessageKey('FILE_TOO_LARGE', true)).toBe(
+      'asset_library.upload_reject_file_too_large',
+    );
   });
 });
 
