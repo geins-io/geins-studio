@@ -35,6 +35,7 @@ const actions: BulkAction[] = [
     key: 'trash',
     label: 'Move to trash',
     icon: 'Trash2',
+    description: (count) => `Moves ${count} to trash`,
     run: noop,
     successMessage: () => 'done',
   },
@@ -98,6 +99,12 @@ describe('ListBulkActionSheet', () => {
     expect(confirm.props('action')).toMatchObject({ key: 'tag' });
     expect(confirm.props('value')).toBe('hero');
     expect(confirm.props('ids')).toEqual(['a1', 'a2']);
+  });
+
+  it("shows a pane-less action's description for the selection", async () => {
+    const wrapper = await mount();
+    await row(wrapper, 0).trigger('click');
+    expect(wrapper.text()).toContain('Moves 2 to trash');
   });
 
   it('resets the value when another action is picked', async () => {

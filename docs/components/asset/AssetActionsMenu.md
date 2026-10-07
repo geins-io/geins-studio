@@ -1,10 +1,10 @@
 # `AssetActionsMenu`
 
-`AssetActionsMenu` is the shared asset context menu — a `DropdownMenu` with **View details**, **Download**, **Copy public URL**, and **Delete**. Both the grid-view [`AssetCard`](/components/asset/AssetCard) and the list-view actions column render it, so the two views stay in sync.
+`AssetActionsMenu` is the shared asset context menu — a `DropdownMenu` with **View details**, **Download**, **Copy public URL**, and **Move to trash**. Both the grid-view [`AssetCard`](/components/asset/AssetCard) and the list-view actions column render it, so the two views stay in sync.
 
 Download and Copy URL are disabled when the asset has no public `url`.
 
-In **`trashed`** mode (the library's Trash view) the menu collapses to a single **Restore** item: a soft-deleted asset can only come back, and its stored file may already be unreachable, so details / download / delete would be dead ends.
+In **`trashed`** mode (the library's Trash view) the menu collapses to a single **Restore** item: a soft-deleted asset can only come back, and its stored file may already be unreachable, so details / download / trash would be dead ends.
 
 ## Usage
 
@@ -51,14 +51,6 @@ trigger?: 'card' | 'table'; // default 'card'
 
 Trigger button styling: `'card'` is the floating secondary chip used on the grid card (hover ellipsis); `'table'` is the compact outline button used in a list-view actions column (matching other list pages).
 
-### `canDelete`
-
-```ts
-canDelete?: boolean; // default true
-```
-
-Disables the Delete item when the backend can't delete — see [`useAssetCapabilities`](/composables/useAssetCapabilities).
-
 ### `trashed`
 
 ```ts
@@ -79,7 +71,7 @@ Download the file / copy its public URL. Disabled when the asset has no `url`.
 
 ### `delete`
 
-Request deletion — the page opens the confirm dialog for this asset.
+"Move to trash" — the page opens the confirm dialog for this asset. The event keeps the `delete` name: it maps to `DELETE /media/assets/{id}`, which is a soft delete (see [assets](/domains/assets#delete-vocabulary)).
 
 ### `restore`
 

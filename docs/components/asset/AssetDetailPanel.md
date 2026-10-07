@@ -56,7 +56,7 @@ An action row under the preview:
 - **Download** — anchor `download` of `url` (falls back to opening in a new tab); disabled when there is no `url`.
 - **Replace** — opens [`AssetReplaceDialog`](/components/asset/AssetReplaceDialog) to swap the underlying file (same id + metadata).
 
-Footer is the standard **Cancel + Save**. Deleting lives in a **remove section at the bottom of the panel** (like `CompanyBuyerPanel`): a `ContentCardHeader` + destructive **Remove** button → [`DialogDelete`](/components/dialog/DialogDelete) → `assetApi.delete(id)` → refresh `asset-library-list` + toast + close.
+Footer is the standard **Cancel + Save**. Trashing lives in a **section at the bottom of the panel** (like `CompanyBuyerPanel`): a `ContentCardHeader` ("Move to trash", restorable for 30 days) + secondary **Move to trash** button → [`DialogDelete`](/components/dialog/DialogDelete) with the soft `title` / `description` / `confirmLabel` → `assetApi.delete(id)` (a soft delete) → refresh `asset-library-list` + toast + close.
 
 ## Editable fields
 

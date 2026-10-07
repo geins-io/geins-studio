@@ -122,7 +122,8 @@ function onDone(result: BulkRunResult) {
           <p v-else class="text-muted-foreground text-sm">
             {{
               selected
-                ? $t('bulk_action_no_properties')
+                ? (selected.description?.(ids.length) ??
+                  $t('bulk_action_no_properties'))
                 : $t('bulk_action_pick_hint')
             }}
           </p>

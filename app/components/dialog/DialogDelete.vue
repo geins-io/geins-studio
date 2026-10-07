@@ -1,7 +1,11 @@
 <script setup lang="ts">
+import type { ButtonVariants } from '@/components/ui/button';
+
 const props = defineProps<{
   entityKey: string;
   loading: boolean;
+  /** Replaces the default title. Already translated. */
+  title?: string;
   /**
    * Replaces the default confirm line. Needed when the default's permanence
    * claim isn't true for the entity — e.g. a backend that soft-deletes.
@@ -13,6 +17,10 @@ const props = defineProps<{
    */
   warningTitle?: string;
   warningDescription?: string;
+  /** Replaces the confirm button's default "Continue". Already translated. */
+  confirmLabel?: string;
+  /** Confirm button variant. A soft delete (e.g. move to trash) isn't red. */
+  confirmVariant?: ButtonVariants['variant'];
 }>();
 const open = defineModel('open', {
   type: Boolean,
@@ -26,7 +34,7 @@ const _emit = defineEmits(['confirm', 'cancel']);
     <AlertDialogContent>
       <AlertDialogHeader>
         <AlertDialogTitle>
-          {{ $t('dialog.delete_confirm_title') }}
+          {{ props.title ?? $t('dialog.delete_confirm_title') }}
         </AlertDialogTitle>
         <AlertDialogDescription>
           {{
@@ -48,10 +56,10 @@ const _emit = defineEmits(['confirm', 'cancel']);
 
         <Button
           :loading="loading"
-          variant="destructive"
+          :variant="props.confirmVariant ?? 'destructive'"
           @click.prevent.stop="$emit('confirm')"
         >
-          {{ $t('continue') }}
+          {{ props.confirmLabel ?? $t('continue') }}
         </Button>
       </AlertDialogFooter>
     </AlertDialogContent>

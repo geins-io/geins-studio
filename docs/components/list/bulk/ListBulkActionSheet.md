@@ -21,7 +21,8 @@ const actions = computed<BulkAction[]>(() => [
     key: 'move-to-trash',
     label: t('asset_library.move_to_trash'),
     icon: 'Trash2',
-    destructive: true,
+    description: (count) =>
+      t('asset_library.bulk_trash_description', { count }, count),
     run: (ids, _value, options) => assetApi.bulkDelete(ids, options),
     successMessage: (count) =>
       t('asset_library.bulk_moved_to_trash', { count }, count),
@@ -47,21 +48,22 @@ async function onDone(result: BulkRunResult) {
 
 ## `BulkAction`
 
-| Field                              | Type                      | Notes                                                                                              |
-| ---------------------------------- | ------------------------- | -------------------------------------------------------------------------------------------------- |
-| `key`                              | `string`                  | Unique per sheet.                                                                                  |
-| `label`                            | `string`                  | Translated.                                                                                        |
-| `icon`                             | `string`                  | Lucide name, resolved with `useLucideIcon`.                                                        |
-| `component`                        | `Component \| string`     | Properties pane, `v-model` to the value. Omit for no input.                                        |
-| `componentProps`                   | `Record<string, unknown>` | Bound onto `component`.                                                                            |
-| `initialValue()`                   | `TValue`                  | Fresh value on pick.                                                                               |
-| `isValid(value)`                   | `boolean`                 | Gates Run. Defaults to valid.                                                                      |
-| `summary(value)`                   | `string`                  | Confirm summary. Defaults to the label.                                                            |
-| `note(value)`                      | `string \| undefined`     | Extra confirm line, e.g. whether the change can be undone.                                         |
-| `destructive`                      | `boolean`                 | Destructive confirm button.                                                                        |
-| `run(ids, value, options)`         | `Promise<unknown>`        | One chunk (≤ 100 ids). Spread `options` into the fetch; let errors propagate.                      |
-| `describeError(error)`             | `string \| undefined`     | Friendly failure reason. When set, the action owns its failure toast (the global one is silenced). |
-| `successMessage(count, responses)` | `string`                  | Success toast title. `responses` are the successful chunks' results.                               |
+| Field                              | Type                      | Notes                                                                                                                                                           |
+| ---------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `key`                              | `string`                  | Unique per sheet.                                                                                                                                               |
+| `label`                            | `string`                  | Translated.                                                                                                                                                     |
+| `icon`                             | `string`                  | Lucide name, resolved with `useLucideIcon`.                                                                                                                     |
+| `component`                        | `Component \| string`     | Properties pane, `v-model` to the value. Omit for no input.                                                                                                     |
+| `componentProps`                   | `Record<string, unknown>` | Bound onto `component`.                                                                                                                                         |
+| `initialValue()`                   | `TValue`                  | Fresh value on pick.                                                                                                                                            |
+| `isValid(value)`                   | `boolean`                 | Gates Run. Defaults to valid.                                                                                                                                   |
+| `summary(value)`                   | `string`                  | Confirm summary. Defaults to the label.                                                                                                                         |
+| `description(count)`               | `string`                  | Properties-pane line for an action with no `component`, saying what Run does. Without it the pane says the action has no properties, which reads as unfinished. |
+| `note(value)`                      | `string \| undefined`     | Extra confirm line, e.g. whether the change can be undone.                                                                                                      |
+| `destructive`                      | `boolean`                 | Destructive confirm button. Leave it off for recoverable actions (move to trash).                                                                               |
+| `run(ids, value, options)`         | `Promise<unknown>`        | One chunk (≤ 100 ids). Spread `options` into the fetch; let errors propagate.                                                                                   |
+| `describeError(error)`             | `string \| undefined`     | Friendly failure reason. When set, the action owns its failure toast (the global one is silenced).                                                              |
+| `successMessage(count, responses)` | `string`                  | Success toast title. `responses` are the successful chunks' results.                                                                                            |
 
 ## Props
 
