@@ -2,6 +2,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   assetCapabilities,
+  assetSelectionKind,
+  bulkLinkCalls,
   normalizeAssetLabels,
   assetLabelLimitError,
   countAssetIds,
@@ -346,5 +348,76 @@ describe('replaceErrorMessageKey', () => {
     [500, 'asset_library.upload_reject_generic'],
   ])('maps %i → %s', (status, key) => {
     expect(replaceErrorMessageKey(status)).toBe(key);
+  });
+});
+
+describe('assetSelectionKind', () => {
+  it('is images when every asset is an image or svg', () => {
+    expect(assetSelectionKind(['image', 'svg'])).toBe('images');
+  });
+  it('is files when none is', () => {
+    expect(assetSelectionKind(['pdf', 'doc'])).toBe('files');
+  });
+  it('is mixed otherwise, counting an unknown type as a file', () => {
+    expect(assetSelectionKind(['image', 'pdf'])).toBe('mixed');
+    expect(assetSelectionKind(['image', undefined])).toBe('mixed');
+  });
+  it('is files for an empty selection', () => {
+    expect(assetSelectionKind([])).toBe('files');
+  });
+});
+
+describe('bulkLinkCalls', () => {
+  const types: Record<string, 'image' | 'svg' | 'pdf'> = {
+    i1: 'image',
+    i2: 'svg',
+    f1: 'pdf',
+  };
+  const typeOf = (id: string) => types[id];
+
+  it('splits images and files into one call each by type', () => {
+    expect(
+      bulkLinkCalls(['i1', 'f1', 'i2'], typeOf, 'byType', ['p1', 'p2']),
+    ).toEqual([
+      {
+        assetIds: ['i1', 'i2'],
+        links: [
+          { targetType: 'productimage', targetId: 'p1' },
+          { targetType: 'productimage', targetId: 'p2' },
+        ],
+      },
+      {
+        assetIds: ['f1'],
+        links: [
+          { targetType: 'productfile', targetId: 'p1' },
+          { targetType: 'productfile', targetId: 'p2' },
+        ],
+      },
+    ]);
+  });
+
+  it('links everything as a file in file mode', () => {
+    const calls = bulkLinkCalls(['i1', 'f1'], typeOf, 'file', ['p1']);
+    expect(calls).toEqual([
+      {
+        assetIds: ['i1', 'f1'],
+        links: [{ targetType: 'productfile', targetId: 'p1' }],
+      },
+    ]);
+  });
+
+  it('links an asset of unknown type as a file', () => {
+    const calls = bulkLinkCalls(['x'], typeOf, 'byType', ['p1']);
+    expect(calls[0]!.links[0]!.targetType).toBe('productfile');
+  });
+
+  it('caps the links per call', () => {
+    const products = Array.from({ length: 5 }, (_, i) => `p${i}`);
+    const calls = bulkLinkCalls(['i1'], typeOf, 'byType', products, 2);
+    expect(calls.map((c) => c.links.length)).toEqual([2, 2, 1]);
+  });
+
+  it('makes no calls without products', () => {
+    expect(bulkLinkCalls(['i1'], typeOf, 'byType', [])).toEqual([]);
   });
 });

@@ -2,7 +2,7 @@
 
 Links one asset to one or more products. Opened from the **Link to product** action in [`AssetUsedIn`](/components/asset/AssetUsedIn.md) ("Where it's used" in the asset detail panel).
 
-- **Link as.** A segmented control: **Image** (`productimage`) or **File** (`productfile`). Only image and svg assets get the choice (`productLinkTargetType(assetType) === 'productimage'`), defaulting to Image. Every other type is forced to File and the control is replaced by a one-line explanation — a `productimage` link on a non-image is a `422`, so the UI never offers it.
+- **Link as.** A segmented control: **Image** (`productimage`) or **File** (`productfile`). Only image and svg assets get the choice (`productLinkTargetType(assetType) === 'productimage'`), defaulting to Image. Every other type links as File and the control is hidden — a `productimage` link on a non-image is a `422`, so the UI never offers it.
 - **Products.** A [`ProductMultiSelect`](/components/product/ProductMultiSelect.md) over the products store. Products already linked **as the chosen kind** are checked and disabled ("Linked"); switching kind drops any pick that would duplicate an existing link.
 - **Link.** One `assetApi.bulkLink([assetId], links)` (`POST /media/assets/bulk-link`) per 100 products (`chunkIds`). Linking only adds, so a partially failed run is safe to repeat. On success it toasts `entity_added` (`entityKey: 'link'`, pluralized by count), closes and emits `linked`; a failure leaves the dialog open (the global API error toast explains) and still emits `linked` so the caller's list shows what did land.
 

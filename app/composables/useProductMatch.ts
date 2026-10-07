@@ -23,8 +23,9 @@ interface UseProductMatchReturnType {
  * before the first `_`, via `matchOf`) or a bare id from elsewhere (`matchById`,
  * used by the asset "Used in" section) — matching it against the account's
  * products by article number or product id, whichever hits. Reads the shared
- * products store (already loaded + transformed after auth, so its `thumbnail` is
- * a ready image URL), so no extra fetch and no duplicated transform.
+ * products store (loaded once, lazily, and already transformed, so its
+ * `thumbnail` is a ready image URL), so no extra fetch and no duplicated
+ * transform.
  *
  * cutover: REVISIT@phase2 — the ref → product lookup is the backend's job. For
  * now we match on the client over the full product list; phase 2 pushes the
@@ -36,8 +37,7 @@ export function useProductMatch(): UseProductMatchReturnType {
   const productsStore = useProductsStore();
   const { products, ready } = storeToRefs(productsStore);
 
-  // The store is initialised once after auth by the geins-global plugin;
-  // init() is idempotent, so calling it here just covers running first.
+  // The store loads lazily; init() is idempotent.
   productsStore.init();
 
   const pending = computed(() => !ready.value);
