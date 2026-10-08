@@ -1,6 +1,11 @@
 <script setup lang="ts">
-import type { FolderDeleteAssets } from '#shared/types';
-import { ROOT_FOLDER_KEY, TRASH_KEY } from '#shared/utils/asset';
+import type { FolderDeleteAction, FolderDeletion } from '#shared/types';
+import {
+  FOLDER_DELETE_MAX,
+  ROOT_FOLDER_KEY,
+  TRASH_KEY,
+  folderDeleteFailure,
+} from '#shared/utils/asset';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { FolderNode } from '@/composables/useFolders';
 
@@ -25,7 +30,6 @@ const selected = defineModel<string | null>('selected', { default: null });
 
 const { tree, loading, refresh, descendantIds } = useFolders();
 const { assetApi } = useGeinsRepository();
-const caps = useAssetCapabilities();
 const { resolveIcon } = useLucideIcon();
 const { toast } = useToast();
 const { t } = useI18n();
@@ -61,91 +65,160 @@ async function createFolder(payload: {
 const deleteTarget = ref<FolderNode | null>(null);
 const deleteOpen = ref(false);
 const choiceOpen = ref(false);
-const pendingCount = ref(0);
 const deleting = ref(false);
-// Inline failure shown inside the plain confirm (the call suppresses the global
-// toast so the reason sits next to the button that triggered it). `notEmpty`
-// is the expected 409 FOLDER_NOT_EMPTY; `failed` is anything else.
-const notEmpty = ref(false);
-const failed = ref(false);
+// Live assets under the folder (subtree included), for the options' copy;
+// `null` when the count failed.
+const liveCount = ref<number | null>(null);
+// Failures render inside the dialog that triggered them (the calls suppress the
+// global toast), so the user can pick another option or retry in place.
+const deleteError = ref<string>();
+const choiceError = ref<string>();
+// The folder whose contents are being counted; its row shows a spinner.
+const inspectingId = ref<string | null>(null);
 
-// Empty-only backends decide emptiness themselves (409), so skip the probe and
-// go straight to the plain confirm — no disposition to offer. Otherwise: empty
-// folders get the plain confirm, folders that (with their subtree) still hold
-// assets get the choice dialog. `list({ folderId })` already returns the folder
-// + descendants (server-side), so its length is the subtree count.
+// Only a folder proven empty (no subfolders, no live or trashed assets) gets
+// the plain confirm; anything else, or a failed count, goes straight to the
+// options, whose trash action is safe on an empty folder too.
 async function requestDelete(node: FolderNode) {
+  if (inspectingId.value) return;
+  inspectingId.value = node._id;
   deleteTarget.value = node;
-  notEmpty.value = false;
-  failed.value = false;
-  if (!caps.canDeleteFolderWithAssets) {
-    pendingCount.value = 0;
-    deleteOpen.value = true;
-    return;
-  }
+  deleteError.value = undefined;
+  choiceError.value = undefined;
   try {
-    const assets = await assetApi.list({ folderId: node._id });
-    pendingCount.value = Array.isArray(assets) ? assets.length : 0;
-  } catch {
-    pendingCount.value = 0;
+    const [live, trashed] = await Promise.all([
+      countAssets(node._id),
+      countAssets(node._id, true),
+    ]);
+    liveCount.value = live;
+    // `descendantIds` includes the folder itself, so 1 means no subfolders.
+    const empty =
+      live === 0 && trashed === 0 && descendantIds(node._id).length <= 1;
+    if (empty) deleteOpen.value = true;
+    else choiceOpen.value = true;
+  } finally {
+    inspectingId.value = null;
   }
-  if (pendingCount.value > 0) choiceOpen.value = true;
-  else deleteOpen.value = true;
 }
 
-// Callout inside the plain confirm: why the last attempt didn't go through.
-const deleteWarning = computed(() => {
-  if (notEmpty.value)
-    return {
-      title: t('asset_library.folder_not_empty_title'),
-      description: t('asset_library.folder_not_empty_description'),
-    };
-  if (failed.value)
-    return {
-      title: t('error_deleting_entity', { entityKey: 'folder' }),
-      description: t('error_try_again'),
-    };
-  return undefined;
-});
+function failureMessage(error: unknown, action?: FolderDeleteAction) {
+  const failure = folderDeleteFailure(
+    getErrorStatus(error),
+    getApiErrorDetail(error),
+    action,
+  );
+  if (failure === 'failed' || failure === 'not_empty')
+    return t('error_try_again');
+  return t(`asset_library.folder_delete_${failure}`, {
+    max: FOLDER_DELETE_MAX,
+  });
+}
 
-async function confirmDelete(assets: FolderDeleteAssets = 'move') {
-  if (!deleteTarget.value) return;
-  const removed = descendantIds(deleteTarget.value._id);
-  deleting.value = true;
-  notEmpty.value = false;
-  failed.value = false;
+async function countAssets(
+  folderId: string,
+  trashed = false,
+): Promise<number | null> {
   try {
-    if (caps.canDeleteFolderWithAssets) {
-      await assetApi.deleteFolder(deleteTarget.value._id, assets);
-    } else {
-      // Empty-only delete: no `?assets` disposition, and the failure is shown
-      // inline rather than as the global toast.
-      await assetApi.folder.delete(deleteTarget.value._id, {
-        suppressErrorToast: true,
-      });
-    }
+    const result = await assetApi.query(
+      { page: 1, pageSize: 1, sort: null, search: '', filters: {} },
+      { folderId, ...(trashed ? { trashed } : {}) },
+    );
+    return result.totalItemCount;
+  } catch {
+    return null;
+  }
+}
+
+// Runs once the delete has succeeded, so a failed refetch only logs — it must
+// not read as a failed delete.
+async function afterDelete(removed: string[]) {
+  // Deleting the active folder (or an ancestor of it) drops the filter target.
+  if (selected.value && removed.includes(selected.value)) {
+    selected.value = null;
+  }
+  try {
     await refresh();
-    await refreshNuxtData('asset-library-list');
-    // Deleting the active folder (or an ancestor of it) drops the filter target.
-    if (selected.value && removed.includes(selected.value)) {
-      selected.value = null;
-    }
-    toast({
-      title: t('entity_deleted', { entityKey: 'folder' }),
-      variant: 'positive',
-    });
-    deleteOpen.value = false;
-    choiceOpen.value = false;
+    await refreshNuxtData(['asset-library-list', 'asset-tags']);
   } catch (error) {
-    geinsLogError('deleteFolder', getErrorMessage(error));
-    if (!caps.canDeleteFolderWithAssets) {
-      // 409 is the route's only conflict: the folder still holds assets.
-      if (getErrorStatus(error) === 409) notEmpty.value = true;
-      else failed.value = true;
+    geinsLogError('afterDelete', getErrorMessage(error));
+  }
+}
+
+// The action-less delete only takes an empty folder. A not-empty 409 can still
+// happen (e.g. a trashed empty subfolder the tree doesn't list), so it swaps
+// the confirm for the options.
+async function confirmDelete() {
+  const target = deleteTarget.value;
+  if (!target) return;
+  const removed = descendantIds(target._id);
+  deleting.value = true;
+  deleteError.value = undefined;
+  try {
+    await assetApi.folder.delete(target._id, { suppressErrorToast: true });
+  } catch (error) {
+    if (
+      folderDeleteFailure(getErrorStatus(error), getApiErrorDetail(error)) ===
+      'not_empty'
+    ) {
+      choiceError.value = undefined;
+      deleteOpen.value = false;
+      choiceOpen.value = true;
+    } else {
+      geinsLogError('deleteFolder', getErrorMessage(error));
+      deleteError.value = failureMessage(error);
     }
+    return;
   } finally {
     deleting.value = false;
   }
+  deleteOpen.value = false;
+  toast({
+    title: t('entity_deleted', { entityKey: 'folder' }),
+    variant: 'positive',
+  });
+  await afterDelete(removed);
+}
+
+const DELETION_TOAST: Record<FolderDeleteAction, string> = {
+  trash: 'entity_moved_to_trash',
+  relocate: 'entity_moved_to_trash',
+  purge: 'entity_deleted',
+};
+
+// relocate + purge answer 202 and settle in the background, so the one refetch
+// can still show assets in their old place (relocate) or in trash (purge).
+async function confirmChoice(action: FolderDeleteAction) {
+  const target = deleteTarget.value;
+  if (!target) return;
+  const removed = descendantIds(target._id);
+  deleting.value = true;
+  choiceError.value = undefined;
+  let deletion: FolderDeletion;
+  try {
+    deletion = await assetApi.deleteFolder(target._id, action, {
+      suppressErrorToast: true,
+    });
+  } catch (error) {
+    geinsLogError('deleteFolder', getErrorMessage(error));
+    choiceError.value = failureMessage(error, action);
+    return;
+  } finally {
+    deleting.value = false;
+  }
+  const { assetCount } = deletion;
+  choiceOpen.value = false;
+  toast({
+    title: t(DELETION_TOAST[action], { entityKey: 'folder' }),
+    description: assetCount
+      ? t(
+          `asset_library.folder_delete_${action}_done`,
+          { count: assetCount },
+          assetCount,
+        )
+      : undefined,
+    variant: 'positive',
+  });
+  await afterDelete(removed);
 }
 </script>
 
@@ -190,6 +263,7 @@ async function confirmDelete(assets: FolderDeleteAssets = 'move') {
             :node="node"
             :selected="selected"
             :readonly="props.readonly"
+            :busy-id="inspectingId"
             @select="selected = $event"
             @create="createFolder"
             @delete="requestDelete"
@@ -255,17 +329,22 @@ async function confirmDelete(assets: FolderDeleteAssets = 'move') {
       v-model:open="deleteOpen"
       entity-key="folder"
       :loading="deleting"
-      :warning-title="deleteWarning?.title"
-      :warning-description="deleteWarning?.description"
+      :warning-title="
+        deleteError
+          ? $t('error_deleting_entity', { entityKey: 'folder' })
+          : undefined
+      "
+      :warning-description="deleteError"
       @confirm="confirmDelete"
     />
 
     <AssetFolderDeleteDialog
       v-model:open="choiceOpen"
+      v-model:error="choiceError"
       :folder-name="deleteTarget?.name ?? ''"
-      :count="pendingCount"
+      :count="liveCount"
       :loading="deleting"
-      @confirm="confirmDelete"
+      @confirm="confirmChoice"
       @cancel="choiceOpen = false"
     />
   </template>

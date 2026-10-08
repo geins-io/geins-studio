@@ -7,6 +7,7 @@ import {
   normalizeAssetLabels,
   assetLabelLimitError,
   countAssetIds,
+  folderDeleteFailure,
   sameAssetLabels,
   assetListOptions,
   bulkMoveErrorKey,
@@ -64,12 +65,39 @@ describe('mimeToAssetType', () => {
 describe('assetCapabilities', () => {
   it('reports only the features phase 1 does not serve yet', () => {
     expect(assetCapabilities()).toEqual({
-      // Phase-1 folder delete is empty-only (409 FOLDER_NOT_EMPTY) — no
-      // disposition to choose.
-      canDeleteFolderWithAssets: false,
       // The upload ticket doesn't take tags/channels yet.
       canUploadTagsAndChannels: false,
     });
+  });
+});
+
+describe('folderDeleteFailure', () => {
+  it('reads both not-empty codes as the cue to offer the options', () => {
+    expect(folderDeleteFailure(409, 'FOLDER_NOT_EMPTY')).toBe('not_empty');
+    expect(folderDeleteFailure(409, 'FOLDER_HOLDS_TRASHED_ASSETS')).toBe(
+      'not_empty',
+    );
+  });
+
+  it('names the pending-move and too-large refusals for any action', () => {
+    expect(folderDeleteFailure(409, 'MOVE_PENDING', 'trash')).toBe(
+      'move_pending',
+    );
+    expect(folderDeleteFailure(409, 'FOLDER_TOO_LARGE', 'relocate')).toBe(
+      'too_large',
+    );
+  });
+
+  it('treats a code-less relocate 409 as a name clash at the root', () => {
+    const detail =
+      '4f2e8c1d-693e-4748-aa53-b0d4c676867b, 8c1d4f2e-693e-4748-aa53-b0d4c676867b';
+    expect(folderDeleteFailure(409, detail, 'relocate')).toBe('name_clash');
+    expect(folderDeleteFailure(409, detail, 'purge')).toBe('failed');
+  });
+
+  it('falls back to a generic failure for other statuses', () => {
+    expect(folderDeleteFailure(404, undefined, 'trash')).toBe('failed');
+    expect(folderDeleteFailure(500)).toBe('failed');
   });
 });
 

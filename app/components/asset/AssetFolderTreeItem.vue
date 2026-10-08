@@ -7,6 +7,8 @@ const props = defineProps<{
   selected: string | null;
   /** Selection-only mode: hides the hover add/delete actions (picker rail). */
   readonly?: boolean;
+  /** Folder whose delete is being prepared — its delete icon spins. */
+  busyId?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -21,6 +23,7 @@ const hasChildren = computed(() => props.node.children.length > 0);
 const open = ref(false);
 const addingChild = ref(false);
 const isActive = computed(() => props.selected === props.node._id);
+const busy = computed(() => props.busyId === props.node._id);
 
 // Open-folder icon when expanded or active, closed otherwise.
 const folderIcon = computed(() =>
@@ -76,6 +79,7 @@ function onCreateChild(name: string) {
     <div
       v-if="!readonly"
       class="absolute top-1 right-1 flex gap-0.5 opacity-0 group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100"
+      :class="busy && 'opacity-100'"
     >
       <button
         type="button"
@@ -87,11 +91,19 @@ function onCreateChild(name: string) {
       </button>
       <button
         type="button"
-        class="text-muted-foreground hover:bg-sidebar-accent hover:text-destructive flex size-6 items-center justify-center rounded"
+        class="text-muted-foreground flex size-6 items-center justify-center rounded"
+        :class="!busy && 'hover:bg-sidebar-accent hover:text-destructive'"
         :aria-label="$t('delete_entity', { entityKey: 'folder' })"
+        :aria-busy="busy"
+        :disabled="busy"
         @click.stop="emit('delete', node)"
       >
-        <LucideTrash2 class="size-3.5" aria-hidden="true" />
+        <LucideLoaderCircle
+          v-if="busy"
+          class="size-3.5 animate-spin"
+          aria-hidden="true"
+        />
+        <LucideTrash2 v-else class="size-3.5" aria-hidden="true" />
       </button>
     </div>
 
@@ -111,6 +123,7 @@ function onCreateChild(name: string) {
           :node="child"
           :selected="selected"
           :readonly="readonly"
+          :busy-id="busyId"
           @select="emit('select', $event)"
           @create="emit('create', $event)"
           @delete="emit('delete', $event)"

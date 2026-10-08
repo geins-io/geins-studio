@@ -1,27 +1,29 @@
 # `AssetFolderDeleteDialog`
 
-`AssetFolderDeleteDialog` is the folder-delete confirmation shown when a folder (or its subtree) **still contains assets**. It asks the user what should happen to those files:
+`AssetFolderDeleteDialog` offers what happens when a folder that **isn't empty** is deleted. Each option takes the folder and its whole subtree, and maps to an `?action=` of `DELETE media/folders/{id}`:
 
-- **Move to uncategorised** — keep the files, re-home them to the uncategorised bucket (the server sets `folder_id` to `null`).
-- **Delete folder and files** — permanently delete the files too.
+| Option                           | `action`   | What it does                                                                                                      | Confirm button |
+| -------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------- | -------------- |
+| **Move to trash** (default)      | `trash`    | The folder and everything in it go to the trash, restorable for 30 days. URLs keep working until purge.           | `default`      |
+| **Move assets to uncategorised** | `relocate` | The live assets move to the library root, the folder goes to the trash. Shown only when there are assets to move. | `default`      |
+| **Delete permanently**           | `purge`    | The folder and all its assets are deleted, including any already in the trash. Can't be undone.                   | `destructive`  |
 
-Empty folders never reach this dialog — [`AssetFolderTree`](/components/asset/AssetFolderTree) shows the plain [`DialogDelete`](/components/dialog/DialogDelete) confirm instead.
+The wording follows the soft/hard split in [Delete vocabulary](/domains/assets#delete-vocabulary): the option cards are never red, and only the permanent delete's confirm is. The confirm button repeats the selected option's title.
 
-:::warning Capability-gated
-The dialog only runs when `useAssetCapabilities().canDeleteFolderWithAssets` is on, which phase 1 does not support: `DELETE /media/folders/{id}` deletes **empty folders only** (`409 FOLDER_NOT_EMPTY`), so the tree skips this dialog entirely — see [`AssetFolderTree` → Deleting a folder](/components/asset/AssetFolderTree#deleting-a-folder). The component stays in place in case phase 2 restores the disposition.
-::: The subtree asset count is resolved by the caller (via `assetApi.list({ folderId })`, which already returns the folder + descendants) and passed in.
+Every option shows a warning callout so the choice says what running it does: relocate warns that the moved files' links change (`bulk_move_url_*`), trash and purge that the assets come off everything that uses them (`removing_everywhere`). A failure replaces the callout with an error one.
 
-A destructive-usage warning ("if a file is used in several places, it will be removed from all of them") is shown only when the delete option is selected.
+[`AssetFolderTree`](/components/asset/AssetFolderTree#deleting-a-folder) opens it directly for any folder it can't prove empty (subfolders, live or trashed assets, or a failed count); a proven-empty folder gets the plain `DialogDelete` instead.
 
 ## Usage
 
 ```vue
 <AssetFolderDeleteDialog
   v-model:open="choiceOpen"
+  v-model:error="choiceError"
   :folder-name="target?.name ?? ''"
-  :count="pendingCount"
+  :count="liveCount"
   :loading="deleting"
-  @confirm="(assets) => deleteFolder(target._id, assets)"
+  @confirm="(action) => assetApi.deleteFolder(target._id, action)"
   @cancel="choiceOpen = false"
 />
 ```
@@ -39,10 +41,10 @@ Name of the folder being deleted — shown in the dialog title.
 ### `count`
 
 ```ts
-count: number;
+count: number | null;
 ```
 
-Number of assets in the folder **and its subtree**. Drives the intro copy and its pluralization. The dialog assumes `count > 0` (empty folders use `DialogDelete`).
+Live assets in the folder **and its subtree**. A positive count names them in the intro ("This folder contains 3 assets"); `0` (only subfolders or trashed assets left) or `null` (the count failed) falls back to a count-free intro. `0` also hides the relocate option, which would have nothing to move.
 
 ### `loading`
 
@@ -60,17 +62,25 @@ Shows a spinner on the confirm button while the delete request is in flight.
 v-model:open: boolean;
 ```
 
-Controls visibility. **Default:** `false`.
+Controls visibility. **Default:** `false`. Opening resets the choice to **Move to trash**.
+
+### `error`
+
+```ts
+v-model:error: string | undefined;
+```
+
+Why the last attempt failed, already translated — rendered as a negative callout. The dialog clears it when the user picks another option.
 
 ## Events
 
 ### `confirm`
 
 ```ts
-confirm: [assets: 'move' | 'delete'];
+confirm: [action: 'trash' | 'relocate' | 'purge'];
 ```
 
-Emitted with the chosen disposition (defaults to the safe `'move'`). The handler owns the repository call, refresh, and closing.
+Emitted with the chosen action. The handler owns the repository call, refresh, toast and closing.
 
 ### `cancel`
 
@@ -78,6 +88,6 @@ Emitted when the user clicks Cancel.
 
 ## Dependencies
 
-- shadcn-vue `Dialog`, `Button`, `Alert`
+- shadcn-vue `Dialog`, `Button`; app `Feedback`
 - [`useLucideIcon`](/composables/useLucideIcon) — resolves the option icons
 - Wired by [`AssetFolderTree`](/components/asset/AssetFolderTree) to `assetApi.deleteFolder`

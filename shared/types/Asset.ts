@@ -423,11 +423,23 @@ export interface Folder extends ResponseEntity<FolderBase> {
 }
 
 /**
- * What happens to the assets inside a folder (and its subtree) when the folder
- * is deleted: `move` re-homes them to uncategorised (server FK `SET NULL`);
- * `delete` permanently removes them too.
+ * `?action=` of `DELETE media/folders/{id}` for a folder that isn't empty. Each
+ * takes the whole subtree: `trash` trashes the folders + live assets
+ * (restorable), `relocate` moves the live assets to the library root (their
+ * URLs change) and trashes the folders, `purge` permanently deletes everything
+ * under it, trashed assets included.
  */
-export type FolderDeleteAssets = 'move' | 'delete';
+export type FolderDeleteAction = 'trash' | 'relocate' | 'purge';
+
+/** `media_response_folderDeletion`: what a folder delete `action` took. */
+export interface FolderDeletion {
+  /** Folders that left the tree, the deleted one included. */
+  folderCount: number;
+  /** Assets the action took (trashed, relocated or due for purge). */
+  assetCount: number;
+  /** Only on a `relocate` that moves at least one asset. */
+  moveId?: string | null;
+}
 
 // =============================================================================
 // Backend capabilities
@@ -437,8 +449,8 @@ export type FolderDeleteAssets = 'move' | 'delete';
  * Feature availability for the shipped Geins.Media surface — the UI gates on
  * these so controls phase 1 can't fulfil disable cleanly instead of erroring.
  * Only still-gated features carry a flag: browse, upload, metadata `PATCH`,
- * `relocate`, `DELETE` + restore, replace and usage links all ship, so they
- * have none.
+ * `relocate`, `DELETE` + restore, folder delete actions, replace and usage
+ * links all ship, so they have none.
  * Read via `assetCapabilities`.
  */
 export interface AssetCapabilities {
@@ -447,12 +459,6 @@ export interface AssetCapabilities {
    * them in state but can't send them (the detail panel `PATCH` already can).
    */
   canUploadTagsAndChannels: boolean;
-  /**
-   * Folder delete can decide what happens to the assets inside (re-home to
-   * uncategorised, or delete them too). Phase 1's `DELETE /media/folders/{id}`
-   * is empty-only and answers `409 FOLDER_NOT_EMPTY` instead.
-   */
-  canDeleteFolderWithAssets: boolean;
 }
 
 /**
