@@ -22,7 +22,7 @@ await downloadZip(selectedIds.value.flatMap((id) => knownAssets.get(id) ?? []));
 ## Behaviour
 
 - **Size cap.** The summed `sizeBytes` must be at most `ASSET_ZIP_MAX_BYTES` (500 MB, `#shared/utils/asset`), since the zip is held in memory. Above it the composable refuses with a toast that states the limit and the selection's size, and fetches nothing.
-- **Progress.** A toast with `duration: Infinity` shows "Preparing 12 of 40…" with a progress bar. Its **Cancel** action, close button and swipe all abort the run (`toast()` forwards the caller's `onOpenChange`). A cancelled run saves nothing and shows no further toast.
+- **Progress.** A toast with `duration: Infinity` shows "Preparing 12 of 40…" with a progress bar. Its **Cancel** action, close button and swipe all abort the run (`toast()` forwards the caller's `onOpenChange`). An open toast with `duration: Infinity` is never pushed out by newer toasts, so Cancel can't vanish mid-run. A cancelled run saves nothing and shows no further toast.
 - **Fetching.** Four fetches at a time (`ZIP_CONCURRENCY`). Entries are stored, not deflated, since assets are mostly already-compressed media.
 - **File names.** Flat zip, each entry named by the asset's `name`. Collisions get numbered before the extension, case-insensitively: `hero.jpg`, `hero (2).jpg`. The zip is saved as `assets-YYYY-MM-DD.zip` (local date).
 - **Partial failure.** A file that fails to fetch, or an asset without a `url`, is skipped. The rest still download, then a warning toast says "N files couldn't be added to the zip". If nothing could be added, an error toast replaces the download.
@@ -58,6 +58,7 @@ Aborts the run in progress. The toast's Cancel already calls it.
 The zip itself is built by pure helpers in `#shared/utils/zip`, tested without Nuxt:
 
 - `buildZip(sources, { signal, concurrency, onProgress, fetch })` → `{ blob, added, failed }`. `blob` is `null` when nothing was added or the run was aborted.
+- `flatFileName(name)` — swaps `/` and `\` for `_`, so a name can't nest an entry in folders.
 - `uniqueFileNames(names)` — the collision numbering above.
 - `zipFileName(prefix, date?)` — `{prefix}-YYYY-MM-DD.zip`.
 

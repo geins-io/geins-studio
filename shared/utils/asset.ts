@@ -22,7 +22,7 @@ export const MAX_TICKET_BYTES = 10 * 1024 ** 3; // 10 GB per ticket total
 export const ASSET_QUERY_PAGE_SIZE = 1000;
 
 // Bulk download zips in browser memory, so the selection's summed `sizeBytes`
-// is capped well below what a tab can hold.
+// is capped. Peak use is about twice this: the zip chunks plus the Blob copy.
 export const ASSET_ZIP_MAX_BYTES = 500 * 1024 ** 2;
 
 /** Every {@link AssetType}, in display order (filter options, pickers). */

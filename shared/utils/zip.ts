@@ -46,6 +46,11 @@ export function uniqueFileNames(names: readonly string[]): string[] {
   });
 }
 
+/** Path separators would nest an entry in folders; the zip is flat. */
+export function flatFileName(name: string): string {
+  return name.replace(/[/\\]/g, '_');
+}
+
 /** `{prefix}-YYYY-MM-DD.zip`, in local time. */
 export function zipFileName(prefix: string, date = new Date()): string {
   const pad = (value: number) => String(value).padStart(2, '0');
@@ -71,7 +76,9 @@ export async function buildZip(
   } = options;
   const { Zip, ZipPassThrough } = await import('fflate');
 
-  const names = uniqueFileNames(sources.map((source) => source.name));
+  const names = uniqueFileNames(
+    sources.map((source) => flatFileName(source.name)),
+  );
   const chunks: Uint8Array<ArrayBuffer>[] = [];
   const failed: ZipFailure[] = [];
   let resolveDone!: () => void;

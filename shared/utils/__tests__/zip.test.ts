@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { unzipSync, strFromU8 } from 'fflate';
 import { describe, it, expect, vi } from 'vitest';
-import { buildZip, uniqueFileNames, zipFileName } from '../zip';
+import { buildZip, flatFileName, uniqueFileNames, zipFileName } from '../zip';
 
 type Fetch = typeof globalThis.fetch;
 const ok = (body: string) => new Response(body, { status: 200 });
@@ -35,6 +35,13 @@ describe('uniqueFileNames', () => {
       '.env',
       '.env (2)',
     ]);
+  });
+});
+
+describe('flatFileName', () => {
+  it('replaces path separators so entries stay flat', () => {
+    expect(flatFileName('a/b\\c.jpg')).toBe('a_b_c.jpg');
+    expect(flatFileName('hero.jpg')).toBe('hero.jpg');
   });
 });
 

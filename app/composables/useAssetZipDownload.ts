@@ -125,6 +125,7 @@ export function useAssetZipDownload(): UseAssetZipDownloadReturnType {
         });
       }
     } catch (error) {
+      controller = null;
       progress.dismiss();
       geinsLogError('downloadZip', getErrorMessage(error));
       toast({ title: t('asset_library.download_failed'), variant: 'negative' });
