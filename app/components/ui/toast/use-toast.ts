@@ -2,7 +2,8 @@ import { computed, ref } from 'vue';
 import type { ToastProps } from '../toast';
 import type { Component, VNode } from 'vue';
 
-const TOAST_LIMIT = 1;
+// Lets a few toasts stack instead of each replacing the last.
+const TOAST_LIMIT = 3;
 const TOAST_REMOVE_DELAY = 1000000;
 
 export type StringOrVNode = string | VNode | (() => VNode);
@@ -74,12 +75,21 @@ const state = ref<State>({
 
 function dispatch(action: Action) {
   switch (action.type) {
-    case actionTypes.ADD_TOAST:
-      state.value.toasts = [action.toast, ...state.value.toasts].slice(
-        0,
-        TOAST_LIMIT,
-      );
+    case actionTypes.ADD_TOAST: {
+      // Toasts that never time out (progress with a Cancel) are never evicted;
+      // the rest share what's left of the limit, newest first.
+      const toasts = [action.toast, ...state.value.toasts];
+      const isPinned = (t: ToasterToast) =>
+        t.duration === Infinity && t.open !== false;
+      const pinned = toasts.filter(isPinned);
+      const room = Math.max(0, TOAST_LIMIT - pinned.length);
+      const kept = new Set([
+        ...pinned,
+        ...toasts.filter((t) => !isPinned(t)).slice(0, room),
+      ]);
+      state.value.toasts = toasts.filter((t) => kept.has(t));
       break;
+    }
 
     case actionTypes.UPDATE_TOAST:
       state.value.toasts = state.value.toasts.map((t) =>
@@ -150,6 +160,7 @@ function toast(props: Toast) {
       id,
       open: true,
       onOpenChange: (open: boolean) => {
+        props.onOpenChange?.(open);
         if (!open) dismiss();
       },
     },

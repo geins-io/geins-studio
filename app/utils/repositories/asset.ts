@@ -321,8 +321,9 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * Every asset the list's query matches across all pages (id + type) — for a
-     * bulk "select all"; the type lets a bulk link split images from files.
+     * Every asset the list's query matches across all pages — for a bulk
+     * "select all", so the page knows each selected asset (a bulk link's type
+     * split, a zip download's url/name/size) without another fetch.
      * Pages the same batch at the 1000 cap until `pageCount`, so the result
      * stays consistent with what the list counted.
      */
@@ -330,8 +331,8 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       state: ListQueryState<AssetQueryFilters>,
       scope?: AssetQueryScope,
       fetchOptions?: RepoFetchOptions,
-    ): Promise<Pick<Asset, '_id' | 'type'>[]> {
-      const ids: Pick<Asset, '_id' | 'type'>[] = [];
+    ): Promise<Asset[]> {
+      const assets: Asset[] = [];
       let batchId: string | undefined;
       for (let page = 1; ; page++) {
         const res = await fetch<BatchQueryResult<Asset>>(
@@ -348,9 +349,9 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
           },
         );
         const items = Array.isArray(res.items) ? res.items : [];
-        ids.push(...items.map(({ _id, type }) => ({ _id, type })));
+        assets.push(...items);
         batchId = res._id;
-        if (!items.length || page >= res.pageCount) return ids;
+        if (!items.length || page >= res.pageCount) return assets;
       }
     },
 
