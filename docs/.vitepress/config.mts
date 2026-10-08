@@ -138,6 +138,10 @@ export default defineConfig({
                 link: '/composables/useAssetStorage.md',
               },
               {
+                text: 'useAssetZipDownload',
+                link: '/composables/useAssetZipDownload.md',
+              },
+              {
                 text: 'useProductMatch',
                 link: '/composables/useProductMatch.md',
               },

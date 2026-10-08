@@ -4,7 +4,6 @@ import type {
   Asset,
   AssetBulkLinkValue,
   AssetListFilters,
-  AssetType,
   BulkAction,
   BulkRunResult,
   ListSort,
@@ -394,13 +393,14 @@ const clearSelection = () => {
   selectedIds.value = [];
 };
 
-// Type of every asset that could be selected, so a bulk link can split images
-// from files without a fetch. Filled from each loaded page and from select-all
-// before ids reach the selection; plain (non-reactive) because it only grows.
-const assetTypes = new Map<string, AssetType>();
+// Every asset that could be selected, so bulk actions know a selected asset
+// (a link's type split, a zip's url/name/size) without a fetch. Filled from
+// each loaded page and from select-all before ids reach the selection; plain
+// (non-reactive) because it only grows.
+const knownAssets = new Map<string, Asset>();
 watch(
   items,
-  (rows) => rows.forEach((asset) => assetTypes.set(asset._id, asset.type)),
+  (rows) => rows.forEach((asset) => knownAssets.set(asset._id, asset)),
   { immediate: true },
 );
 watch(selectedFolder, clearSelection);
@@ -450,7 +450,7 @@ async function selectAllMatching() {
       },
       assetListOptions(selectedFolder.value),
     );
-    assets.forEach((asset) => assetTypes.set(asset._id, asset.type));
+    assets.forEach((asset) => knownAssets.set(asset._id, asset));
     selectedIds.value = [
       ...new Set([...selectedIds.value, ...assets.map((asset) => asset._id)]),
     ];
@@ -596,7 +596,7 @@ const bulkLinkSummary = (value: AssetBulkLinkValue) => {
 // the whole call), each capped at 100 links. Linking only adds.
 const linkAction = computed<BulkAction<AssetBulkLinkValue>>(() => {
   const composition = assetSelectionKind(
-    selectedIds.value.map((id) => assetTypes.get(id)),
+    selectedIds.value.map((id) => knownAssets.get(id)?.type),
   );
   return {
     key: 'link-to-products',
@@ -614,7 +614,7 @@ const linkAction = computed<BulkAction<AssetBulkLinkValue>>(() => {
     run: async (ids, value, options) => {
       const calls = bulkLinkCalls(
         ids,
-        (id) => assetTypes.get(id),
+        (id) => knownAssets.get(id)?.type,
         value.mode,
         value.productIds,
       );
@@ -657,6 +657,9 @@ function openAsset(asset: Asset) {
 
 const { copyUrl, download, deleteAsset, restoreAsset, purgeAsset } =
   useAssetActions();
+const { downloading, downloadZip } = useAssetZipDownload();
+const downloadSelected = () =>
+  downloadZip(selectedIds.value.flatMap((id) => knownAssets.get(id) ?? []));
 const deleteOpen = ref(false);
 const deleting = ref(false);
 const pendingDelete = ref<Asset | null>(null);
@@ -923,6 +926,17 @@ async function confirmEmptyTrash() {
         @click="bulkSheetOpen = true"
       >
         {{ $t('choose_action') }}
+      </Button>
+      <Button
+        v-if="!isTrash"
+        variant="link"
+        size="sm"
+        class="gap-1"
+        :disabled="downloading"
+        @click="downloadSelected"
+      >
+        <LucideDownload class="size-3.5" aria-hidden="true" />
+        {{ $t('download') }}
       </Button>
       <Button
         variant="link"
