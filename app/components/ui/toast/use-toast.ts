@@ -2,7 +2,8 @@ import { computed, ref } from 'vue';
 import type { ToastProps } from '../toast';
 import type { Component, VNode } from 'vue';
 
-const TOAST_LIMIT = 1;
+// Above 1 so a long-lived toast (e.g. bulk download progress) survives others.
+const TOAST_LIMIT = 3;
 const TOAST_REMOVE_DELAY = 1000000;
 
 export type StringOrVNode = string | VNode | (() => VNode);
@@ -150,6 +151,7 @@ function toast(props: Toast) {
       id,
       open: true,
       onOpenChange: (open: boolean) => {
+        props.onOpenChange?.(open);
         if (!open) dismiss();
       },
     },

@@ -257,16 +257,16 @@ describe('assetRepo', () => {
         items: ids.map((_id) => ({ _id, type: 'image', name: _id })),
       });
 
-      it('pages the same batch at the cap and collects every id + type', async () => {
+      it('pages the same batch at the cap and collects every asset', async () => {
         mockFetch
           .mockResolvedValueOnce(batch(1, 2, ['a1', 'a2']))
           .mockResolvedValueOnce(batch(2, 2, ['a3']));
         await expect(
           api.matchingAssets(state, { folderId: 'f1' }),
         ).resolves.toEqual([
-          { _id: 'a1', type: 'image' },
-          { _id: 'a2', type: 'image' },
-          { _id: 'a3', type: 'image' },
+          { _id: 'a1', type: 'image', name: 'a1' },
+          { _id: 'a2', type: 'image', name: 'a2' },
+          { _id: 'a3', type: 'image', name: 'a3' },
         ]);
         expect(mockFetch).toHaveBeenCalledTimes(2);
         // The list's own page / pageSize are replaced; scope + search kept.

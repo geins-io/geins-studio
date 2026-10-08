@@ -64,6 +64,7 @@
     "clsx": "^2.1.1",
     "codemirror": "^6.0.2",
     "cronstrue": "^3.14.0",
+    "fflate": "^0.8.3",
     "flag-icons": "^7.5.0",
     "jwt-decode": "^4.0.0",
     "next-auth": "4.21.1",
