@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { FolderDeleteAction } from '#shared/types';
+import type { FolderDeleteAction, FolderDeletion } from '#shared/types';
 import {
   FOLDER_DELETE_MAX,
   ROOT_FOLDER_KEY,
@@ -85,16 +85,20 @@ async function requestDelete(node: FolderNode) {
   deleteTarget.value = node;
   deleteError.value = undefined;
   choiceError.value = undefined;
-  const [live, trashed] = await Promise.all([
-    countAssets(node._id),
-    countAssets(node._id, true),
-  ]);
-  inspectingId.value = null;
-  liveCount.value = live;
-  const empty =
-    live === 0 && trashed === 0 && descendantIds(node._id).length <= 1;
-  if (empty) deleteOpen.value = true;
-  else choiceOpen.value = true;
+  try {
+    const [live, trashed] = await Promise.all([
+      countAssets(node._id),
+      countAssets(node._id, true),
+    ]);
+    liveCount.value = live;
+    // `descendantIds` includes the folder itself, so 1 means no subfolders.
+    const empty =
+      live === 0 && trashed === 0 && descendantIds(node._id).length <= 1;
+    if (empty) deleteOpen.value = true;
+    else choiceOpen.value = true;
+  } finally {
+    inspectingId.value = null;
+  }
 }
 
 function failureMessage(error: unknown, action?: FolderDeleteAction) {
@@ -125,12 +129,18 @@ async function countAssets(
   }
 }
 
+// Runs once the delete has succeeded, so a failed refetch only logs — it must
+// not read as a failed delete.
 async function afterDelete(removed: string[]) {
-  await refresh();
-  await refreshNuxtData(['asset-library-list', 'asset-tags']);
   // Deleting the active folder (or an ancestor of it) drops the filter target.
   if (selected.value && removed.includes(selected.value)) {
     selected.value = null;
+  }
+  try {
+    await refresh();
+    await refreshNuxtData(['asset-library-list', 'asset-tags']);
+  } catch (error) {
+    geinsLogError('afterDelete', getErrorMessage(error));
   }
 }
 
@@ -145,12 +155,6 @@ async function confirmDelete() {
   deleteError.value = undefined;
   try {
     await assetApi.folder.delete(target._id, { suppressErrorToast: true });
-    await afterDelete(removed);
-    toast({
-      title: t('entity_deleted', { entityKey: 'folder' }),
-      variant: 'positive',
-    });
-    deleteOpen.value = false;
   } catch (error) {
     if (
       folderDeleteFailure(getErrorStatus(error), getApiErrorDetail(error)) ===
@@ -163,9 +167,16 @@ async function confirmDelete() {
       geinsLogError('deleteFolder', getErrorMessage(error));
       deleteError.value = failureMessage(error);
     }
+    return;
   } finally {
     deleting.value = false;
   }
+  deleteOpen.value = false;
+  toast({
+    title: t('entity_deleted', { entityKey: 'folder' }),
+    variant: 'positive',
+  });
+  await afterDelete(removed);
 }
 
 const DELETION_TOAST: Record<FolderDeleteAction, string> = {
@@ -182,29 +193,32 @@ async function confirmChoice(action: FolderDeleteAction) {
   const removed = descendantIds(target._id);
   deleting.value = true;
   choiceError.value = undefined;
+  let deletion: FolderDeletion;
   try {
-    const { assetCount } = await assetApi.deleteFolder(target._id, action, {
+    deletion = await assetApi.deleteFolder(target._id, action, {
       suppressErrorToast: true,
     });
-    await afterDelete(removed);
-    toast({
-      title: t(DELETION_TOAST[action], { entityKey: 'folder' }),
-      description: assetCount
-        ? t(
-            `asset_library.folder_delete_${action}_done`,
-            { count: assetCount },
-            assetCount,
-          )
-        : undefined,
-      variant: 'positive',
-    });
-    choiceOpen.value = false;
   } catch (error) {
     geinsLogError('deleteFolder', getErrorMessage(error));
     choiceError.value = failureMessage(error, action);
+    return;
   } finally {
     deleting.value = false;
   }
+  const { assetCount } = deletion;
+  choiceOpen.value = false;
+  toast({
+    title: t(DELETION_TOAST[action], { entityKey: 'folder' }),
+    description: assetCount
+      ? t(
+          `asset_library.folder_delete_${action}_done`,
+          { count: assetCount },
+          assetCount,
+        )
+      : undefined,
+    variant: 'positive',
+  });
+  await afterDelete(removed);
 }
 </script>
 
