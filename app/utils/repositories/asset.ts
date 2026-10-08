@@ -17,7 +17,8 @@ import type {
   Folder,
   FolderCreate,
   FolderUpdate,
-  FolderDeleteAssets,
+  FolderDeleteAction,
+  FolderDeletion,
   GeinsErrorAction,
   ListQueryRequestOptions,
   ListQueryState,
@@ -758,19 +759,20 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * Delete a folder and its subtree, choosing what happens to the assets
-     * inside via `assets`: `'move'` (default) re-homes them to uncategorised;
-     * `'delete'` permanently removes them too. `folder.delete` (the plain
-     * entityRepo method) still exists for the move-only default.
+     * Delete a non-empty folder with its whole subtree —
+     * `DELETE media/folders/{id}?action=`. `trash` answers `200`; `relocate`
+     * and `purge` answer `202` and settle in the background, so a refetch right
+     * after can still show some assets where they were. An empty folder goes
+     * through `folder.delete` (no `action`, `204`).
      */
     async deleteFolder(
       id: string,
-      assets: FolderDeleteAssets = 'move',
+      action: FolderDeleteAction,
       fetchOptions?: RepoFetchOptions,
-    ): Promise<void> {
-      await fetch<null>(`${ENTITIES.folder.endpoint}/${id}`, {
+    ): Promise<FolderDeletion> {
+      return await fetch<FolderDeletion>(`${ENTITIES.folder.endpoint}/${id}`, {
         method: 'DELETE',
-        query: { assets },
+        query: { action },
         errorContext: { action: 'deleting', entity: ENTITIES.folder.key },
         ...fetchOptions,
       });

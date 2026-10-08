@@ -632,23 +632,25 @@ describe('assetRepo', () => {
       });
     });
 
-    it('deleteFolder defaults to moving assets to uncategorised', async () => {
-      mockFetch.mockResolvedValue(null);
-      await api.deleteFolder('f');
+    it('deleteFolder sends the action and returns the deletion counts', async () => {
+      mockFetch.mockResolvedValue({ folderCount: 2, assetCount: 5 });
+      const result = await api.deleteFolder('f', 'trash');
+      expect(result).toEqual({ folderCount: 2, assetCount: 5 });
       expect(mockFetch).toHaveBeenCalledWith('/media/folders/f', {
         method: 'DELETE',
-        query: { assets: 'move' },
+        query: { action: 'trash' },
         errorContext: { action: 'deleting', entity: 'folder' },
       });
     });
 
-    it('deleteFolder forwards the delete disposition', async () => {
-      mockFetch.mockResolvedValue(null);
-      await api.deleteFolder('f', 'delete');
+    it('deleteFolder forwards fetch options', async () => {
+      mockFetch.mockResolvedValue({ folderCount: 1, assetCount: 0 });
+      await api.deleteFolder('f', 'purge', { suppressErrorToast: true });
       expect(mockFetch).toHaveBeenCalledWith('/media/folders/f', {
         method: 'DELETE',
-        query: { assets: 'delete' },
+        query: { action: 'purge' },
         errorContext: { action: 'deleting', entity: 'folder' },
+        suppressErrorToast: true,
       });
     });
   });

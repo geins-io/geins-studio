@@ -59,12 +59,13 @@ Hides the **All assets** entry, for when the tree picks a destination rather tha
 
 ## Deleting a folder
 
-Which delete flow runs is gated on `useAssetCapabilities().canDeleteFolderWithAssets`:
+1. The row's delete button first inspects the folder: two `assetApi.query` counts over the subtree (`pageSize: 1` → `totalItemCount`), one for live assets and one with `trashed: true`, plus the subfolders from `descendantIds`. No dialog opens until they answer; meanwhile that row's delete icon turns into a spinner (`busyId` on `AssetFolderTreeItem`) and its hover actions stay visible.
+2. Only a folder **proven empty** gets the plain [`DialogDelete`](/components/dialog/DialogDelete), which calls `assetApi.folder.delete(id)` — no `action` (toast `entity_deleted`). Anything else, or a failed count, opens [`AssetFolderDeleteDialog`](/components/asset/AssetFolderDeleteDialog) directly: move to trash, move assets to uncategorised, or delete permanently (its trash option is safe on an empty folder too). If the plain delete still answers `409 FOLDER_NOT_EMPTY` / `FOLDER_HOLDS_TRASHED_ASSETS` (e.g. a trashed empty subfolder the tree doesn't list), it swaps to the options dialog.
+3. The choice calls `assetApi.deleteFolder(id, action)`. The toast title is `entity_moved_to_trash` (trash, relocate) or `entity_deleted` (purge), with the response's `assetCount` as the description (`folder_delete_{action}_done`).
 
-| Capability       | Flow                                                                                                                                                                                                                                                                                                                                                                                      |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **on** (phase 2) | The tree counts the subtree (`assetApi.list({ folderId })`). Non-empty → [`AssetFolderDeleteDialog`](/components/asset/AssetFolderDeleteDialog) (move vs delete the assets), calling `assetApi.deleteFolder(id, assets)`. Empty → the plain [`DialogDelete`](/components/dialog/DialogDelete).                                                                                            |
-| **off** (today)  | **Empty-only delete.** No subtree probe and no disposition: the plain `DialogDelete` calls `assetApi.folder.delete(id)`. The backend answers `409 FOLDER_NOT_EMPTY` when the folder still holds assets — the call passes `suppressErrorToast: true` and the reason is rendered as the dialog's own warning callout, so the user can empty the folder and retry without losing the dialog. |
+Both calls pass `suppressErrorToast: true`: a failure is shown inline in the dialog that made it (`folderDeleteFailure` → `folder_delete_move_pending`, `folder_delete_too_large`, `folder_delete_name_clash` for a relocate, else `error_try_again`), so the user can retry or pick another option.
+
+After success the tree refetches [`useFolders`](/composables/useFolders), `asset-library-list` and `asset-tags` once, and clears the selection if it was inside the deleted subtree. `relocate` and `purge` answer `202` and settle in the background, so for a while assets can still show in their old folder or in the trash — see [Assets → Folder delete](/domains/assets).
 
 ## Data
 

@@ -7,6 +7,7 @@ import type {
   AssetType,
   BulkLinkCall,
   BulkLinkMode,
+  FolderDeleteAction,
   UploadRejectionCode,
 } from '#shared/types';
 
@@ -371,12 +372,48 @@ export function bulkMoveErrorKey(
 }
 
 /**
+ * Folder or asset limit of a folder delete `action`; a bigger subtree is a
+ * `409 FOLDER_TOO_LARGE`.
+ */
+export const FOLDER_DELETE_MAX = 1000;
+
+/**
+ * Why a folder delete failed, read off the problem `detail` (the codes ride
+ * there, not in a structured field). `not_empty` is the expected answer to an
+ * action-less delete and opens the options. A relocate `409` without a code is
+ * the name clash at the root (the detail lists asset ids instead).
+ */
+export type FolderDeleteFailure =
+  | 'not_empty'
+  | 'move_pending'
+  | 'too_large'
+  | 'name_clash'
+  | 'failed';
+
+export function folderDeleteFailure(
+  status: number,
+  detail?: string,
+  action?: FolderDeleteAction,
+): FolderDeleteFailure {
+  if (status !== 409) return 'failed';
+  const code = detail?.toUpperCase() ?? '';
+  if (
+    code.includes('FOLDER_NOT_EMPTY') ||
+    code.includes('FOLDER_HOLDS_TRASHED_ASSETS')
+  )
+    return 'not_empty';
+  if (code.includes('MOVE_PENDING')) return 'move_pending';
+  if (code.includes('FOLDER_TOO_LARGE')) return 'too_large';
+  return action === 'relocate' ? 'name_clash' : 'failed';
+}
+
+/**
  * Feature availability against the shipped Geins.Media surface. Browse,
  * upload, `PATCH` (incl. tags + channels), `relocate`, `DELETE` (+ restore),
- * replace, usage links and `GET media/tags` all ship unconditionally, so none
- * of them carry a flag. Tags/channels on the upload ticket and the
- * folder-delete asset disposition stay off. Pure so it can be unit-tested and
- * reused by `useAssetCapabilities`.
+ * folder delete actions, replace, usage links and `GET media/tags` all ship
+ * unconditionally, so none of them carry a flag. Tags/channels on the upload
+ * ticket stay off. Pure so it can be unit-tested and reused by
+ * `useAssetCapabilities`.
  *
  * cutover: REVISIT@phase2 — the whole capability mechanism is temporary; remove
  * it (+ its consumers) once the gated features land. Ledger:
@@ -385,7 +422,6 @@ export function bulkMoveErrorKey(
 export function assetCapabilities(): AssetCapabilities {
   return {
     canUploadTagsAndChannels: false,
-    canDeleteFolderWithAssets: false,
   };
 }
 

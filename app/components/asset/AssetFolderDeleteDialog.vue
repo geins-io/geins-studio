@@ -1,48 +1,114 @@
 <script setup lang="ts">
-import type { FolderDeleteAssets } from '#shared/types';
+import type { FolderDeleteAction } from '#shared/types';
+import { TRASH_RETENTION_DAYS } from '#shared/utils/asset';
 
 /**
- * Folder-delete dialog shown when the folder (or its subtree) still holds
- * assets: the user picks what happens to them — keep + move to uncategorised,
- * or delete them too. Empty folders never reach here (the tree shows the plain
- * `DialogDelete` confirm instead). The count is resolved by the caller.
+ * Options for deleting a folder that isn't empty: move it to the trash with
+ * everything in it (default), move its assets to uncategorised, or delete it
+ * permanently. Each takes the whole subtree. Empty folders never reach here
+ * (the tree's plain `DialogDelete` deletes them). Only the permanent delete's
+ * confirm is red.
  */
 const props = defineProps<{
   folderName: string;
-  /** Assets in the folder + its subtree — drives the copy and pluralization. */
-  count: number;
+  /**
+   * Live assets in the folder + its subtree, or `null` when the count failed.
+   * `0` hides the relocate option (nothing to move).
+   */
+  count: number | null;
   loading?: boolean;
 }>();
 
 const open = defineModel<boolean>('open', { default: false });
+/** Why the last attempt failed, already translated. Cleared on a new choice. */
+const error = defineModel<string | undefined>('error');
 
 const emit = defineEmits<{
-  confirm: [assets: FolderDeleteAssets];
+  confirm: [action: FolderDeleteAction];
   cancel: [];
 }>();
 
 const { t } = useI18n();
 const { resolveIcon } = useLucideIcon();
 
-// Default to the safe option; reset each time the dialog opens.
-const disposition = ref<FolderDeleteAssets>('move');
+const action = ref<FolderDeleteAction>('trash');
 watch(open, (value) => {
-  if (value) disposition.value = 'move';
+  if (value) action.value = 'trash';
+});
+watch(action, () => {
+  error.value = undefined;
 });
 
-const OPTIONS = [
-  { id: 'move', icon: 'FolderInput' },
-  { id: 'delete', icon: 'Trash2' },
-] as const;
+interface Option {
+  id: FolderDeleteAction;
+  icon: string;
+  title: string;
+  description: string;
+}
 
-// "3 assets" / "1 asset" — reuse the shared count+entity key.
-const assetCount = computed(() =>
-  t('nr_of_entity', { count: props.count, entityKey: 'asset' }, props.count),
+const options = computed<Option[]>(() => {
+  const all: Option[] = [
+    {
+      id: 'trash',
+      icon: 'Trash2',
+      title: t('asset_library.move_to_trash'),
+      description: `${t('asset_library.folder_delete_trash_description')} ${t(
+        'asset_library.trash_restore_note',
+        { days: TRASH_RETENTION_DAYS },
+        2,
+      )}`,
+    },
+    {
+      id: 'relocate',
+      icon: 'FolderInput',
+      title: t('asset_library.folder_delete_relocate_title'),
+      description: t('asset_library.folder_delete_relocate_description'),
+    },
+    {
+      id: 'purge',
+      icon: 'Ban',
+      title: t('asset_library.delete_permanently'),
+      description: `${t('asset_library.folder_delete_purge_description')} ${t(
+        'asset_library.purge_note',
+      )}`,
+    },
+  ];
+  return props.count === 0 ? all.filter((o) => o.id !== 'relocate') : all;
+});
+
+const selected = computed(
+  () => options.value.find((o) => o.id === action.value) ?? options.value[0]!,
 );
 
-function confirm() {
-  emit('confirm', disposition.value);
-}
+const intro = computed(() =>
+  props.count
+    ? t(
+        'asset_library.folder_delete_intro',
+        {
+          assets: t(
+            'nr_of_entity',
+            { count: props.count, entityKey: 'asset' },
+            props.count,
+          ),
+        },
+        props.count,
+      )
+    : t('asset_library.folder_delete_intro_other'),
+);
+
+// Every option says what it does beyond its one-liner: relocate breaks links,
+// the other two take the assets off everything that uses them.
+const callout = computed(() =>
+  action.value === 'relocate'
+    ? {
+        title: t('asset_library.bulk_move_url_title'),
+        description: t('asset_library.bulk_move_url_description'),
+      }
+    : {
+        title: t('asset_library.removing_everywhere'),
+        description: t('asset_library.remove_everywhere_description', 2),
+      },
+);
 </script>
 
 <template>
@@ -52,44 +118,30 @@ function confirm() {
         <DialogTitle>
           {{ $t('asset_library.delete_folder_title', { name: folderName }) }}
         </DialogTitle>
-        <DialogDescription>
-          {{
-            $t(
-              'asset_library.folder_delete_intro',
-              { assets: assetCount },
-              count,
-            )
-          }}
-        </DialogDescription>
+        <DialogDescription>{{ intro }}</DialogDescription>
       </DialogHeader>
 
       <div class="space-y-3" role="radiogroup">
         <button
-          v-for="option in OPTIONS"
+          v-for="option in options"
           :key="option.id"
           type="button"
           role="radio"
-          :aria-checked="disposition === option.id"
+          :aria-checked="action === option.id"
           class="flex w-full items-start gap-4 rounded-lg border p-4 text-left transition-colors"
           :class="
-            disposition === option.id
-              ? option.id === 'delete'
-                ? 'border-destructive bg-destructive/5'
-                : 'border-primary bg-muted/30'
+            action === option.id
+              ? 'border-primary bg-muted/30'
               : 'hover:bg-muted/40'
           "
-          @click="disposition = option.id"
+          @click="action = option.id"
         >
           <div
             class="flex size-10 shrink-0 items-center justify-center rounded-lg"
             :class="
-              option.id === 'delete'
-                ? disposition === 'delete'
-                  ? 'bg-destructive text-white'
-                  : 'bg-destructive/10 text-destructive'
-                : disposition === 'move'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-foreground'
+              action === option.id
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-foreground'
             "
           >
             <component
@@ -99,42 +151,32 @@ function confirm() {
             />
           </div>
           <div class="flex-1">
-            <div
-              class="font-semibold"
-              :class="option.id === 'delete' && 'text-destructive'"
-            >
-              {{ $t(`asset_library.folder_delete_${option.id}_title`) }}
-            </div>
+            <div class="font-semibold">{{ option.title }}</div>
             <p class="text-muted-foreground mt-0.5 text-sm">
-              {{ $t(`asset_library.folder_delete_${option.id}_description`) }}
+              {{ option.description }}
             </p>
           </div>
           <span
             class="flex size-5 shrink-0 items-center justify-center self-center rounded-full border"
-            :class="
-              disposition === option.id
-                ? option.id === 'delete'
-                  ? 'border-destructive'
-                  : 'border-primary'
-                : 'border-input'
-            "
+            :class="action === option.id ? 'border-primary' : 'border-input'"
           >
             <span
-              v-if="disposition === option.id"
-              class="size-2.5 rounded-full"
-              :class="option.id === 'delete' ? 'bg-destructive' : 'bg-primary'"
+              v-if="action === option.id"
+              class="bg-primary size-2.5 rounded-full"
             />
           </span>
         </button>
       </div>
 
-      <Feedback v-if="disposition === 'delete'" type="warning">
+      <Feedback v-if="error" type="negative">
         <template #title>
-          {{ $t('asset_library.removing_everywhere') }}
+          {{ $t('error_deleting_entity', { entityKey: 'folder' }) }}
         </template>
-        <template #description>
-          {{ $t('asset_library.remove_everywhere_description', count) }}
-        </template>
+        <template #description>{{ error }}</template>
+      </Feedback>
+      <Feedback v-else type="warning">
+        <template #title>{{ callout.title }}</template>
+        <template #description>{{ callout.description }}</template>
       </Feedback>
 
       <DialogFooter class="sm:justify-between">
@@ -143,10 +185,10 @@ function confirm() {
         </Button>
         <Button
           :loading="loading"
-          :variant="disposition === 'delete' ? 'destructive' : 'default'"
-          @click="confirm"
+          :variant="selected.id === 'purge' ? 'destructive' : 'default'"
+          @click="emit('confirm', selected.id)"
         >
-          {{ $t('delete_entity', { entityKey: 'folder' }) }}
+          {{ selected.title }}
         </Button>
       </DialogFooter>
     </DialogContent>
