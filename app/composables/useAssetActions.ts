@@ -11,10 +11,12 @@ export interface UseAssetActionsReturnType {
   deleteAsset: (asset: Asset) => Promise<boolean>;
   /** Restore a trashed asset, refresh the library list, toast. Returns success. */
   restoreAsset: (asset: Asset) => Promise<boolean>;
+  /** Purge a trashed asset, refresh the library list, toast. Returns success. */
+  purgeAsset: (asset: Asset) => Promise<boolean>;
 }
 
 /**
- * Shared asset row/panel actions (copy URL, download, delete, restore) so the
+ * Shared asset row/panel actions (copy URL, download, delete, restore, purge) so the
  * library page, grid card, and detail panel stay consistent. Delete and restore
  * refresh the `asset-library-list` read; callers own their confirm dialog +
  * surrounding UI (closing a panel, clearing selection).
@@ -82,5 +84,19 @@ export function useAssetActions(): UseAssetActionsReturnType {
     }
   }
 
-  return { copyUrl, download, deleteAsset, restoreAsset };
+  // The purge lands about a minute after the call, so the refresh can still
+  // list the asset in trash until then.
+  async function purgeAsset(asset: Asset): Promise<boolean> {
+    try {
+      await assetApi.bulkPurge([asset._id]);
+      await refreshNuxtData('asset-library-list');
+      toast({ title: t('entity_deleted', { entityKey }), variant: 'positive' });
+      return true;
+    } catch (error) {
+      geinsLogError('purgeAsset', getErrorMessage(error));
+      return false;
+    }
+  }
+
+  return { copyUrl, download, deleteAsset, restoreAsset, purgeAsset };
 }

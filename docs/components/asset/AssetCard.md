@@ -4,7 +4,7 @@
 
 In `selectable` mode (the asset picker) the tile becomes a selection target instead: a checkbox overlays the thumbnail, clicking the tile toggles selection rather than opening the detail panel, and `hideActions` drops the actions menu.
 
-In `trashed` mode (the library's Trash view) the tile is inert apart from its menu: the thumbnail button is disabled, the name renders as plain text, the menu offers **Restore** only, and the meta line shows "Moved to trash {date}" (`deletedAt`) in place of the modified date.
+In `trashed` mode (the library's Trash view) the tile is inert apart from its menu: the thumbnail button is disabled, the name renders as plain text, the menu offers **Restore** and **Delete permanently** only, and the meta line shows "Moved to trash {date}" (`deletedAt`) in place of the modified date.
 
 :::tip NOTE
 The tile shows no usage. Usage lives in the detail panel's "Where it's used" section ([`AssetUsedIn`](/components/asset/AssetUsedIn)) — it needs a per-asset request, which a grid of tiles can't afford.
@@ -78,7 +78,7 @@ Suppress the [`AssetActionsMenu`](/components/asset/AssetActionsMenu) — the pi
 trashed?: boolean; // default false
 ```
 
-Trash mode: nothing on the tile opens the detail panel (a soft-deleted asset has nothing to edit), and the menu shows **Restore** only, emitting `restore`.
+Trash mode: nothing on the tile opens the detail panel (a soft-deleted asset has nothing to edit), and the menu shows **Restore** and **Delete permanently** only, emitting `restore` / `purge`.
 
 ## Events
 
@@ -95,6 +95,10 @@ Download the file / copy its URL. Disabled in the menu when the asset has no `ur
 ### `restore`
 
 `trashed` mode only — restore the asset from trash; the page calls [`useAssetActions`](/composables/useAssetActions)`.restoreAsset`.
+
+### `purge`
+
+`trashed` mode only — request a permanent delete; the page opens the hard confirm and calls [`useAssetActions`](/composables/useAssetActions)`.purgeAsset`.
 
 ### `delete`
 

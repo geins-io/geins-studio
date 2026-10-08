@@ -89,6 +89,15 @@ export interface AssetBulkMove {
 }
 
 /**
+ * `202` body of `POST /media/assets/bulk-purge` and `POST /media/trash/empty`:
+ * how many trashed assets are now due for purge. The purge itself runs after
+ * the call, usually within a minute.
+ */
+export interface AssetTrashPurge {
+  assetCount: number;
+}
+
+/**
  * A link from an asset to something outside the media library
  * (`media_response_assetLink`, returned by `GET /media/assets/{id}/links`).
  *

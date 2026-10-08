@@ -12,7 +12,8 @@ import { formatFileSize } from '#shared/utils/file';
  * `selectOnClick` off: the checkbox selects and the tile still opens.
  *
  * In `trashed` mode (trash view) the tile is inert apart from its menu, which
- * offers Restore only — there is no detail panel for a soft-deleted asset.
+ * offers Restore and Delete permanently — there is no detail panel for a
+ * soft-deleted asset.
  */
 const props = withDefaults(
   defineProps<{
@@ -45,6 +46,7 @@ const emit = defineEmits<{
   copyUrl: [];
   delete: [];
   restore: [];
+  purge: [];
   toggleSelect: [];
 }>();
 
@@ -125,6 +127,7 @@ const activate = () => {
           @copy-url="emit('copyUrl')"
           @delete="emit('delete')"
           @restore="emit('restore')"
+          @purge="emit('purge')"
         />
       </div>
     </div>
