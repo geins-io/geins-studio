@@ -1,9 +1,9 @@
 # `useAssetActions`
 
-`useAssetActions` bundles the shared asset row/panel actions — **copy URL**, **download**, **delete**, and **restore** — so the library page, the grid [`AssetCard`](/components/asset/AssetCard), and the [`AssetDetailPanel`](/components/asset/AssetDetailPanel) stay consistent.
+`useAssetActions` bundles the shared asset row/panel actions — **copy URL**, **download**, **delete**, **restore**, and **purge** — so the library page, the grid [`AssetCard`](/components/asset/AssetCard), and the [`AssetDetailPanel`](/components/asset/AssetDetailPanel) stay consistent.
 
 :::tip NOTE
-`deleteAsset` and `restoreAsset` refresh the `asset-library-list` read and toast on their own, but callers own the surrounding UI — the confirm dialog ([`DialogDelete`](/components/dialog/DialogDelete)), closing a panel, clearing a pending selection.
+`deleteAsset`, `restoreAsset` and `purgeAsset` refresh the `asset-library-list` read and toast on their own, but callers own the surrounding UI — the confirm dialog ([`DialogDelete`](/components/dialog/DialogDelete)), closing a panel, clearing a pending selection.
 :::
 
 ## Usage
@@ -57,6 +57,14 @@ restoreAsset: (asset: Asset) => Promise<boolean>;
 ```
 
 Restores a trashed asset (`assetApi.restore` → `POST /media/assets/{id}/restore`), refreshes `asset-library-list`, and toasts (`entity_restored`). Returns `true` on success. The refresh is what removes the row from the Trash view, so callers need no local bookkeeping.
+
+### `purgeAsset`
+
+```ts
+purgeAsset: (asset: Asset) => Promise<boolean>;
+```
+
+Permanently deletes a trashed asset (`assetApi.bulkPurge([id])` → `POST /media/assets/bulk-purge`; there is no single-asset route), refreshes `asset-library-list`, and toasts (`entity_deleted`). Returns `true` on success. The purge lands about a minute after the call, so the refresh can still list the asset in trash until then. Callers confirm first with the **hard** copy — see [assets](/domains/assets#delete-vocabulary).
 
 ## Dependencies
 

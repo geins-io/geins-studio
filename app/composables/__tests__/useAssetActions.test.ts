@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { buildAsset } from '../../../test/fixtures';
 
 const { assetApi, toast, refreshNuxtData, geinsLogError } = vi.hoisted(() => ({
-  assetApi: { delete: vi.fn() },
+  assetApi: { delete: vi.fn(), bulkPurge: vi.fn() },
   toast: vi.fn(),
   refreshNuxtData: vi.fn(),
   geinsLogError: vi.fn(),
@@ -102,6 +102,31 @@ describe('useAssetActions — deleteAsset', () => {
     assetApi.delete.mockRejectedValue(new Error('boom'));
     const { deleteAsset } = useAssetActions();
     const ok = await deleteAsset(buildAsset());
+
+    expect(ok).toBe(false);
+    expect(geinsLogError).toHaveBeenCalled();
+    expect(toast).not.toHaveBeenCalled();
+  });
+});
+
+describe('useAssetActions — purgeAsset', () => {
+  it('purges the one asset, refreshes the library, toasts and returns true', async () => {
+    assetApi.bulkPurge.mockResolvedValue({ assetCount: 1 });
+    const { purgeAsset } = useAssetActions();
+    const ok = await purgeAsset(buildAsset({ _id: 'a9' }));
+
+    expect(ok).toBe(true);
+    expect(assetApi.bulkPurge).toHaveBeenCalledWith(['a9']);
+    expect(refreshNuxtData).toHaveBeenCalledWith('asset-library-list');
+    expect(toast).toHaveBeenCalledWith(
+      expect.objectContaining({ variant: 'positive' }),
+    );
+  });
+
+  it('returns false and logs when the purge fails', async () => {
+    assetApi.bulkPurge.mockRejectedValue(new Error('boom'));
+    const { purgeAsset } = useAssetActions();
+    const ok = await purgeAsset(buildAsset());
 
     expect(ok).toBe(false);
     expect(geinsLogError).toHaveBeenCalled();

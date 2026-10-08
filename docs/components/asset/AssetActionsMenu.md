@@ -4,7 +4,7 @@
 
 Download and Copy URL are disabled when the asset has no public `url`.
 
-In **`trashed`** mode (the library's Trash view) the menu collapses to a single **Restore** item: a soft-deleted asset can only come back, and its stored file may already be unreachable, so details / download / trash would be dead ends.
+In **`trashed`** mode (the library's Trash view) the menu collapses to **Restore** and **Delete permanently** (regular item styling; the red is on its confirm): a soft-deleted asset can only come back or go for good, and its stored file may already be unreachable, so details / download / trash would be dead ends.
 
 ## Usage
 
@@ -30,6 +30,7 @@ h(AssetActionsMenu, {
   onDelete: () => requestDelete(row.original),
   trashed: isTrash.value,
   onRestore: () => restore(row.original),
+  onPurge: () => requestPurge(row.original),
 });
 ```
 
@@ -57,7 +58,7 @@ Trigger button styling: `'card'` is the floating secondary chip used on the grid
 trashed?: boolean; // default false
 ```
 
-Trash mode: **Restore** becomes the only item. Set by the library page when the Trash rail entry is selected.
+Trash mode: **Restore** and **Delete permanently** become the only items. Set by the library page when the Trash rail entry is selected.
 
 ## Events
 
@@ -76,6 +77,10 @@ Download the file / copy its public URL. Disabled when the asset has no `url`.
 ### `restore`
 
 `trashed` mode only — restore the asset from trash (the page calls `useAssetActions().restoreAsset`).
+
+### `purge`
+
+`trashed` mode only — "Delete permanently". The page opens a hard confirm ([`DialogDelete`](/components/dialog/DialogDelete) with its default destructive button) and calls `useAssetActions().purgeAsset`.
 
 ## Dependencies
 
