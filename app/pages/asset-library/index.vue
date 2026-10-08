@@ -96,8 +96,8 @@ const selectedFolder = computed<string | null>({
 const uploadFolderId = computed(() =>
   folderIdForSelection(selectedFolder.value),
 );
-// Trash lists the soft-deleted assets instead of a folder scope: restore is the
-// only action there, and upload / detail panel / delete are all off.
+// Trash lists the soft-deleted assets instead of a folder scope: restore and
+// purge are the only actions there, and upload / detail panel / trash are off.
 const isTrash = computed(() => selectedFolder.value === TRASH_KEY);
 // Stated, not enforced — the backend owns the retention window.
 const retentionNote = computed(() =>
@@ -223,7 +223,7 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
     ? ['deletedAt', 'purgeAfter']
     : ['updatedAt'];
   const cols = getColumns(rows, {
-    selectable: !isTrash.value,
+    selectable: true,
     includeColumns: [
       'name',
       'type',
@@ -346,6 +346,7 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
           onCopyUrl: () => copyUrl(row.original),
           onDelete: () => requestDelete(row.original),
           onRestore: () => restore(row.original),
+          onPurge: () => requestPurge(row.original),
         }),
       ),
     meta: { type: 'actions' },
@@ -381,10 +382,9 @@ watch(
 // Bulk selection — one id list for both views, so it survives view switches,
 // paging, sort, search and filters (the bar counts the selection, not the rows
 // on screen). A folder change clears it: the actions assume one scope. Trash
-// has no bulk actions yet, so it has no selection either.
+// selects too, but its only bulk action is Delete permanently.
 const selectedIds = ref<string[]>([]);
 const selectedSet = computed(() => new Set(selectedIds.value));
-const selectable = computed(() => !isTrash.value);
 // Select-all in a folder also takes its subfolders' assets (the folder query
 // includes them); the confirm step says so.
 const selectedWithSubfolders = ref(false);
@@ -455,7 +455,9 @@ async function selectAllMatching() {
       ...new Set([...selectedIds.value, ...assets.map((asset) => asset._id)]),
     ];
     selectedWithSubfolders.value =
-      !!selectedFolder.value && selectedFolder.value !== ROOT_FOLDER_KEY;
+      !!selectedFolder.value &&
+      selectedFolder.value !== ROOT_FOLDER_KEY &&
+      !isTrash.value;
   } catch (err) {
     geinsLogError('selectAllMatching', getErrorMessage(err));
     toast({
@@ -481,6 +483,24 @@ const trashAction = computed<BulkAction>(() => ({
   successMessage: (count) =>
     t('asset_library.bulk_moved_to_trash', { count }, count),
 }));
+// Hard delete: trash-only, red, and can't be undone. The purge lands about a
+// minute after the call, so the refresh after the run can still list some.
+const purgeAction = computed<BulkAction>(() => ({
+  key: 'delete-permanently',
+  label: t('asset_library.delete_permanently'),
+  icon: 'Trash2',
+  destructive: true,
+  description: (count) =>
+    t('asset_library.bulk_purge_description', { count }, count),
+  note: () => t('asset_library.purge_note'),
+  run: (ids, _value, options) => assetApi.bulkPurge(ids, options),
+  successMessage: (count) =>
+    t('asset_library.bulk_deleted_permanently', { count }, count),
+}));
+// The bar's shortcut action: the soft trash on live assets, the purge in trash.
+const barAction = computed(() =>
+  isTrash.value ? purgeAction.value : trashAction.value,
+);
 const AssetBulkMoveFolder = resolveComponent('AssetBulkMoveFolder');
 // The value is the folder tree's selection (a folder id or ROOT_FOLDER_KEY).
 // A 202 means the copies are still landing, so the refresh after the run may
@@ -635,7 +655,8 @@ function openAsset(asset: Asset) {
   detailOpen.value = true;
 }
 
-const { copyUrl, download, deleteAsset, restoreAsset } = useAssetActions();
+const { copyUrl, download, deleteAsset, restoreAsset, purgeAsset } =
+  useAssetActions();
 const { downloading, downloadZip } = useAssetZipDownload();
 const downloadSelected = () =>
   downloadZip(selectedIds.value.flatMap((id) => knownAssets.get(id) ?? []));
@@ -662,6 +683,87 @@ async function confirmDelete() {
   if (!ok) return;
   deleteOpen.value = false;
   pendingDelete.value = null;
+}
+
+const purgeOpen = ref(false);
+const purging = ref(false);
+const pendingPurge = ref<Asset | null>(null);
+
+function requestPurge(asset: Asset) {
+  pendingPurge.value = asset;
+  purgeOpen.value = true;
+}
+
+// The row can still list for about a minute after the purge, so drop its id
+// from the selection: a later bulk purge would 404 on it once it's gone.
+async function confirmPurge() {
+  const asset = pendingPurge.value;
+  if (!asset) return;
+  purging.value = true;
+  const ok = await purgeAsset(asset);
+  purging.value = false;
+  if (!ok) return;
+  selectedIds.value = selectedIds.value.filter((id) => id !== asset._id);
+  purgeOpen.value = false;
+  pendingPurge.value = null;
+}
+
+// Empty trash purges the whole trash, not what the search / filters show, so a
+// filtered view counts the trash separately for the confirm.
+const emptyTrashOpen = ref(false);
+const emptyingTrash = ref(false);
+const countingTrash = ref(false);
+const trashCount = ref(0);
+const trashIsEmpty = computed(
+  () => !loading.value && !hasActiveQuery.value && total.value === 0,
+);
+
+async function requestEmptyTrash() {
+  if (!hasActiveQuery.value) {
+    trashCount.value = total.value;
+    emptyTrashOpen.value = true;
+    return;
+  }
+  countingTrash.value = true;
+  try {
+    const result = await assetApi.query(
+      { page: 1, pageSize: 1, sort: null, search: '', filters: {} },
+      assetListOptions(TRASH_KEY),
+    );
+    trashCount.value = result.totalItemCount;
+    emptyTrashOpen.value = true;
+  } catch (err) {
+    geinsLogError('requestEmptyTrash', getErrorMessage(err));
+    toast({
+      title: t('error_fetching_entity', { entityKey }, 2),
+      variant: 'negative',
+    });
+  } finally {
+    countingTrash.value = false;
+  }
+}
+
+// Like a single purge, the trash can still list some assets for about a minute.
+async function confirmEmptyTrash() {
+  emptyingTrash.value = true;
+  try {
+    const { assetCount } = await assetApi.emptyTrash();
+    emptyTrashOpen.value = false;
+    clearSelection();
+    toast({
+      title: t(
+        'asset_library.bulk_deleted_permanently',
+        { count: assetCount },
+        assetCount,
+      ),
+      variant: 'positive',
+    });
+    await Promise.all([refresh(), refreshNuxtData(['asset-tags'])]);
+  } catch (err) {
+    geinsLogError('confirmEmptyTrash', getErrorMessage(err));
+  } finally {
+    emptyingTrash.value = false;
+  }
 }
 </script>
 
@@ -691,6 +793,31 @@ async function confirmDelete() {
     :warning-description="$t('asset_library.remove_everywhere_description', 1)"
     @confirm="confirmDelete"
     @cancel="deleteOpen = false"
+  />
+  <DialogDelete
+    v-model:open="purgeOpen"
+    :entity-key="entityKey"
+    :loading="purging"
+    :title="$t('asset_library.purge_confirm_title')"
+    :confirm-label="$t('asset_library.delete_permanently')"
+    @confirm="confirmPurge"
+    @cancel="purgeOpen = false"
+  />
+  <DialogDelete
+    v-model:open="emptyTrashOpen"
+    :entity-key="entityKey"
+    :loading="emptyingTrash"
+    :title="$t('asset_library.empty_trash_title')"
+    :description="
+      $t(
+        'asset_library.empty_trash_description',
+        { count: trashCount },
+        trashCount,
+      )
+    "
+    :confirm-label="$t('asset_library.empty_trash')"
+    @confirm="confirmEmptyTrash"
+    @cancel="emptyTrashOpen = false"
   />
 
   <ContentHeader :title="$t(entityKey, 2)">
@@ -726,6 +853,16 @@ async function confirmDelete() {
       <ButtonIcon v-if="!isTrash" icon="upload" @click="uploadOpen = true">
         {{ $t('asset_library.upload_assets') }}
       </ButtonIcon>
+      <Button
+        v-else
+        variant="secondary"
+        :loading="countingTrash"
+        :disabled="trashIsEmpty"
+        @click="requestEmptyTrash"
+      >
+        <LucideTrash2 v-if="!countingTrash" class="mr-2 size-4" />
+        {{ $t('asset_library.empty_trash') }}
+      </Button>
     </ContentActionBar>
   </ContentHeader>
 
@@ -743,7 +880,7 @@ async function confirmDelete() {
   />
   <ListBulkActionConfirm
     v-model:open="bulkTrashOpen"
-    :action="trashAction"
+    :action="barAction"
     :ids="selectedIds"
     :entity-key="entityKey"
     :scope-note="bulkScopeNote"
@@ -773,7 +910,7 @@ async function confirmDelete() {
       @open-all="filterSheetOpen = true"
     />
     <ListBulkBar
-      v-if="selectable && selectedIds.length"
+      v-if="selectedIds.length"
       :count="selectedIds.length"
       :total="total"
       :can-select-all="canSelectAll"
@@ -782,10 +919,16 @@ async function confirmDelete() {
       @select-all="selectAllMatching"
       @clear="clearSelection"
     >
-      <Button variant="link" size="sm" @click="bulkSheetOpen = true">
+      <Button
+        v-if="!isTrash"
+        variant="link"
+        size="sm"
+        @click="bulkSheetOpen = true"
+      >
         {{ $t('choose_action') }}
       </Button>
       <Button
+        v-if="!isTrash"
         variant="link"
         size="sm"
         class="gap-1"
@@ -802,7 +945,7 @@ async function confirmDelete() {
         @click="bulkTrashOpen = true"
       >
         <LucideTrash2 class="size-3.5" aria-hidden="true" />
-        {{ $t('asset_library.move_to_trash') }}
+        {{ barAction.label }}
       </Button>
     </ListBulkBar>
     <ButtonGroup class="order-1 ml-auto sm:order-2">
@@ -892,7 +1035,7 @@ async function confirmDelete() {
     <!-- GRID VIEW: only the grid body scrolls; pagination is a fixed footer -->
     <div v-else class="flex min-h-0 min-w-0 flex-1 flex-col">
       <label
-        v-if="selectable && !loading && !fetchError && items.length"
+        v-if="!loading && !fetchError && items.length"
         class="text-muted-foreground flex w-fit cursor-pointer items-center gap-2 pb-3 text-xs"
       >
         <Checkbox
@@ -957,7 +1100,7 @@ async function confirmDelete() {
             :asset="asset"
             :folder-name="folderName(asset.folderId)"
             :trashed="isTrash"
-            :selectable="selectable"
+            selectable
             :select-on-click="false"
             :selected="selectedSet.has(asset._id)"
             @open="openAsset(asset)"
@@ -965,6 +1108,7 @@ async function confirmDelete() {
             @copy-url="copyUrl(asset)"
             @delete="requestDelete(asset)"
             @restore="restore(asset)"
+            @purge="requestPurge(asset)"
             @toggle-select="toggleSelect(asset._id)"
           />
         </div>

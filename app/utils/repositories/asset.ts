@@ -12,6 +12,7 @@ import type {
   AssetUpdate,
   AssetApiOptions,
   AssetBulkMove,
+  AssetTrashPurge,
   BatchQueryResult,
   Folder,
   FolderCreate,
@@ -91,6 +92,7 @@ function chunkForTickets<T extends { file: File }>(items: T[]): T[][] {
 
 /** Upload tickets are a sibling of assets on Geins.Media, not a child. */
 const TICKETS_ENDPOINT = '/media/tickets';
+const TRASH_ENDPOINT = '/media/trash';
 
 /**
  * Folder / trash scope as `assetQuery` criteria. A folder id covers its subtree
@@ -365,6 +367,43 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       await fetch<unknown>(`${ENTITIES.asset.endpoint}/bulk-delete`, {
         method: 'POST',
         body: { assetIds },
+        errorContext: { action: 'deleting', entity: ENTITIES.asset.key },
+        ...fetchOptions,
+      });
+    },
+
+    /**
+     * Purge up to 100 trashed assets now — real `POST /media/assets/bulk-purge`
+     * (`202`). Only trashed ids: a live id refuses the whole call with a `404`
+     * listing the ids, so nothing skips the restore window. There is no
+     * single-asset route, so purge one asset by passing one id. The purge runs
+     * after the call, so a refetch can still list the assets for about a minute.
+     */
+    async bulkPurge(
+      assetIds: string[],
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<AssetTrashPurge> {
+      return await fetch<AssetTrashPurge>(
+        `${ENTITIES.asset.endpoint}/bulk-purge`,
+        {
+          method: 'POST',
+          body: { assetIds },
+          errorContext: { action: 'deleting', entity: ENTITIES.asset.key },
+          ...fetchOptions,
+        },
+      );
+    },
+
+    /**
+     * Purge every trashed asset in the account — real `POST /media/trash/empty`
+     * (`202`). The server asks for no confirmation, so the caller must. Same
+     * delayed purge as `bulkPurge`.
+     */
+    async emptyTrash(
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<AssetTrashPurge> {
+      return await fetch<AssetTrashPurge>(`${TRASH_ENDPOINT}/empty`, {
+        method: 'POST',
         errorContext: { action: 'deleting', entity: ENTITIES.asset.key },
         ...fetchOptions,
       });

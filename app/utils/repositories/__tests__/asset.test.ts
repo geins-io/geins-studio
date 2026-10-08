@@ -305,6 +305,30 @@ describe('assetRepo', () => {
       });
     });
 
+    it('bulkPurge POSTs the ids to /media/assets/bulk-purge', async () => {
+      mockFetch.mockResolvedValue({ assetCount: 2 });
+      const result = await api.bulkPurge(['a1', 'a2'], {
+        suppressErrorToast: true,
+      });
+      expect(result).toEqual({ assetCount: 2 });
+      expect(mockFetch).toHaveBeenCalledWith('/media/assets/bulk-purge', {
+        method: 'POST',
+        body: { assetIds: ['a1', 'a2'] },
+        errorContext: { action: 'deleting', entity: 'asset' },
+        suppressErrorToast: true,
+      });
+    });
+
+    it('emptyTrash POSTs with no body to /media/trash/empty', async () => {
+      mockFetch.mockResolvedValue({ assetCount: 3 });
+      const result = await api.emptyTrash();
+      expect(result).toEqual({ assetCount: 3 });
+      expect(mockFetch).toHaveBeenCalledWith('/media/trash/empty', {
+        method: 'POST',
+        errorContext: { action: 'deleting', entity: 'asset' },
+      });
+    });
+
     it('bulkTag POSTs the ids and tags to /media/assets/bulk-tag', async () => {
       mockFetch.mockResolvedValue(null);
       await api.bulkTag(['a1', 'a2'], ['hero'], { suppressErrorToast: true });

@@ -7,16 +7,17 @@ import type { Asset } from '#shared/types';
  * emits.
  * Download / copy URL are disabled when the asset has no public `url`.
  *
- * In `trashed` mode the menu collapses to a single **Restore** item: a trashed
- * asset can only come back, and its stored file may already be unreachable, so
- * offering details / download / trash there would be dead ends.
+ * In `trashed` mode the menu collapses to **Restore** and **Delete
+ * permanently**: a trashed asset can only come back or go for good, and its
+ * stored file may already be unreachable, so details / download would be dead
+ * ends.
  */
 withDefaults(
   defineProps<{
     asset: Asset;
     /** Trigger styling: floating chip on the grid card vs. table-row button. */
     trigger?: 'card' | 'table';
-    /** Trash view — the asset is soft-deleted, so Restore is the only action. */
+    /** Trash view — the asset is soft-deleted: restore or purge only. */
     trashed?: boolean;
   }>(),
   { trigger: 'card', trashed: false },
@@ -28,6 +29,7 @@ const emit = defineEmits<{
   copyUrl: [];
   delete: [];
   restore: [];
+  purge: [];
 }>();
 </script>
 
@@ -49,10 +51,17 @@ const emit = defineEmits<{
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end">
-      <DropdownMenuItem v-if="trashed" @click="emit('restore')">
-        <LucideUndo2 class="mr-2 size-4" aria-hidden="true" />
-        <span>{{ $t('restore') }}</span>
-      </DropdownMenuItem>
+      <template v-if="trashed">
+        <DropdownMenuItem @click="emit('restore')">
+          <LucideUndo2 class="mr-2 size-4" aria-hidden="true" />
+          <span>{{ $t('restore') }}</span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem @click="emit('purge')">
+          <LucideTrash2 class="mr-2 size-4" aria-hidden="true" />
+          <span>{{ $t('asset_library.delete_permanently') }}</span>
+        </DropdownMenuItem>
+      </template>
 
       <template v-else>
         <DropdownMenuItem @click="emit('open')">
