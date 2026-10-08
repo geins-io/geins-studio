@@ -691,12 +691,16 @@ function requestPurge(asset: Asset) {
   purgeOpen.value = true;
 }
 
+// The row can still list for about a minute after the purge, so drop its id
+// from the selection: a later bulk purge would 404 on it once it's gone.
 async function confirmPurge() {
-  if (!pendingPurge.value) return;
+  const asset = pendingPurge.value;
+  if (!asset) return;
   purging.value = true;
-  const ok = await purgeAsset(pendingPurge.value);
+  const ok = await purgeAsset(asset);
   purging.value = false;
   if (!ok) return;
+  selectedIds.value = selectedIds.value.filter((id) => id !== asset._id);
   purgeOpen.value = false;
   pendingPurge.value = null;
 }

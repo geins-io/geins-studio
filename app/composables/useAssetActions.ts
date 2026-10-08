@@ -16,10 +16,10 @@ export interface UseAssetActionsReturnType {
 }
 
 /**
- * Shared asset row/panel actions (copy URL, download, delete, restore, purge) so the
- * library page, grid card, and detail panel stay consistent. Delete and restore
- * refresh the `asset-library-list` read; callers own their confirm dialog +
- * surrounding UI (closing a panel, clearing selection).
+ * Shared asset row/panel actions (copy URL, download, delete, restore, purge)
+ * so the library page, grid card, and detail panel stay consistent. Delete,
+ * restore and purge refresh the `asset-library-list` read; callers own their
+ * confirm dialog + surrounding UI (closing a panel, clearing selection).
  */
 export function useAssetActions(): UseAssetActionsReturnType {
   const { t } = useI18n();
