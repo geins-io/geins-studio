@@ -23,6 +23,7 @@ import type {
   ListQueryRequestOptions,
   ListQueryState,
   Localized,
+  MediaMove,
   UploadCompleteResponse,
   UploadCompleteResult,
   UploadTicketFile,
@@ -94,6 +95,7 @@ function chunkForTickets<T extends { file: File }>(items: T[]): T[][] {
 /** Upload tickets are a sibling of assets on Geins.Media, not a child. */
 const TICKETS_ENDPOINT = '/media/tickets';
 const TRASH_ENDPOINT = '/media/trash';
+const MOVES_ENDPOINT = '/media/moves';
 
 /**
  * Folder / trash scope as `assetQuery` criteria. A folder id covers its subtree
@@ -321,6 +323,20 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
+     * One raw `POST /media/assets/query` — for a state check a list state
+     * can't express (ids, a fixed sort). Toast suppressed, like `query`.
+     */
+    async find(
+      body: AssetQuery,
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<BatchQueryResult<Asset>> {
+      return await fetch<BatchQueryResult<Asset>>(
+        `${ENTITIES.asset.endpoint}/query`,
+        { method: 'POST', body, suppressErrorToast: true, ...fetchOptions },
+      );
+    },
+
+    /**
      * Every asset the list's query matches across all pages — for a bulk
      * "select all", so the page knows each selected asset (a bulk link's type
      * split, a zip download's url/name/size) without another fetch.
@@ -432,6 +448,27 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         },
       );
       return res && typeof res === 'object' && 'moveId' in res ? res : null;
+    },
+
+    /**
+     * The background copies behind a `moveId` — real `GET media/moves/{moveId}`.
+     * `null` on `404`: a completed move is swept after 24 hours (sooner when its
+     * folder is deleted), so nothing is left to wait for.
+     */
+    async move(
+      moveId: string,
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<MediaMove | null> {
+      try {
+        return await fetch<MediaMove>(`${MOVES_ENDPOINT}/${moveId}`, {
+          ...fetchOptions,
+        });
+      } catch (error) {
+        if ((error as { statusCode?: number } | null)?.statusCode === 404) {
+          return null;
+        }
+        throw error;
+      }
     },
 
     /**
@@ -694,9 +731,9 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     /**
      * Rename and/or move an asset — real `POST /media/assets/{id}/relocate`. A
      * full replace: a move sends the current `name`, a rename the current
-     * `folderId`. The updated asset comes back on `200` **or** `202` (the
-     * backend may settle the move asynchronously), so callers refresh the
-     * library read rather than trusting the returned row to be settled.
+     * `folderId`. The updated asset comes back on `200` **or** `202`; a `202`
+     * that started a move carries its `moveId`, and until the move lands
+     * callers refresh the library read rather than trusting the returned row.
      */
     async relocate(
       id: string,
