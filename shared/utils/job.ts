@@ -139,7 +139,8 @@ export function purgeCheck(
 
 /**
  * Far enough past now that only a fresh trash's retention clears it, and far
- * beyond any client clock skew.
+ * beyond any client clock skew. Assumes retention is well over an hour (it's
+ * days); a shorter one would hold the check until timeout.
  */
 export const PURGE_DUE_MARGIN_MS = 60 * 60 * 1_000;
 
@@ -180,8 +181,9 @@ export interface ReplaceCheckOptions {
  * A replace is done when the CDN serves the new bytes: a `HEAD` on the bare
  * URL (no `?v=`, which is only a cache miss for a while after a replace)
  * returns the uploaded size. `asset` is the asset **before** the replace. When
- * the sizes match, or the CDN sends no `Content-Length`, size can't tell, so
- * the check waits `REPLACE_FALLBACK_MS` from its creation instead.
+ * the sizes match, the CDN sends no `Content-Length`, or the `HEAD` isn't ok,
+ * size can't tell, so the check waits `REPLACE_FALLBACK_MS` from its creation
+ * instead — best effort, done without the CDN confirming the new bytes.
  */
 export function replaceCheck(
   asset: Pick<Asset, 'url' | 'sizeBytes'>,

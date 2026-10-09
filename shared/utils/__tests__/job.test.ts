@@ -291,6 +291,24 @@ describe('replaceCheck', () => {
     await expect(check()).resolves.toEqual({ done: true });
   });
 
+  it('falls back to a fixed delay when the HEAD is not ok', async () => {
+    let clock = 0;
+    const check = replaceCheck(asset, 250, {
+      fetch: head(503, 250),
+      now: () => clock,
+    });
+    await expect(check()).resolves.toEqual({ done: false });
+    clock = REPLACE_FALLBACK_MS;
+    await expect(check()).resolves.toEqual({ done: true });
+  });
+
+  it('rejects when the HEAD throws, so settleJob counts it as not done', async () => {
+    const fetch = vi.fn().mockRejectedValue(new TypeError('network'));
+    await expect(replaceCheck(asset, 250, { fetch })()).rejects.toThrow(
+      'network',
+    );
+  });
+
   it('is done at once for an asset without a URL', async () => {
     const fetch = head(200, 100);
     await expect(
