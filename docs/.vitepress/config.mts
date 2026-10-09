@@ -52,6 +52,7 @@ export default defineConfig({
           { text: 'Authentication', link: '/concepts/authentication' },
           { text: 'API Repositories', link: '/concepts/api-repositories' },
           { text: 'List queries', link: '/concepts/list-queries' },
+          { text: 'Background jobs', link: '/concepts/background-jobs' },
         ],
       },
       {

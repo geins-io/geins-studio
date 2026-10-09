@@ -405,6 +405,37 @@ describe('assetRepo', () => {
       });
     });
 
+    describe('move', () => {
+      it('GETs /media/moves/:moveId', async () => {
+        const move = { _id: 'm1', state: 'pending' };
+        mockFetch.mockResolvedValue(move);
+        await expect(api.move('m1')).resolves.toEqual(move);
+        expect(mockFetch).toHaveBeenCalledWith('/media/moves/m1', {});
+      });
+
+      it('returns null on 404 (the move was swept)', async () => {
+        mockFetch.mockRejectedValue({ statusCode: 404 });
+        await expect(api.move('m1')).resolves.toBeNull();
+      });
+
+      it('rethrows any other error', async () => {
+        mockFetch.mockRejectedValue({ statusCode: 500 });
+        await expect(api.move('m1')).rejects.toEqual({ statusCode: 500 });
+      });
+    });
+
+    it('find POSTs the raw body to /media/assets/query without a toast', async () => {
+      const res = { _id: 'b1', pageCount: 1, totalItemCount: 0, items: [] };
+      mockFetch.mockResolvedValue(res);
+      const body = { assetIds: ['a1'], trashed: true, page: 1, pageSize: 1 };
+      await expect(api.find(body)).resolves.toEqual(res);
+      expect(mockFetch).toHaveBeenCalledWith('/media/assets/query', {
+        method: 'POST',
+        body,
+        suppressErrorToast: true,
+      });
+    });
+
     it('restore POSTs to /media/assets/:id/restore', async () => {
       mockFetch.mockResolvedValue(null);
       await api.restore('1');

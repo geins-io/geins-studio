@@ -81,12 +81,33 @@ export interface AssetRelocate {
 
 /**
  * `202` body of `POST /media/assets/bulk-move` — the copies run in the
- * background, and `GET media/moves/{moveId}` reports when they land. The
- * client doesn't poll it yet; callers refresh once instead.
+ * background, and `GET media/moves/{moveId}` reports when they land (see
+ * `moveCheck` in `#shared/utils/job`).
  */
 export interface AssetBulkMove {
   moveId: string;
 }
+
+/** `state` of a media move: `completed` once no file is left pending. */
+export type MediaMoveState = 'pending' | 'completed';
+
+export interface MediaMoveBase {
+  state: MediaMoveState;
+  itemCount: number;
+  movedCount: number;
+  /** Files left where they were, because the asset changed after the claim. */
+  skippedCount: number;
+  createdAt: string;
+  completedAt: string | null;
+}
+
+/**
+ * `GET media/moves/{moveId}` — the background copies behind a folder
+ * rename/move, an asset relocate, a bulk move and a folder delete with
+ * `relocate`. The backend retries a failing file without limit, so a move can
+ * stay `pending` indefinitely; pollers need their own limit.
+ */
+export type MediaMove = ResponseEntity<MediaMoveBase>;
 
 /**
  * `202` body of `POST /media/assets/bulk-purge` and `POST /media/trash/empty`:
@@ -294,6 +315,11 @@ export interface Asset extends ResponseEntity<AssetBase> {
    * later change to the retention window doesn't move it.
    */
   purgeAfter: string | null;
+  /**
+   * Only on a relocate `202` that started a move — poll it with
+   * `assetApi.move`. Absent when nothing has to land (a plain rename, a `200`).
+   */
+  moveId?: string | null;
 }
 
 /**
@@ -410,6 +436,11 @@ export type FolderCreate = CreateEntity<FolderBase>;
 export type FolderUpdate = CreateEntity<FolderBase>;
 
 export interface Folder extends ResponseEntity<FolderBase> {
+  /**
+   * Only on a `PUT` `202` that started a move — poll it with `assetApi.move`.
+   * Absent when the folder holds no files to copy.
+   */
+  moveId?: string | null;
   /**
    * Full path from the root to this folder, lowercased, e.g.
    * `marketing/campaigns` — the leading part of every asset path within it.
