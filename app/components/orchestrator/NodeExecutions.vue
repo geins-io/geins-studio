@@ -74,11 +74,17 @@ const rows = computed(() =>
   props.nodes.map((node) => {
     const error = errorForNode(props.execution, node);
     const retries = node.retryErrors ?? [];
+    const errorMessage =
+      error?.message ?? (isFailed(node) ? (retries.at(-1) ?? null) : null);
     return {
       node,
       error,
-      errorMessage:
-        error?.message ?? (isFailed(node) ? (retries.at(-1) ?? null) : null),
+      errorMessage,
+      // The final attempt is usually the failure shown above the list.
+      failedAttempts:
+        errorMessage && retries.at(-1) === errorMessage
+          ? retries.slice(0, -1)
+          : retries,
     };
   }),
 );
@@ -138,7 +144,7 @@ defineExpose({ focusNode });
     </div>
     <div v-else>
       <div
-        v-for="{ node, error, errorMessage } in rows"
+        v-for="{ node, error, errorMessage, failedAttempts } in rows"
         :id="nodeElementId(node.nodeId)"
         :key="node.nodeId"
         class="scroll-mt-4 border-b px-4 py-3"
@@ -242,14 +248,14 @@ defineExpose({ focusNode });
                 {{ node.retryCount ?? 0 }}
               </dd>
             </div>
-            <div v-if="node.retryErrors?.length">
+            <div v-if="failedAttempts.length">
               <dt class="text-muted-foreground">
                 {{ $t('orchestrator.node_executions.failed_attempts') }}
               </dt>
               <dd>
                 <ol class="list-decimal space-y-1 pl-4">
                   <li
-                    v-for="(retryError, idx) in node.retryErrors"
+                    v-for="(retryError, idx) in failedAttempts"
                     :key="idx"
                     class="text-destructive font-mono wrap-break-word whitespace-pre-wrap"
                   >
