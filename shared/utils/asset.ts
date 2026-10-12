@@ -437,10 +437,14 @@ export function assetCapabilities(): AssetCapabilities {
   };
 }
 
-/** Backend limits on an asset's tags and channels (a breach is a `422`). */
+/**
+ * Backend limits on an asset's tags, channels and content languages (a breach
+ * is a `422`).
+ */
 export const ASSET_LABEL_LIMITS = {
   tags: { maxCount: 100, maxLength: 64 },
   channels: { maxCount: 50, maxLength: 50 },
+  languages: { maxCount: 50, maxLength: 50 },
 } as const;
 
 /**

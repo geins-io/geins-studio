@@ -16,6 +16,7 @@ export function buildAsset(overrides?: Partial<Asset>): Asset {
     altText: null,
     tags: [],
     channels: [],
+    languages: [],
     sizeBytes: 2_400_000,
     mime: 'image/jpeg',
     url: 'https://cdn.example.com/hero-spring.jpg',

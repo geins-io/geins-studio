@@ -34,6 +34,7 @@ interface WizardFileSettings {
   name?: string;
   folderId?: string | null;
   channels?: string[];
+  languages?: string[];
   description?: string;
   tags?: string[];
   altText?: LocalizedText;
@@ -57,15 +58,17 @@ interface WizardFileSettings {
 
 Operate on a set of checked ids; the reconciliation lives here, not in the template.
 
-| Name                           | Type                                               | Description                                                                        |
-| ------------------------------ | -------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `bulkFolderId(ids)`            | `(string[]) => string \| null \| undefined`        | Shared folder id, or `undefined` when the selection is mixed.                      |
-| `setBulkFolder(ids, folderId)` | `(string[], string \| null) => void`               | Sets one folder on every file.                                                     |
-| `channelState(ids, channel)`   | `(string[], string) => 'on' \| 'partial' \| 'off'` | Whether every / some / no file has the channel (drives the dashed partial marker). |
-| `bulkChannelUnion(ids)`        | `(string[]) => string[]`                           | All channels present on any file — the chips the bulk selector shows.              |
-| `applyBulkChannels(ids, next)` | `(string[], string[]) => void`                     | Added channels go on all files, removed come off all.                              |
-| `bulkSharedTags(ids)`          | `(string[]) => string[]`                           | Tags common to every file.                                                         |
-| `applyBulkTags(ids, next)`     | `(string[], string[]) => void`                     | Diffs against the shared set: added tags append to all, removed strip from all.    |
+| Name                               | Type                                               | Description                                                                               |
+| ---------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `bulkFolderId(ids)`                | `(string[]) => string \| null \| undefined`        | Shared folder id, or `undefined` when the selection is mixed.                             |
+| `setBulkFolder(ids, folderId)`     | `(string[], string \| null) => void`               | Sets one folder on every file.                                                            |
+| `channelState(ids, channel)`       | `(string[], string) => 'on' \| 'partial' \| 'off'` | Whether every / some / no file has the channel (drives the dashed partial marker).        |
+| `bulkChannelUnion(ids)`            | `(string[]) => string[]`                           | All channels present on any file — the chips the bulk selector shows.                     |
+| `applyBulkChannels(ids, next)`     | `(string[], string[]) => void`                     | Added channels go on all files, removed come off all.                                     |
+| `bulkLanguages(ids)`               | `(string[]) => string[] \| undefined`              | Shared content languages (order-insensitive), or `undefined` when the selection is mixed. |
+| `setBulkLanguages(ids, languages)` | `(string[], string[]) => void`                     | Replaces the content languages on every file.                                             |
+| `bulkSharedTags(ids)`              | `(string[]) => string[]`                           | Tags common to every file.                                                                |
+| `applyBulkTags(ids, next)`         | `(string[], string[]) => void`                     | Diffs against the shared set: added tags append to all, removed strip from all.           |
 
 ## Sharing helpers
 
