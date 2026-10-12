@@ -41,7 +41,13 @@ export function useBulkRunner(): UseBulkRunnerReturnType {
       geinsLogError(action.key, getErrorMessage(error));
     }
 
+    // Runs for a partial success too: the chunks that went through still land.
+    const started =
+      result.succeeded.length > 0 &&
+      (action.startJob?.(result.succeeded.length, result.responses) ?? false);
+
     if (!result.failed.length) {
+      if (started) return result;
       toast({
         title: action.successMessage(total, result.responses),
         variant: 'positive',
