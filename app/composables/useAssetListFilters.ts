@@ -37,6 +37,7 @@ export function useAssetListFilters(): UseAssetListFiltersReturnType {
       name: 'channels',
       label: 'channel',
       kind: 'multiselect',
+      icon: 'Globe',
       options: async () =>
         (channels.value.length
           ? channels.value
@@ -47,6 +48,7 @@ export function useAssetListFilters(): UseAssetListFiltersReturnType {
       name: 'languages',
       label: 'content_language',
       kind: 'multiselect',
+      icon: 'Languages',
       options: async () =>
         (languages.value.length
           ? languages.value

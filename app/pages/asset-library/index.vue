@@ -261,7 +261,9 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
       h(
         'div',
         { class: getBasicCellStyle(table) },
-        row.original.languages.map((code) => code.toUpperCase()).join(', '),
+        (row.original.languages ?? [])
+          .map((code) => code.toUpperCase())
+          .join(', '),
       );
   }
 

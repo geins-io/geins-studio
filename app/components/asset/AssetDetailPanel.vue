@@ -189,7 +189,7 @@ watch(open, (value) => {
       altText: altTexts,
       tags: [...props.asset.tags],
       channels: [...props.asset.channels],
-      languages: [...props.asset.languages],
+      languages: [...(props.asset.languages ?? [])],
     };
     form.resetForm({ values });
     captureBaseline();

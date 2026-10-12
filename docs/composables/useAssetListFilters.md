@@ -46,6 +46,8 @@ definitions: ListFilterDefinition<AssetListFilters>[]
 | Content language | `languages`  | `multiselect` | `languages` | The account's languages by code (`_id`, e.g. `sv`), loaded from the account store on first open. Matches assets carrying any of them |
 | Modified         | `modified`   | `dateRange`   | `modified`  | Presets + custom range                                                                                                               |
 
+Channel and Content language set their `icon` (`Globe`, `Languages`) to match the library's bulk **Add channels** / **Add content languages** actions; Type and Modified use the kind defaults.
+
 ### `toQueryFilters`
 
 ```ts

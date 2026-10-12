@@ -5,8 +5,9 @@ import type { InjectionKey, Ref, ComputedRef } from 'vue';
 /**
  * Per-file metadata the wizard collects before upload. Mirrors the editable
  * fields of an asset (name + folder + channels + content languages +
- * description + tags + alt-text localizations); everything is optional until the user fills it in. Steps
- * 2 (manage) and 3 (review) read and write this; step 1 only adds files.
+ * description + tags + alt-text localizations); everything is optional until
+ * the user fills it in. Steps 2 (manage) and 3 (review) read and write this;
+ * step 1 only adds files.
  */
 export interface WizardFileSettings {
   name?: string;
