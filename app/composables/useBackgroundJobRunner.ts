@@ -1,5 +1,10 @@
 import type { BackgroundJob } from '#shared/types';
-import { backgroundJobCheck, settleJob } from '#shared/utils/job';
+import {
+  backgroundJobCheck,
+  SETTLE_FIRST_DELAY_MS,
+  SETTLE_MAX_WAIT_MS,
+  settleJob,
+} from '#shared/utils/job';
 import { useToast } from '@/components/ui/toast/use-toast';
 
 /**
@@ -24,14 +29,21 @@ export function useBackgroundJobRunner(): void {
   async function run(job: BackgroundJob): Promise<void> {
     const controller = new AbortController();
     running.set(job.id, controller);
-    const check = backgroundJobCheck(job.spec, assetApi);
+    const check = backgroundJobCheck(job.spec, assetApi, {
+      startedAt: job.startedAt,
+    });
+    // A resumed job only gets what's left of the limit, but at least one check.
+    const maxWaitMs = Math.max(
+      SETTLE_MAX_WAIT_MS - (Date.now() - job.startedAt),
+      SETTLE_FIRST_DELAY_MS,
+    );
     const outcome = await settleJob(
       async () => {
         const result = await check();
         if (result.result) store.update(job.id, { progress: result.result });
         return result;
       },
-      { signal: controller.signal },
+      { signal: controller.signal, maxWaitMs },
     );
     running.delete(job.id);
     if (outcome.state === 'aborted') return;

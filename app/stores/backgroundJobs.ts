@@ -46,12 +46,22 @@ export const useBackgroundJobsStore = defineStore('background-jobs', () => {
   );
 
   // Storage can be blocked or full; then jobs just don't survive a reload.
-  function persist(): void {
+  // Another tab shares the key, so its pending jobs (ids unknown here) are
+  // kept on write rather than overwritten.
+  function persist(now: number = Date.now()): void {
     const key = storageKey.value;
     if (!key) return;
     try {
-      if (pending.value.length) {
-        localStorage.setItem(key, JSON.stringify(pending.value));
+      const known = new Set(jobs.value.map((job) => job.id));
+      const others = readStored(key).filter(
+        (job) =>
+          job?.state === 'pending' &&
+          !known.has(job.id) &&
+          now - job.startedAt < BACKGROUND_JOB_RESUME_MS,
+      );
+      const next = [...others, ...pending.value];
+      if (next.length) {
+        localStorage.setItem(key, JSON.stringify(next));
       } else {
         localStorage.removeItem(key);
       }
@@ -83,7 +93,7 @@ export const useBackgroundJobsStore = defineStore('background-jobs', () => {
         jobs.value.push(job);
       }
     }
-    persist();
+    persist(now);
   }
 
   function add(start: BackgroundJobStart): BackgroundJob {
@@ -109,8 +119,10 @@ export const useBackgroundJobsStore = defineStore('background-jobs', () => {
     persist();
   }
 
+  // The trigger unmounts with the last row, so close the panel deliberately.
   function clearFinished(): void {
     jobs.value = pending.value;
+    if (!jobs.value.length) panelOpen.value = false;
   }
 
   /**

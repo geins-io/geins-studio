@@ -53,3 +53,11 @@ A job is plain JSON (`BackgroundJobStart` in `#shared/types`), so it survives a 
 - **Failed** has no state of its own. A job only starts after its request succeeded, and the global API error toast stays the owner of request errors.
 
 The `useBackgroundJobsStore` Pinia store keeps pending jobs in `localStorage` under `geins-background-jobs:{accountKey}`, so a reload or a second tab resumes them. A pending job older than 15 minutes (`BACKGROUND_JOB_RESUME_MS`) isn't resumed. Finished jobs are in memory only, and leave the panel 2 minutes after they finish (`BACKGROUND_JOB_KEEP_MS`) — never while the panel is open. On an account switch the runner aborts its polls and loads the new account's jobs. If storage is blocked, jobs still run; they just don't survive a reload.
+
+A few limits to be aware of:
+
+- **Several tabs.** A write keeps the stored pending jobs of other tabs, matched by id, so tabs don't drop each other's jobs. A job restored in two tabs is polled, and toasts, in both.
+- **Resumed jobs** count from the job's own `startedAt`. They get whatever is left of the 2-minute limit, with at least one check, and replace's fallback timer doesn't restart.
+- **Header only.** The runner lives in the header (`LayoutBackgroundJobs`), so a layout without the header doesn't poll jobs.
+- **Preview versions** (`fileVersion`) are in memory only. After a reload, the browser decides whether a cached preview is still fresh.
+- **Replace reads the CDN's `ETag`.** That header isn't CORS-safelisted; the CDN exposes it (verified on QA). Without it, replace falls back to the 10s timer. `cdnEtag` gives up after 3s, so a hung `HEAD` can't hold the dialog.

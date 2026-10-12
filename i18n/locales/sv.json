@@ -1876,6 +1876,8 @@
     "done": "Klart",
     "timeout": "Arbetar fortfarande i bakgrunden. Uppdatera senare.",
     "skipped": "{count} fil flyttades inte eftersom den ändrades under flytten | {count} filer flyttades inte eftersom de ändrades under flytten",
-    "clear_finished": "Rensa klara"
+    "clear_finished": "Rensa klara",
+    "partly_done": "Delvis klart",
+    "delayed": "Fördröjt"
   }
 }

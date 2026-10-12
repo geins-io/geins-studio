@@ -1879,6 +1879,8 @@
     "done": "Done",
     "timeout": "Still working in the background. Refresh later.",
     "skipped": "{count} file wasn't moved because it changed during the move | {count} files weren't moved because they changed during the move",
-    "clear_finished": "Clear finished"
+    "clear_finished": "Clear finished",
+    "partly_done": "Partly done",
+    "delayed": "Delayed"
   }
 }

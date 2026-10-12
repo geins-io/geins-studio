@@ -102,6 +102,31 @@ describe('background jobs store', () => {
     expect(stored()).toHaveLength(1);
   });
 
+  it('keeps pending jobs of another tab when writing', () => {
+    const other: BackgroundJob = {
+      ...start,
+      id: 'other-tab',
+      state: 'pending',
+      startedAt: Date.now(),
+    };
+    localStorage.setItem(KEY, JSON.stringify([other]));
+    const store = useBackgroundJobsStore();
+    const mine = store.add(start);
+    expect(stored().map((j) => j.id)).toEqual(['other-tab', mine.id]);
+    store.update(mine.id, { state: 'completed' });
+    expect(stored().map((j) => j.id)).toEqual(['other-tab']);
+  });
+
+  it('closes the panel when clearing leaves no rows', () => {
+    const store = useBackgroundJobsStore();
+    const job = store.add(start);
+    store.update(job.id, { state: 'completed' });
+    store.panelOpen = true;
+    store.clearFinished();
+    expect(store.jobs).toEqual([]);
+    expect(store.panelOpen).toBe(false);
+  });
+
   it('versions a replaced file by its bare URL', () => {
     const store = useBackgroundJobsStore();
     expect(store.fileVersion('https://cdn.test/a.jpg')).toBeUndefined();

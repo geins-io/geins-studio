@@ -215,6 +215,21 @@ describe('movesCheck', () => {
       result: { done: 0, total: 0, skipped: 0 },
     });
   });
+
+  it('keeps the last counts of a move once it is swept', async () => {
+    const api = {
+      move: vi
+        .fn()
+        .mockResolvedValueOnce(at('m1', 'pending', 10, 4, 1))
+        .mockResolvedValueOnce(null),
+    };
+    const check = movesCheck(api, ['m1']);
+    await check();
+    await expect(check()).resolves.toEqual({
+      done: true,
+      result: { done: 5, total: 10, skipped: 1 },
+    });
+  });
 });
 
 describe('backgroundJobCheck', () => {
@@ -325,6 +340,7 @@ describe('cdnEtag', () => {
     expect(fetch).toHaveBeenCalledWith('https://cdn.test/a.jpg', {
       method: 'HEAD',
       cache: 'no-store',
+      signal: expect.any(AbortSignal),
     });
   });
 
@@ -360,6 +376,14 @@ describe('replaceCheck', () => {
     clock = REPLACE_FALLBACK_MS;
     await expect(check()).resolves.toEqual({ done: true });
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('counts the fallback from the job start when resumed', async () => {
+    const check = replaceCheck(url, null, {
+      now: () => 50_000,
+      startedAt: 50_000 - REPLACE_FALLBACK_MS,
+    });
+    await expect(check()).resolves.toEqual({ done: true });
   });
 
   it('falls back to a fixed delay when the ETag cannot be read', async () => {

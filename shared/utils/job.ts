@@ -123,31 +123,35 @@ export function moveCheck(
 /**
  * Several moves as one job — a bulk move answers one `moveId` per 100-id
  * chunk. Done when every move is; a settled move isn't read again. Progress
- * sums the moves still on record (a swept one has no counts left to add).
+ * sums each move's last counts read, so a move swept (`null`) after it was
+ * seen keeps its counts — the bar can't jump back or lose a skip.
  */
 export function movesCheck(
   api: MoveCheckApi,
   moveIds: string[],
 ): JobCheckFn<BackgroundJobProgress> {
-  const latest = new Map<string, MediaMove | null>();
-  const settled = (id: string) => {
-    const move = latest.get(id);
-    return move === null || move?.state === 'completed';
-  };
+  const latest = new Map<string, MediaMove>();
+  const settled = new Set<string>();
   return async () => {
     await Promise.all(
       moveIds
-        .filter((id) => !settled(id))
-        .map(async (id) => latest.set(id, await api.move(id))),
+        .filter((id) => !settled.has(id))
+        .map(async (id) => {
+          const move = await api.move(id);
+          if (move) latest.set(id, move);
+          if (!move || move.state === 'completed') settled.add(id);
+        }),
     );
     const progress: BackgroundJobProgress = { done: 0, total: 0, skipped: 0 };
     for (const move of latest.values()) {
-      if (!move) continue;
       progress.total += move.itemCount;
       progress.done += move.movedCount + move.skippedCount;
       progress.skipped += move.skippedCount;
     }
-    return { done: moveIds.every(settled), result: progress };
+    return {
+      done: moveIds.every((id) => settled.has(id)),
+      result: progress,
+    };
   };
 }
 
@@ -205,15 +209,22 @@ export function duePurgeCheck(
 /** How long a replace waits when the CDN response can't tell old from new. */
 export const REPLACE_FALLBACK_MS = 10_000;
 
+/** A hung `HEAD` would otherwise hold the replace dialog. */
+export const CDN_ETAG_TIMEOUT_MS = 3_000;
+
 export interface ReplaceCheckOptions {
   fetch?: typeof globalThis.fetch;
   now?: () => number;
+  /** When the job started, so a resumed check doesn't restart the fallback. */
+  startedAt?: number;
 }
 
 /**
  * The CDN's `ETag` for an asset's file, or `null` when it can't be read.
- * Never throws. The query string is dropped: the CDN keys the raw file on the
- * path alone, so a `?v=` doesn't reach a fresher copy.
+ * Never throws; gives up after `CDN_ETAG_TIMEOUT_MS`. The query string is
+ * dropped: the CDN keys the raw file on the path alone, so a `?v=` doesn't
+ * reach a fresher copy. `ETag` isn't CORS-safelisted — it's readable because
+ * the CDN exposes it (`Access-Control-Expose-Headers`, verified on QA).
  */
 export async function cdnEtag(
   url: string | null,
@@ -224,6 +235,7 @@ export async function cdnEtag(
     const res = await fetch(url.replace(/\?.*$/, ''), {
       method: 'HEAD',
       cache: 'no-store',
+      signal: AbortSignal.timeout(CDN_ETAG_TIMEOUT_MS),
     });
     return res.ok ? res.headers.get('etag') : null;
   } catch {
@@ -241,9 +253,12 @@ export async function cdnEtag(
 export function replaceCheck(
   url: string | null,
   etagBefore: string | null,
-  { fetch = globalThis.fetch, now = Date.now }: ReplaceCheckOptions = {},
+  {
+    fetch = globalThis.fetch,
+    now = Date.now,
+    startedAt = now(),
+  }: ReplaceCheckOptions = {},
 ): JobCheckFn<never> {
-  const startedAt = now();
   const fallback = () => ({
     done: now() - startedAt >= REPLACE_FALLBACK_MS,
   });
