@@ -26,7 +26,7 @@ Failures show inline as a negative `Feedback` (the call passes `suppressErrorToa
 
 ## After success
 
-The asset is refetched with `assetApi.get` (falling back to the completed row) so the preview gets the new `url` version and the caller gets the new `etag`; `asset-library-list` is refreshed and a success toast shown.
+The asset is refetched with `assetApi.get` (falling back to the completed row) so the preview gets the new `url` version and the caller gets the new `etag`; `asset-library-list` is refreshed. Instead of a success toast, a [background job](/composables/useBackgroundJobs) starts (`kind: 'replace'`): a "Replacing {name}" toast with **View progress**. Just before the replace call the dialog reads the CDN's `ETag` (`cdnEtag`); once a `HEAD` on the bare URL answers a different one, the list refreshes again and "File successfully replaced!" toasts. Until then a bare URL can still serve the old bytes.
 
 It is rendered **inside** the [`AssetDetailPanel`](/components/asset/AssetDetailPanel) (from its `Replace` action) so it stays within the panel's modal subtree — a page-level dialog would be hidden by the sheet's `hideOthers`.
 
@@ -40,7 +40,7 @@ It is rendered **inside** the [`AssetDetailPanel`](/components/asset/AssetDetail
 />
 ```
 
-The detail panel advances its held etag from the emitted asset (so its next `PATCH` doesn't fail `If-Match`) and forwards `replaced` up so the page can update its `detailAsset` — the preview refreshes, because the new `url` carries a new `?v=` that `assetPreviewUrl` keeps.
+The detail panel advances its held etag from the emitted asset (so its next `PATCH` doesn't fail `If-Match`) and forwards `replaced` up so the page can update its `detailAsset`, then closes (unless it holds unsaved edits): the header's jobs panel follows the replace from there. The CDN and the browser keep serving their cached copy for an unchanged URL (`?v=` doesn't bust it on QA), so when the job lands it versions the file (`useBackgroundJobsStore().markFileReplaced`) and `AssetThumbnail` / `TableCellAssetThumbnail` add that as `_r` to the preview URL. The grid and list then load the new image without a reload.
 
 ## Props
 
@@ -76,4 +76,4 @@ Emitted with the refetched asset after a successful replace.
 - `replaceExtensions`, `isReplaceExtensionAllowed`, `replaceErrorMessageKey`, `uploadRejectionMessageKey` (`#shared/utils/asset`)
 - [`Feedback`](/components/Feedback), [`AssetFileRow`](/components/asset/AssetFileRow)
 - shadcn-vue [`Dialog`](/components/shadcn-vue), `Button`; [`ButtonIcon`](/components/button/ButtonIcon)
-- `useToast` — success toast; `formatFileSize` (`#shared/utils/file`)
+- [`useBackgroundJobs`](/composables/useBackgroundJobs) — the replace job and its toasts; `formatFileSize` (`#shared/utils/file`)

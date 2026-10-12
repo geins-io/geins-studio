@@ -276,10 +276,12 @@ async function handleSave() {
 }
 
 // A replace changes the etag, and the open-time seed would otherwise make the
-// next save fail its precondition (412).
+// next save fail its precondition (412). The jobs panel follows the replace
+// from here, so the panel closes — unless it holds unsaved edits.
 function onReplaced(updated: Asset) {
   etag.value = updated.etag ?? null;
   emit('replaced', updated);
+  if (!dirty.value) open.value = false;
 }
 
 // Discard the stale local copy and reload: the list refresh re-fetches with the

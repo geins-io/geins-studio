@@ -1866,6 +1866,19 @@
       "video": "Video",
       "audio": "Audio",
       "other": "File"
-    }
+    },
+    "job_replacing": "Replacing {name}",
+    "job_moving": "Moving {count} asset | Moving {count} assets"
+  },
+  "background_jobs": {
+    "title": "Background jobs",
+    "started": "We'll let you know when it's done.",
+    "view_progress": "View progress",
+    "in_progress": "In progress",
+    "progress": "{done} of {total}",
+    "done": "Done",
+    "timeout": "Still working in the background. Refresh later.",
+    "skipped": "{count} file wasn't moved because it changed during the move | {count} files weren't moved because they changed during the move",
+    "clear_finished": "Clear finished"
   }
 }

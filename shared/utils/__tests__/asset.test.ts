@@ -263,6 +263,20 @@ describe('assetPreviewUrl', () => {
     expect(assetPreviewUrl('image', '/full.jpg', 'card')).toBe('/full.jpg');
   });
 
+  it('adds a replaced file version as _r, SVGs included', () => {
+    expect(assetPreviewUrl('image', cdn, 'row', 1700)).toBe(
+      `${cdn}?width=40&height=40&fit=crop&dpr=2&_r=1700`,
+    );
+    expect(
+      assetPreviewUrl(
+        'svg',
+        'https://cdn-qa.geins.media/acme/logo.svg',
+        'card',
+        1700,
+      ),
+    ).toBe('https://cdn-qa.geins.media/acme/logo.svg?_r=1700');
+  });
+
   it('never previews a type an <img> cannot render', () => {
     expect(assetPreviewUrl('pdf', 'https://cdn/doc.pdf', 'card')).toBeNull();
     expect(assetPreviewUrl('video', 'https://cdn/clip.mp4', 'row')).toBeNull();

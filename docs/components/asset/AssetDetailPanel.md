@@ -46,7 +46,7 @@ Emitted after a successful save **or delete** (the page refreshes the library li
 replaced: [asset: Asset];
 ```
 
-Emitted with the updated asset after a file replace; the page sets `detailAsset` to it so the preview refreshes.
+Emitted with the updated asset after a file replace; the page sets `detailAsset` to it. The panel then closes unless it holds unsaved edits: the replace continues as a background job in the header's jobs panel.
 
 ## Actions
 

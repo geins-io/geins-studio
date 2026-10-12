@@ -503,8 +503,9 @@ const barAction = computed(() =>
 );
 const AssetBulkMoveFolder = resolveComponent('AssetBulkMoveFolder');
 // The value is the folder tree's selection (a folder id or ROOT_FOLDER_KEY).
-// A 202 means the copies are still landing, so the refresh after the run may
-// still show some assets in their old folder.
+// A 202 means the copies are still landing: one background job covers every
+// chunk's move and refreshes the list once they land.
+const backgroundJobs = useBackgroundJobs();
 const moveAction = computed<BulkAction<string | null>>(() => ({
   key: 'move-to-folder',
   label: t('asset_library.move_to_folder'),
@@ -531,6 +532,29 @@ const moveAction = computed<BulkAction<string | null>>(() => ({
     responses.every((response) => response === null)
       ? t('asset_library.bulk_already_in_folder')
       : t('asset_library.bulk_moved_to_folder', { count }, count),
+  startJob: (count, responses) => {
+    const moveIds = responses.flatMap((response) =>
+      response && typeof response === 'object' && 'moveId' in response
+        ? [String(response.moveId)]
+        : [],
+    );
+    if (!moveIds.length) return false;
+    backgroundJobs.start({
+      spec: { kind: 'move', moveIds },
+      label: {
+        key: 'asset_library.job_moving',
+        params: { count },
+        plural: count,
+      },
+      doneMessage: {
+        key: 'asset_library.bulk_moved_to_folder',
+        params: { count },
+        plural: count,
+      },
+      refreshKeys: ['asset-library-list'],
+    });
+    return true;
+  },
 }));
 const AssetBulkLabels = resolveComponent('AssetBulkLabels');
 const { channels: accountChannels } = storeToRefs(useAccountStore());

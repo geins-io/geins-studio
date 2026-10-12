@@ -24,7 +24,10 @@ const { resolveIcon } = useLucideIcon();
 const info = computed(() => meta(props.type));
 const icon = computed(() => resolveIcon(info.value.icon));
 
-const src = computed(() => assetPreviewUrl(props.type, props.url, 'row'));
+const { fileVersion } = useBackgroundJobsStore();
+const src = computed(() =>
+  assetPreviewUrl(props.type, props.url, 'row', fileVersion(props.url)),
+);
 const broken = ref(false);
 watch(src, () => {
   broken.value = false;

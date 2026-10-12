@@ -284,21 +284,29 @@ export type AssetPreviewPreset = keyof typeof ASSET_PREVIEW_PRESETS;
 /**
  * Preview source for an asset, scaled by Fastly via query params on its `url`.
  * SVGs are served unchanged by the optimizer, so they get the raw `url`; types
- * an `<img>` can't render return null and the caller shows the icon block. The
- * existing `?v=` cache-buster is kept, so a replaced file refreshes its preview.
+ * an `<img>` can't render return null and the caller shows the icon block.
+ *
+ * `version` (from `useBackgroundJobsStore().fileVersion`) marks a file whose
+ * replace has landed. The CDN keeps serving its cached copy for an unchanged
+ * `url` (`?v=` included), and so does the browser, so a refetched list alone
+ * shows the old image; `_r` makes the preview URL new to both.
  */
 export function assetPreviewUrl(
   type: AssetType,
   url: string | null | undefined,
   preset: AssetPreviewPreset,
+  version?: number,
 ): string | null {
   if (!url || !PREVIEWABLE_TYPES.has(type)) return null;
-  if (type === 'svg' || !URL.canParse(url)) return url;
+  if (!URL.canParse(url)) return url;
   const scaled = new URL(url);
-  for (const [key, value] of Object.entries(ASSET_PREVIEW_PRESETS[preset])) {
-    scaled.searchParams.set(key, String(value));
+  if (type !== 'svg') {
+    for (const [key, value] of Object.entries(ASSET_PREVIEW_PRESETS[preset])) {
+      scaled.searchParams.set(key, String(value));
+    }
   }
-  return scaled.toString();
+  if (version) scaled.searchParams.set('_r', String(version));
+  return type === 'svg' && !version ? url : scaled.toString();
 }
 
 // ── Folder rail selection ────────────────────────────────────────────────────

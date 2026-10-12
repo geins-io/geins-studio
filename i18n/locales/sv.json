@@ -1863,6 +1863,19 @@
       "video": "Video",
       "audio": "Ljud",
       "other": "Fil"
-    }
+    },
+    "job_replacing": "Ersätter {name}",
+    "job_moving": "Flyttar {count} fil | Flyttar {count} filer"
+  },
+  "background_jobs": {
+    "title": "Bakgrundsjobb",
+    "started": "Vi meddelar dig när det är klart.",
+    "view_progress": "Visa förlopp",
+    "in_progress": "Pågår",
+    "progress": "{done} av {total}",
+    "done": "Klart",
+    "timeout": "Arbetar fortfarande i bakgrunden. Uppdatera senare.",
+    "skipped": "{count} fil flyttades inte eftersom den ändrades under flytten | {count} filer flyttades inte eftersom de ändrades under flytten",
+    "clear_finished": "Rensa klara"
   }
 }
