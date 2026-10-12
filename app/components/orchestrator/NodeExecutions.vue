@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ExecutionNodeExecution } from '#shared/types';
+import type { ExecutionLog, ExecutionNodeExecution } from '#shared/types';
 import { formatDuration, formatTimestamp } from '#shared/utils/time';
 import { LucideChevronRight, LucideChevronDown } from '#components';
 
@@ -7,14 +7,21 @@ interface Props {
   nodes: ExecutionNodeExecution[];
   timelineStart?: number | null;
   timelineEnd?: number | null;
+  execution?: Pick<ExecutionLog, 'error' | 'errors'> | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   timelineStart: null,
   timelineEnd: null,
+  execution: null,
 });
 
-const { resolveStatusIcon } = useExecutionStatus();
+const { resolveStatusIcon, isFailedStatus } = useExecutionStatus();
+const { errorForNode } = useExecutionErrors();
+
+const statusOf = (node: ExecutionNodeExecution) =>
+  node.status?.toLowerCase() ?? '';
+const isFailed = (node: ExecutionNodeExecution) => isFailedStatus(node.status);
 
 const derivedStart = computed(() => {
   if (props.timelineStart != null) return props.timelineStart;
@@ -57,6 +64,56 @@ const toggleNodeExpanded = (nodeId: string) => {
   else next.add(nodeId);
   expandedNodeIds.value = next;
 };
+
+const expandNode = (nodeId: string) => {
+  if (isNodeExpanded(nodeId)) return;
+  expandedNodeIds.value = new Set(expandedNodeIds.value).add(nodeId);
+};
+
+const rows = computed(() =>
+  props.nodes.map((node) => {
+    const error = errorForNode(props.execution, node);
+    const retries = node.retryErrors ?? [];
+    return {
+      node,
+      error,
+      errorMessage:
+        error?.message ?? (isFailed(node) ? (retries.at(-1) ?? null) : null),
+    };
+  }),
+);
+
+const failedNodeId = computed(
+  () =>
+    props.execution?.error?.failedNodeId ??
+    props.nodes.find(isFailed)?.nodeId ??
+    null,
+);
+
+// Auto-expand once per failing node; polling re-renders must not re-open a
+// step the user has collapsed.
+const autoExpanded = new Set<string>();
+watch(
+  failedNodeId,
+  (nodeId) => {
+    if (!nodeId || autoExpanded.has(nodeId)) return;
+    autoExpanded.add(nodeId);
+    expandNode(nodeId);
+  },
+  { immediate: true },
+);
+
+const nodeElementId = (nodeId: string) => `node-execution-${nodeId}`;
+
+const focusNode = async (nodeId: string) => {
+  expandNode(nodeId);
+  await nextTick();
+  document
+    .getElementById(nodeElementId(nodeId))
+    ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+defineExpose({ focusNode });
 </script>
 
 <template>
@@ -80,7 +137,12 @@ const toggleNodeExpanded = (nodeId: string) => {
       {{ $t('orchestrator.node_executions.empty') }}
     </div>
     <div v-else>
-      <div v-for="node in nodes" :key="node.nodeId" class="border-b px-4 py-3">
+      <div
+        v-for="{ node, error, errorMessage } in rows"
+        :id="nodeElementId(node.nodeId)"
+        :key="node.nodeId"
+        class="scroll-mt-4 border-b px-4 py-3"
+      >
         <button
           class="w-full cursor-pointer text-left focus:outline-none focus-visible:outline-none"
           @click="toggleNodeExpanded(node.nodeId)"
@@ -119,6 +181,13 @@ const toggleNodeExpanded = (nodeId: string) => {
             </span>
           </div>
 
+          <p
+            v-if="errorMessage && !isNodeExpanded(node.nodeId)"
+            class="text-destructive mt-1 ml-7 truncate font-mono text-xs"
+          >
+            {{ errorMessage }}
+          </p>
+
           <div
             class="bg-muted relative mt-2 ml-7 h-1.5 overflow-hidden rounded"
           >
@@ -126,11 +195,12 @@ const toggleNodeExpanded = (nodeId: string) => {
               class="absolute top-0 h-full rounded"
               :style="nodeBarStyle(node)"
               :class="{
-                'bg-green-500': node.status === 'completed',
-                'bg-destructive': node.status === 'failed',
-                'bg-blue-500': node.status === 'running',
+                'bg-green-500': statusOf(node) === 'completed',
+                'bg-destructive': isFailed(node),
+                'bg-blue-500': statusOf(node) === 'running',
                 'bg-muted-foreground':
-                  node.status === 'canceled' || node.status === 'cancelled',
+                  statusOf(node) === 'canceled' ||
+                  statusOf(node) === 'cancelled',
               }"
             />
           </div>
@@ -140,6 +210,7 @@ const toggleNodeExpanded = (nodeId: string) => {
           v-if="isNodeExpanded(node.nodeId)"
           class="mt-3 ml-7 space-y-3 text-xs"
         >
+          <OrchestratorExecutionErrorDetails v-if="error" :error="error" />
           <dl class="space-y-1.5">
             <div>
               <dt class="text-muted-foreground">
@@ -169,6 +240,22 @@ const toggleNodeExpanded = (nodeId: string) => {
               </dt>
               <dd class="font-mono select-all">
                 {{ node.retryCount ?? 0 }}
+              </dd>
+            </div>
+            <div v-if="node.retryErrors?.length">
+              <dt class="text-muted-foreground">
+                {{ $t('orchestrator.node_executions.failed_attempts') }}
+              </dt>
+              <dd>
+                <ol class="list-decimal space-y-1 pl-4">
+                  <li
+                    v-for="(retryError, idx) in node.retryErrors"
+                    :key="idx"
+                    class="text-destructive font-mono wrap-break-word whitespace-pre-wrap"
+                  >
+                    {{ retryError }}
+                  </li>
+                </ol>
               </dd>
             </div>
             <div>

@@ -9,6 +9,7 @@ const props = defineProps<{
 defineExpose({ refresh: () => refreshExecutions() });
 
 const { orchestratorApi } = useGeinsRepository();
+const { executionErrors } = useExecutionErrors();
 const { t } = useI18n();
 
 const pad = (n: number, len = 2) => String(n).padStart(len, '0');
@@ -89,10 +90,7 @@ const allExecutions = computed(() =>
       trigger:
         log.startedBy ||
         (log.isTestRun ? t('executions.test_run') : t('workflows.scheduled')),
-      error:
-        Array.isArray(log.errors) && log.errors.length > 0
-          ? log.errors[0]
-          : undefined,
+      error: executionErrors(log)[0]?.message,
     };
   }),
 );
@@ -158,6 +156,12 @@ const executions = computed(() => allExecutions.value.slice(0, PAGE_SIZE));
           <div class="text-muted-foreground text-right font-mono text-xs">
             {{ execution.duration }}
           </div>
+          <p
+            v-if="execution.error"
+            class="text-destructive col-span-full -mt-2 line-clamp-2 font-mono text-xs wrap-break-word"
+          >
+            {{ execution.error }}
+          </p>
         </NuxtLink>
         <Empty v-if="executions.length === 0">
           <EmptyHeader>

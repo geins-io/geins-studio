@@ -2,7 +2,9 @@
 import { ref, computed, onBeforeUnmount, watch, nextTick } from 'vue';
 import type {
   ExecutionDetailsResponse,
-  ExecutionNodeResult,
+  ExecutionError,
+  ExecutionLog,
+  ExecutionNodeExecution,
 } from '#shared/types';
 import JsonCodeEditor from '@/components/shared/JsonCodeEditor.vue';
 
@@ -28,6 +30,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const { orchestratorApi } = useGeinsRepository();
+const { executionErrors, nodeErrorMessage } = useExecutionErrors();
 
 const STORAGE_KEY_HEIGHT = 'workflow.logsPanel.height';
 const MIN_HEIGHT = 160;
@@ -60,6 +63,7 @@ const streamStatus = ref<'idle' | 'connecting' | 'live' | 'done' | 'error'>(
   'idle',
 );
 const streamError = ref<string | null>(null);
+const runErrors = ref<ExecutionError[]>([]);
 const executionStatus = ref<string | null>(null);
 let pollTimer: ReturnType<typeof setTimeout> | null = null;
 let activeExecutionId: string | null = null;
@@ -70,6 +74,8 @@ const TERMINAL_STATUSES = new Set([
   'canceled',
   'cancelled',
   'timedout',
+  'terminated',
+  'completedwitherrors',
 ]);
 
 const asRecord = (value: unknown): Record<string, unknown> | null =>
@@ -204,37 +210,11 @@ async function pollOnce(execId: string): Promise<boolean> {
       ? (inner.nodeExecutions as Array<Record<string, unknown>>)
       : [];
 
-    // Build a nodeId→error lookup from nodeResults (if the API returns them)
-    const nodeResults = (
-      Array.isArray(
-        (inner as { nodeResults?: ExecutionNodeResult[] }).nodeResults,
-      )
-        ? (inner as { nodeResults: ExecutionNodeResult[] }).nodeResults
-        : []
-    ) as ExecutionNodeResult[];
-    const nodeResultErrors = new Map<string, string>();
-    for (const nr of nodeResults) {
-      if (nr.error && nr.nodeId)
-        nodeResultErrors.set(nr.nodeId as string, nr.error as string);
-    }
-
-    // Execution-level errors (fallback when per-node error is unavailable)
-    const execErrors: string[] = Array.isArray(inner?.errors)
-      ? inner.errors
-      : [];
+    const errorSource = inner as Pick<ExecutionLog, 'error' | 'errors'>;
 
     for (const [idx, n] of nodes.entries()) {
       const nodeId = typeof n.nodeId === 'string' ? n.nodeId : '';
       if (!nodeId) continue;
-      const retryErrors = Array.isArray(n.retryErrors) ? n.retryErrors : [];
-      const nodeError =
-        n.error ??
-        n.errorMessage ??
-        n.message ??
-        nodeResultErrors.get(nodeId) ??
-        (retryErrors.length > 0 ? retryErrors[retryErrors.length - 1] : null) ??
-        null;
-
       upsertEvent({
         nodeId,
         nodeName: typeof n.nodeName === 'string' ? n.nodeName : undefined,
@@ -242,21 +222,26 @@ async function pollOnce(execId: string): Promise<boolean> {
         seq: typeof n.executionOrder === 'number' ? n.executionOrder : idx,
         startTime: typeof n.startTime === 'string' ? n.startTime : undefined,
         endTime: typeof n.endTime === 'string' ? n.endTime : undefined,
-        error: typeof nodeError === 'string' ? nodeError : null,
+        error: nodeErrorMessage(
+          {
+            nodeId,
+            status: typeof n.status === 'string' ? n.status : null,
+            error: n.error as ExecutionNodeExecution['error'],
+            retryErrors: n.retryErrors as ExecutionNodeExecution['retryErrors'],
+          },
+          errorSource,
+        ),
         input: n.input,
         output: n.output,
       });
     }
 
-    // If we have execution-level errors but no per-node errors, attach to the first failed node
-    if (execErrors.length > 0) {
-      const failedEvent = events.value.find(
-        (e) => statusKind(e.status) === 'error' && !e.error,
-      );
-      if (failedEvent) {
-        failedEvent.error = execErrors.join('\n');
-      }
-    }
+    // Runs that fail outside any step (input validation, workflow timeout)
+    // have no failedNodeId, and trimmed logs may lack the failed node's row.
+    const rowIds = new Set(events.value.map((e) => e.nodeId));
+    runErrors.value = executionErrors(errorSource).filter(
+      (err) => !err.failedNodeId || !rowIds.has(err.failedNodeId),
+    );
     return TERMINAL_STATUSES.has(statusStr);
   } catch (err) {
     streamStatus.value = 'error';
@@ -268,6 +253,7 @@ async function pollOnce(execId: string): Promise<boolean> {
 async function startStream(execId: string) {
   stopStream();
   events.value = [];
+  runErrors.value = [];
   streamError.value = null;
   executionStatus.value = null;
   activeExecutionId = execId;
@@ -569,8 +555,19 @@ const bodyStyle = computed(() => ({
               </div>
             </div>
             <div class="min-h-0 flex-1 overflow-auto">
+              <div v-if="runErrors.length" class="space-y-2 p-3 pb-0">
+                <OrchestratorExecutionErrorDetails
+                  v-for="(err, idx) in runErrors"
+                  :key="idx"
+                  :error="err"
+                  :title="
+                    err.failedNodeName ?? $t('executions.workflow_failed')
+                  "
+                  compact
+                />
+              </div>
               <div
-                v-if="events.length === 0"
+                v-if="events.length === 0 && !runErrors.length"
                 class="text-muted-foreground flex h-full items-center justify-center p-6 text-xs"
               >
                 {{
@@ -579,7 +576,7 @@ const bodyStyle = computed(() => ({
                     : $t('workflow_builder.logs.no_execution_running')
                 }}
               </div>
-              <table v-else class="w-full text-xs">
+              <table v-else-if="events.length" class="w-full text-xs">
                 <thead class="bg-muted/50 sticky top-0">
                   <tr class="text-muted-foreground text-left">
                     <th class="w-12 px-3 py-1.5 font-medium">#</th>
@@ -865,8 +862,17 @@ const bodyStyle = computed(() => ({
 
           <!-- Events list -->
           <div class="min-h-0 flex-1 overflow-auto">
+            <div v-if="runErrors.length" class="space-y-2 p-3 pb-0">
+              <OrchestratorExecutionErrorDetails
+                v-for="(err, idx) in runErrors"
+                :key="idx"
+                :error="err"
+                :title="err.failedNodeName ?? $t('executions.workflow_failed')"
+                compact
+              />
+            </div>
             <div
-              v-if="events.length === 0"
+              v-if="events.length === 0 && !runErrors.length"
               class="text-muted-foreground flex h-full items-center justify-center p-6 text-xs"
             >
               {{
@@ -875,7 +881,7 @@ const bodyStyle = computed(() => ({
                   : $t('workflow_builder.logs.no_execution_running')
               }}
             </div>
-            <table v-else class="w-full text-xs">
+            <table v-else-if="events.length" class="w-full text-xs">
               <thead class="bg-muted/50 sticky top-0">
                 <tr class="text-muted-foreground text-left">
                   <th class="w-12 px-3 py-1.5 font-medium">#</th>

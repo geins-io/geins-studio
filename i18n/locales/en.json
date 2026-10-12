@@ -584,7 +584,8 @@
       "node_id": "Node ID",
       "activity": "Activity",
       "retries": "Retries",
-      "output": "Output"
+      "output": "Output",
+      "failed_attempts": "Failed attempts"
     }
   },
   "executions": {
@@ -629,7 +630,22 @@
     "refresh": "Refresh",
     "live": "Live",
     "nodes_failed": "({count} failed)",
-    "version": "Version"
+    "version": "Version",
+    "error": "Error",
+    "error_code": "Code: {code}",
+    "copy_error": "Copy error",
+    "workflow_failed": "Workflow failed",
+    "failed_at_node": "Failed at {node}",
+    "failed_in_child": "Failed in child workflow",
+    "failed_in_child_at": "Failed in child workflow at {node}",
+    "open_child_execution": "Open child execution",
+    "show_step": "Show step",
+    "cancelled_title": "Execution cancelled",
+    "paused_title": "Execution paused",
+    "console_node_failed_message": "{node} failed: {message}",
+    "console_node_timed_out": "{node} timed out",
+    "console_node_timed_out_message": "{node} timed out: {message}",
+    "console_attempt_failed": "{node} attempt {attempt} failed: {message}"
   },
   "variables": {
     "description": "Shared values available to all workflows — use for API keys, credentials, and environment configuration.",

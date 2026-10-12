@@ -581,7 +581,8 @@
       "node_id": "Nod-ID",
       "activity": "Aktivitet",
       "retries": "Återförsök",
-      "output": "Utdata"
+      "output": "Utdata",
+      "failed_attempts": "Misslyckade försök"
     }
   },
   "executions": {
@@ -626,7 +627,22 @@
     "refresh": "Uppdatera",
     "live": "Live",
     "nodes_failed": "({count} misslyckades)",
-    "version": "Version"
+    "version": "Version",
+    "error": "Fel",
+    "error_code": "Kod: {code}",
+    "copy_error": "Kopiera fel",
+    "workflow_failed": "Arbetsflödet misslyckades",
+    "failed_at_node": "Misslyckades vid {node}",
+    "failed_in_child": "Misslyckades i underordnat arbetsflöde",
+    "failed_in_child_at": "Misslyckades i underordnat arbetsflöde vid {node}",
+    "open_child_execution": "Öppna underordnad körning",
+    "show_step": "Visa steg",
+    "cancelled_title": "Körningen avbröts",
+    "paused_title": "Körningen är pausad",
+    "console_node_failed_message": "{node} misslyckades: {message}",
+    "console_node_timed_out": "{node} överskred tidsgränsen",
+    "console_node_timed_out_message": "{node} överskred tidsgränsen: {message}",
+    "console_attempt_failed": "{node} försök {attempt} misslyckades: {message}"
   },
   "variables": {
     "description": "Delade värden tillgängliga för alla arbetsflöden — använd för API-nycklar, behörigheter och miljökonfiguration.",
