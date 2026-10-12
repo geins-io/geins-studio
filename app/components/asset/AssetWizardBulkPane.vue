@@ -3,9 +3,10 @@ import type { EntityBaseWithName } from '#shared/types';
 
 /**
  * Bulk-edit pane for step 2 of the upload wizard — shown when more than one file
- * is checked. Applies folder, channels and tags across the whole selection in
- * one pass; the reconciliation (shared value vs. "mixed", tri-state channels,
- * shared-tag diffing) lives in {@link useUploadWizard}, not here.
+ * is checked. Applies folder, channels, content languages and tags across the
+ * whole selection in one pass; the reconciliation (shared value vs. "mixed",
+ * tri-state channels, shared-tag diffing) lives in {@link useUploadWizard}, not
+ * here.
  */
 const props = defineProps<{
   ids: string[];
@@ -20,6 +21,8 @@ const {
   channelState,
   bulkChannelUnion,
   applyBulkChannels,
+  bulkLanguages,
+  setBulkLanguages,
   bulkSharedTags,
   applyBulkTags,
 } = useUploadWizardContext();
@@ -42,6 +45,13 @@ const channelItemClass = (id: string) =>
   channelState(props.ids, id) === 'partial'
     ? 'border-dashed border-muted-foreground/35 bg-background dark:bg-background'
     : undefined;
+
+// Mixed selections show an empty field; a pick replaces the set on every file.
+const languagesMixed = computed(() => bulkLanguages(props.ids) === undefined);
+const languages = computed<string[]>({
+  get: () => bulkLanguages(props.ids) ?? [],
+  set: (value) => setBulkLanguages(props.ids, value),
+});
 
 const tags = computed<string[]>({
   get: () => bulkSharedTags(props.ids),
@@ -114,6 +124,23 @@ function removeSelected() {
           }}
         </p>
       </fieldset>
+
+      <div class="space-y-1.5">
+        <Label>
+          {{ $t('content_language', 2) }}
+          <span class="text-muted-foreground font-normal">
+            ({{ $t('optional') }})
+          </span>
+        </Label>
+        <FormInputLanguages v-model="languages" />
+        <p class="text-muted-foreground text-xs">
+          {{
+            languagesMixed
+              ? $t('asset_library.wizard_languages_mixed_hint')
+              : $t('asset_library.content_languages_hint')
+          }}
+        </p>
+      </div>
 
       <fieldset
         :disabled="!caps.canUploadTagsAndChannels"

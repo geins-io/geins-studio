@@ -120,6 +120,13 @@ const channels = computed<string[]>({
     if (active.value) patchSettings(active.value.id, { channels: value });
   },
 });
+const languages = computed<string[]>({
+  get: () =>
+    active.value ? (settingsOf(active.value.id).languages ?? []) : [],
+  set: (value) => {
+    if (active.value) patchSettings(active.value.id, { languages: value });
+  },
+});
 const altText = computed<LocalizedText>({
   get: () => (active.value ? (settingsOf(active.value.id).altText ?? {}) : {}),
   set: (value) => {
@@ -299,6 +306,19 @@ const rowFolderName = (id: string): string | undefined => {
                 {{ $t('asset_library.wizard_field_not_saved') }}
               </p>
             </fieldset>
+
+            <div class="space-y-1.5">
+              <Label>
+                {{ $t('content_language', 2) }}
+                <span class="text-muted-foreground font-normal">
+                  ({{ $t('optional') }})
+                </span>
+              </Label>
+              <FormInputLanguages v-model="languages" />
+              <p class="text-muted-foreground text-xs">
+                {{ $t('asset_library.content_languages_hint') }}
+              </p>
+            </div>
 
             <div class="space-y-1.5">
               <Label>

@@ -3,18 +3,23 @@ import type { EntityBaseWithName } from '#shared/types';
 import { ASSET_LABEL_LIMITS, assetLabelLimitError } from '#shared/utils/asset';
 
 /**
- * Properties pane of the bulk "Add tags" / "Add channels" actions: the same
- * inputs the detail panel uses, plus a line saying the values are added to
- * what each asset already has. A breached limit shows inline; the action's
- * `isValid` keeps Run disabled until it's fixed.
+ * Properties pane of the bulk "Add tags" / "Add channels" / "Add content
+ * languages" actions: the same inputs the detail panel uses, plus a line saying
+ * the values are added to what each asset already has. A breached limit shows
+ * inline; the action's `isValid` keeps Run disabled until it's fixed.
  */
-const props = defineProps<{ kind: 'tags' | 'channels' }>();
+const props = defineProps<{ kind: 'tags' | 'channels' | 'languages' }>();
 const values = defineModel<string[]>({ default: () => [] });
 
 const { t } = useI18n();
 const { assetApi } = useGeinsRepository();
 
-const entityKey = computed(() => (props.kind === 'tags' ? 'tag' : 'channel'));
+const ENTITY_KEYS = {
+  tags: 'tag',
+  channels: 'channel',
+  languages: 'content_language',
+} as const;
+const entityKey = computed(() => ENTITY_KEYS[props.kind]);
 
 // Same key as the detail panel, so an open there reuses this fetch.
 const { data: allTags } = useAsyncData<string[]>(
@@ -48,7 +53,8 @@ const limitMessage = computed(() => {
       :data-set="tagOptions"
       :allow-custom-tags="true"
     />
-    <FormInputChannels v-else v-model="values" />
+    <FormInputChannels v-else-if="kind === 'channels'" v-model="values" />
+    <FormInputLanguages v-else v-model="values" />
     <p v-if="limitMessage" class="text-destructive text-sm">
       {{ limitMessage }}
     </p>

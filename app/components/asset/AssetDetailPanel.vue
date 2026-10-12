@@ -21,7 +21,8 @@ import { formatFileSize } from '#shared/utils/file';
 
 /**
  * Asset detail/edit panel — the standard slide-in edit panel (PanelEdit) for a
- * single asset. Editable metadata (name, folder, description, tags, channels)
+ * single asset. Editable metadata (name, folder, description, tags, channels,
+ * content languages)
  * plus read-only info and, on the real backend, a "Where it's used" section
  * ([AssetUsedIn](/components/asset/AssetUsedIn)). Alt text (translation panel),
  * actions, and replace are separate. Opened from the library card/row via
@@ -105,6 +106,7 @@ const formSchema = toTypedSchema(
     altText: z.record(z.string(), z.string()),
     tags: labelsSchema('tag', ASSET_LABEL_LIMITS.tags),
     channels: labelsSchema('channel', ASSET_LABEL_LIMITS.channels),
+    languages: labelsSchema('content_language', ASSET_LABEL_LIMITS.languages),
   }),
 );
 const form = useForm({ validationSchema: formSchema });
@@ -116,6 +118,7 @@ interface AssetFormValues {
   altText: LocalizedText;
   tags: string[];
   channels: string[];
+  languages: string[];
 }
 
 // `form.meta.dirty` false-positives on open (undefined fields settling +
@@ -186,6 +189,7 @@ watch(open, (value) => {
       altText: altTexts,
       tags: [...props.asset.tags],
       channels: [...props.asset.channels],
+      languages: [...(props.asset.languages ?? [])],
     };
     form.resetForm({ values });
     captureBaseline();
@@ -210,6 +214,7 @@ async function handleSave() {
   const folderId = form.values.folderId ?? null;
   const tags = normalizeAssetLabels(form.values.tags ?? []);
   const channels = normalizeAssetLabels(form.values.channels ?? []);
+  const languages = normalizeAssetLabels(form.values.languages ?? []);
   const tagsChanged = !sameAssetLabels(tags, asset.tags);
   loading.value = true;
   relocateFailed.value = null;
@@ -226,6 +231,7 @@ async function handleSave() {
       // omitted field keeps what's stored. A cleared set goes as `[]`.
       ...(tagsChanged && { tags }),
       ...(!sameAssetLabels(channels, asset.channels) && { channels }),
+      ...(!sameAssetLabels(languages, asset.languages) && { languages }),
     };
     // Round-trip the loaded etag as If-Match so a concurrent change is caught
     // (412) instead of silently overwritten. Omitted when the backend gave none.
@@ -483,6 +489,28 @@ async function handleDelete() {
                     @update:model-value="handleChange"
                   />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+
+            <FormField
+              v-slot="{ value, handleChange }"
+              name="languages"
+              keep-value
+            >
+              <FormItem>
+                <FormLabel :optional="true">
+                  {{ $t('content_language', 2) }}
+                </FormLabel>
+                <FormControl>
+                  <FormInputLanguages
+                    :model-value="value"
+                    @update:model-value="handleChange"
+                  />
+                </FormControl>
+                <FormDescription>
+                  {{ $t('asset_library.content_languages_hint') }}
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             </FormField>

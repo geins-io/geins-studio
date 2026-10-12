@@ -1,16 +1,19 @@
 import type { LocalizedText } from '#shared/types';
+import { sameAssetLabels } from '#shared/utils/asset';
 import type { InjectionKey, Ref, ComputedRef } from 'vue';
 
 /**
  * Per-file metadata the wizard collects before upload. Mirrors the editable
- * fields of an asset (name + folder + channels + description + tags + alt-text
- * localizations); everything is optional until the user fills it in. Steps
- * 2 (manage) and 3 (review) read and write this; step 1 only adds files.
+ * fields of an asset (name + folder + channels + content languages +
+ * description + tags + alt-text localizations); everything is optional until
+ * the user fills it in. Steps 2 (manage) and 3 (review) read and write this;
+ * step 1 only adds files.
  */
 export interface WizardFileSettings {
   name?: string;
   folderId?: string | null;
   channels?: string[];
+  languages?: string[];
   description?: string;
   tags?: string[];
   /** Localized alt text (images only): locale → text. Mapped to the wire
@@ -50,6 +53,8 @@ interface UseUploadWizardReturnType {
   channelState: (ids: string[], channel: string) => ChannelState;
   bulkChannelUnion: (ids: string[]) => string[];
   applyBulkChannels: (ids: string[], next: string[]) => void;
+  bulkLanguages: (ids: string[]) => string[] | undefined;
+  setBulkLanguages: (ids: string[], languages: string[]) => void;
   bulkSharedTags: (ids: string[]) => string[];
   applyBulkTags: (ids: string[], next: string[]) => void;
 }
@@ -145,6 +150,22 @@ export function useUploadWizard(): UseUploadWizardReturnType {
     }
   }
 
+  // Shared when every file holds the same set (order aside), else mixed. A pick
+  // replaces the set on every file — unlike channels and tags, nothing is diffed.
+  function bulkLanguages(ids: string[]): string[] | undefined {
+    const [head] = ids;
+    if (head === undefined) return undefined;
+    const first = settingsOf(head).languages ?? [];
+    return ids.every((id) =>
+      sameAssetLabels(settingsOf(id).languages ?? [], first),
+    )
+      ? first
+      : undefined;
+  }
+  function setBulkLanguages(ids: string[], languages: string[]) {
+    for (const id of ids) patchSettings(id, { languages: [...languages] });
+  }
+
   function bulkSharedTags(ids: string[]): string[] {
     const [head] = ids;
     if (head === undefined) return [];
@@ -184,6 +205,8 @@ export function useUploadWizard(): UseUploadWizardReturnType {
     channelState,
     bulkChannelUnion,
     applyBulkChannels,
+    bulkLanguages,
+    setBulkLanguages,
     bulkSharedTags,
     applyBulkTags,
   };
