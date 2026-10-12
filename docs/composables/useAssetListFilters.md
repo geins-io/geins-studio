@@ -1,6 +1,6 @@
 # `useAssetListFilters`
 
-The `useAssetListFilters` composable holds the asset list's filter-kit definitions — **Type**, **Channel** and **Modified** — and maps the filter-bar state onto the `assetQuery` request. The library page and the `/dev/server-table` harness both use it, so the filters and their wire mapping live in one place.
+The `useAssetListFilters` composable holds the asset list's filter-kit definitions — **Type**, **Channel**, **Content language** and **Modified** — and maps the filter-bar state onto the `assetQuery` request. The library page and the `/dev/server-table` harness both use it, so the filters and their wire mapping live in one place.
 
 ## Usage
 
@@ -39,11 +39,12 @@ const listFilters = useListFilters<AssetListFilters>({
 definitions: ListFilterDefinition<AssetListFilters>[]
 ```
 
-| Filter   | Name         | Kind          | URL key    | Options                                                                                              |
-| -------- | ------------ | ------------- | ---------- | ---------------------------------------------------------------------------------------------------- |
-| Type     | `assetTypes` | `multiselect` | `type`     | Every `AssetType` (`ASSET_TYPES`), labelled + iconed via [`useAssetType`](/composables/useAssetType) |
-| Channel  | `channels`   | `multiselect` | `channels` | The account's channels by `_id`, loaded from the account store on first open                         |
-| Modified | `modified`   | `dateRange`   | `modified` | Presets + custom range                                                                               |
+| Filter           | Name         | Kind          | URL key     | Options                                                                                                                              |
+| ---------------- | ------------ | ------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Type             | `assetTypes` | `multiselect` | `type`      | Every `AssetType` (`ASSET_TYPES`), labelled + iconed via [`useAssetType`](/composables/useAssetType)                                 |
+| Channel          | `channels`   | `multiselect` | `channels`  | The account's channels by `_id`, loaded from the account store on first open                                                         |
+| Content language | `languages`  | `multiselect` | `languages` | The account's languages by code (`_id`, e.g. `sv`), loaded from the account store on first open. Matches assets carrying any of them |
+| Modified         | `modified`   | `dateRange`   | `modified`  | Presets + custom range                                                                                                               |
 
 ### `toQueryFilters`
 
@@ -61,6 +62,7 @@ Turns the bar state into `assetQuery` filters: `modified` becomes `modifiedFrom`
 interface AssetListFilters {
   assetTypes?: AssetType[];
   channels?: string[];
+  languages?: string[];
   modified?: ListDateRange;
 }
 ```

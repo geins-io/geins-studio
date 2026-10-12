@@ -8,6 +8,7 @@ import type {
 } from '#shared/types';
 import {
   mimeToAssetType,
+  normalizeAssetLabels,
   productLinkTargetType,
   uploadRejectionMessageKey,
 } from '#shared/utils/asset';
@@ -139,6 +140,7 @@ async function submit() {
       folderId: s.folderId ?? null,
       name: s.name || wf.file.name,
       localizations: buildLocalizations(s.description, s.altText ?? {}),
+      languages: normalizeAssetLabels(s.languages ?? []),
       ...(product
         ? {
             links: [

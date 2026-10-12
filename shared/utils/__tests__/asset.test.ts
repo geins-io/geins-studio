@@ -131,6 +131,13 @@ describe('assetLabelLimitError', () => {
     expect(assetLabelLimitError(['x'.repeat(65)], 'tags')).toBe('length');
     expect(assetLabelLimitError([` ${'x'.repeat(64)} `], 'tags')).toBeNull();
   });
+
+  it('applies the content language limits', () => {
+    const many = Array.from({ length: 51 }, (_, i) => `l${i}`);
+    expect(assetLabelLimitError(many, 'languages')).toBe('count');
+    expect(assetLabelLimitError(['x'.repeat(51)], 'languages')).toBe('length');
+    expect(assetLabelLimitError(['sv', 'en'], 'languages')).toBeNull();
+  });
 });
 
 describe('countAssetIds', () => {

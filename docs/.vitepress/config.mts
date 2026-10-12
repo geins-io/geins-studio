@@ -440,6 +440,10 @@ export default defineConfig({
                     link: '/components/form/input/FormInputLanguageSelect.md',
                   },
                   {
+                    text: 'FormInputLanguages',
+                    link: '/components/form/input/FormInputLanguages.md',
+                  },
+                  {
                     text: 'FormInputLocked',
                     link: '/components/form/input/FormInputLocked.md',
                   },
