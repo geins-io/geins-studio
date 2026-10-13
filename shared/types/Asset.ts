@@ -2,6 +2,7 @@ import type {
   CreateEntity,
   UpdateEntity,
   ResponseEntity,
+  EntityBase,
   EntityBaseWithName,
   ApiOptions,
   BatchQuery,
@@ -189,6 +190,69 @@ export interface AssetBulkLinkValue {
 export interface BulkLinkCall {
   assetIds: string[];
   links: AssetLinkTarget[];
+}
+
+// =============================================================================
+// Storage usage (`GET media/usage?from&to` → `media_response_usage`)
+//
+// Not an entity — one read per account. `egress` and the per-day `days` series
+// are in the response too but unused, so they are not typed here.
+// =============================================================================
+
+/** `from` / `to` of `GET media/usage`: UTC days as `yyyy-MM-dd`, both included. */
+export interface AssetUsageRange {
+  from: string;
+  to: string;
+}
+
+/**
+ * Storage on the last day in the range that has a reading. `date` is empty and
+ * the bytes are `0` when no day has one. `limitBytes` / `remainingBytes` are
+ * `null` for an account with no limit.
+ */
+export interface AssetUsageStorage {
+  date: string;
+  bytes: number;
+  publicBytes: number;
+  privateBytes: number;
+  limitBytes: number | null;
+  remainingBytes: number | null;
+}
+
+/** Summed size of the live assets of one type. Read as an open string. */
+export interface AssetUsageAssetType {
+  type: AssetType | (string & {});
+  bytes: number;
+}
+
+/**
+ * A root folder with the size of everything under it. The row carries `_id`
+ * but no `_type`, so it takes `_id` off `EntityBase` rather than claiming a
+ * `_type` via `ResponseEntity`.
+ */
+export interface AssetUsageFolder extends Pick<EntityBase, '_id'> {
+  name: string;
+  bytes: number;
+}
+
+/** The library root: files in no folder, and the whole library. */
+export interface AssetUsageRoot {
+  directBytes: number;
+  totalBytes: number;
+}
+
+/**
+ * The breakdown (`assetTypes`, `folders`, `root`) is the live assets' summed
+ * size, independent of the range, so it does not add up to `storage.bytes`.
+ * Before its first calculation the lists are empty and `root` /
+ * `breakdownReadAt` are `null`.
+ */
+export interface AssetUsage extends AssetUsageRange {
+  storage: AssetUsageStorage;
+  assetTypes: AssetUsageAssetType[];
+  folders: AssetUsageFolder[];
+  root: AssetUsageRoot | null;
+  breakdownReadAt: string | null;
 }
 
 // =============================================================================

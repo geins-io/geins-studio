@@ -13,6 +13,8 @@ import type {
   AssetApiOptions,
   AssetBulkMove,
   AssetTrashPurge,
+  AssetUsage,
+  AssetUsageRange,
   BatchQueryResult,
   Folder,
   FolderCreate,
@@ -646,6 +648,20 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     async listTags(fetchOptions?: RepoFetchOptions): Promise<string[]> {
       const res = await fetch<string[]>('/media/tags', { ...fetchOptions });
       return Array.isArray(res) ? res : [];
+    },
+
+    /**
+     * Storage + the by-type / by-folder breakdown — real `GET media/usage`.
+     * `storage` is the latest reading in the range; the breakdown ignores it.
+     */
+    async usage(
+      range: AssetUsageRange,
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<AssetUsage> {
+      return await fetch<AssetUsage>('/media/usage', {
+        query: { ...range },
+        ...fetchOptions,
+      });
     },
 
     /**

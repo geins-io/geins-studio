@@ -108,14 +108,10 @@ const retentionNote = computed(() =>
 );
 const uploadOpen = ref(false);
 
-// Storage usage (mocked; phase-2 API). Summary in the header + a details panel.
+// Storage usage: summary in the header + a details panel. A failed read hides
+// the summary; a GET doesn't toast.
 const storageOpen = ref(false);
-const { storage } = useAssetStorage();
-const storageUsedPct = computed(() =>
-  storage.value.totalBytes
-    ? Math.round((storage.value.usedBytes / storage.value.totalBytes) * 100)
-    : 0,
-);
+const { storage, error: storageError } = useAssetStorage();
 
 const detailOpen = ref(false);
 const detailAsset = ref<Asset | null>(null);
@@ -887,9 +883,19 @@ async function confirmEmptyTrash() {
 
   <ContentHeader :title="$t(entityKey, 2)">
     <ContentActionBar>
-      <!-- Storage summary + details panel (mocked usage; phase-2 API). -->
-      <div class="hidden w-64 sm:me-4 sm:block">
-        <div class="flex items-center gap-1.5">
+      <!-- No limit = no bar, so the text hugs the actions instead of a fixed width. -->
+      <div
+        v-if="!storageError"
+        :class="[
+          'hidden sm:me-4 sm:flex sm:flex-col sm:justify-center',
+          { 'w-64': storage?.usedPct !== null },
+        ]"
+      >
+        <div v-if="!storage" class="space-y-2.5">
+          <Skeleton class="h-3 w-40" />
+          <Skeleton class="h-1.5 w-full" />
+        </div>
+        <div v-else class="flex items-center gap-1.5">
           <p class="text-xs whitespace-nowrap">
             <span class="font-semibold">
               {{ formatFileSize(storage.usedBytes) }}
@@ -898,9 +904,11 @@ async function confirmEmptyTrash() {
             {{ ' ' }}
             <span class="text-muted-foreground">
               {{
-                $t('asset_library.storage.of_used', {
-                  total: formatFileSize(storage.totalBytes),
-                })
+                storage.totalBytes === null
+                  ? $t('asset_library.storage.used')
+                  : $t('asset_library.storage.of_used', {
+                      total: formatFileSize(storage.totalBytes),
+                    })
               }}
             </span>
           </p>
@@ -913,7 +921,11 @@ async function confirmEmptyTrash() {
             <LucideInfo class="size-4" aria-hidden="true" />
           </button>
         </div>
-        <Progress :model-value="storageUsedPct" class="mt-1.5 h-1.5" />
+        <Progress
+          v-if="storage && storage.usedPct !== null"
+          :model-value="storage.usedPct"
+          class="mt-1.5 h-1.5"
+        />
       </div>
       <ButtonIcon v-if="!isTrash" icon="upload" @click="uploadOpen = true">
         {{ $t('asset_library.upload_assets') }}
