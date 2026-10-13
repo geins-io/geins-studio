@@ -329,6 +329,17 @@ describe('assetRepo', () => {
       });
     });
 
+    it('usage GETs /media/usage with the range as the query', async () => {
+      const usage = { from: '2026-10-07', to: '2026-10-13' };
+      mockFetch.mockResolvedValue(usage);
+      await expect(
+        api.usage({ from: '2026-10-07', to: '2026-10-13' }),
+      ).resolves.toEqual(usage);
+      expect(mockFetch).toHaveBeenCalledWith('/media/usage', {
+        query: { from: '2026-10-07', to: '2026-10-13' },
+      });
+    });
+
     it('bulkTag POSTs the ids and tags to /media/assets/bulk-tag', async () => {
       mockFetch.mockResolvedValue(null);
       await api.bulkTag(['a1', 'a2'], ['hero'], { suppressErrorToast: true });

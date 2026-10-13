@@ -205,6 +205,7 @@ The surface is not the Management API's conventions with a prefix swapped — ve
 - Folders follow `media_response_folder`: `path` (lowercased full path, **not** `fullPath`), `depth`, `createdBy`/`createdAt`/`updatedAt`. There is no manual ordering, so the folder tree sorts by name.
 - **No backend thumbnails.** Assets carry only `url` (CDN host `cdn-qa.geins.media/{account}/{path}`, with a `?v=` cache-buster). Previews are scaled by Fastly's image optimizer through query params: `assetPreviewUrl(type, url, preset)` appends one of the fixed `ASSET_PREVIEW_PRESETS` (`row` 40×40, `card` 420×280, `banner` 500×250 — all `fit=crop&dpr=2`) to `image` URLs. SVGs are served unchanged by the optimizer, so they get the raw `url`; non-image types show the type icon. Each distinct query string is a separately cached + billed variant — keep the preset set small.
 - **`GET /media/assets/{id}/links`** returns a **bare array** of `media_response_assetLink` — the asset usage behind the panel's "Where it's used" section.
+- **`GET media/usage?from&to`** (`yyyy-MM-dd`, UTC, both included) returns storage + its breakdown — see [Storage usage](#storage-usage).
 
 ### Usage links ("Where it's used")
 
@@ -221,6 +222,17 @@ A product `targetId` has its **leading zero stripped** when the link is written 
 Writing links is wired from the asset side, for **products only**. "Where it's used" groups links into **Products** and **Other**. **Link to product** opens [`AssetLinkProductsDialog`](/components/asset/AssetLinkProductsDialog), which links the asset to one or more products in one `assetApi.bulkLink([id], links)` (`POST .../bulk-link { assetIds, links }`, ≤ 100 links per call). Each product row can be removed (`assetApi.removeLink` → `DELETE .../links/{targetType}/{targetId}`). Image and svg assets can link as **Image** (`productimage`, the default) or **File** (`productfile`); every other type links as File with no choice shown, so the UI never triggers the `422`. After either call the panel refetches `asset-links`. Other uses of an asset (CMS, channel storefront settings, mail settings, …) are expected later; they'll be created where the asset is used, not from the asset, and listed under **Other** as Studio entities. Note the response also carries `_type` with no `_id`; `AssetLink` deliberately omits it (`ResponseEntity` would add an `_id` the API never sends).
 
 `x-account-key` needs **no** transport work: [`geins-api.ts`](app/plugins/geins-api.ts) sets it on every request from the session's account key, and the catch-all proxy forwards headers verbatim. The real API also accepts `x-functions-key` (Azure function app key) for direct function-host access — not used when calls go through the Geins gateway.
+
+### Storage usage
+
+The header quota bar and [`AssetStoragePanel`](/components/asset/AssetStoragePanel) read `GET media/usage` through [`useAssetStorage`](/composables/useAssetStorage) (`assetApi.usage`, shared `asset-usage` key).
+
+- **`storage` is a reading, not a live sum.** A job reads storage hourly and after each upload, delete, restore and move, keeping each day's latest reading; `storage` is the reading from the last day in the range that has one. Studio asks for today and the six days before it, so a day the job hasn't read yet falls back to the latest reading instead of zero.
+- **No limit is `null`, not `0`.** `limitBytes` / `remainingBytes` are `null` for an account with no limit; the UI then shows "X used" with no bar and no percentage.
+- **The breakdown is a different measure.** `assetTypes`, `folders` (root folders, largest first, each including everything under it) and `root` (`directBytes` = files in no folder, `totalBytes` = the whole library) are the live assets' summed `sizeBytes`, independent of the range. `storage.bytes` also counts Azure's per-file overhead, so the two don't match exactly. Row percentages are therefore of `root.totalBytes`, and the Folders tab adds the files in no folder as an "Uncategorised" row so it adds up.
+- **Seven types, four rows.** `image` + `svg` → Images, `video` → Video, `doc` + `pdf` → Documents, `audio` + `other` → Other (the pure mapping is in `shared/utils/asset-usage.ts`).
+- **Before the first calculation** `breakdownReadAt` and `root` are `null` and both lists are empty; the panel shows a "Breakdown not available yet" state.
+- Egress (`egress`, `days[]`) and the public/private split are in the response but not shown.
 
 ### What is left for phase 2
 
@@ -239,6 +251,7 @@ The capability gating in [`useAssetCapabilities`](/composables/useAssetCapabilit
 | Registry     | `shared/utils/entities.ts` (`asset`, `folder`)                                            |
 | Repository   | `app/utils/repositories/asset.ts` (`assetApi`, `.folder` sub-repo)                        |
 | Async jobs   | `shared/utils/job.ts` (`settleJob` + one check per delayed job)                           |
+| Storage      | `app/composables/useAssetStorage.ts`, `shared/utils/asset-usage.ts`                       |
 | Capabilities | `app/composables/useAssetCapabilities.ts`, `assetCapabilities` in `shared/utils/asset.ts` |
 | Pages        | `app/pages/asset-library/index.vue` (grid + list browse, folder nav, detail panel)        |
 | Picker       | `app/composables/useAssetPicker.ts`, `app/components/asset/AssetPicker{,Host,Panel}.vue`  |
