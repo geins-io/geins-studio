@@ -8,6 +8,10 @@ import {
   assetLabelLimitError,
   countAssetIds,
   folderDeleteFailure,
+  folderRestoreFailure,
+  isTrashSelection,
+  trashedFolderId,
+  trashedFolderKey,
   sameAssetLabels,
   assetListOptions,
   bulkMoveErrorKey,
@@ -98,6 +102,53 @@ describe('folderDeleteFailure', () => {
   it('falls back to a generic failure for other statuses', () => {
     expect(folderDeleteFailure(404, undefined, 'trash')).toBe('failed');
     expect(folderDeleteFailure(500)).toBe('failed');
+  });
+});
+
+describe('trashed folder selection', () => {
+  it('round-trips a trashed folder id through its rail key', () => {
+    const key = trashedFolderKey('f1');
+    expect(key).toBe('trash:f1');
+    expect(trashedFolderId(key)).toBe('f1');
+    expect(trashedFolderId(TRASH_KEY)).toBeNull();
+    expect(trashedFolderId('f1')).toBeNull();
+    expect(trashedFolderId(null)).toBeNull();
+  });
+
+  it('counts trash and trashed folders as trash views', () => {
+    expect(isTrashSelection(TRASH_KEY)).toBe(true);
+    expect(isTrashSelection(trashedFolderKey('f1'))).toBe(true);
+    expect(isTrashSelection('f1')).toBe(false);
+    expect(isTrashSelection(ROOT_FOLDER_KEY)).toBe(false);
+    expect(isTrashSelection(null)).toBe(false);
+  });
+
+  it('scopes a trashed folder to its trashed subtree and never as a target', () => {
+    expect(assetListOptions(trashedFolderKey('f1'))).toEqual({
+      trashed: true,
+      folderId: 'f1',
+    });
+    expect(folderIdForSelection(trashedFolderKey('f1'))).toBeNull();
+  });
+});
+
+describe('folderRestoreFailure', () => {
+  it('reads pending moves and uploads from the 409 detail', () => {
+    expect(folderRestoreFailure(409, 'MOVE_PENDING')).toBe('pending');
+    expect(folderRestoreFailure(409, 'UPLOAD_PENDING')).toBe('pending');
+  });
+
+  it('treats any other 409 as a taken path', () => {
+    expect(
+      folderRestoreFailure(409, '4f2e8c1d-693e-4748-aa53-b0d4c676867b'),
+    ).toBe('path_taken');
+  });
+
+  it('maps a gone folder, the quota and anything else', () => {
+    expect(folderRestoreFailure(404)).toBe('not_found');
+    expect(folderRestoreFailure(422, 'QUOTA_EXCEEDED')).toBe('quota');
+    expect(folderRestoreFailure(422, 'something else')).toBe('failed');
+    expect(folderRestoreFailure(503)).toBe('failed');
   });
 });
 

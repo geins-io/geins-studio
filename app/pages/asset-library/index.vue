@@ -18,6 +18,8 @@ import {
   bulkMoveErrorKey,
   countAssetIds,
   folderIdForSelection,
+  isTrashSelection,
+  trashedFolderId,
   ROOT_FOLDER_KEY,
   TRASH_KEY,
   TRASH_RETENTION_DAYS,
@@ -60,8 +62,8 @@ const view = ref<'grid' | 'list'>('grid');
 // filter is always visible; below sm it starts closed and overlays on demand.
 const showFolders = ref(useMediaQuery('(min-width: 640px)').value);
 // Rail selection: a folder id, `null` for All assets, `ROOT_FOLDER_KEY` for
-// Uncategorised, or `TRASH_KEY` for the soft-deleted set — all four scope the
-// server-side query. Read straight from `?folder`: a local ref synced by its
+// Uncategorised, `TRASH_KEY` for the soft-deleted set, or `trash:<id>` for one
+// trashed folder — all scope the server-side query. Read straight from `?folder`: a local ref synced by its
 // own `router.replace` would race useListQuery's write of the same query (both
 // merge a stale `route.query`, and the later navigation cancels the earlier).
 const selectedFolder = computed<string | null>({
@@ -73,7 +75,7 @@ const selectedFolder = computed<string | null>({
     // A new folder starts on page 1; a leftover ?page would be read back as a
     // navigation to that page. Crossing into or out of trash swaps the sort in
     // the same navigation, for the same reason.
-    const crossesTrash = (folder === TRASH_KEY) !== isTrash.value;
+    const crossesTrash = isTrashSelection(folder) !== isTrash.value;
     const rest = Object.fromEntries(
       Object.entries(route.query).filter(
         ([key]) =>
@@ -82,7 +84,7 @@ const selectedFolder = computed<string | null>({
           !(crossesTrash && key === 'sort'),
       ),
     );
-    const entersTrash = crossesTrash && folder === TRASH_KEY;
+    const entersTrash = crossesTrash && isTrashSelection(folder);
     router.replace({
       query: {
         ...rest,
@@ -98,7 +100,8 @@ const uploadFolderId = computed(() =>
 );
 // Trash lists the soft-deleted assets instead of a folder scope: restore and
 // purge are the only actions there, and upload / detail panel / trash are off.
-const isTrash = computed(() => selectedFolder.value === TRASH_KEY);
+// A trashed folder's view is trash too, scoped to that folder.
+const isTrash = computed(() => isTrashSelection(selectedFolder.value));
 // Stated, not enforced — the backend owns the retention window.
 const retentionNote = computed(() =>
   t('asset_library.trash_retention', { days: TRASH_RETENTION_DAYS }),
@@ -196,6 +199,8 @@ const emptyIcon = computed(() => {
 });
 const emptyTitle = computed(() => {
   if (hasActiveQuery.value) return t('no_entity_found', { entityKey }, 2);
+  if (trashedFolderId(selectedFolder.value))
+    return t('asset_library.no_assets_in_folder');
   if (isTrash.value) return t('asset_library.trash_empty');
   return selectedFolder.value && selectedFolder.value !== ROOT_FOLDER_KEY
     ? t('asset_library.no_assets_in_folder')
@@ -760,18 +765,23 @@ async function confirmPurge() {
   pendingPurge.value = null;
 }
 
-// Empty trash purges the whole trash, not what the search / filters show, so a
-// filtered view counts the trash separately for the confirm.
+// Empty trash purges the whole trash, not what the search / filters or a
+// trashed folder show, so those views count the trash separately for the
+// confirm.
 const emptyTrashOpen = ref(false);
 const emptyingTrash = ref(false);
 const countingTrash = ref(false);
 const trashCount = ref(0);
+// Only the unfiltered Trash view's total is the whole trash.
+const wholeTrashInView = computed(
+  () => selectedFolder.value === TRASH_KEY && !hasActiveQuery.value,
+);
 const trashIsEmpty = computed(
-  () => !loading.value && !hasActiveQuery.value && total.value === 0,
+  () => !loading.value && wholeTrashInView.value && total.value === 0,
 );
 
 async function requestEmptyTrash() {
-  if (!hasActiveQuery.value) {
+  if (wholeTrashInView.value) {
     trashCount.value = total.value;
     emptyTrashOpen.value = true;
     return;
@@ -810,7 +820,10 @@ async function confirmEmptyTrash() {
       ),
       variant: 'positive',
     });
-    await Promise.all([refresh(), refreshNuxtData(['asset-tags'])]);
+    await Promise.all([
+      refresh(),
+      refreshNuxtData(['asset-tags', 'asset-trash-folders']),
+    ]);
   } catch (err) {
     geinsLogError('confirmEmptyTrash', getErrorMessage(err));
   } finally {
