@@ -2,9 +2,9 @@
 
 `AssetFolderTree` is the folder-navigation tree for the Assets Library, built on the shadcn `Sidebar` primitives. Under a "Folders" header it shows **All assets**, then the nested folders (each expandable via a leading chevron; the folder icon opens when expanded/active), with the pinned **Uncategorised** and **Trash** views last, below the folder list.
 
-Selection is emitted via `v-model:selected` — a folder id, `null` for **All assets**, `ROOT_FOLDER_KEY` (`'root'`, from `#shared/utils/asset`) for **Uncategorised**, or `TRASH_KEY` (`'trash'`) for **Trash**. The consumer turns that into list options with `assetListOptions(selected)`; the tree itself only selects.
+Selection is emitted via `v-model:selected` — a folder id, `null` for **All assets**, `ROOT_FOLDER_KEY` (`'root'`, from `#shared/utils/asset`) for **Uncategorised**, `TRASH_KEY` (`'trash'`) for **Trash**, or `trashedFolderKey(id)` (`'trash:<id>'`) for one trashed folder. The consumer turns that into list options with `assetListOptions(selected)`; the tree itself only selects.
 
-The **Trash** entry appears only outside `readonly` mode: the picker must never browse soft-deleted assets.
+The **Trash** entry appears only outside `readonly` mode: the picker must never browse soft-deleted assets. When the trash holds folders, Trash gets a chevron and folds out to them — see [Trashed folders](#trashed-folders).
 
 :::tip NOTE
 **Uncategorised is a query, not a folder.** Real Geins.Media has no system folders — assets with no folder are `folderId: null`, and the query asks for them with `folderIds: [null]`. That is why the entry is pinned by the component rather than coming from the folder list, and why `assetListOptions` distinguishes "root only" (`folderId: null`) from "all assets" (no folder scope at all).
@@ -35,7 +35,7 @@ Must be rendered inside a `SidebarProvider` / `Sidebar` (the library page provid
 v-model:selected: string | null
 ```
 
-The selected folder id, `null` for "All assets", `ROOT_FOLDER_KEY` for "Uncategorised" (assets with no folder), or `TRASH_KEY` for the soft-deleted set. It is also the `?folder=` URL value on the library page, so every view deep-links.
+The selected folder id, `null` for "All assets", `ROOT_FOLDER_KEY` for "Uncategorised" (assets with no folder), `TRASH_KEY` for the soft-deleted set, or `trashedFolderKey(id)` for one trashed folder's trashed contents. It is also the `?folder=` URL value on the library page, so every view deep-links.
 
 ## Props
 
@@ -67,9 +67,18 @@ Both calls pass `suppressErrorToast: true`: a failure is shown inline in the dia
 
 After success the tree refetches [`useFolders`](/composables/useFolders), `asset-library-list` and `asset-tags` once, and clears the selection if it was inside the deleted subtree. `relocate` and `purge` answer `202` and settle in the background, so for a while assets can still show in their old folder or in the trash — see [Assets → Folder delete](/domains/assets).
 
+## Trashed folders
+
+Folding out **Trash** lists the folders the merchant trashed, newest first: `useAsyncData('asset-trash-folders', () => assetApi.folder.listTrashed())` → `GET media/folders?trashed=true`. It isn't fetched in `readonly` mode. The list is flat: a subfolder that went to the trash with its parent is left out, because restoring the parent brings it back. Trash opens by itself when a trashed folder is selected (e.g. from a `?folder=trash:<id>` link).
+
+- **Clicking a trashed folder** selects `trashedFolderKey(id)`. `assetListOptions` turns that into `{ trashed: true, folderId }`, so the page lists the folder's trashed contents, subfolders included. `isTrashSelection` treats it like Trash: restore and purge only, trash columns and sort, no upload.
+- **Restore** (hover ↶, where a live row has "+ add"): `assetApi.folder.restore(id)` → `POST media/folders/{id}/restore`. It brings back what went to the trash with the folder, plus any trashed parents without their other contents, at the same URLs. It runs without a confirm (soft), toasts `entity_restored`, and if that folder was being viewed it selects the restored live folder. A failure is a negative toast with friendly copy (`folderRestoreFailure` → `folder_restore_*`). The rail has no room for an inline message, and the backend's `409` detail is a bare id, so the call passes `suppressErrorToast: true`. A `404` (already reaped) also refetches the list. The row's restore icon spins while it runs.
+- **Delete permanently** (hover trash can): a red [`DialogDelete`](/components/dialog/DialogDelete) (`purge_folder_title`, `trashed_folder_purge_description` + `purge_note`, confirm `delete_permanently`). On confirm the tree loads the folder's trashed assets (`assetApi.matchingAssets`, `trashed: true`) and purges them through `assetApi.bulkPurge` in chunks of 100. That's the documented route for trashed items; the backend then deletes the emptied folder on its own, after a while. So the row is hidden for the rest of the session, and a view of it falls back to Trash. Toast `entity_deleted` with the purged count. Failures render in the dialog.
+- After either action the tree refreshes `asset-folders`, `asset-trash-folders`, `asset-library-list` and `asset-tags`. Folder delete, `useAssetActions().restoreAsset` and Empty trash refresh `asset-trash-folders` too.
+
 ## Data
 
-Reads [`useFolders`](/composables/useFolders) — the nested `tree`. No fetching of its own; it shares the `asset-folders` cache with every other consumer.
+Reads [`useFolders`](/composables/useFolders) — the nested `tree`, shared through the `asset-folders` cache with every other consumer — plus its own `asset-trash-folders` read (above).
 
 ## Related
 

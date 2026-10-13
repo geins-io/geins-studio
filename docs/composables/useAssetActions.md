@@ -56,7 +56,7 @@ Moves the asset to trash (`assetApi.delete`), refreshes `asset-library-list`, an
 restoreAsset: (asset: Asset) => Promise<boolean>;
 ```
 
-Restores a trashed asset (`assetApi.restore` → `POST /media/assets/{id}/restore`), refreshes `asset-library-list`, and toasts (`entity_restored`). Returns `true` on success. The refresh is what removes the row from the Trash view, so callers need no local bookkeeping.
+Restores a trashed asset (`assetApi.restore` → `POST /media/assets/{id}/restore`), refreshes `asset-library-list`, `asset-folders` and `asset-trash-folders` (if the asset's folder is in the trash, the backend brings that folder and its trashed parents back too, without their other contents), and toasts (`entity_restored`). Returns `true` on success. The refresh is what removes the row from the Trash view, so callers need no local bookkeeping.
 
 ### `purgeAsset`
 

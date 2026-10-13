@@ -663,6 +663,27 @@ describe('assetRepo', () => {
       });
     });
 
+    it('folder.listTrashed GETs the trashed folders', async () => {
+      mockFetch.mockResolvedValue([]);
+      await api.folder.listTrashed();
+      expect(mockFetch).toHaveBeenCalledWith('/media/folders', {
+        query: { trashed: true },
+      });
+    });
+
+    it('folder.restore POSTs /media/folders/:id/restore', async () => {
+      mockFetch.mockResolvedValue({ _id: 'f' });
+      const result = await api.folder.restore('f', {
+        suppressErrorToast: true,
+      });
+      expect(result).toEqual({ _id: 'f' });
+      expect(mockFetch).toHaveBeenCalledWith('/media/folders/f/restore', {
+        method: 'POST',
+        errorContext: { action: 'updating', entity: 'folder' },
+        suppressErrorToast: true,
+      });
+    });
+
     it('deleteFolder sends the action and returns the deletion counts', async () => {
       mockFetch.mockResolvedValue({ folderCount: 2, assetCount: 5 });
       const result = await api.deleteFolder('f', 'trash');
