@@ -6,10 +6,24 @@ const { jobs, pending, hasFinished, panelOpen, message, clearFinished } =
   useBackgroundJobs();
 const { t } = useI18n();
 
-const percent = (job: BackgroundJob): number | null =>
-  job.progress?.total
-    ? Math.min(100, Math.round((job.progress.done / job.progress.total) * 100))
-    : null;
+// Newest first. The store appends restored jobs, so sort rather than reverse.
+const rows = computed(() =>
+  [...jobs.value].sort((a, b) => b.startedAt - a.startedAt),
+);
+
+// Keyed by every spec kind, so a new kind fails typecheck until it has a row.
+const JOB_KINDS: Record<
+  BackgroundJob['spec']['kind'],
+  { icon: string; activity: string }
+> = {
+  move: { icon: 'FolderInput', activity: 'background_jobs.moving' },
+  replace: { icon: 'Replace', activity: 'background_jobs.replacing' },
+  purge: { icon: 'Trash2', activity: 'background_jobs.deleting' },
+  'due-purge': { icon: 'Trash2', activity: 'background_jobs.deleting' },
+};
+const { resolveIcon } = useLucideIcon();
+const activity = (job: BackgroundJob): string =>
+  message(job.activity ?? { key: JOB_KINDS[job.spec.kind].activity });
 
 const badge = (
   job: BackgroundJob,
@@ -57,7 +71,7 @@ const detail = (job: BackgroundJob): string | null => {
               <LucideCircleCheck v-else class="text-positive size-4" />
               <span
                 v-if="pending.length"
-                class="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-blue-600 text-[10px] font-semibold text-white"
+                class="bg-primary text-primary-foreground absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full text-[10px] font-semibold"
               >
                 {{ pending.length }}
               </span>
@@ -82,47 +96,35 @@ const detail = (job: BackgroundJob): string | null => {
             </Button>
           </div>
           <ul class="max-h-96 divide-y overflow-y-auto">
-            <li v-for="job in jobs" :key="job.id" class="px-4 py-3">
+            <li v-for="job in rows" :key="job.id" class="px-4 py-3">
               <div class="flex items-start gap-3">
                 <div
                   class="bg-muted flex size-8 flex-shrink-0 items-center justify-center rounded-md"
                 >
-                  <LucideFolderInput
-                    v-if="job.spec.kind === 'move'"
+                  <component
+                    :is="resolveIcon(JOB_KINDS[job.spec.kind].icon)"
                     class="text-muted-foreground size-4"
                   />
-                  <LucideReplace v-else class="text-muted-foreground size-4" />
                 </div>
                 <div class="min-w-0 flex-1">
                   <p class="truncate text-sm font-medium">
                     {{ message(job.label) }}
                   </p>
                   <p
-                    v-if="detail(job)"
+                    v-if="job.state === 'pending'"
+                    class="text-muted-foreground mt-0.5 flex items-center gap-1.5 text-xs"
+                  >
+                    <LucideLoaderCircle class="size-3 animate-spin" />
+                    {{ activity(job) }}
+                  </p>
+                  <p
+                    v-else-if="detail(job)"
                     class="text-muted-foreground mt-0.5 text-xs"
                   >
                     {{ detail(job) }}
                   </p>
                 </div>
                 <StatusBadge v-bind="badge(job)" class="flex-shrink-0" />
-              </div>
-              <div
-                v-if="job.state === 'pending' && percent(job) !== null"
-                class="mt-2 ml-11 grid gap-1"
-              >
-                <Progress
-                  :model-value="percent(job)"
-                  class="h-1.5"
-                  indicator-class="bg-blue-600 dark:bg-blue-400"
-                />
-                <span class="text-muted-foreground text-xs">
-                  {{
-                    $t('background_jobs.progress', {
-                      done: job.progress?.done ?? 0,
-                      total: job.progress?.total ?? 0,
-                    })
-                  }}
-                </span>
               </div>
             </li>
           </ul>

@@ -44,7 +44,11 @@ export function useBulkRunner(): UseBulkRunnerReturnType {
     // Runs for a partial success too: the chunks that went through still land.
     const started =
       result.succeeded.length > 0 &&
-      (action.startJob?.(result.succeeded.length, result.responses) ?? false);
+      !!action.startJob?.(
+        result.succeeded.length,
+        result.responses,
+        result.succeeded,
+      );
 
     if (!result.failed.length) {
       if (started) return result;

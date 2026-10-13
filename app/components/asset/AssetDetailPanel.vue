@@ -38,6 +38,8 @@ const { assetApi } = useGeinsRepository();
 const { formatDate } = useDate();
 const { geinsLogError } = useGeinsLog('components/AssetDetailPanel.vue');
 const { copyUrl, download, deleteAsset } = useAssetActions();
+const backgroundJobs = useBackgroundJobs();
+const { movingAssetIds } = backgroundJobs;
 const { hasPending, commitPending } = providePendingCommits();
 
 const entityKey = ENTITIES.asset.key;
@@ -56,6 +58,10 @@ const tagOptions = computed<EntityBaseWithName[]>(() =>
 
 const loading = ref(false);
 const replaceOpen = ref(false);
+// The replace claim answers `409 ASSET_MOVE_IN_FLIGHT` until the move lands.
+const replaceBlocked = computed(
+  () => !!props.asset && movingAssetIds.value.has(props.asset._id),
+);
 const deleteOpen = ref(false);
 const deleting = ref(false);
 // Set when a save fails the etag precondition (412) — someone else changed the
@@ -244,14 +250,16 @@ async function handleSave() {
     if (tagsChanged) refreshTags();
 
     if (name !== asset.name || folderId !== asset.folderId) {
+      let moveId: string | null | undefined;
       try {
-        // Relocate answers 200 or 202 — a 202 means the move is accepted but
-        // not settled, so the refreshed list is the source of truth either way.
-        await assetApi.relocate(
+        // Relocate answers 200 or 202 — a 202 with a `moveId` copies the file
+        // in the background, so a job refreshes the list once it lands.
+        const relocated = await assetApi.relocate(
           asset._id,
           { name, folderId },
           { suppressErrorToast: true },
         );
+        moveId = relocated?.moveId;
       } catch (error) {
         geinsLogError('relocateAsset', getErrorMessage(error));
         relocateFailed.value =
@@ -261,6 +269,21 @@ async function handleSave() {
         await refreshNuxtData('asset-library-list');
         emit('updated');
         return;
+      }
+      if (moveId) {
+        const renameOnly = folderId === asset.folderId;
+        backgroundJobs.start({
+          spec: { kind: 'move', moveIds: [moveId], assetIds: [asset._id] },
+          label: {
+            key: renameOnly
+              ? 'asset_library.job_renaming_asset'
+              : 'asset_library.job_moving_asset',
+            params: { name: asset.name },
+          },
+          ...(renameOnly && { activity: { key: 'background_jobs.renaming' } }),
+          doneMessage: { key: 'entity_updated', params: { entityKey } },
+          refreshKeys: ['asset-library-list'],
+        });
       }
     }
 
@@ -393,15 +416,32 @@ async function handleDelete() {
         >
           {{ $t('download') }}
         </ButtonIcon>
-        <ButtonIcon
-          icon="RefreshCw"
-          variant="outline"
-          size="sm"
-          class="flex-1 bg-transparent dark:bg-transparent"
-          @click="replaceOpen = true"
-        >
-          {{ $t('replace') }}
-        </ButtonIcon>
+        <!-- A disabled button gets no pointer events, so the span carries the
+             tooltip. -->
+        <TooltipProvider :delay-duration="100">
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <span
+                class="flex flex-1"
+                :tabindex="replaceBlocked ? 0 : undefined"
+              >
+                <ButtonIcon
+                  icon="RefreshCw"
+                  variant="outline"
+                  size="sm"
+                  class="flex-1 bg-transparent dark:bg-transparent"
+                  :disabled="replaceBlocked"
+                  @click="replaceOpen = true"
+                >
+                  {{ $t('replace') }}
+                </ButtonIcon>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent v-if="replaceBlocked">
+              {{ $t('asset_library.replace_move_pending') }}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       <div class="border-border -mx-3 mt-4 mb-6 border-b sm:-mx-6" />

@@ -63,7 +63,8 @@ export interface BulkAction<TValue = unknown> {
   /**
    * Start a background job for work that lands after the calls (e.g. a move's
    * copies). Return `true` when one started: its "started" toast then stands
-   * in for the success toast, which comes once the job lands.
+   * in for the success toast, which comes once the job lands. `ids` are the
+   * ones whose chunk went through.
    */
-  startJob?(count: number, responses: unknown[]): boolean;
+  startJob?(count: number, responses: unknown[], ids: string[]): boolean;
 }

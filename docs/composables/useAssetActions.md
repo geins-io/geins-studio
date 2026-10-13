@@ -3,7 +3,7 @@
 `useAssetActions` bundles the shared asset row/panel actions — **copy URL**, **download**, **delete**, **restore**, and **purge** — so the library page, the grid [`AssetCard`](/components/asset/AssetCard), and the [`AssetDetailPanel`](/components/asset/AssetDetailPanel) stay consistent.
 
 :::tip NOTE
-`deleteAsset`, `restoreAsset` and `purgeAsset` refresh the `asset-library-list` read and toast on their own, but callers own the surrounding UI — the confirm dialog ([`DialogDelete`](/components/dialog/DialogDelete)), closing a panel, clearing a pending selection.
+`deleteAsset`, `restoreAsset` and `purgeAsset` refresh the `asset-library-list` read and toast on their own (`purgeAsset` once its background job lands), but callers own the surrounding UI — the confirm dialog ([`DialogDelete`](/components/dialog/DialogDelete)), closing a panel, clearing a pending selection.
 :::
 
 ## Usage
@@ -64,9 +64,10 @@ Restores a trashed asset (`assetApi.restore` → `POST /media/assets/{id}/restor
 purgeAsset: (asset: Asset) => Promise<boolean>;
 ```
 
-Permanently deletes a trashed asset (`assetApi.bulkPurge([id])` → `POST /media/assets/bulk-purge`; there is no single-asset route), refreshes `asset-library-list`, and toasts (`entity_deleted`). Returns `true` on success. The purge lands about a minute after the call, so the refresh can still list the asset in trash until then. Callers confirm first with the **hard** copy — see [assets](/domains/assets#delete-vocabulary).
+Permanently deletes a trashed asset (`assetApi.bulkPurge([id])` → `POST /media/assets/bulk-purge`; there is no single-asset route). Returns `true` once the call went through. The purge lands about a minute after the call, so it starts a `purge` [background job](/composables/useBackgroundJobs) ("Deleting {name} permanently") that refreshes `asset-library-list` and toasts `entity_deleted` once the asset has left the trash. Callers confirm first with the **hard** copy — see [assets](/domains/assets#delete-vocabulary).
 
 ## Dependencies
 
 - [`useGeinsRepository`](/composables/useGeinsRepository) — `assetApi`
 - `useToast` — success toasts
+- [`useBackgroundJobs`](/composables/useBackgroundJobs) — the purge job

@@ -272,11 +272,12 @@ export function replaceCheck(
 
 /**
  * The check for a persisted job spec — how a resumed job gets its check back.
- * Only a move reports progress.
+ * Only a move reports progress. A purge's remaining count isn't progress: the
+ * reaper takes every id in one pass, so it reads all-or-nothing.
  */
 export function backgroundJobCheck(
   spec: BackgroundJobSpec,
-  api: MoveCheckApi,
+  api: MoveCheckApi & QueryCheckApi,
   options?: ReplaceCheckOptions,
 ): JobCheckFn<BackgroundJobProgress> {
   switch (spec.kind) {
@@ -284,5 +285,11 @@ export function backgroundJobCheck(
       return movesCheck(api, spec.moveIds);
     case 'replace':
       return replaceCheck(spec.url, spec.etagBefore, options);
+    case 'purge': {
+      const check = purgeCheck(api, spec.assetIds);
+      return async () => ({ done: (await check()).done });
+    }
+    case 'due-purge':
+      return duePurgeCheck(api, options?.now);
   }
 }
