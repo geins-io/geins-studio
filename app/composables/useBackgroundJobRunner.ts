@@ -73,7 +73,11 @@ export function useBackgroundJobRunner(): void {
         variant: 'warning',
       });
     } else {
-      toast({ title: message(job.doneMessage), variant: 'positive' });
+      toast({
+        title: message(job.doneMessage),
+        description: job.doneDescription && message(job.doneDescription),
+        variant: 'positive',
+      });
     }
   }
 

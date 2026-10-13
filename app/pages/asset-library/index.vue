@@ -487,6 +487,7 @@ async function selectAllMatching() {
 
 const bulkSheetOpen = ref(false);
 const bulkTrashOpen = ref(false);
+const backgroundJobs = useBackgroundJobs();
 const trashAction = computed<BulkAction>(() => ({
   key: 'move-to-trash',
   label: t('asset_library.move_to_trash'),
@@ -500,7 +501,7 @@ const trashAction = computed<BulkAction>(() => ({
     t('asset_library.bulk_moved_to_trash', { count }, count),
 }));
 // Hard delete: trash-only, red, and can't be undone. The purge lands about a
-// minute after the call, so the refresh after the run can still list some.
+// minute after the call, so a background job reports it and refreshes then.
 const purgeAction = computed<BulkAction>(() => ({
   key: 'delete-permanently',
   label: t('asset_library.delete_permanently'),
@@ -512,6 +513,23 @@ const purgeAction = computed<BulkAction>(() => ({
   run: (ids, _value, options) => assetApi.bulkPurge(ids, options),
   successMessage: (count) =>
     t('asset_library.bulk_deleted_permanently', { count }, count),
+  startJob: (count, _responses, ids) => {
+    backgroundJobs.start({
+      spec: { kind: 'purge', assetIds: ids },
+      label: {
+        key: 'asset_library.job_purging',
+        params: { count },
+        plural: count,
+      },
+      doneMessage: {
+        key: 'asset_library.bulk_deleted_permanently',
+        params: { count },
+        plural: count,
+      },
+      refreshKeys: ['asset-library-list', 'asset-trash-folders'],
+    });
+    return true;
+  },
 }));
 // The bar's shortcut action: the soft trash on live assets, the purge in trash.
 const barAction = computed(() =>
@@ -521,7 +539,6 @@ const AssetBulkMoveFolder = resolveComponent('AssetBulkMoveFolder');
 // The value is the folder tree's selection (a folder id or ROOT_FOLDER_KEY).
 // A 202 means the copies are still landing: one background job covers every
 // chunk's move and refreshes the list once they land.
-const backgroundJobs = useBackgroundJobs();
 const moveAction = computed<BulkAction<string | null>>(() => ({
   key: 'move-to-folder',
   label: t('asset_library.move_to_folder'),
@@ -548,7 +565,7 @@ const moveAction = computed<BulkAction<string | null>>(() => ({
     responses.every((response) => response === null)
       ? t('asset_library.bulk_already_in_folder')
       : t('asset_library.bulk_moved_to_folder', { count }, count),
-  startJob: (count, responses) => {
+  startJob: (count, responses, ids) => {
     const moveIds = responses.flatMap((response) =>
       response && typeof response === 'object' && 'moveId' in response
         ? [String(response.moveId)]
@@ -556,7 +573,7 @@ const moveAction = computed<BulkAction<string | null>>(() => ({
     );
     if (!moveIds.length) return false;
     backgroundJobs.start({
-      spec: { kind: 'move', moveIds },
+      spec: { kind: 'move', moveIds, assetIds: ids },
       label: {
         key: 'asset_library.job_moving',
         params: { count },
@@ -801,25 +818,33 @@ async function requestEmptyTrash() {
   }
 }
 
-// Like a single purge, the trash can still list some assets for about a minute.
+// Like a single purge, the trash can still list some assets for about a minute,
+// so a background job reports it and refreshes once it lands.
 async function confirmEmptyTrash() {
   emptyingTrash.value = true;
   try {
     const { assetCount } = await assetApi.emptyTrash();
     emptyTrashOpen.value = false;
     clearSelection();
-    toast({
-      title: t(
-        'asset_library.bulk_deleted_permanently',
-        { count: assetCount },
-        assetCount,
-      ),
-      variant: 'positive',
+    // Nothing was due for purge, so there's nothing to wait for.
+    if (!assetCount) {
+      toast({
+        title: t('asset_library.bulk_deleted_permanently', { count: 0 }, 0),
+        variant: 'positive',
+      });
+      await refresh();
+      return;
+    }
+    backgroundJobs.start({
+      spec: { kind: 'due-purge' },
+      label: { key: 'asset_library.job_emptying_trash' },
+      doneMessage: {
+        key: 'asset_library.bulk_deleted_permanently',
+        params: { count: assetCount },
+        plural: assetCount,
+      },
+      refreshKeys: ['asset-library-list', 'asset-tags', 'asset-trash-folders'],
     });
-    await Promise.all([
-      refresh(),
-      refreshNuxtData(['asset-tags', 'asset-trash-folders']),
-    ]);
   } catch (err) {
     geinsLogError('confirmEmptyTrash', getErrorMessage(err));
   } finally {

@@ -11,20 +11,25 @@ export interface UseAssetActionsReturnType {
   deleteAsset: (asset: Asset) => Promise<boolean>;
   /** Restore a trashed asset, refresh the library list, toast. Returns success. */
   restoreAsset: (asset: Asset) => Promise<boolean>;
-  /** Purge a trashed asset, refresh the library list, toast. Returns success. */
+  /**
+   * Purge a trashed asset as a background job, which refreshes the library
+   * list and toasts once the purge lands. Returns whether the call went through.
+   */
   purgeAsset: (asset: Asset) => Promise<boolean>;
 }
 
 /**
  * Shared asset row/panel actions (copy URL, download, delete, restore, purge)
  * so the library page, grid card, and detail panel stay consistent. Delete,
- * restore and purge refresh the `asset-library-list` read; callers own their
- * confirm dialog + surrounding UI (closing a panel, clearing selection).
+ * restore and purge refresh the `asset-library-list` read (purge once its job
+ * lands); callers own their confirm dialog + surrounding UI (closing a panel,
+ * clearing selection).
  */
 export function useAssetActions(): UseAssetActionsReturnType {
   const { t } = useI18n();
   const { toast } = useToast();
   const { assetApi } = useGeinsRepository();
+  const backgroundJobs = useBackgroundJobs();
   const { geinsLogError } = useGeinsLog('composables/useAssetActions');
   const entityKey = ENTITIES.asset.key;
 
@@ -90,18 +95,26 @@ export function useAssetActions(): UseAssetActionsReturnType {
     }
   }
 
-  // The purge lands about a minute after the call, so the refresh can still
-  // list the asset in trash until then.
+  // The purge lands about a minute after the call; until then the trash can
+  // still list the asset.
   async function purgeAsset(asset: Asset): Promise<boolean> {
     try {
       await assetApi.bulkPurge([asset._id]);
-      await refreshNuxtData('asset-library-list');
-      toast({ title: t('entity_deleted', { entityKey }), variant: 'positive' });
-      return true;
     } catch (error) {
       geinsLogError('purgeAsset', getErrorMessage(error));
       return false;
     }
+    backgroundJobs.start({
+      spec: { kind: 'purge', assetIds: [asset._id] },
+      label: {
+        key: 'asset_library.job_purging_asset',
+        params: { name: asset.name },
+      },
+      doneMessage: { key: 'entity_deleted', params: { entityKey } },
+      // Purging a trashed folder's last asset lets the backend reap the folder.
+      refreshKeys: ['asset-library-list', 'asset-trash-folders'],
+    });
+    return true;
   }
 
   return { copyUrl, download, deleteAsset, restoreAsset, purgeAsset };

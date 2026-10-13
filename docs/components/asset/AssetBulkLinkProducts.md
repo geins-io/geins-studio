@@ -12,7 +12,7 @@ Properties pane of the asset library's bulk **Link to products** action (in [`Li
 
   A mixed selection also gets a line explaining the split. There is no "all as image" mode: `byType` never sends a non-image as `productimage`, so the `422` can't happen.
 
-- **Products** — a [`ProductMultiSelect`](/components/product/ProductMultiSelect.md) over the products store. Individual products only.
+- **Products** — a [`ProductMultiSelect`](/components/product/ProductMultiSelect.md) over the products store — paste a list of ids or search, then remove picks from the selected list. Individual products only.
 - **Summary** — once products are picked, the `summary` prop's "N assets → M products (X links)" line. The page passes the same function as the action's confirm `summary`.
 
 ## Props

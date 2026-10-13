@@ -234,7 +234,10 @@ describe('movesCheck', () => {
 
 describe('backgroundJobCheck', () => {
   it('rebuilds a move check from its spec', async () => {
-    const api = { move: vi.fn().mockResolvedValue(move('completed')) };
+    const api = {
+      move: vi.fn().mockResolvedValue(move('completed')),
+      find: vi.fn(),
+    };
     const check = backgroundJobCheck({ kind: 'move', moveIds: ['m1'] }, api);
     await expect(check()).resolves.toMatchObject({ done: true });
     expect(api.move).toHaveBeenCalledWith('m1');
@@ -246,10 +249,39 @@ describe('backgroundJobCheck', () => {
       .mockResolvedValue(new Response(null, { headers: { etag: '"new"' } }));
     const check = backgroundJobCheck(
       { kind: 'replace', url: 'https://cdn.test/a.jpg', etagBefore: '"old"' },
-      { move: vi.fn() },
+      { move: vi.fn(), find: vi.fn() },
       { fetch },
     );
     await expect(check()).resolves.toEqual({ done: true });
+  });
+
+  it('rebuilds a purge check from its spec, without progress', async () => {
+    const api = { move: vi.fn(), find: vi.fn().mockResolvedValue(page([], 1)) };
+    const check = backgroundJobCheck(
+      { kind: 'purge', assetIds: ['a1', 'a2', 'a3'] },
+      api,
+    );
+    await expect(check()).resolves.toEqual({ done: false });
+    expect(api.find).toHaveBeenCalledWith(
+      expect.objectContaining({ assetIds: ['a1', 'a2', 'a3'], trashed: true }),
+    );
+  });
+
+  it('rebuilds a due-purge check from its spec', async () => {
+    const now = Date.parse('2026-10-09T08:00:00Z');
+    const api = {
+      move: vi.fn(),
+      find: vi
+        .fn()
+        .mockResolvedValue(page([{ purgeAfter: new Date(now).toISOString() }])),
+    };
+    const check = backgroundJobCheck({ kind: 'due-purge' }, api, {
+      now: () => now,
+    });
+    await expect(check()).resolves.toEqual({ done: false });
+    expect(api.find).toHaveBeenCalledWith(
+      expect.objectContaining({ trashed: true, sortBy: 'purgeAfter' }),
+    );
   });
 });
 
