@@ -95,8 +95,6 @@ export function useAssetActions(): UseAssetActionsReturnType {
     }
   }
 
-  // The purge lands about a minute after the call, so the refresh can still
-  // list the asset in trash until then.
   // The purge lands about a minute after the call; until then the trash can
   // still list the asset.
   async function purgeAsset(asset: Asset): Promise<boolean> {

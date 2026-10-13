@@ -830,6 +830,15 @@ async function confirmEmptyTrash() {
     const { assetCount } = await assetApi.emptyTrash();
     emptyTrashOpen.value = false;
     clearSelection();
+    // Nothing was due for purge, so there's nothing to wait for.
+    if (!assetCount) {
+      toast({
+        title: t('asset_library.bulk_deleted_permanently', { count: 0 }, 0),
+        variant: 'positive',
+      });
+      await refresh();
+      return;
+    }
     backgroundJobs.start({
       spec: { kind: 'due-purge' },
       label: { key: 'asset_library.job_emptying_trash' },

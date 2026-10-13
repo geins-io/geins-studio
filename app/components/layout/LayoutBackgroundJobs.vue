@@ -11,17 +11,19 @@ const rows = computed(() =>
   [...jobs.value].sort((a, b) => b.startedAt - a.startedAt),
 );
 
-const ACTIVITY: Record<BackgroundJob['spec']['kind'], string> = {
-  move: 'background_jobs.moving',
-  replace: 'background_jobs.replacing',
-  purge: 'background_jobs.deleting',
-  'due-purge': 'background_jobs.deleting',
+// Keyed by every spec kind, so a new kind fails typecheck until it has a row.
+const JOB_KINDS: Record<
+  BackgroundJob['spec']['kind'],
+  { icon: string; activity: string }
+> = {
+  move: { icon: 'FolderInput', activity: 'background_jobs.moving' },
+  replace: { icon: 'Replace', activity: 'background_jobs.replacing' },
+  purge: { icon: 'Trash2', activity: 'background_jobs.deleting' },
+  'due-purge': { icon: 'Trash2', activity: 'background_jobs.deleting' },
 };
+const { resolveIcon } = useLucideIcon();
 const activity = (job: BackgroundJob): string =>
-  message(job.activity ?? { key: ACTIVITY[job.spec.kind] });
-
-const isPurge = (job: BackgroundJob): boolean =>
-  job.spec.kind === 'purge' || job.spec.kind === 'due-purge';
+  message(job.activity ?? { key: JOB_KINDS[job.spec.kind].activity });
 
 const badge = (
   job: BackgroundJob,
@@ -99,15 +101,10 @@ const detail = (job: BackgroundJob): string | null => {
                 <div
                   class="bg-muted flex size-8 flex-shrink-0 items-center justify-center rounded-md"
                 >
-                  <LucideFolderInput
-                    v-if="job.spec.kind === 'move'"
+                  <component
+                    :is="resolveIcon(JOB_KINDS[job.spec.kind].icon)"
                     class="text-muted-foreground size-4"
                   />
-                  <LucideTrash2
-                    v-else-if="isPurge(job)"
-                    class="text-muted-foreground size-4"
-                  />
-                  <LucideReplace v-else class="text-muted-foreground size-4" />
                 </div>
                 <div class="min-w-0 flex-1">
                   <p class="truncate text-sm font-medium">
