@@ -1,5 +1,5 @@
 import { mockNuxtImport } from '@nuxt/test-utils/runtime';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { mountWithContext } from '../../../../test/helpers';
 import { ProductMultiSelect } from '#components';
 
@@ -9,10 +9,16 @@ const products = [
   { _id: '1003', name: 'Pilea', articleNumber: 'PIL-1' },
 ];
 
-// Resolve pasted refs against the test products instead of the products store.
+// Stands in for the products store: knows one product the picker isn't given.
+const catalogue = [
+  ...products,
+  { _id: '2001', name: 'Hidden', articleNumber: 'HID-1' },
+];
+const matchPending = vi.hoisted(() => ({ value: false }));
 mockNuxtImport('useProductMatch', () => () => ({
+  pending: matchPending,
   matchById: (ref: string) =>
-    products.find((p) =>
+    catalogue.find((p) =>
       [p._id, p.articleNumber].some(
         (k) => k.toLowerCase() === ref.toLowerCase(),
       ),
@@ -100,5 +106,27 @@ describe('ProductMultiSelect selection', () => {
       .find('[data-test="product-multi-select-paste-replace"]')
       .trigger('click');
     expect(await paste(wrapper, 'mon-1')).toEqual([['1001']]);
+  });
+
+  it('only selects products the picker lists', async () => {
+    const wrapper = await mount({});
+    expect(await paste(wrapper, 'MON-1 HID-1')).toEqual([['1001']]);
+    expect(
+      wrapper.find('[data-test="product-multi-select-not-found"]').exists(),
+    ).toBe(true);
+  });
+
+  it('disables paste until the products store is ready', async () => {
+    matchPending.value = true;
+    const wrapper = await mount({});
+    await wrapper
+      .find('input[data-test="product-multi-select-paste"]')
+      .setValue('MON-1');
+    expect(
+      wrapper
+        .find('[data-test="product-multi-select-paste-apply"]')
+        .attributes('disabled'),
+    ).toBeDefined();
+    matchPending.value = false;
   });
 });

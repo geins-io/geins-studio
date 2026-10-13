@@ -89,7 +89,7 @@ const selectedProducts = computed(() =>
 const refs = (product: SelectorEntity) =>
   [product.articleNumber, product._id].filter(Boolean).join(' · ');
 
-const { matchById } = useProductMatch();
+const { matchById, pending: matchPending } = useProductMatch();
 const PASTE_MODES: ProductRefPasteMode[] = ['add', 'replace'];
 const pasteText = ref('');
 const pasteMode = ref<ProductRefPasteMode>('add');
@@ -112,13 +112,23 @@ function onPaste(event: ClipboardEvent) {
     pasteText.value.slice(0, start) + flat + pasteText.value.slice(end);
 }
 
+// Matching reads the products store, which can still be loading even when the
+// caller's list isn't — every ref would come back "not found".
+const pasteDisabled = computed(
+  () => props.loading || matchPending.value || !pasteText.value.trim(),
+);
+
 function applyPaste() {
-  if (props.loading || !pasteText.value.trim()) return;
+  if (pasteDisabled.value) return;
   const result = applyProductRefPaste(pasteText.value, {
     current: selected.value,
     lockedIds: props.lockedIds,
     mode: pasteMode.value,
-    resolve: (ref) => matchById(ref)?._id ?? null,
+    // Only products this picker lists count, even if the store knows more.
+    resolve: (ref) => {
+      const id = matchById(ref)?._id;
+      return id && productById.value.has(id) ? id : null;
+    },
   });
   selected.value = result.selected;
   notFound.value = result.notFound;
@@ -271,7 +281,7 @@ function applyPaste() {
             variant="outline"
             size="sm"
             class="text-foreground h-7 rounded-lg px-2"
-            :disabled="loading || !pasteText.trim()"
+            :disabled="pasteDisabled"
             data-test="product-multi-select-paste-apply"
             @click="applyPaste"
           >
