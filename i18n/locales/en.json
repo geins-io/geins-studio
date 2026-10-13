@@ -1826,6 +1826,7 @@
     "folder_restore_quota": "Restoring it would take you over your storage limit.",
     "purge_folder_title": "Delete “{name}” permanently?",
     "trashed_folder_purge_description": "The folder and all its assets in the trash are deleted.",
+    "trashed_folder_empty_note": "There's nothing in this folder to delete. Empty folders leave the trash on their own shortly.",
     "view_details": "View details",
     "alt_text": "Alt text",
     "alt_text_placeholder": "Describe the image for screen readers…",

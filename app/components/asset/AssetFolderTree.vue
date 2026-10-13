@@ -326,11 +326,13 @@ async function confirmPurge() {
   purging.value = true;
   purgeError.value = undefined;
   let assetCount = 0;
+  let found = 0;
   try {
     const assets = await assetApi.matchingAssets(
       { page: 1, pageSize: 1, sort: null, search: '', filters: {} },
       { folderId: target._id, trashed: true },
     );
+    found = assets.length;
     for (const ids of chunkIds(assets.map((asset) => asset._id))) {
       const result = await assetApi.bulkPurge(ids, {
         suppressErrorToast: true,
@@ -340,9 +342,18 @@ async function confirmPurge() {
   } catch (error) {
     geinsLogError('purgeFolder', getErrorMessage(error));
     purgeError.value = t('error_try_again');
+    // Earlier chunks may already be purged; show the trash as it is now.
+    if (assetCount) await refreshTrashView();
     return;
   } finally {
     purging.value = false;
+  }
+  // Nothing to purge means nothing was deleted: the backend removes an empty
+  // trashed folder on its own, so say that rather than claim a delete.
+  if (!found) {
+    purgeOpen.value = false;
+    toast({ title: t('asset_library.trashed_folder_empty_note') });
+    return;
   }
   purgedIds.value = [...purgedIds.value, target._id];
   purgeOpen.value = false;
