@@ -1,10 +1,12 @@
 # `ProductMultiSelect`
 
-A searchable, always-open product multi-select: a search field over a checkbox list (thumbnail, name, `articleNumber · id`). It renders **inline** — no popover — so it works inside a sheet or dialog without fighting their focus trap (a popover combobox inside the asset detail sheet lost its search input focus).
+A compact product multi-select in three parts, from top to bottom:
 
-- **Search** matches name, article number or id (accent- and case-insensitive, Reka `useFilter`). It keeps its own state rather than `CommandInput`, which clears on every select.
-- **At most 100 rows render**; past that a footer says to search to narrow it down. The full catalogue would be slow to render.
-- **`lockedIds`** render checked and disabled, with `lockedLabel` as a trailing badge — e.g. products an asset is already linked to. They're never in the model.
+- **Add by search.** A labelled search (placeholder "Search by name, article number or product id") that matches name, article number or id (accent- and case-insensitive, Reka `useFilter`) and opens the results in a **popover** anchored to the field — the full catalogue is never listed. Clicking a result toggles it (check / plus icon) and keeps the popover open for the next pick; Escape or a click outside closes it. Focus stays in the search field (`open-auto-focus`/`close-auto-focus` prevented). At most 100 results render; past that a footer says to narrow the search. Search keeps its own state rather than `CommandInput`, which clears on every select.
+- **Add by pasting ids.** A labelled input (with the **Add** / **Replace** segmented choice on the label row and an `outline` **Select** button (same height as the toggle) inside an `InputGroup`) for a list of article numbers or product ids, separated by commas, semicolons, spaces or new lines — line breaks from a pasted spreadsheet column become separators, and Enter applies it. **Add** (default) adds the matches to the selection, **Replace** swaps the selection for them. Refs resolve through [`useProductMatch`](/composables/useProductMatch.md)`.matchById` (article number or id, case-insensitive, leading-zero tolerant); the pure combine step is `applyProductRefPaste` (`#shared/utils/asset`). Locked products, repeated refs and existing picks are skipped; unmatched refs are listed under the input ("2 not found: ABC-1, 0999") so a typo isn't silently dropped. A replace that matches nothing leaves the selection alone. Only products in the `products` prop count (a ref the store knows but the picker doesn't list is "not found"), and **Select** stays disabled until the products store is `ready` — otherwise every ref would come back not found.
+- **Selected products.** Only the picks, one row each (thumbnail, name, `articleNumber · id`) with a remove button, in a list that scrolls past `max-h-52` (about 5 rows). "No products selected" when empty.
+
+**`lockedIds`** (e.g. products an asset is already linked to) show in the search results disabled, with `lockedLabel` as a badge. They're never in the model.
 
 The products store loads lazily, so callers call `useProductsStore().init()` and pass `loading` until it's `initialized`.
 
@@ -12,13 +14,13 @@ Used by [`AssetLinkProductsDialog`](/components/asset/AssetLinkProductsDialog.md
 
 ## Props
 
-| Prop                     | Type               | Meaning                                              |
-| ------------------------ | ------------------ | ---------------------------------------------------- |
-| `products`               | `SelectorEntity[]` | The products to choose from (the products store).    |
-| `lockedIds`              | `string[]?`        | Shown checked + disabled.                            |
-| `lockedLabel`            | `string?`          | Badge on locked rows.                                |
-| `loading`                | `boolean?`         | Skeleton rows while the caller's product list loads. |
-| `modelValue` (`v-model`) | `string[]`         | Selected product ids.                                |
+| Prop                     | Type               | Meaning                                           |
+| ------------------------ | ------------------ | ------------------------------------------------- |
+| `products`               | `SelectorEntity[]` | The products to choose from (the products store). |
+| `lockedIds`              | `string[]?`        | Disabled in the search results.                   |
+| `lockedLabel`            | `string?`          | Badge on locked rows.                             |
+| `loading`                | `boolean?`         | Skeleton results + paste disabled while loading.  |
+| `modelValue` (`v-model`) | `string[]`         | Selected product ids.                             |
 
 ## Usage
 

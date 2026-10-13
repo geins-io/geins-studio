@@ -566,6 +566,57 @@ export function parseProductRef(filename: string): string | null {
   return /^([^_]+)_/.exec(filename)?.[1]?.trim() || null;
 }
 
+/** How a pasted ref list combines with the picker's current selection. */
+export type ProductRefPasteMode = 'add' | 'replace';
+
+export interface ProductRefPasteResult {
+  /** The new selection (product ids). */
+  selected: string[];
+  /** Refs that matched no product, in paste order. */
+  notFound: string[];
+}
+
+/**
+ * Applies a pasted list of article numbers / product ids (separated by commas,
+ * semicolons, whitespace or new lines) to a product selection. `resolve` turns
+ * a ref into a product id or null. Locked ids are never selected; repeated refs
+ * and refs naming an already-picked product are ignored. A `replace` paste that
+ * matches nothing leaves the selection as is, so a bad paste can't wipe it.
+ */
+export function applyProductRefPaste(
+  text: string,
+  options: {
+    current: string[];
+    lockedIds?: string[];
+    mode: ProductRefPasteMode;
+    resolve: (ref: string) => string | null;
+  },
+): ProductRefPasteResult {
+  const locked = new Set(options.lockedIds);
+  const seenRefs = new Set<string>();
+  const matched = new Set<string>();
+  const notFound: string[] = [];
+  for (const ref of text.split(/[\s,;]+/)) {
+    const key = ref.toLowerCase();
+    if (!ref || seenRefs.has(key)) continue;
+    seenRefs.add(key);
+    const id = options.resolve(ref);
+    if (id === null) notFound.push(ref);
+    else if (!locked.has(id)) matched.add(id);
+  }
+
+  if (options.mode === 'replace' && matched.size)
+    return { selected: [...matched], notFound };
+  const current = new Set(options.current);
+  return {
+    selected: [
+      ...options.current,
+      ...[...matched].filter((id) => !current.has(id)),
+    ],
+    notFound,
+  };
+}
+
 // Raster image mimes browsers can render inline. Only these become `image` (and
 // get an `<img>` preview) — an `image/*` prefix is too broad: formats like PSD
 // (`image/vnd.adobe.photoshop`), TIFF and HEIC are images but can't be shown in

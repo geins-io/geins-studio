@@ -14,6 +14,7 @@ import {
   trashedFolderKey,
   sameAssetLabels,
   assetListOptions,
+  applyProductRefPaste,
   bulkMoveErrorKey,
   folderIdForSelection,
   ROOT_FOLDER_KEY,
@@ -519,5 +520,57 @@ describe('bulkLinkCalls', () => {
 
   it('makes no calls without products', () => {
     expect(bulkLinkCalls(['i1'], typeOf, 'byType', [])).toEqual([]);
+  });
+});
+
+describe('applyProductRefPaste', () => {
+  const ids: Record<string, string> = {
+    'mon-1': '1001',
+    'fic-1': '1002',
+    '1003': '1003',
+  };
+  const resolve = (ref: string) => ids[ref.toLowerCase()] ?? null;
+
+  it('splits on commas, semicolons, spaces and new lines', () => {
+    const { selected } = applyProductRefPaste('MON-1,FIC-1;\n 1003\t', {
+      current: [],
+      mode: 'add',
+      resolve,
+    });
+    expect(selected).toEqual(['1001', '1002', '1003']);
+  });
+
+  it('lists unmatched refs once, in paste order', () => {
+    const { selected, notFound } = applyProductRefPaste(
+      'ABC-1 MON-1 0999 abc-1',
+      {
+        current: [],
+        mode: 'add',
+        resolve,
+      },
+    );
+    expect(selected).toEqual(['1001']);
+    expect(notFound).toEqual(['ABC-1', '0999']);
+  });
+
+  it('skips locked, duplicate and already selected products', () => {
+    const { selected } = applyProductRefPaste('MON-1 mon-1 1001 FIC-1 1003', {
+      current: ['1003'],
+      lockedIds: ['1002'],
+      mode: 'add',
+      resolve,
+    });
+    expect(selected).toEqual(['1003', '1001']);
+  });
+
+  it('replaces the selection, but never with nothing', () => {
+    const replace = (text: string) =>
+      applyProductRefPaste(text, {
+        current: ['1003'],
+        mode: 'replace',
+        resolve,
+      }).selected;
+    expect(replace('MON-1, FIC-1')).toEqual(['1001', '1002']);
+    expect(replace('nope')).toEqual(['1003']);
   });
 });
