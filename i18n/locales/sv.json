@@ -1869,14 +1869,24 @@
       "other": "Fil"
     },
     "job_replacing": "Ersätter {name}",
-    "job_moving": "Flyttar {count} fil | Flyttar {count} filer"
+    "job_moving": "Flyttar {count} fil | Flyttar {count} filer",
+    "job_moving_asset": "Flyttar {name}",
+    "job_renaming_asset": "Byter namn på {name}",
+    "job_purging_asset": "Raderar {name} permanent",
+    "job_purging": "Raderar {count} fil permanent | Raderar {count} filer permanent",
+    "job_emptying_trash": "Tömmer papperskorgen",
+    "job_deleting_folder": "Raderar mappen {name}",
+    "replace_move_pending": "Ersätt går att använda när flytten är klar."
   },
   "background_jobs": {
     "title": "Bakgrundsjobb",
     "started": "Vi meddelar dig när det är klart.",
     "view_progress": "Visa förlopp",
     "in_progress": "Pågår",
-    "progress": "{done} av {total}",
+    "moving": "Flyttar…",
+    "renaming": "Byter namn…",
+    "replacing": "Ersätter…",
+    "deleting": "Raderar…",
     "done": "Klart",
     "timeout": "Arbetar fortfarande i bakgrunden. Uppdatera senare.",
     "skipped": "{count} fil flyttades inte eftersom den ändrades under flytten | {count} filer flyttades inte eftersom de ändrades under flytten",

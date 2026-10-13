@@ -3,17 +3,20 @@ import { mockNuxtImport } from '@nuxt/test-utils/runtime';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { buildAsset } from '../../../test/fixtures';
 
-const { assetApi, toast, refreshNuxtData, geinsLogError } = vi.hoisted(() => ({
-  assetApi: { delete: vi.fn(), bulkPurge: vi.fn() },
-  toast: vi.fn(),
-  refreshNuxtData: vi.fn(),
-  geinsLogError: vi.fn(),
-}));
+const { assetApi, toast, refreshNuxtData, geinsLogError, startJob } =
+  vi.hoisted(() => ({
+    assetApi: { delete: vi.fn(), bulkPurge: vi.fn() },
+    toast: vi.fn(),
+    refreshNuxtData: vi.fn(),
+    geinsLogError: vi.fn(),
+    startJob: vi.fn(),
+  }));
 
 mockNuxtImport('useGeinsRepository', () => () => ({ assetApi }));
 mockNuxtImport('useI18n', () => () => ({ t: (key: string) => key }));
 mockNuxtImport('useGeinsLog', () => () => ({ geinsLogError }));
 mockNuxtImport('refreshNuxtData', () => refreshNuxtData);
+mockNuxtImport('useBackgroundJobs', () => () => ({ start: startJob }));
 
 vi.mock('@/components/ui/toast/use-toast', () => ({
   useToast: () => ({ toast }),
@@ -110,17 +113,25 @@ describe('useAssetActions — deleteAsset', () => {
 });
 
 describe('useAssetActions — purgeAsset', () => {
-  it('purges the one asset, refreshes the library, toasts and returns true', async () => {
+  it('purges the one asset as a background job and returns true', async () => {
     assetApi.bulkPurge.mockResolvedValue({ assetCount: 1 });
     const { purgeAsset } = useAssetActions();
-    const ok = await purgeAsset(buildAsset({ _id: 'a9' }));
+    const ok = await purgeAsset(buildAsset({ _id: 'a9', name: 'x.jpg' }));
 
     expect(ok).toBe(true);
     expect(assetApi.bulkPurge).toHaveBeenCalledWith(['a9']);
-    expect(refreshNuxtData).toHaveBeenCalledWith('asset-library-list');
-    expect(toast).toHaveBeenCalledWith(
-      expect.objectContaining({ variant: 'positive' }),
-    );
+    expect(startJob).toHaveBeenCalledWith({
+      spec: { kind: 'purge', assetIds: ['a9'] },
+      label: {
+        key: 'asset_library.job_purging_asset',
+        params: { name: 'x.jpg' },
+      },
+      doneMessage: { key: 'entity_deleted', params: { entityKey: 'asset' } },
+      refreshKeys: ['asset-library-list'],
+    });
+    // The job refreshes and toasts once the purge lands, not now.
+    expect(refreshNuxtData).not.toHaveBeenCalled();
+    expect(toast).not.toHaveBeenCalled();
   });
 
   it('returns false and logs when the purge fails', async () => {
@@ -130,6 +141,7 @@ describe('useAssetActions — purgeAsset', () => {
 
     expect(ok).toBe(false);
     expect(geinsLogError).toHaveBeenCalled();
+    expect(startJob).not.toHaveBeenCalled();
     expect(toast).not.toHaveBeenCalled();
   });
 });

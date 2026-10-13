@@ -141,7 +141,7 @@ describe('useBulkRunner', () => {
         undefined,
         'asset',
       );
-      expect(startJob).toHaveBeenCalledWith(3, [{ moveId: 'm1' }]);
+      expect(startJob).toHaveBeenCalledWith(3, [{ moveId: 'm1' }], ids(3));
       expect(toast).not.toHaveBeenCalled();
     });
 
@@ -171,7 +171,11 @@ describe('useBulkRunner', () => {
         undefined,
         'asset',
       );
-      expect(startJob).toHaveBeenCalledWith(100, [{ moveId: 'm1' }]);
+      expect(startJob).toHaveBeenCalledWith(
+        100,
+        [{ moveId: 'm1' }],
+        ids(150).slice(0, 100),
+      );
       expect(toast).toHaveBeenCalledWith(
         expect.objectContaining({ variant: 'negative' }),
       );

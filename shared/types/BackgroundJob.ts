@@ -20,16 +20,31 @@ export type BackgroundJobSpec =
       kind: 'move';
       /** One per bulk-move chunk; the job is done when every move is. */
       moveIds: string[];
+      /** The assets being moved, when known — replace waits on them. */
+      assetIds?: string[];
     }
   | {
       kind: 'replace';
       url: string | null;
       /** The CDN's `ETag` read just before the replace (`cdnEtag`). */
       etagBefore: string | null;
+    }
+  | {
+      /** A purge of known ids (delete permanently, single or bulk). */
+      kind: 'purge';
+      assetIds: string[];
+    }
+  | {
+      /** A purge without ids (empty trash, folder delete with `purge`). */
+      kind: 'due-purge';
     };
 
 export type BackgroundJobState = 'pending' | 'completed' | 'timeout';
 
+/**
+ * A move's counts. Only `skipped` is shown: the backend reports `done` as 0
+ * and then all, so a bar would only ever jump to the end.
+ */
 export interface BackgroundJobProgress {
   /** Items that settled (moved or skipped). */
   done: number;
@@ -41,8 +56,15 @@ export interface BackgroundJobStart {
   spec: BackgroundJobSpec;
   /** Row label and started toast, e.g. "Moving 40 assets". */
   label: JobMessage;
+  /**
+   * Muted line by the spinner while a row has no progress bar, e.g.
+   * "Renaming…". Defaults by spec kind (moving, replacing, deleting).
+   */
+  activity?: JobMessage;
   /** Success toast once the job lands. */
   doneMessage: JobMessage;
+  /** Line under the success toast, e.g. how many assets went with a folder. */
+  doneDescription?: JobMessage;
   /** `useAsyncData` keys refreshed once the job lands. */
   refreshKeys: string[];
 }

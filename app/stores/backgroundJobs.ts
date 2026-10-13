@@ -39,6 +39,15 @@ export const useBackgroundJobsStore = defineStore('background-jobs', () => {
     jobs.value.filter((job) => job.state === 'pending'),
   );
   const hasFinished = computed(() => pending.value.length < jobs.value.length);
+  /** Assets a pending move holds — replace answers `409` on them meanwhile. */
+  const movingAssetIds = computed(
+    () =>
+      new Set(
+        pending.value.flatMap((job) =>
+          job.spec.kind === 'move' ? (job.spec.assetIds ?? []) : [],
+        ),
+      ),
+  );
   const storageKey = computed(() =>
     session.value?.accountKey
       ? `${STORAGE_PREFIX}${session.value.accountKey}`
@@ -148,6 +157,7 @@ export const useBackgroundJobsStore = defineStore('background-jobs', () => {
     jobs,
     pending,
     hasFinished,
+    movingAssetIds,
     panelOpen,
     storageKey,
     fileVersions,

@@ -127,6 +127,19 @@ describe('background jobs store', () => {
     expect(store.panelOpen).toBe(false);
   });
 
+  it('lists the assets a pending move holds', () => {
+    const store = useBackgroundJobsStore();
+    const moving = store.add({
+      ...start,
+      spec: { kind: 'move', moveIds: ['m1'], assetIds: ['a1', 'a2'] },
+    });
+    store.add(start);
+    store.add({ ...start, spec: { kind: 'purge', assetIds: ['a3'] } });
+    expect([...store.movingAssetIds]).toEqual(['a1', 'a2']);
+    store.update(moving.id, { state: 'completed' });
+    expect(store.movingAssetIds.size).toBe(0);
+  });
+
   it('versions a replaced file by its bare URL', () => {
     const store = useBackgroundJobsStore();
     expect(store.fileVersion('https://cdn.test/a.jpg')).toBeUndefined();

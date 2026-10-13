@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import type { FolderDeleteAction, FolderDeletion } from '#shared/types';
+import type {
+  BackgroundJobSpec,
+  FolderDeleteAction,
+  FolderDeletion,
+  JobMessage,
+} from '#shared/types';
 import {
   FOLDER_DELETE_MAX,
   ROOT_FOLDER_KEY,
@@ -32,6 +37,7 @@ const { tree, loading, refresh, descendantIds } = useFolders();
 const { assetApi } = useGeinsRepository();
 const { resolveIcon } = useLucideIcon();
 const { toast } = useToast();
+const backgroundJobs = useBackgroundJobs();
 const { t } = useI18n();
 const { geinsLogError } = useGeinsLog('components/AssetFolderTree.vue');
 
@@ -185,8 +191,20 @@ const DELETION_TOAST: Record<FolderDeleteAction, string> = {
   purge: 'entity_deleted',
 };
 
-// relocate + purge answer 202 and settle in the background, so the one refetch
-// can still show assets in their old place (relocate) or in trash (purge).
+// relocate + purge answer 202: the folders leave the tree at once, but the
+// assets land later (moved to the root, or purged), so a background job toasts
+// and refreshes again once they have. Nothing left to land toasts right away.
+function deletionJobSpec(
+  action: FolderDeleteAction,
+  { assetCount, moveId }: FolderDeletion,
+): BackgroundJobSpec | null {
+  if (action === 'relocate' && moveId) {
+    return { kind: 'move', moveIds: [moveId] };
+  }
+  if (action === 'purge' && assetCount) return { kind: 'due-purge' };
+  return null;
+}
+
 async function confirmChoice(action: FolderDeleteAction) {
   const target = deleteTarget.value;
   if (!target) return;
@@ -207,17 +225,36 @@ async function confirmChoice(action: FolderDeleteAction) {
   }
   const { assetCount } = deletion;
   choiceOpen.value = false;
-  toast({
-    title: t(DELETION_TOAST[action], { entityKey: 'folder' }),
-    description: assetCount
-      ? t(
-          `asset_library.folder_delete_${action}_done`,
-          { count: assetCount },
-          assetCount,
-        )
-      : undefined,
-    variant: 'positive',
-  });
+  const doneMessage: JobMessage = {
+    key: DELETION_TOAST[action],
+    params: { entityKey: 'folder' },
+  };
+  const doneDescription: JobMessage | undefined = assetCount
+    ? {
+        key: `asset_library.folder_delete_${action}_done`,
+        params: { count: assetCount },
+        plural: assetCount,
+      }
+    : undefined;
+  const spec = deletionJobSpec(action, deletion);
+  if (spec) {
+    backgroundJobs.start({
+      spec,
+      label: {
+        key: 'asset_library.job_deleting_folder',
+        params: { name: target.name },
+      },
+      doneMessage,
+      doneDescription,
+      refreshKeys: ['asset-folders', 'asset-library-list', 'asset-tags'],
+    });
+  } else {
+    toast({
+      title: backgroundJobs.message(doneMessage),
+      description: doneDescription && backgroundJobs.message(doneDescription),
+      variant: 'positive',
+    });
+  }
   await afterDelete(removed);
 }
 </script>

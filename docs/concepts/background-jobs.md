@@ -4,7 +4,7 @@ Some media calls succeed at once but take effect later: a move copies files in t
 
 The engine is pure — no Vue, no Nuxt — and is unit-tested in node (`shared/utils/__tests__/job.test.ts`). The asset domain's [Async jobs](/domains/assets#async-jobs) table lists which call needs which check.
 
-In the app, don't call `settleJob` from a page. Start a job with [`useBackgroundJobs`](/composables/useBackgroundJobs) instead. The header's [`LayoutBackgroundJobs`](/components/layout/LayoutBackgroundJobs) runs it, shows its progress, persists it across reloads, refreshes data and toasts the result. A job is a serialisable `spec`; `backgroundJobCheck(spec, assetApi)` turns it back into one of the checks below, and `movesCheck(api, moveIds)` folds a bulk move's per-chunk moves into one job with summed progress.
+In the app, don't call `settleJob` from a page. Start a job with [`useBackgroundJobs`](/composables/useBackgroundJobs) instead. The header's [`LayoutBackgroundJobs`](/components/layout/LayoutBackgroundJobs) runs it, shows it while it's pending, persists it across reloads, refreshes data and toasts the result. A job is a serialisable `spec`; `backgroundJobCheck(spec, assetApi)` turns it back into one of the checks below. `movesCheck(api, moveIds)` folds a bulk move's per-chunk moves into one job with summed counts, read for the skipped-files warning. The panel shows no progress bar: on QA a move's `movedCount` goes from 0 to all within a second, and a purge's ids leave the trash in one pass.
 
 ## Usage
 
