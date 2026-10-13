@@ -130,4 +130,63 @@ describe('useBulkRunner', () => {
     expect(toast).not.toHaveBeenCalled();
     expect(geinsLogError).toHaveBeenCalled();
   });
+
+  describe('startJob', () => {
+    it('drops the success toast when a background job started', async () => {
+      const startJob = vi.fn().mockReturnValue(true);
+      const run = vi.fn().mockResolvedValue({ moveId: 'm1' });
+      await useBulkRunner().run(
+        { ...action(run), startJob },
+        ids(3),
+        undefined,
+        'asset',
+      );
+      expect(startJob).toHaveBeenCalledWith(3, [{ moveId: 'm1' }]);
+      expect(toast).not.toHaveBeenCalled();
+    });
+
+    it('keeps the success toast when no job started', async () => {
+      const startJob = vi.fn().mockReturnValue(false);
+      await useBulkRunner().run(
+        { ...action(), startJob },
+        ids(3),
+        undefined,
+        'asset',
+      );
+      expect(toast).toHaveBeenCalledWith({
+        title: 'done 3',
+        variant: 'positive',
+      });
+    });
+
+    it('starts a job for the chunks that went through on a partial run', async () => {
+      const startJob = vi.fn().mockReturnValue(true);
+      const run = vi
+        .fn()
+        .mockResolvedValueOnce({ moveId: 'm1' })
+        .mockRejectedValueOnce(new Error('boom'));
+      await useBulkRunner().run(
+        { ...action(run), startJob },
+        ids(150),
+        undefined,
+        'asset',
+      );
+      expect(startJob).toHaveBeenCalledWith(100, [{ moveId: 'm1' }]);
+      expect(toast).toHaveBeenCalledWith(
+        expect.objectContaining({ variant: 'negative' }),
+      );
+    });
+
+    it('never starts a job when every chunk failed', async () => {
+      const startJob = vi.fn();
+      const run = vi.fn().mockRejectedValue(new Error('boom'));
+      await useBulkRunner().run(
+        { ...action(run), startJob },
+        ids(2),
+        undefined,
+        'asset',
+      );
+      expect(startJob).not.toHaveBeenCalled();
+    });
+  });
 });

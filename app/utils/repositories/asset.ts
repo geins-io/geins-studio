@@ -58,6 +58,7 @@ export interface UploadTicketItem {
   description?: string;
   altText?: string;
   localizations?: Localized<AssetLocalizations>;
+  languages?: string[];
   /** Links created when the ticket completes (max 100). */
   links?: AssetLinkTarget[];
 }
@@ -540,6 +541,24 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
+     * Add content languages to up to 100 assets — real
+     * `POST /media/assets/bulk-assign-languages`. Same add-only, all-or-nothing
+     * rules as {@link bulkTag}; a `422` names the assets that would pass 50.
+     */
+    async bulkAssignLanguages(
+      assetIds: string[],
+      languages: string[],
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<void> {
+      await fetch<unknown>(`${ENTITIES.asset.endpoint}/bulk-assign-languages`, {
+        method: 'POST',
+        body: { assetIds, languages },
+        errorContext: { action: 'updating', entity: ENTITIES.asset.key },
+        ...fetchOptions,
+      });
+    },
+
+    /**
      * The live assets with these ids — `assetIds` on `POST /media/assets/query`,
      * one page at the schema's cap. Ids that don't match (trashed, deleted) are
      * simply absent from the result.
@@ -691,6 +710,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
             ...(it.localizations && Object.keys(it.localizations).length
               ? { localizations: it.localizations }
               : {}),
+            ...(it.languages?.length ? { languages: it.languages } : {}),
             ...(it.links?.length ? { links: it.links } : {}),
           };
         });

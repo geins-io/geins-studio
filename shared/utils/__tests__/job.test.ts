@@ -2,8 +2,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { Asset, BatchQueryResult, MediaMove } from '#shared/types';
 import {
+  backgroundJobCheck,
+  cdnEtag,
   duePurgeCheck,
   moveCheck,
+  movesCheck,
   purgeCheck,
   PURGE_DUE_MARGIN_MS,
   REPLACE_FALLBACK_MS,
@@ -169,6 +172,87 @@ describe('moveCheck', () => {
   });
 });
 
+describe('movesCheck', () => {
+  const at = (
+    id: string,
+    state: MediaMove['state'],
+    itemCount: number,
+    movedCount: number,
+    skippedCount = 0,
+  ): MediaMove => ({
+    ...move(state),
+    _id: id,
+    itemCount,
+    movedCount,
+    skippedCount,
+  });
+
+  it('sums progress across moves and is done when all are', async () => {
+    const api = {
+      move: vi
+        .fn()
+        .mockResolvedValueOnce(at('m1', 'completed', 100, 99, 1))
+        .mockResolvedValueOnce(at('m2', 'pending', 40, 10))
+        .mockResolvedValueOnce(at('m2', 'completed', 40, 40)),
+    };
+    const check = movesCheck(api, ['m1', 'm2']);
+    await expect(check()).resolves.toEqual({
+      done: false,
+      result: { done: 110, total: 140, skipped: 1 },
+    });
+    await expect(check()).resolves.toEqual({
+      done: true,
+      result: { done: 140, total: 140, skipped: 1 },
+    });
+    // A completed move isn't read again.
+    expect(api.move.mock.calls.map(([id]) => id)).toEqual(['m1', 'm2', 'm2']);
+  });
+
+  it('counts a swept move (null) as settled', async () => {
+    const api = { move: vi.fn().mockResolvedValue(null) };
+    await expect(movesCheck(api, ['m1'])()).resolves.toEqual({
+      done: true,
+      result: { done: 0, total: 0, skipped: 0 },
+    });
+  });
+
+  it('keeps the last counts of a move once it is swept', async () => {
+    const api = {
+      move: vi
+        .fn()
+        .mockResolvedValueOnce(at('m1', 'pending', 10, 4, 1))
+        .mockResolvedValueOnce(null),
+    };
+    const check = movesCheck(api, ['m1']);
+    await check();
+    await expect(check()).resolves.toEqual({
+      done: true,
+      result: { done: 5, total: 10, skipped: 1 },
+    });
+  });
+});
+
+describe('backgroundJobCheck', () => {
+  it('rebuilds a move check from its spec', async () => {
+    const api = { move: vi.fn().mockResolvedValue(move('completed')) };
+    const check = backgroundJobCheck({ kind: 'move', moveIds: ['m1'] }, api);
+    await expect(check()).resolves.toMatchObject({ done: true });
+    expect(api.move).toHaveBeenCalledWith('m1');
+  });
+
+  it('rebuilds a replace check from its spec', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValue(new Response(null, { headers: { etag: '"new"' } }));
+    const check = backgroundJobCheck(
+      { kind: 'replace', url: 'https://cdn.test/a.jpg', etagBefore: '"old"' },
+      { move: vi.fn() },
+      { fetch },
+    );
+    await expect(check()).resolves.toEqual({ done: true });
+  });
+});
+
 describe('purgeCheck', () => {
   it('asks for the ids still in the trash, one row', async () => {
     const api = { find: vi.fn().mockResolvedValue(page([{}], 2)) };
@@ -239,81 +323,85 @@ describe('duePurgeCheck', () => {
   });
 });
 
-describe('replaceCheck', () => {
-  const asset = { url: 'https://cdn.test/acc/hero.jpg?v=abc', sizeBytes: 100 };
-  const head = (status: number, length?: number) =>
-    vi.fn().mockResolvedValue(
-      new Response(null, {
-        status,
-        headers: length === undefined ? {} : { 'content-length': `${length}` },
-      }),
-    );
+const head = (status: number, etag?: string) =>
+  vi.fn().mockResolvedValue(
+    new Response(null, {
+      status,
+      headers: etag === undefined ? {} : { etag },
+    }),
+  );
 
+describe('cdnEtag', () => {
   it('HEADs the bare URL past the browser cache', async () => {
-    const fetch = head(200, 100);
-    await replaceCheck(asset, 250, { fetch })();
-    expect(fetch).toHaveBeenCalledWith('https://cdn.test/acc/hero.jpg', {
+    const fetch = head(200, '"e1"');
+    await expect(cdnEtag('https://cdn.test/a.jpg?v=abc', fetch)).resolves.toBe(
+      '"e1"',
+    );
+    expect(fetch).toHaveBeenCalledWith('https://cdn.test/a.jpg', {
       method: 'HEAD',
       cache: 'no-store',
+      signal: expect.any(AbortSignal),
     });
   });
 
-  it('is not done while the CDN still serves the old size', async () => {
+  it('is null without a URL, on a non-ok answer, or when the HEAD throws', async () => {
+    await expect(cdnEtag(null, head(200, '"e1"'))).resolves.toBeNull();
+    await expect(cdnEtag('https://x', head(404, '"e1"'))).resolves.toBeNull();
     await expect(
-      replaceCheck(asset, 250, { fetch: head(200, 100) })(),
+      cdnEtag('https://x', vi.fn().mockRejectedValue(new TypeError('cors'))),
+    ).resolves.toBeNull();
+  });
+});
+
+describe('replaceCheck', () => {
+  const url = 'https://cdn.test/acc/hero.jpg';
+
+  it('is not done while the CDN serves the same file', async () => {
+    await expect(
+      replaceCheck(url, '"old"', { fetch: head(200, '"old"') })(),
     ).resolves.toEqual({ done: false });
   });
 
-  it('is done once the CDN serves the uploaded size', async () => {
+  it('is done once the CDN serves another file', async () => {
     await expect(
-      replaceCheck(asset, 250, { fetch: head(200, 250) })(),
+      replaceCheck(url, '"old"', { fetch: head(200, '"new"') })(),
     ).resolves.toEqual({ done: true });
   });
 
-  it('falls back to a fixed delay when the sizes are equal', async () => {
+  it('falls back to a fixed delay without a baseline', async () => {
     let clock = 0;
-    const fetch = head(200, 100);
-    const check = replaceCheck(asset, 100, { fetch, now: () => clock });
+    const fetch = head(200, '"new"');
+    const check = replaceCheck(url, null, { fetch, now: () => clock });
     await expect(check()).resolves.toEqual({ done: false });
     clock = REPLACE_FALLBACK_MS;
     await expect(check()).resolves.toEqual({ done: true });
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it('falls back to a fixed delay without a Content-Length', async () => {
+  it('counts the fallback from the job start when resumed', async () => {
+    const check = replaceCheck(url, null, {
+      now: () => 50_000,
+      startedAt: 50_000 - REPLACE_FALLBACK_MS,
+    });
+    await expect(check()).resolves.toEqual({ done: true });
+  });
+
+  it('falls back to a fixed delay when the ETag cannot be read', async () => {
     let clock = 0;
-    const check = replaceCheck(asset, 250, {
-      fetch: head(200),
+    const check = replaceCheck(url, '"old"', {
+      fetch: head(503),
       now: () => clock,
     });
     await expect(check()).resolves.toEqual({ done: false });
     clock = REPLACE_FALLBACK_MS;
     await expect(check()).resolves.toEqual({ done: true });
-  });
-
-  it('falls back to a fixed delay when the HEAD is not ok', async () => {
-    let clock = 0;
-    const check = replaceCheck(asset, 250, {
-      fetch: head(503, 250),
-      now: () => clock,
-    });
-    await expect(check()).resolves.toEqual({ done: false });
-    clock = REPLACE_FALLBACK_MS;
-    await expect(check()).resolves.toEqual({ done: true });
-  });
-
-  it('rejects when the HEAD throws, so settleJob counts it as not done', async () => {
-    const fetch = vi.fn().mockRejectedValue(new TypeError('network'));
-    await expect(replaceCheck(asset, 250, { fetch })()).rejects.toThrow(
-      'network',
-    );
   });
 
   it('is done at once for an asset without a URL', async () => {
-    const fetch = head(200, 100);
-    await expect(
-      replaceCheck({ url: null, sizeBytes: 100 }, 250, { fetch })(),
-    ).resolves.toEqual({ done: true });
+    const fetch = head(200, '"new"');
+    await expect(replaceCheck(null, '"old"', { fetch })()).resolves.toEqual({
+      done: true,
+    });
     expect(fetch).not.toHaveBeenCalled();
   });
 });

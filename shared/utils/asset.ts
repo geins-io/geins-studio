@@ -284,21 +284,29 @@ export type AssetPreviewPreset = keyof typeof ASSET_PREVIEW_PRESETS;
 /**
  * Preview source for an asset, scaled by Fastly via query params on its `url`.
  * SVGs are served unchanged by the optimizer, so they get the raw `url`; types
- * an `<img>` can't render return null and the caller shows the icon block. The
- * existing `?v=` cache-buster is kept, so a replaced file refreshes its preview.
+ * an `<img>` can't render return null and the caller shows the icon block.
+ *
+ * `version` (from `useBackgroundJobsStore().fileVersion`) marks a file whose
+ * replace has landed. The CDN keeps serving its cached copy for an unchanged
+ * `url` (`?v=` included), and so does the browser, so a refetched list alone
+ * shows the old image; `_r` makes the preview URL new to both.
  */
 export function assetPreviewUrl(
   type: AssetType,
   url: string | null | undefined,
   preset: AssetPreviewPreset,
+  version?: number,
 ): string | null {
   if (!url || !PREVIEWABLE_TYPES.has(type)) return null;
-  if (type === 'svg' || !URL.canParse(url)) return url;
+  if (!URL.canParse(url)) return url;
   const scaled = new URL(url);
-  for (const [key, value] of Object.entries(ASSET_PREVIEW_PRESETS[preset])) {
-    scaled.searchParams.set(key, String(value));
+  if (type !== 'svg') {
+    for (const [key, value] of Object.entries(ASSET_PREVIEW_PRESETS[preset])) {
+      scaled.searchParams.set(key, String(value));
+    }
   }
-  return scaled.toString();
+  if (version) scaled.searchParams.set('_r', String(version));
+  return type === 'svg' && !version ? url : scaled.toString();
 }
 
 // ── Folder rail selection ────────────────────────────────────────────────────
@@ -481,10 +489,14 @@ export function assetCapabilities(): AssetCapabilities {
   };
 }
 
-/** Backend limits on an asset's tags and channels (a breach is a `422`). */
+/**
+ * Backend limits on an asset's tags, channels and content languages (a breach
+ * is a `422`).
+ */
 export const ASSET_LABEL_LIMITS = {
   tags: { maxCount: 100, maxLength: 64 },
   channels: { maxCount: 50, maxLength: 50 },
+  languages: { maxCount: 50, maxLength: 50 },
 } as const;
 
 /**

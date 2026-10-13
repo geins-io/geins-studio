@@ -1,6 +1,8 @@
 import type {
   Asset,
   AssetQuery,
+  BackgroundJobProgress,
+  BackgroundJobSpec,
   BatchQueryResult,
   MediaMove,
 } from '#shared/types';
@@ -119,6 +121,41 @@ export function moveCheck(
 }
 
 /**
+ * Several moves as one job — a bulk move answers one `moveId` per 100-id
+ * chunk. Done when every move is; a settled move isn't read again. Progress
+ * sums each move's last counts read, so a move swept (`null`) after it was
+ * seen keeps its counts — the bar can't jump back or lose a skip.
+ */
+export function movesCheck(
+  api: MoveCheckApi,
+  moveIds: string[],
+): JobCheckFn<BackgroundJobProgress> {
+  const latest = new Map<string, MediaMove>();
+  const settled = new Set<string>();
+  return async () => {
+    await Promise.all(
+      moveIds
+        .filter((id) => !settled.has(id))
+        .map(async (id) => {
+          const move = await api.move(id);
+          if (move) latest.set(id, move);
+          if (!move || move.state === 'completed') settled.add(id);
+        }),
+    );
+    const progress: BackgroundJobProgress = { done: 0, total: 0, skipped: 0 };
+    for (const move of latest.values()) {
+      progress.total += move.itemCount;
+      progress.done += move.movedCount + move.skippedCount;
+      progress.skipped += move.skippedCount;
+    }
+    return {
+      done: moveIds.every((id) => settled.has(id)),
+      result: progress,
+    };
+  };
+}
+
+/**
  * A purge of known ids (bulk purge, delete permanently) is done when none of
  * them is still in the trash. The result is how many are left.
  */
@@ -154,7 +191,7 @@ export const PURGE_DUE_MARGIN_MS = 60 * 60 * 1_000;
 export function duePurgeCheck(
   api: QueryCheckApi,
   now: () => number = Date.now,
-): JobCheckFn<void> {
+): JobCheckFn<never> {
   return async () => {
     const res = await api.find({
       trashed: true,
@@ -172,37 +209,80 @@ export function duePurgeCheck(
 /** How long a replace waits when the CDN response can't tell old from new. */
 export const REPLACE_FALLBACK_MS = 10_000;
 
+/** A hung `HEAD` would otherwise hold the replace dialog. */
+export const CDN_ETAG_TIMEOUT_MS = 3_000;
+
 export interface ReplaceCheckOptions {
   fetch?: typeof globalThis.fetch;
   now?: () => number;
+  /** When the job started, so a resumed check doesn't restart the fallback. */
+  startedAt?: number;
 }
 
 /**
- * A replace is done when the CDN serves the new bytes: a `HEAD` on the bare
- * URL (no `?v=`, which is only a cache miss for a while after a replace)
- * returns the uploaded size. `asset` is the asset **before** the replace. When
- * the sizes match, the CDN sends no `Content-Length`, or the `HEAD` isn't ok,
- * size can't tell, so the check waits `REPLACE_FALLBACK_MS` from its creation
- * instead — best effort, done without the CDN confirming the new bytes.
+ * The CDN's `ETag` for an asset's file, or `null` when it can't be read.
+ * Never throws; gives up after `CDN_ETAG_TIMEOUT_MS`. The query string is
+ * dropped: the CDN keys the raw file on the path alone, so a `?v=` doesn't
+ * reach a fresher copy. `ETag` isn't CORS-safelisted — it's readable because
+ * the CDN exposes it (`Access-Control-Expose-Headers`, verified on QA).
+ */
+export async function cdnEtag(
+  url: string | null,
+  fetch: typeof globalThis.fetch = globalThis.fetch,
+): Promise<string | null> {
+  if (!url) return null;
+  try {
+    const res = await fetch(url.replace(/\?.*$/, ''), {
+      method: 'HEAD',
+      cache: 'no-store',
+      signal: AbortSignal.timeout(CDN_ETAG_TIMEOUT_MS),
+    });
+    return res.ok ? res.headers.get('etag') : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * A replace is done when the CDN serves a different file than before it:
+ * its `ETag` moved off `etagBefore` (read with `cdnEtag` just before the
+ * replace). Size can't tell — the stored file's size needn't match the asset
+ * row's `sizeBytes`. Without a baseline or an `ETag` the check waits
+ * `REPLACE_FALLBACK_MS` from its creation instead — best effort.
  */
 export function replaceCheck(
-  asset: Pick<Asset, 'url' | 'sizeBytes'>,
-  sizeBytes: number,
-  { fetch = globalThis.fetch, now = Date.now }: ReplaceCheckOptions = {},
-): JobCheckFn<void> {
-  const startedAt = now();
+  url: string | null,
+  etagBefore: string | null,
+  {
+    fetch = globalThis.fetch,
+    now = Date.now,
+    startedAt = now(),
+  }: ReplaceCheckOptions = {},
+): JobCheckFn<never> {
   const fallback = () => ({
     done: now() - startedAt >= REPLACE_FALLBACK_MS,
   });
   return async () => {
-    if (!asset.url) return { done: true };
-    if (asset.sizeBytes === sizeBytes) return fallback();
-    const res = await fetch(asset.url.replace(/\?.*$/, ''), {
-      method: 'HEAD',
-      cache: 'no-store',
-    });
-    const length = res.headers.get('content-length');
-    if (!res.ok || length === null) return fallback();
-    return { done: Number(length) === sizeBytes };
+    if (!url) return { done: true };
+    if (!etagBefore) return fallback();
+    const etag = await cdnEtag(url, fetch);
+    return etag ? { done: etag !== etagBefore } : fallback();
   };
+}
+
+/**
+ * The check for a persisted job spec — how a resumed job gets its check back.
+ * Only a move reports progress.
+ */
+export function backgroundJobCheck(
+  spec: BackgroundJobSpec,
+  api: MoveCheckApi,
+  options?: ReplaceCheckOptions,
+): JobCheckFn<BackgroundJobProgress> {
+  switch (spec.kind) {
+    case 'move':
+      return movesCheck(api, spec.moveIds);
+    case 'replace':
+      return replaceCheck(spec.url, spec.etagBefore, options);
+  }
 }

@@ -60,4 +60,10 @@ export interface BulkAction<TValue = unknown> {
   ): Promise<unknown>;
   /** Success toast title for `count` ids; `responses` are the chunks' results. */
   successMessage(count: number, responses: unknown[]): string;
+  /**
+   * Start a background job for work that lands after the calls (e.g. a move's
+   * copies). Return `true` when one started: its "started" toast then stands
+   * in for the success toast, which comes once the job lands.
+   */
+  startJob?(count: number, responses: unknown[]): boolean;
 }

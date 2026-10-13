@@ -29,7 +29,10 @@ const isRow = computed(() => props.size === 'row');
 // Fall back to the type icon when there's nothing previewable OR the image
 // fails to load (a stale/removed object 404s). Reset on change since the panel
 // banner reuses one instance across assets.
-const src = computed(() => assetPreviewUrl(props.type, props.url, props.size));
+const { fileVersion } = useBackgroundJobsStore();
+const src = computed(() =>
+  assetPreviewUrl(props.type, props.url, props.size, fileVersion(props.url)),
+);
 const broken = ref(false);
 watch(src, () => {
   broken.value = false;

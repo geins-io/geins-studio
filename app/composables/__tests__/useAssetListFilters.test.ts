@@ -3,32 +3,48 @@
 import { mockNuxtImport } from '@nuxt/test-utils/runtime';
 import { afterEach, describe, it, expect, vi } from 'vitest';
 
-const { channels, fetchChannels } = vi.hoisted(() => ({
-  channels: {
-    value: [] as { _id: string; name: string; identifier: string }[],
-  },
-  fetchChannels: vi.fn(),
-}));
+const { channels, fetchChannels, languages, fetchLanguages } = vi.hoisted(
+  () => ({
+    channels: {
+      value: [] as { _id: string; name: string; identifier: string }[],
+    },
+    fetchChannels: vi.fn(),
+    languages: { value: [] as { _id: string; name: string }[] },
+    fetchLanguages: vi.fn(),
+  }),
+);
 
 mockNuxtImport('useI18n', () => () => ({ t: (key: string) => key }));
-mockNuxtImport('useAccountStore', () => () => ({ channels, fetchChannels }));
-mockNuxtImport('storeToRefs', () => (store: { channels: unknown }) => ({
-  channels: store.channels,
+mockNuxtImport('useAccountStore', () => () => ({
+  channels,
+  fetchChannels,
+  languages,
+  fetchLanguages,
 }));
+mockNuxtImport(
+  'storeToRefs',
+  () => (store: { channels: unknown; languages: unknown }) => ({
+    channels: store.channels,
+    languages: store.languages,
+  }),
+);
 
 import { useAssetListFilters } from '../useAssetListFilters';
 
 afterEach(() => {
   channels.value = [];
   fetchChannels.mockReset();
+  languages.value = [];
+  fetchLanguages.mockReset();
 });
 
 describe('useAssetListFilters', () => {
-  it('defines type, channel and modified', () => {
+  it('defines type, channel, content language and modified', () => {
     const { definitions } = useAssetListFilters();
     expect(definitions.map((d) => [d.name, d.kind])).toEqual([
       ['assetTypes', 'multiselect'],
       ['channels', 'multiselect'],
+      ['languages', 'multiselect'],
       ['modified', 'dateRange'],
     ]);
     expect(definitions[0]?.urlKey).toBe('type');
@@ -74,17 +90,41 @@ describe('useAssetListFilters', () => {
     expect(fetchChannels).not.toHaveBeenCalled();
   });
 
+  it('loads language options by code, fetching when the store is empty', async () => {
+    fetchLanguages.mockResolvedValue([
+      { _id: 'sv', name: 'Svenska' },
+      { _id: 'en', name: '' },
+    ]);
+    const language = useAssetListFilters().definitions[2];
+    const load = language?.kind === 'multiselect' ? language.options : [];
+    expect(typeof load === 'function' && (await load())).toEqual([
+      { value: 'sv', label: 'Svenska' },
+      { value: 'en', label: 'en' },
+    ]);
+    expect(fetchLanguages).toHaveBeenCalledOnce();
+  });
+
+  it('reuses loaded languages', async () => {
+    languages.value = [{ _id: 'sv', name: 'Svenska' }];
+    const language = useAssetListFilters().definitions[2];
+    const load = language?.kind === 'multiselect' ? language.options : [];
+    if (typeof load === 'function') await load();
+    expect(fetchLanguages).not.toHaveBeenCalled();
+  });
+
   it('maps the modified range onto modifiedFrom / modifiedTo', () => {
     const { toQueryFilters } = useAssetListFilters();
     expect(
       toQueryFilters({
         assetTypes: ['pdf'],
         channels: ['c1'],
+        languages: ['sv'],
         modified: { from: '2026-09-01T00:00:00.000Z' },
       }),
     ).toEqual({
       assetTypes: ['pdf'],
       channels: ['c1'],
+      languages: ['sv'],
       modifiedFrom: '2026-09-01T00:00:00.000Z',
       modifiedTo: undefined,
     });

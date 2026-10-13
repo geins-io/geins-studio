@@ -115,6 +115,10 @@ export default defineConfig({
               { text: 'useGeinsImage', link: '/composables/useGeinsImage.md' },
               { text: 'useGeinsLog', link: '/composables/useGeinsLog.md' },
               { text: 'useLayout', link: '/composables/useLayout.md' },
+              {
+                text: 'useBackgroundJobs',
+                link: '/composables/useBackgroundJobs.md',
+              },
               { text: 'useNavigation', link: '/composables/useNavigation.md' },
               { text: 'usePageError', link: '/composables/usePageError.md' },
               { text: 'usePageTitle', link: '/composables/usePageTitle.md' },
@@ -438,6 +442,10 @@ export default defineConfig({
                   {
                     text: 'FormInputLanguageSelect',
                     link: '/components/form/input/FormInputLanguageSelect.md',
+                  },
+                  {
+                    text: 'FormInputLanguages',
+                    link: '/components/form/input/FormInputLanguages.md',
                   },
                   {
                     text: 'FormInputLocked',
@@ -765,6 +773,10 @@ export default defineConfig({
               {
                 text: 'LayoutHeader',
                 link: '/components/layout/LayoutHeader.md',
+              },
+              {
+                text: 'LayoutBackgroundJobs',
+                link: '/components/layout/LayoutBackgroundJobs.md',
               },
               {
                 text: 'LayoutSidebar',

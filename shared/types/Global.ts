@@ -27,7 +27,8 @@ export type StatusBadgeKnownStatus =
   | 'degraded'
   | 'unhealthy'
   | 'idle'
-  | 'enabled';
+  | 'enabled'
+  | 'in-progress';
 
 /**
  * StatusBadge accepts booleans (active/inactive), known statuses with

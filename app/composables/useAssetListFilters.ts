@@ -5,7 +5,7 @@ import type {
 } from '#shared/types';
 
 export interface UseAssetListFiltersReturnType {
-  /** Type, channel and modified — for `useListFilters` and `listFilterRouteParams`. */
+  /** Type, channel, content language and modified — for `useListFilters` and `listFilterRouteParams`. */
   definitions: ListFilterDefinition<AssetListFilters>[];
   /** The filter-bar state as `assetQuery` filters. Call at send time. */
   toQueryFilters: (filters: AssetListFilters) => AssetQueryFilters;
@@ -13,12 +13,13 @@ export interface UseAssetListFiltersReturnType {
 
 /**
  * The asset list's filter-kit definitions and their mapping onto the media
- * query. Channel options load from the account store on first open.
+ * query. Channel and language options load from the account store on first
+ * open.
  */
 export function useAssetListFilters(): UseAssetListFiltersReturnType {
   const { label, meta } = useAssetType();
   const accountStore = useAccountStore();
-  const { channels } = storeToRefs(accountStore);
+  const { channels, languages } = storeToRefs(accountStore);
 
   const definitions: ListFilterDefinition<AssetListFilters>[] = [
     {
@@ -36,11 +37,23 @@ export function useAssetListFilters(): UseAssetListFiltersReturnType {
       name: 'channels',
       label: 'channel',
       kind: 'multiselect',
+      icon: 'Globe',
       options: async () =>
         (channels.value.length
           ? channels.value
           : await accountStore.fetchChannels()
         ).map((c) => ({ value: c._id, label: c.name || c.identifier })),
+    },
+    {
+      name: 'languages',
+      label: 'content_language',
+      kind: 'multiselect',
+      icon: 'Languages',
+      options: async () =>
+        (languages.value.length
+          ? languages.value
+          : await accountStore.fetchLanguages()
+        ).map((lang) => ({ value: lang._id, label: lang.name || lang._id })),
     },
     { name: 'modified', label: 'modified', kind: 'dateRange' },
   ];

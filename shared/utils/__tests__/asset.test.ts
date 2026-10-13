@@ -182,6 +182,13 @@ describe('assetLabelLimitError', () => {
     expect(assetLabelLimitError(['x'.repeat(65)], 'tags')).toBe('length');
     expect(assetLabelLimitError([` ${'x'.repeat(64)} `], 'tags')).toBeNull();
   });
+
+  it('applies the content language limits', () => {
+    const many = Array.from({ length: 51 }, (_, i) => `l${i}`);
+    expect(assetLabelLimitError(many, 'languages')).toBe('count');
+    expect(assetLabelLimitError(['x'.repeat(51)], 'languages')).toBe('length');
+    expect(assetLabelLimitError(['sv', 'en'], 'languages')).toBeNull();
+  });
 });
 
 describe('countAssetIds', () => {
@@ -312,6 +319,20 @@ describe('assetPreviewUrl', () => {
 
   it('returns a url it cannot parse unchanged', () => {
     expect(assetPreviewUrl('image', '/full.jpg', 'card')).toBe('/full.jpg');
+  });
+
+  it('adds a replaced file version as _r, SVGs included', () => {
+    expect(assetPreviewUrl('image', cdn, 'row', 1700)).toBe(
+      `${cdn}?width=40&height=40&fit=crop&dpr=2&_r=1700`,
+    );
+    expect(
+      assetPreviewUrl(
+        'svg',
+        'https://cdn-qa.geins.media/acme/logo.svg',
+        'card',
+        1700,
+      ),
+    ).toBe('https://cdn-qa.geins.media/acme/logo.svg?_r=1700');
   });
 
   it('never previews a type an <img> cannot render', () => {

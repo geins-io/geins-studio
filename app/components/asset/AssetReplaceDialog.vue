@@ -6,14 +6,15 @@ import {
   replaceExtensions,
   uploadRejectionMessageKey,
 } from '#shared/utils/asset';
-import { useToast } from '@/components/ui/toast/use-toast';
+import { cdnEtag } from '#shared/utils/job';
 
 /**
  * Replace an asset's underlying file: drop/pick a single file, confirm, and
  * `assetApi.replace` overwrites the bytes in place — same id, path and
  * metadata. The path never changes, so the new file must keep the asset's
  * extension (or an alias). The warning counts the asset's usage links. On
- * success the asset is refetched (new `url` version + etag) and emitted.
+ * success the asset is refetched (new `url` version + etag) and emitted, and
+ * a background job reports "replaced" once the CDN serves the new bytes.
  * Rendered inside the detail panel so it stays in the panel's modal subtree.
  */
 const props = defineProps<{ asset: Asset | null }>();
@@ -21,8 +22,7 @@ const open = defineModel<boolean>('open', { default: false });
 const emit = defineEmits<{ replaced: [Asset] }>();
 
 const { assetApi } = useGeinsRepository();
-const { toast } = useToast();
-const { t } = useI18n();
+const backgroundJobs = useBackgroundJobs();
 const { geinsLogError } = useGeinsLog('components/AssetReplaceDialog.vue');
 
 const file = ref<File | null>(null);
@@ -93,9 +93,12 @@ function onPick(event: Event) {
 
 async function replace() {
   if (!props.asset || !file.value || extensionMismatch.value) return;
-  const id = props.asset._id;
+  const before = props.asset;
+  const id = before._id;
   replacing.value = true;
   failure.value = null;
+  // The CDN's file before the replace — the job is done once it serves another.
+  const etagBefore = await cdnEtag(before.url);
   let result: UploadCompleteResult;
   try {
     // Failures are explained inline next to the file, not as a global toast.
@@ -119,9 +122,14 @@ async function replace() {
   try {
     const updated = await assetApi.get(id).catch(() => result.file);
     await refreshNuxtData('asset-library-list');
-    toast({
-      title: t('entity_replaced', { entityKey: 'file' }),
-      variant: 'positive',
+    backgroundJobs.start({
+      spec: { kind: 'replace', url: before.url, etagBefore },
+      label: {
+        key: 'asset_library.job_replacing',
+        params: { name: before.name },
+      },
+      doneMessage: { key: 'entity_replaced', params: { entityKey: 'file' } },
+      refreshKeys: ['asset-library-list'],
     });
     emit('replaced', updated);
     open.value = false;

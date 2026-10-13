@@ -376,6 +376,19 @@ describe('assetRepo', () => {
       );
     });
 
+    it('bulkAssignLanguages POSTs the ids and languages', async () => {
+      mockFetch.mockResolvedValue(null);
+      await api.bulkAssignLanguages(['a1'], ['sv']);
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/media/assets/bulk-assign-languages',
+        {
+          method: 'POST',
+          body: { assetIds: ['a1'], languages: ['sv'] },
+          errorContext: { action: 'updating', entity: 'asset' },
+        },
+      );
+    });
+
     describe('bulkMove', () => {
       it('POSTs the ids and folder and returns the move on 202', async () => {
         mockFetch.mockResolvedValue({ moveId: 'm1' });
@@ -794,6 +807,7 @@ describe('assetRepo', () => {
           clientRef: 'a',
           folderId: null,
           localizations: { en: { altText: 'Logo' } },
+          languages: ['sv', 'en'],
           links: [{ targetType: 'productimage', targetId: 'p1' }],
         },
         {
@@ -818,6 +832,7 @@ describe('assetRepo', () => {
                 mimeType: 'image/png',
                 overwrite: false,
                 localizations: { en: { altText: 'Logo' } },
+                languages: ['sv', 'en'],
                 links: [{ targetType: 'productimage', targetId: 'p1' }],
               },
               {

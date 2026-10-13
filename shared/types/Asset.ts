@@ -62,6 +62,11 @@ export interface AssetBase {
    */
   tags?: string[];
   channels?: string[];
+  /**
+   * Content languages: the language codes (`sv`, `en`, …) the asset is intended
+   * for. Free labels to the backend; not related to `localizations`.
+   */
+  languages?: string[];
 }
 
 export type AssetCreate = CreateEntity<AssetBase>;
@@ -217,6 +222,8 @@ export interface UploadTicketFile {
   altText?: string;
   /** Per-locale `{ description, altText }`, applied on complete. */
   localizations?: Localized<AssetLocalizations>;
+  /** Content languages, applied on complete under the `PATCH` rules. */
+  languages?: string[];
   /** Links created when the ticket completes (max 100 per file). */
   links?: AssetLinkTarget[];
 }
@@ -308,6 +315,8 @@ export interface Asset extends ResponseEntity<AssetBase> {
   tags: string[];
   /** Channel ids. Always present on a read — empty when unset. */
   channels: string[];
+  /** Content language codes. Always present on a read — empty when unset. */
+  languages: string[];
   /** When the asset was moved to the trash; `null` while it's live. */
   deletedAt: string | null;
   /**
@@ -376,6 +385,8 @@ export type AssetSortField =
 export interface AssetQueryFilters {
   assetTypes?: AssetType[];
   channels?: string[];
+  /** Matches assets carrying any of these languages. */
+  languages?: string[];
   createdBy?: string;
   /** ISO date-time, inclusive. */
   modifiedFrom?: string;
@@ -390,6 +401,7 @@ export interface AssetQueryFilters {
 export interface AssetListFilters {
   assetTypes?: AssetType[];
   channels?: string[];
+  languages?: string[];
   modified?: ListDateRange;
 }
 
@@ -408,7 +420,6 @@ export interface AssetQuery extends BatchQuery, AssetQueryFilters {
   folderName?: string;
   includeSubfolders?: boolean;
   trashed?: boolean;
-  languages?: string[];
   /** Word-prefix match, not substring. */
   search?: string;
   sortBy?: AssetSortField;

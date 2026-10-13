@@ -4,6 +4,8 @@ Some media calls succeed at once but take effect later: a move copies files in t
 
 The engine is pure — no Vue, no Nuxt — and is unit-tested in node (`shared/utils/__tests__/job.test.ts`). The asset domain's [Async jobs](/domains/assets#async-jobs) table lists which call needs which check.
 
+In the app, don't call `settleJob` from a page. Start a job with [`useBackgroundJobs`](/composables/useBackgroundJobs) instead. The header's [`LayoutBackgroundJobs`](/components/layout/LayoutBackgroundJobs) runs it, shows its progress, persists it across reloads, refreshes data and toasts the result. A job is a serialisable `spec`; `backgroundJobCheck(spec, assetApi)` turns it back into one of the checks below, and `movesCheck(api, moveIds)` folds a bulk move's per-chunk moves into one job with summed progress.
+
 ## Usage
 
 ```ts
@@ -46,13 +48,13 @@ Why not `usePollWhile`: it ticks on a fixed interval with no backoff and no limi
 
 Each factory returns a `check` for `settleJob`.
 
-| Factory                                            | For                                                                    | Done when                                                                | `result`                                  |
-| -------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------ | ----------------------------------------- |
-| `moveCheck(api, moveId)`                           | folder rename/move, relocate, bulk move, folder delete with `relocate` | `assetApi.move(moveId)` is `completed`, or `null` (404: swept after 24h) | `MediaMove \| null` — read `skippedCount` |
-| `purgeCheck(api, assetIds)`                        | bulk purge, delete permanently                                         | none of the ids is left in the trash                                     | ids still trashed                         |
-| `duePurgeCheck(api, now?)`                         | empty trash, folder delete with `purge`                                | no trashed asset has `purgeAfter` before now + 1h                        | —                                         |
-| `replaceCheck(asset, sizeBytes, { fetch?, now? })` | replace file                                                           | a `HEAD` on the bare CDN URL returns the uploaded size                   | —                                         |
+| Factory                                           | For                                                                    | Done when                                                                | `result`                                  |
+| ------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------ | ----------------------------------------- |
+| `moveCheck(api, moveId)`                          | folder rename/move, relocate, bulk move, folder delete with `relocate` | `assetApi.move(moveId)` is `completed`, or `null` (404: swept after 24h) | `MediaMove \| null` — read `skippedCount` |
+| `purgeCheck(api, assetIds)`                       | bulk purge, delete permanently                                         | none of the ids is left in the trash                                     | ids still trashed                         |
+| `duePurgeCheck(api, now?)`                        | empty trash, folder delete with `purge`                                | no trashed asset has `purgeAfter` before now + 1h                        | —                                         |
+| `replaceCheck(url, etagBefore, { fetch?, now? })` | replace file                                                           | the CDN's `ETag` for the file differs from `etagBefore`                  | —                                         |
 
 - **No `moveId`, no job.** A move call that started no copies (a `204` bulk move, an empty folder's rename, a relocate answered `200`) carries no `moveId`; don't settle it.
 - **Why `purgeAfter`, not the call time.** Every purge sets `purgeAfter` to the server's now, while a fresh trash gets now + retention. Checking the earliest `purgeAfter` against a one-hour margin tells them apart without comparing the server's clock to the browser's. Assets expiring on their own go in the same reaper pass, so they only add seconds. This assumes retention is well over an hour (it's 30 days); a shorter one would hold the check until timeout.
-- **Replace.** Pass the asset **before** the replace. The `HEAD` skips the browser cache and the `?v=` cache-buster (the bare URL is the one that can serve stale bytes). When the old and new sizes are equal, the CDN sends no `Content-Length`, or the `HEAD` isn't ok, size can't tell them apart, so the check waits `REPLACE_FALLBACK_MS` (10s) from its creation instead — best effort, done without the CDN confirming. A `HEAD` that throws counts as not done, like any check.
+- **Replace.** Read the baseline with `cdnEtag(asset.url)` **before** the replace call. It sends a `HEAD` to the bare URL, skipping the browser cache. The query string is dropped because the CDN caches the raw file by path alone, so `?v=` doesn't reach a fresher copy. Size can't tell old from new: on QA the stored file's size didn't match the row's `sizeBytes`. Without a baseline, or when the `ETag` can't be read, the check waits `REPLACE_FALLBACK_MS` (10s) from its creation instead. That's best effort, done without the CDN confirming.

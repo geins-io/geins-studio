@@ -235,6 +235,7 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
       'folderPath',
       'sizeBytes',
       'tags',
+      'languages',
       ...dateColumns,
     ],
     columnTitles: {
@@ -243,6 +244,7 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
       folderPath: t('folder', 1),
       sizeBytes: t('size'),
       tags: t('tag', 2),
+      languages: t('content_language', 2),
       updatedAt: t('modified'),
       deletedAt: t('asset_library.moved_to_trash'),
       purgeAfter: t('asset_library.deleted_permanently'),
@@ -254,9 +256,21 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
       deletedAt: 'date',
       purgeAfter: 'date',
     },
-    // Column ids are the query's `sortBy`; tags isn't one.
-    sortableColumns: { tags: false },
+    // Column ids are the query's `sortBy`; tags and languages aren't.
+    sortableColumns: { tags: false, languages: false },
   });
+
+  const languagesCol = cols.find((col) => col.id === 'languages');
+  if (languagesCol) {
+    languagesCol.cell = ({ table, row }) =>
+      h(
+        'div',
+        { class: getBasicCellStyle(table) },
+        (row.original.languages ?? [])
+          .map((code) => code.toUpperCase())
+          .join(', '),
+      );
+  }
 
   // Sorts by `folderPath` (the closest server field) but shows the folder name.
   const folderCol = cols.find((col) => col.id === 'folderPath');
@@ -365,6 +379,7 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
     'folderPath',
     'sizeBytes',
     'tags',
+    'languages',
     ...dateColumns,
     'actions',
   ];
@@ -508,8 +523,9 @@ const barAction = computed(() =>
 );
 const AssetBulkMoveFolder = resolveComponent('AssetBulkMoveFolder');
 // The value is the folder tree's selection (a folder id or ROOT_FOLDER_KEY).
-// A 202 means the copies are still landing, so the refresh after the run may
-// still show some assets in their old folder.
+// A 202 means the copies are still landing: one background job covers every
+// chunk's move and refreshes the list once they land.
+const backgroundJobs = useBackgroundJobs();
 const moveAction = computed<BulkAction<string | null>>(() => ({
   key: 'move-to-folder',
   label: t('asset_library.move_to_folder'),
@@ -536,6 +552,29 @@ const moveAction = computed<BulkAction<string | null>>(() => ({
     responses.every((response) => response === null)
       ? t('asset_library.bulk_already_in_folder')
       : t('asset_library.bulk_moved_to_folder', { count }, count),
+  startJob: (count, responses) => {
+    const moveIds = responses.flatMap((response) =>
+      response && typeof response === 'object' && 'moveId' in response
+        ? [String(response.moveId)]
+        : [],
+    );
+    if (!moveIds.length) return false;
+    backgroundJobs.start({
+      spec: { kind: 'move', moveIds },
+      label: {
+        key: 'asset_library.job_moving',
+        params: { count },
+        plural: count,
+      },
+      doneMessage: {
+        key: 'asset_library.bulk_moved_to_folder',
+        params: { count },
+        plural: count,
+      },
+      refreshKeys: ['asset-library-list'],
+    });
+    return true;
+  },
 }));
 const AssetBulkLabels = resolveComponent('AssetBulkLabels');
 const { channels: accountChannels } = storeToRefs(useAccountStore());
@@ -543,17 +582,34 @@ const channelName = (id: string) => {
   const channel = accountChannels.value.find((c) => c._id === id);
   return channel?.name || id;
 };
-// Both routes add to each asset's set and never remove, so the confirm says the
-// run can't be undone in bulk. Values are normalized the way the backend stores
-// them; a 422 names the assets that would pass the per-asset limit.
-function labelsAction(kind: 'tags' | 'channels'): BulkAction<string[]> {
-  const entityKey = kind === 'tags' ? 'tag' : 'channel';
+const LABEL_KINDS = {
+  tags: { entityKey: 'tag', icon: 'Tag', run: assetApi.bulkTag },
+  channels: {
+    entityKey: 'channel',
+    icon: 'Globe',
+    run: assetApi.bulkAssignChannels,
+  },
+  languages: {
+    entityKey: 'content_language',
+    icon: 'Languages',
+    run: assetApi.bulkAssignLanguages,
+  },
+} as const;
+// All three routes add to each asset's set and never remove, so the confirm
+// says the run can't be undone in bulk. Values are normalized the way the
+// backend stores them; a 422 names the assets that would pass the limit.
+function labelsAction(kind: keyof typeof LABEL_KINDS): BulkAction<string[]> {
+  const { entityKey, icon, run } = LABEL_KINDS[kind];
   const display = (value: string) =>
-    kind === 'channels' ? channelName(value) : value;
+    kind === 'channels'
+      ? channelName(value)
+      : kind === 'languages'
+        ? value.toUpperCase()
+        : value;
   return {
     key: `add-${kind}`,
     label: t('add_entity', { entityKey }, 2),
-    icon: kind === 'tags' ? 'Tag' : 'Globe',
+    icon,
     component: AssetBulkLabels,
     componentProps: { kind },
     initialValue: () => [],
@@ -572,13 +628,7 @@ function labelsAction(kind: 'tags' | 'channels'): BulkAction<string[]> {
       );
     },
     run: (ids, value, options) =>
-      kind === 'tags'
-        ? assetApi.bulkTag(ids, normalizeAssetLabels(value), options)
-        : assetApi.bulkAssignChannels(
-            ids,
-            normalizeAssetLabels(value),
-            options,
-          ),
+      run(ids, normalizeAssetLabels(value), options),
     successMessage: () => t('entity_added', { entityKey }, 2),
   };
 }
@@ -631,9 +681,11 @@ const linkAction = computed<BulkAction<AssetBulkLinkValue>>(() => {
 });
 const tagsAction = computed(() => labelsAction('tags'));
 const channelsAction = computed(() => labelsAction('channels'));
+const languagesAction = computed(() => labelsAction('languages'));
 const bulkActions = computed<BulkAction[]>(() => [
   tagsAction.value,
   channelsAction.value,
+  languagesAction.value,
   linkAction.value,
   moveAction.value,
   trashAction.value,

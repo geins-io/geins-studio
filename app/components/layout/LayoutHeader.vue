@@ -95,6 +95,9 @@ onMounted(() => {
         </template>
       </BreadcrumbList>
     </Breadcrumb>
+    <div class="mr-2 ml-auto flex flex-shrink-0 items-center sm:mr-3">
+      <LayoutBackgroundJobs />
+    </div>
     <!--  <div class="relative ml-5 w-full max-w-96 items-center">
        <Input
         id="search"
