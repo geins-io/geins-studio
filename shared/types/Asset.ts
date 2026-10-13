@@ -462,6 +462,8 @@ export interface Folder extends ResponseEntity<FolderBase> {
   createdBy?: string;
   createdAt: string;
   updatedAt?: string;
+  /** When it went to the trash. Only the trashed listing carries it. */
+  deletedAt?: string | null;
 }
 
 /**

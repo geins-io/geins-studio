@@ -127,7 +127,7 @@ describe('useAssetActions — purgeAsset', () => {
         params: { name: 'x.jpg' },
       },
       doneMessage: { key: 'entity_deleted', params: { entityKey: 'asset' } },
-      refreshKeys: ['asset-library-list'],
+      refreshKeys: ['asset-library-list', 'asset-trash-folders'],
     });
     // The job refreshes and toasts once the purge lands, not now.
     expect(refreshNuxtData).not.toHaveBeenCalled();

@@ -50,6 +50,8 @@ export function createMockRepository() {
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+      listTrashed: vi.fn(),
+      restore: vi.fn(),
     },
   };
 

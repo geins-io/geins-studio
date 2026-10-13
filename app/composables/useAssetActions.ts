@@ -77,7 +77,13 @@ export function useAssetActions(): UseAssetActionsReturnType {
   async function restoreAsset(asset: Asset): Promise<boolean> {
     try {
       await assetApi.restore(asset._id);
-      await refreshNuxtData('asset-library-list');
+      // Restoring an asset whose folder is in the trash brings that folder
+      // (and any trashed parents) back too.
+      await refreshNuxtData([
+        'asset-library-list',
+        'asset-folders',
+        'asset-trash-folders',
+      ]);
       toast({
         title: t('entity_restored', { entityKey }),
         variant: 'positive',
@@ -107,7 +113,8 @@ export function useAssetActions(): UseAssetActionsReturnType {
         params: { name: asset.name },
       },
       doneMessage: { key: 'entity_deleted', params: { entityKey } },
-      refreshKeys: ['asset-library-list'],
+      // Purging a trashed folder's last asset lets the backend reap the folder.
+      refreshKeys: ['asset-library-list', 'asset-trash-folders'],
     });
     return true;
   }

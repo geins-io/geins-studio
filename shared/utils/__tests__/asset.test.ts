@@ -8,8 +8,13 @@ import {
   assetLabelLimitError,
   countAssetIds,
   folderDeleteFailure,
+  folderRestoreFailure,
+  isTrashSelection,
+  trashedFolderId,
+  trashedFolderKey,
   sameAssetLabels,
   assetListOptions,
+  applyProductRefPaste,
   bulkMoveErrorKey,
   folderIdForSelection,
   ROOT_FOLDER_KEY,
@@ -98,6 +103,53 @@ describe('folderDeleteFailure', () => {
   it('falls back to a generic failure for other statuses', () => {
     expect(folderDeleteFailure(404, undefined, 'trash')).toBe('failed');
     expect(folderDeleteFailure(500)).toBe('failed');
+  });
+});
+
+describe('trashed folder selection', () => {
+  it('round-trips a trashed folder id through its rail key', () => {
+    const key = trashedFolderKey('f1');
+    expect(key).toBe('trash:f1');
+    expect(trashedFolderId(key)).toBe('f1');
+    expect(trashedFolderId(TRASH_KEY)).toBeNull();
+    expect(trashedFolderId('f1')).toBeNull();
+    expect(trashedFolderId(null)).toBeNull();
+  });
+
+  it('counts trash and trashed folders as trash views', () => {
+    expect(isTrashSelection(TRASH_KEY)).toBe(true);
+    expect(isTrashSelection(trashedFolderKey('f1'))).toBe(true);
+    expect(isTrashSelection('f1')).toBe(false);
+    expect(isTrashSelection(ROOT_FOLDER_KEY)).toBe(false);
+    expect(isTrashSelection(null)).toBe(false);
+  });
+
+  it('scopes a trashed folder to its trashed subtree and never as a target', () => {
+    expect(assetListOptions(trashedFolderKey('f1'))).toEqual({
+      trashed: true,
+      folderId: 'f1',
+    });
+    expect(folderIdForSelection(trashedFolderKey('f1'))).toBeNull();
+  });
+});
+
+describe('folderRestoreFailure', () => {
+  it('reads pending moves and uploads from the 409 detail', () => {
+    expect(folderRestoreFailure(409, 'MOVE_PENDING')).toBe('pending');
+    expect(folderRestoreFailure(409, 'UPLOAD_PENDING')).toBe('pending');
+  });
+
+  it('treats any other 409 as a taken path', () => {
+    expect(
+      folderRestoreFailure(409, '4f2e8c1d-693e-4748-aa53-b0d4c676867b'),
+    ).toBe('path_taken');
+  });
+
+  it('maps a gone folder, the quota and anything else', () => {
+    expect(folderRestoreFailure(404)).toBe('not_found');
+    expect(folderRestoreFailure(422, 'QUOTA_EXCEEDED')).toBe('quota');
+    expect(folderRestoreFailure(422, 'something else')).toBe('failed');
+    expect(folderRestoreFailure(503)).toBe('failed');
   });
 });
 
@@ -468,5 +520,57 @@ describe('bulkLinkCalls', () => {
 
   it('makes no calls without products', () => {
     expect(bulkLinkCalls(['i1'], typeOf, 'byType', [])).toEqual([]);
+  });
+});
+
+describe('applyProductRefPaste', () => {
+  const ids: Record<string, string> = {
+    'mon-1': '1001',
+    'fic-1': '1002',
+    '1003': '1003',
+  };
+  const resolve = (ref: string) => ids[ref.toLowerCase()] ?? null;
+
+  it('splits on commas, semicolons, spaces and new lines', () => {
+    const { selected } = applyProductRefPaste('MON-1,FIC-1;\n 1003\t', {
+      current: [],
+      mode: 'add',
+      resolve,
+    });
+    expect(selected).toEqual(['1001', '1002', '1003']);
+  });
+
+  it('lists unmatched refs once, in paste order', () => {
+    const { selected, notFound } = applyProductRefPaste(
+      'ABC-1 MON-1 0999 abc-1',
+      {
+        current: [],
+        mode: 'add',
+        resolve,
+      },
+    );
+    expect(selected).toEqual(['1001']);
+    expect(notFound).toEqual(['ABC-1', '0999']);
+  });
+
+  it('skips locked, duplicate and already selected products', () => {
+    const { selected } = applyProductRefPaste('MON-1 mon-1 1001 FIC-1 1003', {
+      current: ['1003'],
+      lockedIds: ['1002'],
+      mode: 'add',
+      resolve,
+    });
+    expect(selected).toEqual(['1003', '1001']);
+  });
+
+  it('replaces the selection, but never with nothing', () => {
+    const replace = (text: string) =>
+      applyProductRefPaste(text, {
+        current: ['1003'],
+        mode: 'replace',
+        resolve,
+      }).selected;
+    expect(replace('MON-1, FIC-1')).toEqual(['1001', '1002']);
+    expect(replace('nope')).toEqual(['1003']);
   });
 });

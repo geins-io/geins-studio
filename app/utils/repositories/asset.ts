@@ -177,7 +177,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 
   // Geins.Media lists folders at the collection root and replaces a folder with
   // PUT, where `entityRepo` assumes the Management API's `{base}/list` + PATCH.
-  const folder: typeof folderBase = {
+  const folderEntity: typeof folderBase = {
     ...folderBase,
     async list(options, fetchOptions) {
       return await fetch<Folder[]>(ENTITIES.folder.endpoint, {
@@ -190,6 +190,37 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         method: 'PUT',
         body: data,
         query: buildQueryObject(options),
+        errorContext: { action: 'updating', entity: ENTITIES.folder.key },
+        ...fetchOptions,
+      });
+    },
+  };
+  const folder = {
+    ...folderEntity,
+    /**
+     * The folders the merchant trashed, most recently first, each with
+     * `deletedAt`. A subfolder trashed with its parent is left out (restoring
+     * the parent brings it back), so `parentFolderId` can name a folder the list
+     * doesn't hold.
+     */
+    async listTrashed(fetchOptions?: RepoFetchOptions): Promise<Folder[]> {
+      return await fetch<Folder[]>(ENTITIES.folder.endpoint, {
+        query: { trashed: true },
+        ...fetchOptions,
+      });
+    },
+    /**
+     * Put a trashed folder back, with the subfolders and assets trashed with
+     * it (and any trashed parents, without their other contents). URLs don't
+     * change. `404` once the folder has left the trash; `409` when a live
+     * folder or asset holds a path it needs, or while a move/upload is pending.
+     */
+    async restore(
+      id: string,
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<Folder> {
+      return await fetch<Folder>(`${ENTITIES.folder.endpoint}/${id}/restore`, {
+        method: 'POST',
         errorContext: { action: 'updating', entity: ENTITIES.folder.key },
         ...fetchOptions,
       });

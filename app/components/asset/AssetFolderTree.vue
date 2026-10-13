@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type {
   BackgroundJobSpec,
+  Folder,
   FolderDeleteAction,
   FolderDeletion,
   JobMessage,
@@ -10,17 +11,23 @@ import {
   ROOT_FOLDER_KEY,
   TRASH_KEY,
   folderDeleteFailure,
+  folderRestoreFailure,
+  trashedFolderId,
+  trashedFolderKey,
 } from '#shared/utils/asset';
+import { chunkIds } from '#shared/utils/bulk';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { FolderNode } from '@/composables/useFolders';
 
 /**
  * Folder navigation tree (shadcn Sidebar). "Folders" header, then "All assets",
  * the nested folders (create subfolder / delete on hover), the pinned
- * "Uncategorised" and "Trash" views, and a "New folder" action. Selection via
+ * "Uncategorised" and "Trash" views, and a "New folder" action. Trash folds out
+ * to the trashed folders (restore / delete permanently on hover). Selection via
  * `v-model:selected` — a folder id, `null` for All, `ROOT_FOLDER_KEY` for
- * Uncategorised (assets with no folder), or `TRASH_KEY` for the soft-deleted
- * ones — drives the server-side query.
+ * Uncategorised (assets with no folder), `TRASH_KEY` for the soft-deleted
+ * ones, or `trashedFolderKey(id)` for one trashed folder's contents — drives
+ * the server-side query.
  * Must be used inside a `SidebarProvider` / `Sidebar`.
  *
  * `readonly` makes the rail selection-only — every folder mutation control
@@ -144,7 +151,11 @@ async function afterDelete(removed: string[]) {
   }
   try {
     await refresh();
-    await refreshNuxtData(['asset-library-list', 'asset-tags']);
+    await refreshNuxtData([
+      'asset-library-list',
+      'asset-tags',
+      'asset-trash-folders',
+    ]);
   } catch (error) {
     geinsLogError('afterDelete', getErrorMessage(error));
   }
@@ -246,7 +257,12 @@ async function confirmChoice(action: FolderDeleteAction) {
       },
       doneMessage,
       doneDescription,
-      refreshKeys: ['asset-folders', 'asset-library-list', 'asset-tags'],
+      refreshKeys: [
+        'asset-folders',
+        'asset-trash-folders',
+        'asset-library-list',
+        'asset-tags',
+      ],
     });
   } else {
     toast({
@@ -256,6 +272,161 @@ async function confirmChoice(action: FolderDeleteAction) {
     });
   }
   await afterDelete(removed);
+}
+
+// Trashed folders under Trash. The picker (`readonly`) never shows the trash.
+const { data: trashedData, refresh: refreshTrashed } = useAsyncData<Folder[]>(
+  'asset-trash-folders',
+  () => assetApi.folder.listTrashed(),
+  { default: () => [], immediate: !props.readonly },
+);
+// The backend reaps an emptied trashed folder only after a while, so a folder
+// purged here is hidden for the rest of the session instead of lingering.
+const purgedIds = ref<string[]>([]);
+const trashedNodes = computed<FolderNode[]>(() =>
+  (Array.isArray(trashedData.value) ? trashedData.value : [])
+    .filter((folder) => !purgedIds.value.includes(folder._id))
+    .map((folder) => ({ ...folder, children: [] })),
+);
+const trashOpen = ref(false);
+watch(
+  selected,
+  (value) => {
+    if (trashedFolderId(value)) trashOpen.value = true;
+  },
+  { immediate: true },
+);
+
+async function refreshTrashView() {
+  try {
+    await refreshNuxtData([
+      'asset-folders',
+      'asset-trash-folders',
+      'asset-library-list',
+      'asset-tags',
+    ]);
+  } catch (error) {
+    geinsLogError('refreshTrashView', getErrorMessage(error));
+  }
+}
+
+const restoringId = ref<string | null>(null);
+
+// No room for an inline message in the rail, so a failure is a toast — with
+// friendly copy, since the backend's 409 detail is a bare id.
+async function restoreTrashed(node: FolderNode) {
+  if (restoringId.value) return;
+  restoringId.value = node._id;
+  try {
+    await assetApi.folder.restore(node._id, { suppressErrorToast: true });
+  } catch (error) {
+    geinsLogError('restoreFolder', getErrorMessage(error));
+    const failure = folderRestoreFailure(
+      getErrorStatus(error),
+      getApiErrorDetail(error),
+    );
+    toast({
+      title: t('error_updating_entity', { entityKey: 'folder' }),
+      description:
+        failure === 'failed'
+          ? t('error_try_again')
+          : t(`asset_library.folder_restore_${failure}`),
+      variant: 'negative',
+    });
+    if (failure === 'not_found') await refreshTrashed();
+    return;
+  } finally {
+    restoringId.value = null;
+  }
+  toast({
+    title: t('entity_restored', { entityKey: 'folder' }),
+    variant: 'positive',
+  });
+  // Viewing the restored folder's trash would now be empty; show it live.
+  if (selected.value === trashedFolderKey(node._id)) selected.value = node._id;
+  await refreshTrashView();
+}
+
+const purgeTarget = ref<FolderNode | null>(null);
+const purgeOpen = ref(false);
+const purging = ref(false);
+const purgeError = ref<string>();
+const purgeDescription = computed(
+  () =>
+    `${t('asset_library.trashed_folder_purge_description')} ${t('asset_library.purge_note')}`,
+);
+
+function requestPurge(node: FolderNode) {
+  purgeTarget.value = node;
+  purgeError.value = undefined;
+  purgeOpen.value = true;
+}
+
+// Purges the folder's trashed assets (the documented route for trashed items);
+// the backend then deletes the emptied folder on its own. The purge lands about
+// a minute later, so a background job toasts and refreshes once it has.
+async function confirmPurge() {
+  const target = purgeTarget.value;
+  if (!target) return;
+  purging.value = true;
+  purgeError.value = undefined;
+  let assetCount = 0;
+  let found = 0;
+  const purged: string[] = [];
+  try {
+    const assets = await assetApi.matchingAssets(
+      { page: 1, pageSize: 1, sort: null, search: '', filters: {} },
+      { folderId: target._id, trashed: true },
+    );
+    found = assets.length;
+    for (const ids of chunkIds(assets.map((asset) => asset._id))) {
+      const result = await assetApi.bulkPurge(ids, {
+        suppressErrorToast: true,
+      });
+      assetCount += result.assetCount;
+      purged.push(...ids);
+    }
+  } catch (error) {
+    geinsLogError('purgeFolder', getErrorMessage(error));
+    purgeError.value = t('error_try_again');
+    // Earlier chunks may already be purged; show the trash as it is now.
+    if (assetCount) await refreshTrashView();
+    return;
+  } finally {
+    purging.value = false;
+  }
+  // Nothing to purge means nothing was deleted: the backend removes an empty
+  // trashed folder on its own, so say that rather than claim a delete.
+  if (!found) {
+    purgeOpen.value = false;
+    toast({ title: t('asset_library.trashed_folder_empty_note') });
+    return;
+  }
+  purgedIds.value = [...purgedIds.value, target._id];
+  purgeOpen.value = false;
+  if (selected.value === trashedFolderKey(target._id))
+    selected.value = TRASH_KEY;
+  backgroundJobs.start({
+    spec: { kind: 'purge', assetIds: purged },
+    label: {
+      key: 'asset_library.job_deleting_folder',
+      params: { name: target.name },
+    },
+    doneMessage: { key: 'entity_deleted', params: { entityKey: 'folder' } },
+    doneDescription: assetCount
+      ? {
+          key: 'asset_library.folder_delete_purge_done',
+          params: { count: assetCount },
+          plural: assetCount,
+        }
+      : undefined,
+    refreshKeys: [
+      'asset-folders',
+      'asset-trash-folders',
+      'asset-library-list',
+      'asset-tags',
+    ],
+  });
 }
 </script>
 
@@ -337,6 +508,38 @@ async function confirmChoice(action: FolderDeleteAction) {
                 {{ $t('asset_library.trash') }}
               </span>
             </SidebarMenuButton>
+            <button
+              v-if="trashedNodes.length"
+              type="button"
+              class="text-muted-foreground hover:text-foreground absolute top-1.5 left-1.5 flex size-5 items-center justify-center rounded"
+              :aria-label="$t(trashOpen ? 'collapse' : 'expand')"
+              :aria-expanded="trashOpen"
+              @click.stop="trashOpen = !trashOpen"
+            >
+              <LucideChevronRight
+                class="size-3.5 transition-transform"
+                :class="trashOpen && 'rotate-90'"
+                aria-hidden="true"
+              />
+            </button>
+            <div
+              v-if="trashOpen && trashedNodes.length"
+              class="border-sidebar-border mt-1 ml-3.5 border-l pl-2.5"
+            >
+              <SidebarMenu>
+                <AssetFolderTreeItem
+                  v-for="node in trashedNodes"
+                  :key="node._id"
+                  :node="node"
+                  :selected="selected"
+                  trashed
+                  :restoring-id="restoringId"
+                  @select="selected = $event"
+                  @restore="restoreTrashed"
+                  @delete="requestPurge"
+                />
+              </SidebarMenu>
+            </div>
           </SidebarMenuItem>
 
           <template v-if="!props.readonly">
@@ -373,6 +576,27 @@ async function confirmChoice(action: FolderDeleteAction) {
       "
       :warning-description="deleteError"
       @confirm="confirmDelete"
+    />
+
+    <DialogDelete
+      v-model:open="purgeOpen"
+      entity-key="folder"
+      :loading="purging"
+      :title="
+        $t('asset_library.purge_folder_title', {
+          name: purgeTarget?.name ?? '',
+        })
+      "
+      :description="purgeDescription"
+      :confirm-label="$t('asset_library.delete_permanently')"
+      :warning-title="
+        purgeError
+          ? $t('error_deleting_entity', { entityKey: 'folder' })
+          : undefined
+      "
+      :warning-description="purgeError"
+      @confirm="confirmPurge"
+      @cancel="purgeOpen = false"
     />
 
     <AssetFolderDeleteDialog

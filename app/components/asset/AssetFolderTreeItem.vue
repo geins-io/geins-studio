@@ -1,7 +1,12 @@
 <script setup lang="ts">
+import { trashedFolderKey } from '#shared/utils/asset';
 import type { FolderNode } from '@/composables/useFolders';
 
-/** Recursive folder tree row — selectable, expandable, with hover add/delete. */
+/**
+ * Recursive folder tree row — selectable, expandable, with hover add/delete.
+ * A `trashed` row selects its trashed contents and offers restore + delete
+ * permanently instead.
+ */
 const props = defineProps<{
   node: FolderNode;
   selected: string | null;
@@ -9,12 +14,17 @@ const props = defineProps<{
   readonly?: boolean;
   /** Folder whose delete is being prepared — its delete icon spins. */
   busyId?: string | null;
+  /** A folder in the trash, listed under Trash. */
+  trashed?: boolean;
+  /** Folder being restored — its restore icon spins. */
+  restoringId?: string | null;
 }>();
 
 const emit = defineEmits<{
   select: [id: string];
   create: [payload: { parentFolderId: string; name: string }];
   delete: [node: FolderNode];
+  restore: [node: FolderNode];
 }>();
 
 const { resolveIcon } = useLucideIcon();
@@ -22,8 +32,12 @@ const { resolveIcon } = useLucideIcon();
 const hasChildren = computed(() => props.node.children.length > 0);
 const open = ref(false);
 const addingChild = ref(false);
-const isActive = computed(() => props.selected === props.node._id);
+const selectKey = computed(() =>
+  props.trashed ? trashedFolderKey(props.node._id) : props.node._id,
+);
+const isActive = computed(() => props.selected === selectKey.value);
 const busy = computed(() => props.busyId === props.node._id);
+const restoring = computed(() => props.restoringId === props.node._id);
 
 // Open-folder icon when expanded or active, closed otherwise.
 const folderIcon = computed(() =>
@@ -42,7 +56,7 @@ function onCreateChild(name: string) {
 
 <template>
   <SidebarMenuItem>
-    <SidebarMenuButton :is-active="isActive" @click="emit('select', node._id)">
+    <SidebarMenuButton :is-active="isActive" @click="emit('select', selectKey)">
       <!-- Reserved leading slot; the chevron toggle (below) overlays it so the
            row button holds no nested interactive element. -->
       <span class="size-4 shrink-0" aria-hidden="true" />
@@ -79,9 +93,27 @@ function onCreateChild(name: string) {
     <div
       v-if="!readonly"
       class="absolute top-1 right-1 flex gap-0.5 opacity-0 group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100"
-      :class="busy && 'opacity-100'"
+      :class="(busy || restoring) && 'opacity-100'"
     >
       <button
+        v-if="trashed"
+        type="button"
+        class="text-muted-foreground flex size-6 items-center justify-center rounded"
+        :class="!restoring && 'hover:bg-sidebar-accent hover:text-foreground'"
+        :aria-label="$t('restore')"
+        :aria-busy="restoring"
+        :disabled="restoring || busy"
+        @click.stop="emit('restore', node)"
+      >
+        <LucideLoaderCircle
+          v-if="restoring"
+          class="size-3.5 animate-spin"
+          aria-hidden="true"
+        />
+        <LucideUndo2 v-else class="size-3.5" aria-hidden="true" />
+      </button>
+      <button
+        v-else
         type="button"
         class="text-muted-foreground hover:bg-sidebar-accent hover:text-foreground flex size-6 items-center justify-center rounded"
         :aria-label="$t('add_entity', { entityKey: 'folder' })"
@@ -93,9 +125,13 @@ function onCreateChild(name: string) {
         type="button"
         class="text-muted-foreground flex size-6 items-center justify-center rounded"
         :class="!busy && 'hover:bg-sidebar-accent hover:text-destructive'"
-        :aria-label="$t('delete_entity', { entityKey: 'folder' })"
+        :aria-label="
+          trashed
+            ? $t('asset_library.delete_permanently')
+            : $t('delete_entity', { entityKey: 'folder' })
+        "
         :aria-busy="busy"
-        :disabled="busy"
+        :disabled="busy || restoring"
         @click.stop="emit('delete', node)"
       >
         <LucideLoaderCircle
@@ -124,9 +160,12 @@ function onCreateChild(name: string) {
           :selected="selected"
           :readonly="readonly"
           :busy-id="busyId"
+          :trashed="trashed"
+          :restoring-id="restoringId"
           @select="emit('select', $event)"
           @create="emit('create', $event)"
           @delete="emit('delete', $event)"
+          @restore="emit('restore', $event)"
         />
       </SidebarMenu>
     </div>

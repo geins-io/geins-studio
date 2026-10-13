@@ -326,6 +326,29 @@ export const ROOT_FOLDER_KEY = 'root';
  */
 export const TRASH_KEY = 'trash';
 
+const TRASHED_FOLDER_PREFIX = `${TRASH_KEY}:`;
+
+/**
+ * Rail selection for one trashed folder (`trash:<id>`): its trashed contents,
+ * subfolders included. A prefixed key, not the bare id, because a trashed id
+ * scoped like a live folder would query live assets.
+ */
+export function trashedFolderKey(folderId: string): string {
+  return `${TRASHED_FOLDER_PREFIX}${folderId}`;
+}
+
+/** The folder id of a {@link trashedFolderKey} selection, else `null`. */
+export function trashedFolderId(selected: string | null): string | null {
+  return selected?.startsWith(TRASHED_FOLDER_PREFIX)
+    ? selected.slice(TRASHED_FOLDER_PREFIX.length) || null
+    : null;
+}
+
+/** Trash or one trashed folder — the views that only restore and purge. */
+export function isTrashSelection(selected: string | null): boolean {
+  return selected === TRASH_KEY || trashedFolderId(selected) !== null;
+}
+
 /**
  * How long a soft-deleted asset stays restorable before Geins.Media hard-deletes
  * it. Configurable server-side, so this is the copy's number, not a guarantee —
@@ -336,7 +359,8 @@ export const TRASH_RETENTION_DAYS = 30;
 /**
  * List options for a rail selection: `null` (All assets) sends no folder scope
  * at all, {@link ROOT_FOLDER_KEY} scopes to the root, {@link TRASH_KEY} asks for
- * the trashed set instead, and anything else is a folder id. `folderId: null`
+ * the trashed set instead, a {@link trashedFolderKey} for one trashed folder's
+ * trashed subtree, and anything else is a folder id. `folderId: null`
  * and `undefined` are different queries here — the root view and "every folder"
  * must not collapse into each other.
  */
@@ -347,6 +371,8 @@ export function assetListOptions(
   // Trash is its own query, not a folder scope: `trashed: true` returns only
   // the soft-deleted assets, across every folder.
   if (selected === TRASH_KEY) return { trashed: true };
+  const trashedId = trashedFolderId(selected);
+  if (trashedId) return { trashed: true, folderId: trashedId };
   return { folderId: selected === ROOT_FOLDER_KEY ? null : selected };
 }
 
@@ -355,7 +381,7 @@ export function assetListOptions(
  * a real id, or `null` for the root — All assets, Uncategorised and Trash.
  */
 export function folderIdForSelection(selected: string | null): string | null {
-  return selected === ROOT_FOLDER_KEY || selected === TRASH_KEY
+  return selected === ROOT_FOLDER_KEY || isTrashSelection(selected)
     ? null
     : selected;
 }
@@ -417,6 +443,32 @@ export function folderDeleteFailure(
   if (code.includes('MOVE_PENDING')) return 'move_pending';
   if (code.includes('FOLDER_TOO_LARGE')) return 'too_large';
   return action === 'relocate' ? 'name_clash' : 'failed';
+}
+
+/**
+ * Why a folder restore failed. A `409` is a pending move/upload when the detail
+ * carries the code, otherwise a live folder or asset holding a path it needs
+ * (the detail is that id, which the UI doesn't show). `404` means the folder
+ * has already left the trash.
+ */
+export type FolderRestoreFailure =
+  | 'pending'
+  | 'path_taken'
+  | 'not_found'
+  | 'quota'
+  | 'failed';
+
+export function folderRestoreFailure(
+  status: number,
+  detail?: string,
+): FolderRestoreFailure {
+  const code = detail?.toUpperCase() ?? '';
+  if (status === 404) return 'not_found';
+  if (status === 422 && code.includes('QUOTA_EXCEEDED')) return 'quota';
+  if (status !== 409) return 'failed';
+  if (code.includes('MOVE_PENDING') || code.includes('UPLOAD_PENDING'))
+    return 'pending';
+  return 'path_taken';
 }
 
 /**
@@ -512,6 +564,57 @@ export function sameAssetLabels(
  */
 export function parseProductRef(filename: string): string | null {
   return /^([^_]+)_/.exec(filename)?.[1]?.trim() || null;
+}
+
+/** How a pasted ref list combines with the picker's current selection. */
+export type ProductRefPasteMode = 'add' | 'replace';
+
+export interface ProductRefPasteResult {
+  /** The new selection (product ids). */
+  selected: string[];
+  /** Refs that matched no product, in paste order. */
+  notFound: string[];
+}
+
+/**
+ * Applies a pasted list of article numbers / product ids (separated by commas,
+ * semicolons, whitespace or new lines) to a product selection. `resolve` turns
+ * a ref into a product id or null. Locked ids are never selected; repeated refs
+ * and refs naming an already-picked product are ignored. A `replace` paste that
+ * matches nothing leaves the selection as is, so a bad paste can't wipe it.
+ */
+export function applyProductRefPaste(
+  text: string,
+  options: {
+    current: string[];
+    lockedIds?: string[];
+    mode: ProductRefPasteMode;
+    resolve: (ref: string) => string | null;
+  },
+): ProductRefPasteResult {
+  const locked = new Set(options.lockedIds);
+  const seenRefs = new Set<string>();
+  const matched = new Set<string>();
+  const notFound: string[] = [];
+  for (const ref of text.split(/[\s,;]+/)) {
+    const key = ref.toLowerCase();
+    if (!ref || seenRefs.has(key)) continue;
+    seenRefs.add(key);
+    const id = options.resolve(ref);
+    if (id === null) notFound.push(ref);
+    else if (!locked.has(id)) matched.add(id);
+  }
+
+  if (options.mode === 'replace' && matched.size)
+    return { selected: [...matched], notFound };
+  const current = new Set(options.current);
+  return {
+    selected: [
+      ...options.current,
+      ...[...matched].filter((id) => !current.has(id)),
+    ],
+    notFound,
+  };
 }
 
 // Raster image mimes browsers can render inline. Only these become `image` (and
