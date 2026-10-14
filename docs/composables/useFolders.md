@@ -1,6 +1,6 @@
 # `useFolders`
 
-The `useFolders` composable is the single shared source of Assets Library folders. It fetches the folder list once (by the stable `asset-folders` key, so every consumer shares the same data) and derives the nested tree and name-by-id lookup.
+The `useFolders` composable is the single shared source of Assets Library folders. It fetches the folder list once (by the stable `asset-folders` key, so every consumer shares the same data) and derives the nested tree and the name and path lookups by id.
 
 :::tip NOTE
 Folder **filtering** is server-side — the library page and the asset picker scope `assetApi.query` by folder and the backend resolves descendants. `descendantIds` here is only a client mirror for UI needs.
@@ -46,6 +46,14 @@ folderName(id?: string | null): string | undefined
 ```
 
 Looks up a folder's name by id (for cards and list rows).
+
+### `folderPath`
+
+```ts
+folderPath(id?: string | null): string[]
+```
+
+The folder's name and its ancestors' names, top level first (e.g. `['Campaigns', '2026', 'Summer']`), for showing where a folder sits. Empty for an unknown id. Use this rather than `Folder.path`, which is lowercased.
 
 ### `descendantIds`
 
