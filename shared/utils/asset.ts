@@ -11,7 +11,7 @@ import type {
   UploadRejectionCode,
 } from '#shared/types';
 
-// Upload-ticket limits — the real Geins.Media `createUploadTicket` caps. The
+// Upload-ticket limits — the Geins.Media `createUploadTicket` caps. The
 // client validates + chunks against them before claiming a ticket, so an
 // over-cap claim never reaches the backend as a 400.
 export const MAX_FILES_PER_TICKET = 50;
@@ -313,7 +313,7 @@ export function assetPreviewUrl(
 
 /**
  * Rail selection for "assets with no folder" — the library root. Not a folder
- * id: real Geins.Media has no folder row for it, the state is `folderId: null`
+ * id: Geins.Media has no folder row for it, the state is `folderId: null`
  * on the asset and `folderIds: [null]` on the query. Also the `?folder=` URL
  * value, so the view deep-links like any folder.
  */
