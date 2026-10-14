@@ -7,7 +7,7 @@ Selection is emitted via `v-model:selected` — a folder id, `null` for **All as
 The **Trash** entry appears only outside `readonly` mode: the picker must never browse soft-deleted assets. When the trash holds folders, Trash gets a chevron and folds out to them — see [Trashed folders](#trashed-folders).
 
 :::tip NOTE
-**Uncategorised is a query, not a folder.** Real Geins.Media has no system folders — assets with no folder are `folderId: null`, and the query asks for them with `folderIds: [null]`. That is why the entry is pinned by the component rather than coming from the folder list, and why `assetListOptions` distinguishes "root only" (`folderId: null`) from "all assets" (no folder scope at all).
+**Uncategorised is a query, not a folder.** Geins.Media has no system folders — assets with no folder are `folderId: null`, and the query asks for them with `folderIds: [null]`. That is why the entry is pinned by the component rather than coming from the folder list, and why `assetListOptions` distinguishes "root only" (`folderId: null`) from "all assets" (no folder scope at all).
 :::
 
 :::warning

@@ -5,7 +5,7 @@ import type { ColumnDef } from '@tanstack/vue-table';
 /**
  * Harness for `<TableView data-source="server">`. Not linked from the nav —
  * reach it at /dev/server-table. Drives the table from `useListQuery` +
- * `assetApi.query` against the real media API: paging, sorting, search, the
+ * `assetApi.query` against the media API: paging, sorting, search, the
  * filter kit (pinned popovers + "All filters" sheet), the empty / filtered
  * states and a forced fetch error. Copy is hardcoded on purpose and must not
  * pollute the locale files.

@@ -12,12 +12,10 @@ import type {
 } from './index';
 
 // =============================================================================
-// Assets Library types (STU-264)
+// Assets Library types
 //
 // The API JSON contract is camelCase + `_id`/`_type` (via `ResponseEntity`),
-// mirroring the Geins Management API. The Supabase mock stores snake_case
-// columns and maps to this shape at the Nitro boundary (STU-266) — so these
-// types are the frozen contract, independent of the storage backend.
+// mirroring the Geins Management API.
 // =============================================================================
 
 export type AssetType =
@@ -358,12 +356,12 @@ export interface AssetReplace {
 /** Asset as returned by the API — base + identity + server-managed fields. */
 export interface Asset extends ResponseEntity<AssetBase> {
   /**
-   * Optimistic-concurrency tag. The real `PATCH /media/assets/{id}` requires it
+   * Optimistic-concurrency tag. The `PATCH /media/assets/{id}` requires it
    * echoed back as `If-Match: {etag}`; a stale tag yields `412`. Round-trip it
    * verbatim (opaque token) — `null` when the backend supplies none.
    */
   etag: string | null;
-  /** Blob storage path: `folderPath`/`name`. Mirrors the real API's `path`. */
+  /** Blob storage path: `folderPath`/`name`. Mirrors the API's `path`. */
   path: string;
   /** Owning folder's full path (breadcrumb source); `null` for a root asset. */
   folderPath: string | null;
@@ -503,7 +501,7 @@ export interface FolderBase {
 export type FolderCreate = CreateEntity<FolderBase>;
 
 /**
- * A folder update is a **full replace**: real `PUT /media/folders/{id}` requires
+ * A folder update is a **full replace**: `PUT /media/folders/{id}` requires
  * `name` on every call, so a move sends the current name and a rename sends the
  * current `parentFolderId`. Deliberately not `UpdateEntity` (partial) — a
  * partial body would blank the other field.
