@@ -1,9 +1,5 @@
 <script setup lang="ts">
-import type {
-  AssetLabelKind,
-  EntityBaseWithName,
-  LocalizedText,
-} from '#shared/types';
+import type { EntityBaseWithName, LocalizedText } from '#shared/types';
 import { mimeToAssetType, productLinkTargetType } from '#shared/utils/asset';
 import { formatFileSize } from '#shared/utils/file';
 
@@ -27,7 +23,7 @@ const {
   labelLimitError,
 } = useUploadWizardContext();
 const { matchOf } = useProductMatch();
-const { limitMessage } = useAssetLabelLimits();
+const { limitMessages } = useAssetLabelLimits();
 
 // A file whose filename ref resolves to a product (only when auto-link is on).
 const isLinked = (file: File): boolean => linkProducts.value && !!matchOf(file);
@@ -144,13 +140,7 @@ const altText = computed<LocalizedText>({
 // The page blocks upload while any file breaks a limit; this says which field.
 const limits = computed(() => {
   const ids = active.value ? [active.value.id] : [];
-  const of = (kind: AssetLabelKind) =>
-    limitMessage(labelLimitError(ids, kind), kind);
-  return {
-    tags: of('tags'),
-    channels: of('channels'),
-    languages: of('languages'),
-  };
+  return limitMessages((kind) => labelLimitError(ids, kind));
 });
 
 const rowFolderName = (id: string): string | undefined => {

@@ -33,3 +33,20 @@ The localized message for a breach, or `undefined` when there is none. The entit
 | `tags`      | `tag`              | 100       | 64         |
 | `channels`  | `channel`          | 50        | 50         |
 | `languages` | `content_language` | 50        | 50         |
+
+### `limitMessages`
+
+```ts
+limitMessages(
+  breachOf: (kind: AssetLabelKind) => AssetLabelLimitBreach | null,
+): Record<AssetLabelKind, string | undefined>
+```
+
+`limitMessage` for all three lists at once, for a form that shows them side by side. The wizard panes pass their file ids through `labelLimitError`:
+
+```ts
+const limits = computed(() =>
+  limitMessages((kind) => labelLimitError(ids, kind)),
+);
+// limits.value.tags, limits.value.channels, limits.value.languages
+```

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AssetLabelKind, EntityBaseWithName } from '#shared/types';
+import type { EntityBaseWithName } from '#shared/types';
 
 /**
  * Bulk-edit pane for step 2 of the upload wizard — shown when more than one file
@@ -27,7 +27,7 @@ const {
   applyBulkTags,
   labelLimitError,
 } = useUploadWizardContext();
-const { limitMessage } = useAssetLabelLimits();
+const { limitMessages } = useAssetLabelLimits();
 
 const folder = computed<string | null | undefined>({
   get: () => bulkFolderId(props.ids),
@@ -58,15 +58,9 @@ const tags = computed<string[]>({
 });
 
 // Checked per file, so a breach in a value only some files hold still shows.
-const limits = computed(() => {
-  const of = (kind: AssetLabelKind) =>
-    limitMessage(labelLimitError(props.ids, kind), kind);
-  return {
-    tags: of('tags'),
-    channels: of('channels'),
-    languages: of('languages'),
-  };
-});
+const limits = computed(() =>
+  limitMessages((kind) => labelLimitError(props.ids, kind)),
+);
 
 function removeSelected() {
   removeFiles(props.ids);

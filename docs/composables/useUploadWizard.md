@@ -74,10 +74,10 @@ Operate on a set of checked ids; the reconciliation lives here, not in the templ
 
 Tags, channels and content languages ride the upload ticket under the backend's `PATCH` rules, and a list over a limit gets that file rejected as `METADATA_INVALID`. These check the normalized values (`assetLabelLimitError`), so a case-only duplicate doesn't count.
 
-| Name                         | Type                                                          | Description                                                                                             |
-| ---------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `labelLimitError(ids, kind)` | `(string[], AssetLabelKind) => AssetLabelLimitBreach \| null` | The first limit any of the files breaks for that list (`'count'` / `'length'`), or `null`.              |
-| `hasLabelLimitError`         | `ComputedRef<boolean>`                                        | Whether any file breaks any limit. The upload page disables **Next** (step 2) and **Upload** while set. |
+| Name                         | Type                                                          | Description                                                                                                                        |
+| ---------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `labelLimitError(ids, kind)` | `(string[], AssetLabelKind) => AssetLabelLimitBreach \| null` | The first limit any of the files breaks for that list (`'count'` / `'length'`), or `null`.                                         |
+| `hasLabelLimitError`         | `ComputedRef<boolean>`                                        | Whether any file breaks any limit. The upload page disables **Next** and the next step's header (step 2) and **Upload** while set. |
 
 ## Sharing helpers
 

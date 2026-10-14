@@ -244,9 +244,12 @@ function leave() {
       <div class="shrink-0 pb-6">
         <Stepper v-model="currentStep" class="w-full items-start gap-0">
           <template v-for="(s, i) in steps" :key="s.step">
+            <!-- Reka's linear stepper lets the next header be clicked; hold it to
+                 the same gate as Next. -->
             <StepperItem
               v-slot="{ state }"
               :step="s.step"
+              :disabled="s.step > currentStep && !canProceed"
               class="shrink-0 flex-col items-center"
             >
               <StepperTrigger class="flex-col gap-1.5">

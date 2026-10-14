@@ -9,6 +9,9 @@ export interface UseAssetLabelLimitsReturnType {
     breach: AssetLabelLimitBreach | null,
     kind: AssetLabelKind,
   ) => string | undefined;
+  limitMessages: (
+    breachOf: (kind: AssetLabelKind) => AssetLabelLimitBreach | null,
+  ) => Record<AssetLabelKind, string | undefined>;
 }
 
 /**
@@ -31,5 +34,16 @@ export function useAssetLabelLimits(): UseAssetLabelLimitsReturnType {
       : t('max_length_entity', { entityKey, max: maxLength });
   }
 
-  return { limitMessage };
+  function limitMessages(
+    breachOf: (kind: AssetLabelKind) => AssetLabelLimitBreach | null,
+  ): Record<AssetLabelKind, string | undefined> {
+    const of = (kind: AssetLabelKind) => limitMessage(breachOf(kind), kind);
+    return {
+      tags: of('tags'),
+      channels: of('channels'),
+      languages: of('languages'),
+    };
+  }
+
+  return { limitMessage, limitMessages };
 }

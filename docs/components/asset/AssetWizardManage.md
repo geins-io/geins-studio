@@ -24,7 +24,7 @@ All edits write straight into the shared wizard state via [`useUploadWizard`](/c
 
 **Everything rides the claim.** Every field persists through the ticket claim itself (applied when the upload completes, no follow-up write). Tag autocomplete (`GET media/tags`, shared `asset-tags` key) always fetches.
 
-**Label limits.** Channels, content languages and tags show an inline error when the active file's list breaks a backend limit (`labelLimitError` from [`useUploadWizard`](/composables/useUploadWizard), worded by [`useAssetLabelLimits`](/composables/useAssetLabelLimits)). The wizard page keeps **Next** and **Upload** disabled while any file breaks one, since the ticket would reject that file as `METADATA_INVALID`.
+**Label limits.** Channels, content languages and tags show an inline error when the active file's list breaks a backend limit (`labelLimitError` from [`useUploadWizard`](/composables/useUploadWizard), worded by [`useAssetLabelLimits`](/composables/useAssetLabelLimits)). The wizard page keeps **Next**, the next step's header and **Upload** disabled while any file breaks one, since the ticket would reject that file as `METADATA_INVALID`.
 
 **Unsaved folder name.** The wizard page's **Next** button awaits [`usePendingCommits`](/composables/usePendingCommits) before advancing, so a folder name typed into the picker here (or in the bulk pane) is created instead of dropped when this step unmounts.
 
