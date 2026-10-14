@@ -16,6 +16,7 @@
   "more_count": "+{count} more",
   "file": "File | Files",
   "select_all": "Select all",
+  "select_row": "Select row",
   "deselect_all": "Deselect all",
   "select_all_count": "Select all {count}",
   "select_all_on_page": "Select all on this page",

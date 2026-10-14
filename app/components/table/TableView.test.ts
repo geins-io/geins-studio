@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { defineComponent, h, nextTick, ref } from 'vue';
 import { TableMode } from '#shared/types';
+import { useColumns } from '@/composables/useColumns';
 import { mountWithContext } from '../../../test/helpers';
 import type { ColumnDef, Table } from '@tanstack/vue-table';
 import { TableHeaderSort, TableView } from '#components';
@@ -152,6 +153,7 @@ describe('TableView — server mode selection', () => {
           type: 'checkbox',
           'data-test': 'select-page',
           checked: table.getIsAllPageRowsSelected(),
+          indeterminate: table.getIsSomePageRowsSelected(),
           onChange: (e: Event) =>
             table.toggleAllPageRowsSelected(
               (e.target as HTMLInputElement).checked,
@@ -256,6 +258,17 @@ describe('TableView — server mode selection', () => {
     ).toBe(false);
   });
 
+  it('marks the header partial while only some page rows are selected', async () => {
+    const t = await mountServer(['4']);
+    const header = () =>
+      t.wrapper.find('[data-test="select-page"]').element as HTMLInputElement;
+    expect(header().indeterminate).toBe(false);
+
+    await t.wrapper.find('[data-test="select-1"]').setValue(true);
+    expect(header().indeterminate).toBe(true);
+    expect(header().checked).toBe(false);
+  });
+
   it('toggles only the current page from the header checkbox', async () => {
     const t = await mountServer(['4']);
     await t.wrapper.find('[data-test="select-page"]').setValue(true);
@@ -273,5 +286,78 @@ describe('TableView — server mode selection', () => {
     await nextTick();
     expect(t.idUpdates.at(-1)).toEqual([]);
     expect(t.selectedCount()).toBe(0);
+  });
+});
+
+describe('TableView — select column', () => {
+  interface TreeRow {
+    _id: string;
+    name: string;
+    skus?: TreeRow[];
+  }
+
+  const mountSelectable = async (
+    data: TreeRow[],
+    props: Record<string, unknown> = {},
+  ) => {
+    const selections: TreeRow[][] = [];
+    const Host = defineComponent({
+      setup: () => {
+        const { getColumns, orderAndFilterColumns } = useColumns<TreeRow>();
+        const selectColumns = orderAndFilterColumns(
+          getColumns(data, { selectable: true }),
+          ['select', 'name'],
+        );
+        return () =>
+          h(TableView<TreeRow, unknown>, {
+            columns: selectColumns,
+            data,
+            mode: TableMode.Simple,
+            onSelection: (selection: TreeRow[]) => selections.push(selection),
+            ...props,
+          });
+      },
+    });
+    const wrapper = await mountWithContext(Host);
+    const checkboxes = () => wrapper.findAll('table [data-slot="checkbox"]');
+    const states = () => checkboxes().map((c) => c.attributes('data-state'));
+    return { checkboxes, states, selections };
+  };
+
+  it('shows the header as partial, then selects the whole page', async () => {
+    const t = await mountSelectable(rows);
+    await t.checkboxes()[1]!.trigger('click');
+    expect(t.states()[0]).toBe('indeterminate');
+
+    await t.checkboxes()[0]!.trigger('click');
+    expect(t.states()).toEqual(['checked', 'checked', 'checked', 'checked']);
+  });
+
+  it('derives parent rows from their sub-rows and toggles them all', async () => {
+    const tree: TreeRow[] = [
+      {
+        _id: 'p',
+        name: 'p',
+        skus: [
+          { _id: 's1', name: 's1' },
+          { _id: 's2', name: 's2' },
+        ],
+      },
+    ];
+    const t = await mountSelectable(tree, {
+      enableExpanding: true,
+      getSubRows: (row: TreeRow) => row.skus,
+      selectedIds: ['s1'],
+    });
+    const parent = () => t.checkboxes()[1]!;
+    expect(parent().attributes('data-state')).toBe('indeterminate');
+
+    await parent().trigger('click');
+    expect(parent().attributes('data-state')).toBe('checked');
+    expect(t.selections.at(-1)?.map((r) => r._id)).toEqual(['s1', 's2']);
+
+    await parent().trigger('click');
+    expect(parent().attributes('data-state')).toBe('unchecked');
+    expect(t.selections.at(-1)).toEqual([]);
   });
 });

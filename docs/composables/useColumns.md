@@ -81,6 +81,8 @@ columns = addActionsColumn(columns, {
 
 Enable a checkbox column for row selection. Default is `false`.
 
+The header checkbox selects the current page and shows a partial (minus) state while only some page rows are selected. In expanding tables, a parent row's checkbox follows its sub-rows (checked when all are selected, partial when some are), and clicking it selects or clears all of them.
+
 ### `sortable`
 
 Enable sorting for all columns. Default is `true`.

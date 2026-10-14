@@ -16,6 +16,7 @@
   "more_count": "+{count} till",
   "file": "Fil | Filer",
   "select_all": "Markera alla",
+  "select_row": "Markera rad",
   "deselect_all": "Avmarkera alla",
   "select_all_count": "Markera alla {count}",
   "select_all_on_page": "Markera alla på den här sidan",
