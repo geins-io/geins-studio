@@ -15,6 +15,18 @@ describe('AssetFolderCreateInput', () => {
     expect(input.emitted('create')?.[0]).toEqual(['Campaigns']);
   });
 
+  it('locks the committed name with a spinner until it is unmounted', async () => {
+    const input = await mountWithContext(AssetFolderCreateInput);
+    const field = input.find('input');
+    await field.setValue('Campaigns');
+    expect(input.find('.animate-spin').exists()).toBe(false);
+
+    await field.trigger('keydown.enter');
+    expect(field.attributes('readonly')).toBeDefined();
+    expect(field.attributes('aria-busy')).toBe('true');
+    expect(input.find('.animate-spin').exists()).toBe(true);
+  });
+
   it('commits a folder on blur (click away)', async () => {
     const input = await mountWithContext(AssetFolderCreateInput);
     const field = input.find('input');

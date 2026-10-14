@@ -60,12 +60,31 @@ const allIcon = computed(() =>
   resolveIcon(selected.value === null ? 'FolderOpenDot' : 'FolderDot'),
 );
 
+// Skeleton until the first fetch lands. A refetch (after a create, rename,
+// move, delete or restore) keeps the tree and dims it; an empty library stays
+// empty rather than flashing skeletons.
+const loaded = ref(!loading.value);
+watch(loading, (isLoading) => {
+  if (!isLoading) loaded.value = true;
+});
+const showSkeleton = computed(
+  () => loading.value && !loaded.value && !tree.value.length,
+);
+const refetching = computed(() => loading.value && !showSkeleton.value);
+const { dimmed } = useRefetchDim(refetching);
+
 const addingTop = ref(false);
+// Parents with a create in flight. Their inline new-folder row (and the top
+// one, via `addingTop`) stays until the refetch lands, so the new folder
+// replaces it instead of popping in.
+const creatingIds = ref<string[]>([]);
 
 async function createFolder(payload: {
   parentFolderId: string | null;
   name: string;
 }) {
+  const parentId = payload.parentFolderId;
+  if (parentId) creatingIds.value = [...creatingIds.value, parentId];
   try {
     await assetApi.folder.create({
       name: payload.name,
@@ -79,7 +98,9 @@ async function createFolder(payload: {
   } catch (error) {
     geinsLogError('createFolder', getErrorMessage(error));
   } finally {
-    addingTop.value = false;
+    if (parentId)
+      creatingIds.value = creatingIds.value.filter((id) => id !== parentId);
+    else addingTop.value = false;
   }
 }
 
@@ -567,22 +588,30 @@ async function confirmPurge() {
           </SidebarMenuItem>
         </SidebarMenu>
 
-        <SidebarMenu :class="{ 'mt-2': !props.hideAll }">
-          <template v-if="loading">
+        <SidebarMenu
+          :class="{ 'mt-2': !props.hideAll }"
+          :aria-busy="refetching || undefined"
+        >
+          <!-- `ps-8` lines the bars up with a row's icon and name, past its
+               chevron slot. -->
+          <template v-if="showSkeleton">
             <SidebarMenuItem v-for="n in 4" :key="n">
-              <SidebarMenuSkeleton />
+              <SidebarMenuSkeleton show-icon class="ps-8" />
             </SidebarMenuItem>
           </template>
 
           <AssetFolderTreeItem
             v-for="node in tree"
             :key="node._id"
+            class="transition-opacity"
+            :class="dimmed && 'pointer-events-none opacity-60'"
             :node="node"
             :selected="selected"
             :readonly="props.readonly"
             :busy-ids="busyIds"
             :disabled-ids="props.disabledIds"
             :locked-ids="lockedIds"
+            :creating-ids="creatingIds"
             @select="selected = $event"
             @create="createFolder"
             @rename="renameFolder"
@@ -666,6 +695,7 @@ async function confirmPurge() {
             <SidebarMenuItem>
               <SidebarMenuButton
                 class="text-muted-foreground"
+                data-test="folder-tree-new"
                 @click="addingTop = true"
               >
                 <span class="size-4 shrink-0" />

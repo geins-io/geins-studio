@@ -32,20 +32,21 @@ The rename starts in the menu's `close-auto-focus` handler, which also prevents 
 | -------------- | -------- | -------------------------------------------------------------------- |
 | `initialValue` | `string` | Prefills and selects the input (a rename). Unchanged commits cancel. |
 
-It emits `create` with the trimmed name, or `cancel`, exactly once (a guard stops the unmount blur committing twice). A name with a `/` marks the input invalid and shows `asset_library.asset_name_no_slash` under it: Enter keeps editing, and blur cancels.
+It emits `create` with the trimmed name, or `cancel`, exactly once (a guard stops the unmount blur committing twice). After `create` the name stays, read-only with a spinner, until the caller unmounts the input: a row's add subfolder keeps it while `creatingIds` holds the folder. A name with a `/` marks the input invalid and shows `asset_library.asset_name_no_slash` under it: Enter keeps editing, and blur cancels.
 
 ## Props
 
-| Prop          | Type             | Notes                                                                              |
-| ------------- | ---------------- | ---------------------------------------------------------------------------------- |
-| `node`        | `FolderNode`     | The folder, with `children`                                                        |
-| `selected`    | `string \| null` | The tree's selection; the row is active when it matches                            |
-| `readonly`    | `boolean`        | Picker mode: no actions                                                            |
-| `busyIds`     | `string[]`       | Folders whose delete or update is being prepared; their `⋯` (or trash) icon spins  |
-| `trashed`     | `boolean`        | A folder under Trash: selects `trashedFolderKey(id)`, restore + delete permanently |
-| `restoringId` | `string \| null` | Folder being restored; its restore icon spins                                      |
-| `disabledIds` | `string[]`       | Folders that can't be selected: the row button is disabled (a move's own subtree)  |
-| `lockedIds`   | `string[]`       | Folders a pending rename/move holds; **Rename** and **Move** are disabled          |
+| Prop          | Type             | Notes                                                                                |
+| ------------- | ---------------- | ------------------------------------------------------------------------------------ |
+| `node`        | `FolderNode`     | The folder, with `children`                                                          |
+| `selected`    | `string \| null` | The tree's selection; the row is active when it matches                              |
+| `readonly`    | `boolean`        | Picker mode: no actions                                                              |
+| `busyIds`     | `string[]`       | Folders whose delete or update is being prepared; their `⋯` (or trash) icon spins    |
+| `trashed`     | `boolean`        | A folder under Trash: selects `trashedFolderKey(id)`, restore + delete permanently   |
+| `restoringId` | `string \| null` | Folder being restored; its restore icon spins                                        |
+| `disabledIds` | `string[]`       | Folders that can't be selected: the row button is disabled (a move's own subtree)    |
+| `lockedIds`   | `string[]`       | Folders a pending rename/move holds; **Rename** and **Move** are disabled            |
+| `creatingIds` | `string[]`       | Folders a new subfolder is being created in; the new-folder row stays until it lands |
 
 ## Events
 

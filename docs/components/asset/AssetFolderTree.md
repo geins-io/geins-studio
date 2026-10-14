@@ -100,6 +100,12 @@ Folding out **Trash** lists the folders the merchant trashed, newest first: `use
 
 Reads [`useFolders`](/composables/useFolders) — the nested `tree`, shared through the `asset-folders` cache with every other consumer — plus its own `asset-trash-folders` read (above).
 
+### Loading
+
+- **First load:** four skeleton rows, with an icon bar and a text bar lined up under a row's folder icon and name (`SidebarMenuSkeleton show-icon class="ps-8"`). Only until the first fetch lands, so an empty library never flashes skeletons later.
+- **Refetch** (after a create, rename, move, delete or restore): the folders stay on screen with `aria-busy` and dim once the refetch runs past 200 ms ([`useRefetchDim`](/composables/useRefetchDim)).
+- **Create:** the inline new-folder row keeps the committed name, locked with a spinner, until the refetch lands, so the new folder replaces it instead of popping in. The tree tracks the parents with a create in flight (`creatingIds`); the top-level row stays via **New folder**'s own state.
+
 ## Related
 
 - [`AssetFolderTreeItem`](/components/asset/AssetFolderTreeItem) — the recursive row rendered per folder (internal), and its inline name input.
