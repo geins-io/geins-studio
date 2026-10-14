@@ -33,10 +33,8 @@ When `grep -rn "cutover:"` returns nothing, the ledger is discharged and this fi
 
 ## Discharged
 
-**Capability flags (STU-378, 2026-10-14)** — the gating mechanism itself: `useAssetCapabilities`, `assetCapabilities()`, the `AssetCapabilities` type and its docs page. Every flag had already been deleted with its consumers as its feature shipped: `canEditDescriptionAltText`, `canDeleteAsset`, `hasTrash` and `hasUsageLinks`; `canRenameAsset` / `canMoveAsset` (STU-355, `relocate`); `canReplaceFile` (STU-367, replace on the ticket flow); `canDeleteFolderWithAssets` (STU-368, `DELETE media/folders/{id}?action=`); `canEditTags` / `canEditChannels` / `tagAutocomplete` (STU-366, the detail panel `PATCH` + `GET media/tags`); `hasThumbnails` (STU-402, previews scale on the CDN via `assetPreviewUrl`); and `canUploadTagsAndChannels` (STU-379).
+**Capability flags (STU-378, 2026-10-14)** — the gating mechanism itself: `useAssetCapabilities`, `assetCapabilities()`, the `AssetCapabilities` type and its docs page. Every flag had already been deleted with its consumers as its feature shipped: `canEditDescriptionAltText`, `canDeleteAsset`, `hasTrash` and `hasUsageLinks`; `canRenameAsset` / `canMoveAsset` (STU-355, `relocate`); `canReplaceFile` (STU-367, replace on the ticket flow); `canDeleteFolderWithAssets` and its empty-only folder delete gate (STU-368, `DELETE media/folders/{id}?action=` with trash / relocate / purge); `canEditTags` / `canEditChannels` / `tagAutocomplete` (STU-366, the detail panel `PATCH` + `GET media/tags`); `hasThumbnails` (STU-402, previews scale on the CDN via `assetPreviewUrl`); and `canUploadTagsAndChannels` (STU-379).
 
 **Wizard tags + channels (STU-379, 2026-10-14)** — the four `<fieldset :disabled>` gates on `canUploadTagsAndChannels` in `AssetWizardManage` + `AssetWizardBulkPane` and their "not saved yet" hint. The upload ticket takes `tags` + `channels` (PLA-570), so the wizard sends them on the claim.
 
 **Storage usage (STU-413, 2026-10-13)** — the static placeholder figures in `useAssetStorage` (fixed totals, type and folder rows). The header bar and the panel now read `GET media/usage`, breakdown included.
-
-**Folder delete (STU-368)** — the empty-only folder delete gate. `AssetFolderDeleteDialog` now offers trash / relocate / purge through `DELETE media/folders/{id}?action=`.
