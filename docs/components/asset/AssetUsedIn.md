@@ -24,11 +24,14 @@ A **trashed** asset's links answer `404`. The detail panel never opens for a tra
 
 ## States
 
-| State   | Renders                                                          |
-| ------- | ---------------------------------------------------------------- |
-| Pending | Two `Skeleton` rows.                                             |
-| Error   | `Empty` with a destructive media icon and a retry button.        |
-| Loaded  | The Products group (rows or "No products"), plus Other when any. |
+| State      | Renders                                                                                                                                                                    |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pending    | Two `Skeleton` rows, until this asset's links land (and on a retry after an error).                                                                                        |
+| Refreshing | The same asset's rows stay with `aria-busy`, dimmed after 200 ms ([`useRefetchDim`](/composables/useRefetchDim)): after a link, a remove, or the page's bulk-link refresh. |
+| Error      | `Empty` with a destructive media icon and a retry button.                                                                                                                  |
+| Loaded     | The Products group (rows or "No products"), plus Other when any.                                                                                                           |
+
+`asset-links` is one cache entry shared by every asset, so while switching assets it still holds the previous asset's rows. The component tracks which asset the rows belong to and shows the skeleton, not those rows, until the new asset's land.
 
 ## Usage
 
