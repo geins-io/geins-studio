@@ -50,6 +50,19 @@ const {
   { default: () => [], watch: [() => props.assetId] },
 );
 
+// The one cache entry holds the previous asset's rows while switching, so
+// track whose rows they are: skeleton until this asset's land (or on a retry
+// after an error), and a refresh of the same asset keeps them, dimmed.
+const loadedFor = ref(pending.value ? null : props.assetId);
+watch(pending, (isPending) => {
+  if (!isPending) loadedFor.value = props.assetId;
+});
+const showSkeleton = computed(
+  () => pending.value && (loadedFor.value !== props.assetId || !!error.value),
+);
+const refetching = computed(() => pending.value && !showSkeleton.value);
+const { dimmed } = useRefetchDim(refetching);
+
 interface ProductRow {
   key: string;
   link: AssetLink;
@@ -159,7 +172,7 @@ const removeDescription = computed(() =>
       :title="$t('asset_library.used_in')"
     />
 
-    <div v-if="pending" class="mt-4 space-y-2">
+    <div v-if="showSkeleton" class="mt-4 space-y-2">
       <Skeleton v-for="i in 2" :key="i" class="h-11 w-full rounded-lg" />
     </div>
 
@@ -183,7 +196,11 @@ const removeDescription = computed(() =>
     </Card>
 
     <TooltipProvider v-else :delay-duration="100">
-      <div class="mt-4 space-y-6">
+      <div
+        class="mt-4 space-y-6 transition-opacity"
+        :class="dimmed && 'pointer-events-none opacity-60'"
+        :aria-busy="refetching || undefined"
+      >
         <div data-test="used-in-products">
           <div class="flex items-center justify-between gap-4">
             <h4 class="text-sm font-semibold">{{ $t('product', 2) }}</h4>
