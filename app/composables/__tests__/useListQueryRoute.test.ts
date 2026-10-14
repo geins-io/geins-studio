@@ -66,7 +66,11 @@ const settle = async (ms = 0) => {
   await nextTick();
 };
 
-function setup(query: Record<string, string> = {}, keys = {}) {
+function setup(
+  query: Record<string, string> = {},
+  keys = {},
+  searchDebounceMs = 20,
+) {
   mocks.route.query = query;
   const fetcher = vi.fn(
     async (
@@ -87,7 +91,7 @@ function setup(query: Record<string, string> = {}, keys = {}) {
       fetcher,
       defaults: { filters: {}, pageSize: 24 },
       pageSizes: [24, 48],
-      searchDebounceMs: 20,
+      searchDebounceMs,
       route: {
         keys,
         sortFields: ['name', 'updatedAt'],
@@ -155,12 +159,14 @@ describe('useListQuery route sync', () => {
   });
 
   it('writes the search only after the debounce', async () => {
-    const { list } = setup();
+    // Windows rounds timers up to ~16ms, so `settle()` alone can outlast a
+    // short debounce; keep it well above three ticks.
+    const { list } = setup({}, {}, 200);
     await settle();
     list.searchInput.value = 'lo';
     await settle();
     expect(mocks.replace).not.toHaveBeenCalled();
-    await settle(30);
+    await settle(80);
     expect(mocks.replace).toHaveBeenLastCalledWith({ query: { q: 'lo' } });
   });
 

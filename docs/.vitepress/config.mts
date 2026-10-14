@@ -181,6 +181,15 @@ export default defineConfig({
             ],
           },
           {
+            text: 'Orchestrator',
+            items: [
+              {
+                text: 'useExecutionErrors',
+                link: '/composables/useExecutionErrors.md',
+              },
+            ],
+          },
+          {
             text: 'Wholesale',
             items: [
               {
@@ -932,6 +941,16 @@ export default defineConfig({
               {
                 text: 'PriceListPriceModeCell',
                 link: '/components/price-list/PriceListPriceModeCell.md',
+              },
+            ],
+          },
+          {
+            text: 'Orchestrator',
+            collapsed: true,
+            items: [
+              {
+                text: 'OrchestratorExecutionErrorDetails',
+                link: '/components/orchestrator/OrchestratorExecutionErrorDetails.md',
               },
             ],
           },
