@@ -9,6 +9,7 @@ export interface UseFoldersReturnType {
   folders: ComputedRef<Folder[]>;
   tree: ComputedRef<FolderNode[]>;
   folderName: (id?: string | null) => string | undefined;
+  folderPath: (id?: string | null) => string[];
   descendantIds: (rootId: string) => string[];
   loading: Ref<boolean>;
   error: Ref<unknown>;
@@ -65,6 +66,21 @@ export function useFolders(): UseFoldersReturnType {
   });
   const folderName = (id?: string | null): string | undefined =>
     id ? byId.value.get(id)?.name : undefined;
+  // Names from the top level down to the folder. `path` is lowercased, so it
+  // can't be shown; the `seen` guard stops a bad parent link from looping.
+  const folderPath = (id?: string | null): string[] => {
+    const names: string[] = [];
+    const seen = new Set<string>();
+    let folder = id ? byId.value.get(id) : undefined;
+    while (folder && !seen.has(folder._id)) {
+      seen.add(folder._id);
+      names.unshift(folder.name);
+      folder = folder.parentFolderId
+        ? byId.value.get(folder.parentFolderId)
+        : undefined;
+    }
+    return names;
+  };
 
   // Self + all descendants (mirrors the server's descendant resolution).
   const descendantIds = (rootId: string): string[] => {
@@ -88,6 +104,7 @@ export function useFolders(): UseFoldersReturnType {
     folders,
     tree,
     folderName,
+    folderPath,
     descendantIds,
     loading: pending,
     error,

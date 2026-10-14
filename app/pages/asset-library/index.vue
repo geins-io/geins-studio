@@ -4,7 +4,9 @@ import type {
   Asset,
   AssetBulkLinkValue,
   AssetListFilters,
+  AssetSelectionKind,
   BulkAction,
+  BulkLinkMode,
   BulkRunResult,
   ListSort,
 } from '#shared/types';
@@ -40,7 +42,7 @@ const { t } = useI18n();
 const { assetApi } = useGeinsRepository();
 const { getColumns, getBasicCellStyle, getBasicHeaderStyle } =
   useColumns<Asset>();
-const { folderName } = useFolders();
+const { folderName, folderPath } = useFolders();
 const { resolveIcon } = useLucideIcon();
 const entityKey = ENTITIES.asset.key;
 const route = useRoute();
@@ -492,10 +494,16 @@ async function selectAllMatching() {
 const bulkSheetOpen = ref(false);
 const bulkTrashOpen = ref(false);
 const backgroundJobs = useBackgroundJobs();
+const countOf = (entityKey: string, count: number) =>
+  t('count_entity', { count, entityKey }, count);
 const trashAction = computed<BulkAction>(() => ({
   key: 'move-to-trash',
   label: t('asset_library.move_to_trash'),
   icon: 'Trash2',
+  confirmTitle: (count) =>
+    t('asset_library.bulk_trash_confirm_title', {
+      assets: countOf('asset', count),
+    }),
   description: (count) =>
     t('asset_library.bulk_trash_description', { count }, count),
   note: () =>
@@ -511,6 +519,10 @@ const purgeAction = computed<BulkAction>(() => ({
   label: t('asset_library.delete_permanently'),
   icon: 'Trash2',
   destructive: true,
+  confirmTitle: (count) =>
+    t('asset_library.bulk_purge_confirm_title', {
+      assets: countOf('asset', count),
+    }),
   description: (count) =>
     t('asset_library.bulk_purge_description', { count }, count),
   note: () => t('asset_library.purge_note'),
@@ -540,6 +552,10 @@ const barAction = computed(() =>
   isTrash.value ? purgeAction.value : trashAction.value,
 );
 const AssetBulkMoveFolder = resolveComponent('AssetBulkMoveFolder');
+const moveDestination = (value: string | null) =>
+  value === ROOT_FOLDER_KEY
+    ? [t('asset_library.uncategorised')]
+    : folderPath(value);
 // The value is the folder tree's selection (a folder id or ROOT_FOLDER_KEY).
 // A 202 means the copies are still landing: one background job covers every
 // chunk's move and refreshes the list once they land.
@@ -550,11 +566,16 @@ const moveAction = computed<BulkAction<string | null>>(() => ({
   component: AssetBulkMoveFolder,
   initialValue: () => null,
   isValid: (value) => !!value && value !== TRASH_KEY,
-  summary: (value) =>
-    value === ROOT_FOLDER_KEY
-      ? t('asset_library.uncategorised')
-      : (folderName(value) ?? ''),
-  note: () => t('asset_library.bulk_move_url_description'),
+  confirmTitle: (count, value) =>
+    t('asset_library.bulk_move_confirm_title', {
+      assets: countOf('asset', count),
+      folder: moveDestination(value).at(-1) ?? '',
+    }),
+  summary: (value) => ({ path: moveDestination(value), icon: 'Folder' }),
+  warning: () => ({
+    title: t('asset_library.bulk_move_url_title'),
+    description: t('asset_library.bulk_move_url_description'),
+  }),
   describeError: (error) => {
     const key = bulkMoveErrorKey(
       getErrorStatus(error),
@@ -594,10 +615,15 @@ const moveAction = computed<BulkAction<string | null>>(() => ({
   },
 }));
 const AssetBulkLabels = resolveComponent('AssetBulkLabels');
-const { channels: accountChannels } = storeToRefs(useAccountStore());
+const { channels: accountChannels, languages: accountLanguages } =
+  storeToRefs(useAccountStore());
 const channelName = (id: string) => {
   const channel = accountChannels.value.find((c) => c._id === id);
   return channel?.name || id;
+};
+const languageName = (code: string) => {
+  const language = accountLanguages.value.find((l) => l._id === code);
+  return language?.name || code.toUpperCase();
 };
 const LABEL_KINDS = {
   tags: { entityKey: 'tag', icon: 'Tag', run: assetApi.bulkTag },
@@ -613,7 +639,7 @@ const LABEL_KINDS = {
   },
 } as const;
 // All three routes add to each asset's set and never remove, so the confirm
-// says the run can't be undone in bulk. Values are normalized the way the
+// says existing values are kept. Values are normalized the way the
 // backend stores them; a 422 names the assets that would pass the limit.
 function labelsAction(kind: keyof typeof LABEL_KINDS): BulkAction<string[]> {
   const { entityKey, icon, run } = LABEL_KINDS[kind];
@@ -621,7 +647,7 @@ function labelsAction(kind: keyof typeof LABEL_KINDS): BulkAction<string[]> {
     kind === 'channels'
       ? channelName(value)
       : kind === 'languages'
-        ? value.toUpperCase()
+        ? languageName(value)
         : value;
   return {
     key: `add-${kind}`,
@@ -633,8 +659,15 @@ function labelsAction(kind: keyof typeof LABEL_KINDS): BulkAction<string[]> {
     isValid: (value) =>
       normalizeAssetLabels(value).length > 0 &&
       !assetLabelLimitError(value, kind),
-    summary: (value) => normalizeAssetLabels(value).map(display).join(', '),
-    note: () => t('asset_library.bulk_add_note'),
+    confirmTitle: (count, value) => {
+      const items = normalizeAssetLabels(value).length;
+      return t('asset_library.bulk_add_confirm_title', {
+        items: countOf(entityKey, items),
+        assets: countOf('asset', count),
+      });
+    },
+    summary: (value) => ({ tags: normalizeAssetLabels(value).map(display) }),
+    note: () => t('asset_library.bulk_add_note', { entityKey }, 2),
     describeError: (error) => {
       if (getErrorStatus(error) !== 422) return undefined;
       const count = countAssetIds(getApiErrorDetail(error));
@@ -653,16 +686,20 @@ const AssetBulkLinkProducts = resolveComponent('AssetBulkLinkProducts');
 const bulkLinkSummary = (value: AssetBulkLinkValue) => {
   const assets = selectedIds.value.length;
   const products = value.productIds.length;
-  const links = assets * products;
   return t('asset_library.bulk_link_summary', {
-    assets: t('count_entity', { count: assets, entityKey: 'asset' }, assets),
-    products: t(
-      'count_entity',
-      { count: products, entityKey: 'product' },
-      products,
-    ),
-    links: t('count_entity', { count: links, entityKey: 'link' }, links),
+    assets: countOf('asset', assets),
+    products: countOf('product', products),
+    links: countOf('link', assets * products),
   });
+};
+const bulkLinkModeLabel = (
+  composition: AssetSelectionKind,
+  mode: BulkLinkMode,
+) => {
+  if (mode === 'file') return t('asset_library.bulk_link_all_as_file');
+  return composition === 'images'
+    ? t('asset_library.bulk_link_all_as_image')
+    : t('asset_library.bulk_link_by_type');
 };
 // Images and files go in separate calls (a productimage link on a file fails
 // the whole call), each capped at 100 links. Linking only adds.
@@ -681,8 +718,18 @@ const linkAction = computed<BulkAction<AssetBulkLinkValue>>(() => {
       productIds: [],
     }),
     isValid: (value) => value.productIds.length > 0,
-    summary: bulkLinkSummary,
-    note: () => t('asset_library.bulk_add_note'),
+    confirmTitle: (count, value) =>
+      t('asset_library.bulk_link_confirm_title', {
+        assets: countOf('asset', count),
+        products: countOf('product', value.productIds.length),
+      }),
+    summary: (value) => ({
+      list: [
+        bulkLinkSummary(value),
+        bulkLinkModeLabel(composition, value.mode),
+      ],
+    }),
+    note: () => t('asset_library.bulk_add_note', { entityKey: 'link' }, 2),
     run: async (ids, value, options) => {
       const calls = bulkLinkCalls(
         ids,
