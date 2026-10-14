@@ -15,7 +15,7 @@
 <AssetFolderMoveDialog
   v-model:open="moveOpen"
   :folder="moveTarget"
-  :loading="!!updatingId"
+  :loading="!!moveTarget && updatingIds.includes(moveTarget._id)"
   @confirm="confirmMove"
 />
 ```

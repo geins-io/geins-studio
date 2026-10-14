@@ -286,7 +286,13 @@ async function confirmChoice(action: FolderDeleteAction) {
 const lockedIds = computed(() =>
   [...movingFolderIds.value].flatMap((id) => descendantIds(id)),
 );
-const updatingId = ref<string | null>(null);
+// Per folder, so a rename on one row isn't dropped while another row saves.
+const updatingIds = ref<string[]>([]);
+const busyIds = computed(() =>
+  inspectingId.value
+    ? [inspectingId.value, ...updatingIds.value]
+    : updatingIds.value,
+);
 const moveTarget = ref<FolderNode | null>(null);
 const moveOpen = ref(false);
 
@@ -300,8 +306,8 @@ async function updateFolder(
   body: FolderUpdate,
   kind: 'rename' | 'move',
 ): Promise<boolean> {
-  if (updatingId.value) return false;
-  updatingId.value = node._id;
+  if (updatingIds.value.includes(node._id)) return false;
+  updatingIds.value = [...updatingIds.value, node._id];
   try {
     const updated = await assetApi.folder.update(node._id, body);
     await refreshAfterUpdate();
@@ -340,7 +346,7 @@ async function updateFolder(
     geinsLogError('updateFolder', getErrorMessage(error));
     return false;
   } finally {
-    updatingId.value = null;
+    updatingIds.value = updatingIds.value.filter((id) => id !== node._id);
   }
 }
 
@@ -574,7 +580,7 @@ async function confirmPurge() {
             :node="node"
             :selected="selected"
             :readonly="props.readonly"
-            :busy-id="inspectingId ?? updatingId"
+            :busy-ids="busyIds"
             :disabled-ids="props.disabledIds"
             :locked-ids="lockedIds"
             @select="selected = $event"
@@ -721,7 +727,7 @@ async function confirmPurge() {
     <AssetFolderMoveDialog
       v-model:open="moveOpen"
       :folder="moveTarget"
-      :loading="!!updatingId"
+      :loading="!!moveTarget && updatingIds.includes(moveTarget._id)"
       @confirm="confirmMove"
     />
   </template>

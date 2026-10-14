@@ -13,8 +13,8 @@ const props = defineProps<{
   selected: string | null;
   /** Selection-only mode: hides the hover actions (picker rail). */
   readonly?: boolean;
-  /** Folder whose delete or update is being prepared — its icon spins. */
-  busyId?: string | null;
+  /** Folders whose delete or update is being prepared — their icon spins. */
+  busyIds?: string[];
   /** A folder in the trash, listed under Trash. */
   trashed?: boolean;
   /** Folder being restored — its restore icon spins. */
@@ -45,7 +45,7 @@ const selectKey = computed(() =>
   props.trashed ? trashedFolderKey(props.node._id) : props.node._id,
 );
 const isActive = computed(() => props.selected === selectKey.value);
-const busy = computed(() => props.busyId === props.node._id);
+const busy = computed(() => !!props.busyIds?.includes(props.node._id));
 const restoring = computed(() => props.restoringId === props.node._id);
 const disabled = computed(() => !!props.disabledIds?.includes(props.node._id));
 const locked = computed(() => !!props.lockedIds?.includes(props.node._id));
@@ -211,6 +211,8 @@ function onRename(name: string) {
               <span>{{ $t('move_entity', { entityKey: 'folder' }) }}</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
+            <!-- Not locked: during a move the backend refuses the delete with
+                 MOVE_PENDING, which the delete dialog shows in friendly copy. -->
             <DropdownMenuItem @select="emit('delete', node)">
               <LucideTrash2 class="mr-2 size-4" aria-hidden="true" />
               <span>{{ $t('delete_entity', { entityKey: 'folder' }) }}</span>
@@ -237,7 +239,7 @@ function onRename(name: string) {
           :node="child"
           :selected="selected"
           :readonly="readonly"
-          :busy-id="busyId"
+          :busy-ids="busyIds"
           :trashed="trashed"
           :restoring-id="restoringId"
           :disabled-ids="disabledIds"

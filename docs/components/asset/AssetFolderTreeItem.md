@@ -16,7 +16,7 @@ The actions sit to the right of the row as siblings of the row button, so the bu
 - **Trashed row** (`trashed`): **Restore** (↶) and **Delete permanently** (trash can). No `⋯` menu, so no rename or move: a trashed folder is restored first.
 - **Readonly row** (`readonly`, the picker): no actions.
 
-While `busyId` is this row's folder (the tree is counting it for a delete, or saving a rename or move), the `⋯` trigger turns into a spinner and is disabled. While a background job holds the folder (`lockedIds`), **Rename** and **Move** are disabled in the menu. **Delete** stays available, because the backend answers that with its own friendly `MOVE_PENDING` copy.
+While `busyIds` holds this row's folder (the tree is counting it for a delete, or saving a rename or move), the `⋯` trigger turns into a spinner and is disabled. While a background job holds the folder (`lockedIds`), **Rename** and **Move** are disabled in the menu. **Delete** stays available, because the backend answers that with its own friendly `MOVE_PENDING` copy.
 
 ### Rename
 
@@ -41,7 +41,7 @@ It emits `create` with the trimmed name, or `cancel`, exactly once (a guard stop
 | `node`        | `FolderNode`     | The folder, with `children`                                                        |
 | `selected`    | `string \| null` | The tree's selection; the row is active when it matches                            |
 | `readonly`    | `boolean`        | Picker mode: no actions                                                            |
-| `busyId`      | `string \| null` | Folder whose delete or update is being prepared; its `⋯` (or trash) icon spins     |
+| `busyIds`     | `string[]`       | Folders whose delete or update is being prepared; their `⋯` (or trash) icon spins  |
 | `trashed`     | `boolean`        | A folder under Trash: selects `trashedFolderKey(id)`, restore + delete permanently |
 | `restoringId` | `string \| null` | Folder being restored; its restore icon spins                                      |
 | `disabledIds` | `string[]`       | Folders that can't be selected: the row button is disabled (a move's own subtree)  |
