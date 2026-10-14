@@ -1,6 +1,6 @@
 # `AssetFolderTree`
 
-`AssetFolderTree` is the folder-navigation tree for the Assets Library, built on the shadcn `Sidebar` primitives. Under a "Folders" header it shows **All assets**, then the nested folders (each expandable via a leading chevron; the folder icon opens when expanded/active), with the pinned **Uncategorised** and **Trash** views last, below the folder list.
+`AssetFolderTree` is the folder-navigation tree for the Assets Library, built on the shadcn `Sidebar` primitives. Under a "Folders" header it shows **All assets**, then the nested folders (each expandable via a leading chevron; the folder icon opens when expanded/active), with the pinned **Uncategorised** and **Trash** views last, below the folder list. Each folder row offers **add subfolder** on hover and a `⋯` menu to **rename**, **move** or **delete** it (see [`AssetFolderTreeItem`](/components/asset/AssetFolderTreeItem#row-actions)).
 
 Selection is emitted via `v-model:selected` — a folder id, `null` for **All assets**, `ROOT_FOLDER_KEY` (`'root'`, from `#shared/utils/asset`) for **Uncategorised**, `TRASH_KEY` (`'trash'`) for **Trash**, or `trashedFolderKey(id)` (`'trash:<id>'`) for one trashed folder. The consumer turns that into list options with `assetListOptions(selected)`; the tree itself only selects.
 
@@ -45,7 +45,7 @@ The selected folder id, `null` for "All assets", `ROOT_FOLDER_KEY` for "Uncatego
 readonly?: boolean // default: false
 ```
 
-Selection-only mode. When `true`, every folder **mutation** control is gated off: the per-node hover **create subfolder** / **delete** actions, the top-level **New folder** input/button, and the delete dialogs — and the **Trash** entry is hidden. Selection + navigation still work.
+Selection-only mode. When `true`, every folder **mutation** control is gated off: the per-node hover actions (**add subfolder** and the `⋯` menu), the top-level **New folder** input/button, and the dialogs — and the **Trash** entry is hidden. Selection + navigation still work.
 
 The [`AssetPickerPanel`](/components/asset/AssetPickerPanel) passes `readonly` so a user browsing to pick an asset can't accidentally create or delete folders — folder management stays on the asset library page, which renders the tree with actions on (the default).
 
@@ -57,9 +57,29 @@ hideAll?: boolean // default: false
 
 Hides the **All assets** entry, for when the tree picks a destination rather than a browse scope (an asset can't be moved to "all"). With `readonly` the tree then offers only real folders and **Uncategorised** (`ROOT_FOLDER_KEY`). Used by [`AssetBulkMoveFolder`](/components/asset/AssetBulkMoveFolder).
 
+### `disabledIds`
+
+```ts
+disabledIds?: string[] // default: undefined
+```
+
+Selection keys that can't be picked: those folder rows (and **Uncategorised**, for `ROOT_FOLDER_KEY`) render disabled. A destination picker uses it. [`AssetFolderMoveDialog`](/components/asset/AssetFolderMoveDialog) passes a folder's own subtree plus its current parent.
+
+## Renaming and moving a folder
+
+Both go through `assetApi.folder.update(id, body)` → `PUT media/folders/{id}`, a **full replace**: a rename sends `{ name, parentFolderId: node.parentFolderId }`, and a move sends `{ name: node.name, parentFolderId }` (`null` = top level).
+
+- **Rename** is inline in the row (see [`AssetFolderTreeItem`](/components/asset/AssetFolderTreeItem#rename)). An empty or unchanged name makes no call, and a `/` is refused in the input. There is no URL-change warning, matching asset rename in [`AssetDetailPanel`](/components/asset/AssetDetailPanel).
+- **Move** opens [`AssetFolderMoveDialog`](/components/asset/AssetFolderMoveDialog), which emits the new `parentFolderId`. The dialog closes once the `PUT` succeeds.
+- While the `PUT` runs, the row's `⋯` icon spins (`busyIds`). Each folder saves on its own, so a rename on one row isn't dropped while another row's `PUT` runs. A failure goes to the global error toast (`errorContext` is set on `folder.update`; a sibling with the same name is a `409`).
+
+The folder rows change as soon as the `PUT` answers, so the tree refetches `asset-folders` + `asset-library-list` right away and renders from them, not from the response. A `202` with a `moveId` means the files of the assets inside are still being copied to the new path. That starts a `move` [background job](/composables/useBackgroundJobs) (`folderIds: [id]`, "Renaming folder {name}" with the "Renaming…" activity, or "Moving folder {name}"), which refetches both keys again and toasts `entity_updated` once the move lands. Without a `moveId` (nothing to copy) the tree toasts `entity_updated` at once.
+
+While that job is pending, the folder and its subtree are **locked** (`movingFolderIds` → `descendantIds`, passed as `lockedIds`): **Rename** and **Move** are disabled in their menus, because their paths are moving too.
+
 ## Deleting a folder
 
-1. The row's delete button first inspects the folder: two `assetApi.query` counts over the subtree (`pageSize: 1` → `totalItemCount`), one for live assets and one with `trashed: true`, plus the subfolders from `descendantIds`. No dialog opens until they answer; meanwhile that row's delete icon turns into a spinner (`busyId` on `AssetFolderTreeItem`) and its hover actions stay visible.
+1. The **Delete folder** menu item first inspects the folder: two `assetApi.query` counts over the subtree (`pageSize: 1` → `totalItemCount`), one for live assets and one with `trashed: true`, plus the subfolders from `descendantIds`. No dialog opens until they answer; meanwhile that row's `⋯` icon turns into a spinner (`busyIds` on `AssetFolderTreeItem`) and its hover actions stay visible.
 2. Only a folder **proven empty** gets the plain [`DialogDelete`](/components/dialog/DialogDelete), which calls `assetApi.folder.delete(id)` — no `action` (toast `entity_deleted`). Anything else, or a failed count, opens [`AssetFolderDeleteDialog`](/components/asset/AssetFolderDeleteDialog) directly: move to trash, move assets to uncategorised, or delete permanently (its trash option is safe on an empty folder too). If the plain delete still answers `409 FOLDER_NOT_EMPTY` / `FOLDER_HOLDS_TRASHED_ASSETS` (e.g. a trashed empty subfolder the tree doesn't list), it swaps to the options dialog.
 3. The choice calls `assetApi.deleteFolder(id, action)`. The toast title is `entity_moved_to_trash` (trash, relocate) or `entity_deleted` (purge), with the response's `assetCount` as the description (`folder_delete_{action}_done`). `trash` toasts at once. `relocate` (with a `moveId`) and `purge` (with assets) answer `202` and settle later, so they start a [background job](/composables/useBackgroundJobs) ("Deleting folder {name}": a `move` job on the `moveId`, or a `due-purge` job) and the same toast comes once it lands.
 
@@ -82,5 +102,6 @@ Reads [`useFolders`](/composables/useFolders) — the nested `tree`, shared thro
 
 ## Related
 
-- `AssetFolderTreeItem` — the recursive row rendered per folder (internal).
-- CRUD (create / rename / move / delete) layers on top in a separate change.
+- [`AssetFolderTreeItem`](/components/asset/AssetFolderTreeItem) — the recursive row rendered per folder (internal), and its inline name input.
+- [`AssetFolderMoveDialog`](/components/asset/AssetFolderMoveDialog) — the move destination picker.
+- [`AssetFolderDeleteDialog`](/components/asset/AssetFolderDeleteDialog) — the options for deleting a folder that isn't empty.

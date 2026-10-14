@@ -39,4 +39,39 @@ describe('AssetFolderCreateInput', () => {
     expect(input.emitted('create')).toBeUndefined();
     expect(input.emitted('cancel')).toHaveLength(1);
   });
+
+  it('prefills a rename and cancels when the name is unchanged', async () => {
+    const input = await mountWithContext(AssetFolderCreateInput, {
+      props: { initialValue: 'Brand' },
+    });
+    const field = input.find('input');
+    expect(field.element.value).toBe('Brand');
+    await field.setValue(' Brand ');
+    await field.trigger('keydown.enter');
+    expect(input.emitted('create')).toBeUndefined();
+    expect(input.emitted('cancel')).toHaveLength(1);
+  });
+
+  it('commits a changed rename', async () => {
+    const input = await mountWithContext(AssetFolderCreateInput, {
+      props: { initialValue: 'Brand' },
+    });
+    const field = input.find('input');
+    await field.setValue('Brand assets');
+    await field.trigger('keydown.enter');
+    expect(input.emitted('create')?.[0]).toEqual(['Brand assets']);
+  });
+
+  it('keeps editing on Enter with a slash and cancels on blur', async () => {
+    const input = await mountWithContext(AssetFolderCreateInput);
+    const field = input.find('input');
+    await field.setValue('a/b');
+    await field.trigger('keydown.enter');
+    expect(input.emitted('create')).toBeUndefined();
+    expect(input.emitted('cancel')).toBeUndefined();
+    expect(field.attributes('aria-invalid')).toBe('true');
+    await field.trigger('blur');
+    expect(input.emitted('create')).toBeUndefined();
+    expect(input.emitted('cancel')).toHaveLength(1);
+  });
 });
