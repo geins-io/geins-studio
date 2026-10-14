@@ -28,7 +28,7 @@ A bulk action starts its job through `BulkAction.startJob(count, responses, ids)
 A job is plain JSON (`BackgroundJobStart` in `#shared/types`), so it survives a reload:
 
 - **`spec`**: what to poll. `backgroundJobCheck(spec, assetApi)` rebuilds the check from it.
-  - `{ kind: 'move', moveIds, assetIds? }`: one `moveId` per 100-id chunk. Pass `assetIds` when the moved assets are known; replace is disabled on them until the move lands (`movingAssetIds`).
+  - `{ kind: 'move', moveIds, assetIds?, folderIds? }`: one `moveId` per 100-id chunk. Pass `assetIds` when the moved assets are known; replace is disabled on them until the move lands (`movingAssetIds`). A folder rename or move passes `folderIds: [id]`; rename and move are disabled on that folder and its subtree until it lands (`movingFolderIds`).
   - `{ kind: 'replace', url, etagBefore }`: `etagBefore` from `cdnEtag(url)`, read before the replace call.
   - `{ kind: 'purge', assetIds }`: delete permanently, single or bulk.
   - `{ kind: 'due-purge' }`: a purge without ids (empty trash, folder delete with `purge`).
@@ -40,16 +40,17 @@ A job is plain JSON (`BackgroundJobStart` in `#shared/types`), so it survives a 
 
 ## Returns
 
-| Name             | Type                                         | Description                                     |
-| ---------------- | -------------------------------------------- | ----------------------------------------------- |
-| `jobs`           | `Ref<BackgroundJob[]>`                       | Every job this session, oldest first            |
-| `pending`        | `ComputedRef<BackgroundJob[]>`               | Jobs still running                              |
-| `hasFinished`    | `ComputedRef<boolean>`                       | Any completed or timed-out job left in the list |
-| `movingAssetIds` | `ComputedRef<Set<string>>`                   | Assets a pending move holds (its `assetIds`)    |
-| `panelOpen`      | `Ref<boolean>`                               | The header panel's open state                   |
-| `start`          | `(job: BackgroundJobStart) => BackgroundJob` | Track a job and toast that it started           |
-| `message`        | `(msg: JobMessage) => string`                | Translate a stored message                      |
-| `clearFinished`  | `() => void`                                 | Drop finished jobs from the panel               |
+| Name              | Type                                         | Description                                     |
+| ----------------- | -------------------------------------------- | ----------------------------------------------- |
+| `jobs`            | `Ref<BackgroundJob[]>`                       | Every job this session, oldest first            |
+| `pending`         | `ComputedRef<BackgroundJob[]>`               | Jobs still running                              |
+| `hasFinished`     | `ComputedRef<boolean>`                       | Any completed or timed-out job left in the list |
+| `movingAssetIds`  | `ComputedRef<Set<string>>`                   | Assets a pending move holds (its `assetIds`)    |
+| `movingFolderIds` | `ComputedRef<Set<string>>`                   | Folders a pending move holds (its `folderIds`)  |
+| `panelOpen`       | `Ref<boolean>`                               | The header panel's open state                   |
+| `start`           | `(job: BackgroundJobStart) => BackgroundJob` | Track a job and toast that it started           |
+| `message`         | `(msg: JobMessage) => string`                | Translate a stored message                      |
+| `clearFinished`   | `() => void`                                 | Drop finished jobs from the panel               |
 
 ## Running and persistence
 

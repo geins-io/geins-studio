@@ -4,6 +4,7 @@ import type {
   Folder,
   FolderDeleteAction,
   FolderDeletion,
+  FolderUpdate,
   JobMessage,
 } from '#shared/types';
 import {
@@ -21,8 +22,9 @@ import type { FolderNode } from '@/composables/useFolders';
 
 /**
  * Folder navigation tree (shadcn Sidebar). "Folders" header, then "All assets",
- * the nested folders (create subfolder / delete on hover), the pinned
- * "Uncategorised" and "Trash" views, and a "New folder" action. Trash folds out
+ * the nested folders (add subfolder + a `⋯` menu to rename, move or delete on
+ * hover), the pinned "Uncategorised" and "Trash" views, and a "New folder"
+ * action. Trash folds out
  * to the trashed folders (restore / delete permanently on hover). Selection via
  * `v-model:selected` — a folder id, `null` for All, `ROOT_FOLDER_KEY` for
  * Uncategorised (assets with no folder), `TRASH_KEY` for the soft-deleted
@@ -31,12 +33,17 @@ import type { FolderNode } from '@/composables/useFolders';
  * Must be used inside a `SidebarProvider` / `Sidebar`.
  *
  * `readonly` makes the rail selection-only — every folder mutation control
- * (hover create/delete, "New folder", delete dialogs) is gated off. Used by the
- * asset picker, where folder management must stay on the library page.
+ * (hover actions, "New folder", the dialogs) is gated off. Used by the asset
+ * picker, where folder management must stay on the library page.
  * `hideAll` drops "All assets" for a destination picker (e.g. bulk move), where
- * it isn't a place an asset can go.
+ * it isn't a place an asset can go. `disabledIds` (selection keys, so
+ * `ROOT_FOLDER_KEY` too) can't be picked — a folder move's own subtree.
  */
-const props = defineProps<{ readonly?: boolean; hideAll?: boolean }>();
+const props = defineProps<{
+  readonly?: boolean;
+  hideAll?: boolean;
+  disabledIds?: string[];
+}>();
 
 const selected = defineModel<string | null>('selected', { default: null });
 
@@ -45,6 +52,7 @@ const { assetApi } = useGeinsRepository();
 const { resolveIcon } = useLucideIcon();
 const { toast } = useToast();
 const backgroundJobs = useBackgroundJobs();
+const { movingFolderIds } = backgroundJobs;
 const { t } = useI18n();
 const { geinsLogError } = useGeinsLog('components/AssetFolderTree.vue');
 
@@ -274,6 +282,101 @@ async function confirmChoice(action: FolderDeleteAction) {
   await afterDelete(removed);
 }
 
+// A pending rename/move holds the folder's whole subtree: its paths move too.
+const lockedIds = computed(() =>
+  [...movingFolderIds.value].flatMap((id) => descendantIds(id)),
+);
+const updatingId = ref<string | null>(null);
+const moveTarget = ref<FolderNode | null>(null);
+const moveOpen = ref(false);
+
+// `PUT` is a full replace, so a rename sends the current parent and a move the
+// current name. The folder rows change at once; a `moveId` means the assets'
+// files are still being copied to the new path, so a background job refreshes
+// again and toasts once they land. Failures go to the global error toast
+// (a sibling with the same name is a 409).
+async function updateFolder(
+  node: FolderNode,
+  body: FolderUpdate,
+  kind: 'rename' | 'move',
+): Promise<boolean> {
+  if (updatingId.value) return false;
+  updatingId.value = node._id;
+  try {
+    const updated = await assetApi.folder.update(node._id, body);
+    await refreshAfterUpdate();
+    const doneMessage: JobMessage = {
+      key: 'entity_updated',
+      params: { entityKey: 'folder' },
+    };
+    if (updated?.moveId) {
+      backgroundJobs.start({
+        spec: {
+          kind: 'move',
+          moveIds: [updated.moveId],
+          folderIds: [node._id],
+        },
+        label: {
+          key:
+            kind === 'rename'
+              ? 'asset_library.job_renaming_folder'
+              : 'asset_library.job_moving_folder',
+          params: { name: node.name },
+        },
+        ...(kind === 'rename' && {
+          activity: { key: 'background_jobs.renaming' },
+        }),
+        doneMessage,
+        refreshKeys: ['asset-folders', 'asset-library-list'],
+      });
+    } else {
+      toast({
+        title: backgroundJobs.message(doneMessage),
+        variant: 'positive',
+      });
+    }
+    return true;
+  } catch (error) {
+    geinsLogError('updateFolder', getErrorMessage(error));
+    return false;
+  } finally {
+    updatingId.value = null;
+  }
+}
+
+// Runs once the update has succeeded, so a failed refetch only logs.
+async function refreshAfterUpdate() {
+  try {
+    await refreshNuxtData(['asset-folders', 'asset-library-list']);
+  } catch (error) {
+    geinsLogError('refreshAfterUpdate', getErrorMessage(error));
+  }
+}
+
+function renameFolder({ node, name }: { node: FolderNode; name: string }) {
+  void updateFolder(
+    node,
+    { name, parentFolderId: node.parentFolderId },
+    'rename',
+  );
+}
+
+function requestMove(node: FolderNode) {
+  moveTarget.value = node;
+  moveOpen.value = true;
+}
+
+async function confirmMove(parentFolderId: string | null) {
+  const target = moveTarget.value;
+  if (!target) return;
+  const moved = await updateFolder(
+    target,
+    { name: target.name, parentFolderId },
+    'move',
+  );
+  if (moved) moveOpen.value = false;
+}
+
 // Trashed folders under Trash. The picker (`readonly`) never shows the trash.
 const { data: trashedData, refresh: refreshTrashed } = useAsyncData<Folder[]>(
   'asset-trash-folders',
@@ -471,9 +574,13 @@ async function confirmPurge() {
             :node="node"
             :selected="selected"
             :readonly="props.readonly"
-            :busy-id="inspectingId"
+            :busy-id="inspectingId ?? updatingId"
+            :disabled-ids="props.disabledIds"
+            :locked-ids="lockedIds"
             @select="selected = $event"
             @create="createFolder"
+            @rename="renameFolder"
+            @move="requestMove"
             @delete="requestDelete"
           />
 
@@ -482,6 +589,7 @@ async function confirmPurge() {
           <SidebarMenuItem>
             <SidebarMenuButton
               :is-active="selected === ROOT_FOLDER_KEY"
+              :disabled="props.disabledIds?.includes(ROOT_FOLDER_KEY)"
               @click="selected = ROOT_FOLDER_KEY"
             >
               <span class="size-4 shrink-0" />
@@ -543,11 +651,12 @@ async function confirmPurge() {
           </SidebarMenuItem>
 
           <template v-if="!props.readonly">
-            <AssetFolderCreateInput
-              v-if="addingTop"
-              @create="(name) => createFolder({ parentFolderId: null, name })"
-              @cancel="addingTop = false"
-            />
+            <SidebarMenuItem v-if="addingTop">
+              <AssetFolderCreateInput
+                @create="(name) => createFolder({ parentFolderId: null, name })"
+                @cancel="addingTop = false"
+              />
+            </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton
                 class="text-muted-foreground"
@@ -607,6 +716,13 @@ async function confirmPurge() {
       :loading="deleting"
       @confirm="confirmChoice"
       @cancel="choiceOpen = false"
+    />
+
+    <AssetFolderMoveDialog
+      v-model:open="moveOpen"
+      :folder="moveTarget"
+      :loading="!!updatingId"
+      @confirm="confirmMove"
     />
   </template>
 </template>

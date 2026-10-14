@@ -88,6 +88,8 @@
   "select_entity": "Välj @.lower:{entityKey}",
   "search_entity": "Sök @.lower:{entityKey}",
   "delete_entity": "Ta bort @.lower:{entityKey}",
+  "rename_entity": "Byt namn på @.lower:{entityKey}",
+  "move_entity": "Flytta @.lower:{entityKey}",
   "update_entity": "Uppdatera @.lower:{entityKey}",
   "remove_entity": "Ta bort @.lower:{entityKey}",
   "send_entity": "Skicka @.lower:{entityKey}",
@@ -1808,6 +1810,9 @@
     "bulk_already_in_folder": "Finns redan i den här mappen",
     "bulk_move_url_title": "Länkarna till de här filerna ändras",
     "bulk_move_url_description": "Flytten ändrar varje fils URL, så länkar som kopierats någon annanstans slutar fungera.",
+    "folder_move_url_title": "Länkarna till filerna i den här mappen ändras",
+    "folder_move_url_description": "Flytten ändrar URL:en för varje fil i mappen och dess undermappar, så länkar som kopierats någon annanstans slutar fungera.",
+    "move_folder_description": "Välj vart {name} ska flyttas.",
     "bulk_move_not_found": "Mappen eller några av filerna finns inte längre.",
     "bulk_move_path_too_long": "Sökvägen skulle bli för lång för några av filerna. Välj en mapp högre upp.",
     "bulk_move_name_clash": "Några av filerna har samma namn, så de kan inte ligga i samma mapp.",
@@ -1893,6 +1898,8 @@
     "job_purging": "Raderar {count} fil permanent | Raderar {count} filer permanent",
     "job_emptying_trash": "Tömmer papperskorgen",
     "job_deleting_folder": "Raderar mappen {name}",
+    "job_renaming_folder": "Byter namn på mappen {name}",
+    "job_moving_folder": "Flyttar mappen {name}",
     "replace_move_pending": "Ersätt går att använda när flytten är klar."
   },
   "background_jobs": {

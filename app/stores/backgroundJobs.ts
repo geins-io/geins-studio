@@ -48,6 +48,15 @@ export const useBackgroundJobsStore = defineStore('background-jobs', () => {
         ),
       ),
   );
+  /** Folders a pending rename/move holds — their subtree's paths are moving. */
+  const movingFolderIds = computed(
+    () =>
+      new Set(
+        pending.value.flatMap((job) =>
+          job.spec.kind === 'move' ? (job.spec.folderIds ?? []) : [],
+        ),
+      ),
+  );
   const storageKey = computed(() =>
     session.value?.accountKey
       ? `${STORAGE_PREFIX}${session.value.accountKey}`
@@ -158,6 +167,7 @@ export const useBackgroundJobsStore = defineStore('background-jobs', () => {
     pending,
     hasFinished,
     movingAssetIds,
+    movingFolderIds,
     panelOpen,
     storageKey,
     fileVersions,

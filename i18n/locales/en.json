@@ -88,6 +88,8 @@
   "select_entity": "Select @.lower:{entityKey}",
   "search_entity": "Search @.lower:{entityKey}",
   "delete_entity": "Delete @.lower:{entityKey}",
+  "rename_entity": "Rename @.lower:{entityKey}",
+  "move_entity": "Move @.lower:{entityKey}",
   "update_entity": "Update @.lower:{entityKey}",
   "remove_entity": "Remove @.lower:{entityKey}",
   "send_entity": "Send @.lower:{entityKey}",
@@ -1811,6 +1813,9 @@
     "bulk_already_in_folder": "Already in this folder",
     "bulk_move_url_title": "Links to these assets will change",
     "bulk_move_url_description": "Moving changes each asset's URL, so links copied elsewhere stop working.",
+    "folder_move_url_title": "Links to assets in this folder will change",
+    "folder_move_url_description": "Moving changes the URL of every asset in the folder and its subfolders, so links copied elsewhere stop working.",
+    "move_folder_description": "Choose where to move {name}.",
     "bulk_move_not_found": "The folder or some of the assets no longer exist.",
     "bulk_move_path_too_long": "The path would be too long for some of these assets. Pick a folder higher up.",
     "bulk_move_name_clash": "Some of these assets have the same name, so they can't go in one folder.",
@@ -1896,6 +1901,8 @@
     "job_purging": "Deleting {count} asset permanently | Deleting {count} assets permanently",
     "job_emptying_trash": "Emptying trash",
     "job_deleting_folder": "Deleting folder {name}",
+    "job_renaming_folder": "Renaming folder {name}",
+    "job_moving_folder": "Moving folder {name}",
     "replace_move_pending": "Replace is available once the move has finished."
   },
   "background_jobs": {
