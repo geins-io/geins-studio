@@ -33,6 +33,15 @@ export default defineNuxtConfig({
           content: `${pkg.version}+${process.env.GIT_SHA || 'dev'}`,
         },
       ],
+      // Each weight is its own @font-face, fetched only on first use — preload
+      // so the first semibold text doesn't swap in after paint.
+      link: ['SuisseIntl-Regular', 'SuisseIntl-Medium'].map((file) => ({
+        rel: 'preload',
+        as: 'font',
+        type: 'font/woff2',
+        href: `/fonts/${file}.woff2`,
+        crossorigin: 'anonymous',
+      })),
     },
   },
 
