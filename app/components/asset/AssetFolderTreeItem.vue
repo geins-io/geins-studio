@@ -23,6 +23,8 @@ const props = defineProps<{
   disabledIds?: string[];
   /** Folders a pending rename/move holds — no rename or move meanwhile. */
   lockedIds?: string[];
+  /** Folders a new subfolder is being created in — its row stays meanwhile. */
+  creatingIds?: string[];
 }>();
 
 const emit = defineEmits<{
@@ -49,6 +51,7 @@ const busy = computed(() => !!props.busyIds?.includes(props.node._id));
 const restoring = computed(() => props.restoringId === props.node._id);
 const disabled = computed(() => !!props.disabledIds?.includes(props.node._id));
 const locked = computed(() => !!props.lockedIds?.includes(props.node._id));
+const creating = computed(() => !!props.creatingIds?.includes(props.node._id));
 
 // Open-folder icon when expanded or active, closed otherwise.
 const folderIcon = computed(() =>
@@ -59,6 +62,8 @@ function startAddChild() {
   open.value = true;
   addingChild.value = true;
 }
+// The emit marks this folder `creating` in the same tick, so the new-folder
+// row stays mounted (spinning) until the tree's refetch lands.
 function onCreateChild(name: string) {
   emit('create', { parentFolderId: props.node._id, name });
   addingChild.value = false;
@@ -173,6 +178,7 @@ function onRename(name: string) {
           type="button"
           class="text-muted-foreground hover:bg-sidebar-accent hover:text-foreground flex size-6 items-center justify-center rounded"
           :aria-label="$t('add_entity', { entityKey: 'folder' })"
+          data-test="folder-add-child"
           @click.stop="startAddChild"
         >
           <LucidePlus class="size-3.5" aria-hidden="true" />
@@ -223,11 +229,11 @@ function onRename(name: string) {
     </div>
 
     <div
-      v-if="(hasChildren && open) || addingChild"
+      v-if="(hasChildren && open) || addingChild || creating"
       class="border-sidebar-border mt-1 ml-3.5 border-l pl-2.5"
     >
       <SidebarMenu>
-        <SidebarMenuItem v-if="addingChild">
+        <SidebarMenuItem v-if="addingChild || creating">
           <AssetFolderCreateInput
             @create="onCreateChild"
             @cancel="addingChild = false"
@@ -244,6 +250,7 @@ function onRename(name: string) {
           :restoring-id="restoringId"
           :disabled-ids="disabledIds"
           :locked-ids="lockedIds"
+          :creating-ids="creatingIds"
           @select="emit('select', $event)"
           @create="emit('create', $event)"
           @rename="emit('rename', $event)"

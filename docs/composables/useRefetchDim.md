@@ -63,4 +63,4 @@ dimmed: Readonly<Ref<boolean>>;
 
 ## Notes
 
-- Consumers: [`TableView`](/components/table/TableView), the asset library grid (`pages/asset-library/index.vue`), [`AssetPickerPanel`](/components/asset/AssetPickerPanel).
+- Consumers: [`TableView`](/components/table/TableView), the asset library grid (`pages/asset-library/index.vue`), [`AssetPickerPanel`](/components/asset/AssetPickerPanel), [`AssetFolderTree`](/components/asset/AssetFolderTree#loading).
