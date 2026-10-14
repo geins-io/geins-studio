@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { defineComponent, h, nextTick, ref } from 'vue';
 import { TableMode } from '#shared/types';
 import { mountWithContext } from '../../../test/helpers';
@@ -95,6 +95,37 @@ describe('TableView — server mode', () => {
     const wrapper = await mountTable({ ...serverProps, loading: true });
     expect(names(wrapper)).toEqual(['b', 'a', 'c']);
     expect(wrapper.find('[aria-busy="true"]').exists()).toBe(true);
+  });
+
+  it('dims the current rows only once a refetch runs past the delay', async () => {
+    const loading = ref(false);
+    const Host = defineComponent({
+      setup: () => () =>
+        h(TableView<Row, unknown>, {
+          columns,
+          data: rows,
+          mode: TableMode.Simple,
+          ...serverProps,
+          dataSource: 'server',
+          loading: loading.value,
+        }),
+    });
+    const wrapper = await mountWithContext(Host);
+    vi.useFakeTimers();
+    try {
+      loading.value = true;
+      await nextTick();
+      expect(wrapper.find('[aria-busy="true"]').exists()).toBe(true);
+      expect(wrapper.find('table').classes()).not.toContain('opacity-60');
+
+      vi.advanceTimersByTime(200);
+      await nextTick();
+      expect(wrapper.find('table').classes()).toEqual(
+        expect.arrayContaining(['opacity-60', 'pointer-events-none']),
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('writes search without debouncing', async () => {

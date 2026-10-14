@@ -177,6 +177,7 @@ const showSkeleton = computed(
   () => props.loading && (!serverMode || props.data.length === 0),
 );
 const refetching = computed(() => props.loading && !showSkeleton.value);
+const { dimmed } = useRefetchDim(refetching);
 
 onUnmounted(() => {
   tableMaximized.value = false;
@@ -676,7 +677,9 @@ const hasSearchableColumns = computed(() => {
   >
     <Table
       :style="maxHeight ? { maxHeight } : {}"
-      :class="cn('transition-opacity', refetching && 'opacity-60')"
+      :class="
+        cn('transition-opacity', dimmed && 'pointer-events-none opacity-60')
+      "
     >
       <TableHeader v-if="table.getRowModel().rows?.length">
         <TableRow

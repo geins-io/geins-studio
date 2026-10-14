@@ -34,7 +34,7 @@ await assetApi.delete(id);
 await refresh();
 ```
 
-Show skeletons only when `pending && items.length === 0`. While the next page loads, the previous page's rows stay in `items`.
+Show skeletons only when `pending && items.length === 0`. While the next page loads, the previous page's rows stay in `items`: dim them with [`useRefetchDim`](/composables/useRefetchDim). A server-mode `TableView` takes `pending` as `loading` and does both itself.
 
 `deps` lists the inputs the fetcher reads from outside the list state, such as `selectedFolder` above. A change to them resets the list like any other query change: back to page 1, on a new batch.
 

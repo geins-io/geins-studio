@@ -114,7 +114,7 @@ How server mode differs from client mode:
 
 - **Sorting** is single-column. Clearing a header's sort sets `sorting` to `[]`, which means "the endpoint's default". Only columns the column definitions mark sortable can be sorted. Mark columns the backend can't sort as non-sortable with `useColumns`'s `sortableColumns`. `TableView` knows nothing about backend field names. `initSortingState` is ignored; set the initial sort in `useListQuery`'s `defaults.sort`.
 - **Search** writes `search` on every keystroke with no debounce. `useListQuery` owns the debounce. `searchableFields` doesn't apply.
-- **Loading** shows skeleton rows only when there are no rows yet. Later fetches keep the current page on screen, dimmed, with `aria-busy`.
+- **Loading** shows skeleton rows only when there are no rows yet, so pass `pending` straight through. Later fetches keep the current page on screen with `aria-busy`, and dim it (`opacity-60`, no pointer events) once the fetch runs past 200 ms ([`useRefetchDim`](/composables/useRefetchDim)).
 - **Not supported:** `TableMode.Minimal` (it has no pagination) and expanding rows. Both log a dev warning.
 
 #### Selection in server mode
@@ -236,7 +236,7 @@ Filters outside the table are active. Shows the "no results" empty state (with *
 loading?: boolean
 ```
 
-Renders skeleton rows when `true`.
+Renders skeleton rows when `true`. In server mode, only while `data` is empty; with rows on screen it marks them busy and dims them instead (see [Server mode](#server-mode)).
 
 - **Default:** `false`
 

@@ -121,6 +121,11 @@ watch(pending, (isPending) => {
 const loading = computed(
   () => pending.value && (opening.value || !items.value.length),
 );
+const refetching = computed(() => pending.value && !loading.value);
+const { dimmed } = useRefetchDim(refetching);
+// Server-mode TableView skeletons only while it has no rows, and dims them on
+// a refetch — so hand it none until this open's first fetch lands.
+const listRows = computed(() => (loading.value ? [] : items.value));
 const fetchError = computed(() => !!error.value);
 
 // Selection lives in `selectedIds` for both views. `seen` resolves ids to
@@ -433,7 +438,15 @@ async function confirmSelection() {
               v-model="searchInput"
               :placeholder="$t('search')"
               class="order-2 w-full sm:order-1 sm:w-64"
-            />
+              input-class="pe-9"
+            >
+              <template v-if="dimmed" #icon>
+                <LucideLoaderCircle
+                  class="text-muted-foreground size-4 animate-spin"
+                  aria-hidden="true"
+                />
+              </template>
+            </Input>
 
             <span class="text-muted-foreground order-3 ml-auto text-xs">
               {{ $t('rows_total', { total, entityKey }, total) }}
@@ -472,11 +485,11 @@ async function confirmSelection() {
               <TableView
                 v-model:pagination="pagination"
                 v-model:sorting="sorting"
-                :loading="loading"
+                :loading="pending"
                 :entity-key="entityKey"
                 :columns="listColumns"
                 data-source="server"
-                :data="items"
+                :data="listRows"
                 :row-count="total"
                 :filtered="hasActiveQuery"
                 :page-sizes="PAGE_SIZES"
@@ -536,7 +549,13 @@ async function confirmSelection() {
 
               <div
                 v-else
-                class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))]"
+                :class="
+                  cn(
+                    'grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4 transition-opacity sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))]',
+                    dimmed && 'pointer-events-none opacity-60',
+                  )
+                "
+                :aria-busy="refetching || undefined"
               >
                 <div v-for="asset in items" :key="asset._id" class="relative">
                   <Badge
