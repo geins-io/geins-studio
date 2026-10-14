@@ -52,7 +52,7 @@
   --color-sidebar: var(--sidebar);
 
   /* Font Family */
-  --font-sans: 'Suisse Intl';
+  --font-sans: 'Suisse Intl', ui-sans-serif, system-ui, sans-serif;
 
   /* Letter Spacing */
   --tracking-normal: 0.01em;
