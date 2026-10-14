@@ -23,7 +23,7 @@ import { formatFileSize } from '#shared/utils/file';
  * Asset detail/edit panel — the standard slide-in edit panel (PanelEdit) for a
  * single asset. Editable metadata (name, folder, description, tags, channels,
  * content languages)
- * plus read-only info and, on the real backend, a "Where it's used" section
+ * plus read-only info and a "Where it's used" section
  * ([AssetUsedIn](/components/asset/AssetUsedIn)). Alt text (translation panel),
  * actions, and replace are separate. Opened from the library card/row via
  * `v-model:open` + `:asset`.
@@ -103,7 +103,7 @@ const formSchema = toTypedSchema(
     name: z
       .string()
       .min(1, { message: t('form.field_required') })
-      // `relocate` takes a bare file name — a slash is a 422 from the real API.
+      // `relocate` takes a bare file name — a slash is a 422 from the API.
       .refine((value) => !value.includes('/'), {
         message: t('asset_library.asset_name_no_slash'),
       }),

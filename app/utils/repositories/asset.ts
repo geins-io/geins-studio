@@ -239,7 +239,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
    * finish through here.
    *
    * The bytes PUT deliberately uses the global `fetch`, not `$geinsApi`: it
-   * targets the plan URL directly (a storage endpoint in production), so it
+   * targets the plan URL directly (a signed storage URL), so it
    * must not go through the API proxy. Throws on an unknown upload `mode`.
    */
   async function sendTicketFiles(
@@ -306,16 +306,13 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     folder,
 
     /**
-     * List assets via `POST /asset/query` (mirrors the real POST
-     * /media/assets/query `assetQuery` schema + `BatchQueryResult` shape).
-     * Returns one page at the schema's `pageSize` cap (1000), treated as the
-     * whole set — the grid + list sort / paginate / search client-side via
-     * TanStack, the app-wide pattern. Libraries past 1000 assets are truncated.
+     * Every asset in a folder / trash scope — one `POST /media/assets/query`
+     * page at the schema's `pageSize` cap (1000), treated as the whole set, so
+     * a scope past 1000 assets is truncated. Paged lists use {@link query}.
      *
      * `all: true` matches every asset *regardless of the other filters*, so it
      * is only sent for the unfiltered "all assets" view; the folder / trash
-     * scope is built by `assetScopeCriteria`. Server-driven lists use
-     * {@link query} instead.
+     * scope is built by `assetScopeCriteria`.
      */
     async list(
       options?: AssetApiOptions,
@@ -408,7 +405,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * Move up to 100 assets to trash — real `POST /media/assets/bulk-delete`
+     * Move up to 100 assets to trash — `POST /media/assets/bulk-delete`
      * (`204`). All or nothing: one unknown id refuses the whole call with a
      * `404` listing the ids. Already-trashed ids are left alone. Chunk larger
      * selections with `runInChunks` (`#shared/utils/bulk`).
@@ -426,7 +423,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * Purge up to 100 trashed assets now — real `POST /media/assets/bulk-purge`
+     * Purge up to 100 trashed assets now — `POST /media/assets/bulk-purge`
      * (`202`). Only trashed ids: a live id refuses the whole call with a `404`
      * listing the ids, so nothing skips the restore window. There is no
      * single-asset route, so purge one asset by passing one id. The purge runs
@@ -448,7 +445,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * Purge every trashed asset in the account — real `POST /media/trash/empty`
+     * Purge every trashed asset in the account — `POST /media/trash/empty`
      * (`202`). The server asks for no confirmation, so the caller must. Same
      * delayed purge as `bulkPurge`.
      */
@@ -463,7 +460,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * Move up to 100 assets into one folder — real `POST /media/assets/bulk-move`.
+     * Move up to 100 assets into one folder — `POST /media/assets/bulk-move`.
      * `folderId: null` is the library root. Usually `202` with a `moveId` (the
      * copies land in the background, so refresh rather than trust the list);
      * `204` (→ `null`) when every asset already sits in the folder. All or
@@ -487,7 +484,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * The background copies behind a `moveId` — real `GET media/moves/{moveId}`.
+     * The background copies behind a `moveId` — `GET media/moves/{moveId}`.
      * `null` on `404`: a completed move is swept after 24 hours (sooner when its
      * folder is deleted), so nothing is left to wait for.
      */
@@ -508,7 +505,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * Add tags to up to 100 assets — real `POST /media/assets/bulk-tag`. Adds to
+     * Add tags to up to 100 assets — `POST /media/assets/bulk-tag`. Adds to
      * each asset's set and never removes, so repeating a body is safe; a new tag
      * is created on the fly. All or nothing: a `422` names the assets that would
      * pass 100 tags.
@@ -527,7 +524,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * Add channels to up to 100 assets — real
+     * Add channels to up to 100 assets —
      * `POST /media/assets/bulk-assign-channels`. Same add-only, all-or-nothing
      * rules as {@link bulkTag}; a `422` names the assets that would pass 50.
      */
@@ -545,7 +542,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * Add content languages to up to 100 assets — real
+     * Add content languages to up to 100 assets —
      * `POST /media/assets/bulk-assign-languages`. Same add-only, all-or-nothing
      * rules as {@link bulkTag}; a `422` names the assets that would pass 50.
      */
@@ -588,7 +585,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * What this asset is linked to outside the library — real
+     * What this asset is linked to outside the library —
      * `GET /media/assets/{id}/links`. The backend resolves nothing: a link to a
      * since-deleted product still comes back, and no display name is included,
      * so the caller resolves `targetId` itself. Read-only; failures surface
@@ -608,7 +605,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * Link assets to targets — real `POST /media/assets/bulk-link`. Every asset
+     * Link assets to targets — `POST /media/assets/bulk-link`. Every asset
      * gets every link (at most 100 links per call). Only adds, never removes, so
      * repeating a body is safe. All or nothing: a `productimage` link on a
      * non-image/svg asset is a `422` naming those assets.
@@ -626,7 +623,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       });
     },
 
-    /** Remove one link — real `DELETE /media/assets/{id}/links/{type}/{target}`. */
+    /** Remove one link — `DELETE /media/assets/{id}/links/{type}/{target}`. */
     async removeLink(
       id: string,
       targetType: string,
@@ -644,7 +641,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * Distinct tags on live assets, sorted by name — real `GET media/tags`.
+     * Distinct tags on live assets, sorted by name — `GET media/tags`.
      * Feeds the tag-input suggestions; a tag only on trashed assets drops out.
      */
     async listTags(fetchOptions?: RepoFetchOptions): Promise<string[]> {
@@ -653,7 +650,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * Storage + the by-type / by-folder breakdown — real `GET media/usage`.
+     * Storage + the by-type / by-folder breakdown — `GET media/usage`.
      * `storage` is the latest reading in the range; the breakdown ignores it.
      */
     async usage(
@@ -667,9 +664,9 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * Upload files via the 3-step ticket flow (mirrors Geins.Media): claim a
-     * ticket, PUT each accepted file's bytes straight to its plan URL (raw
-     * fetch, no auth header — like a signed storage URL), then confirm with
+     * Upload files via the Geins.Media 3-step ticket flow: claim a ticket,
+     * PUT each accepted file's bytes straight to its signed plan URL (raw
+     * fetch, no auth header), then confirm with
      * `complete`. Returns the per-file outcomes (ticket-stage rejections +
      * complete-stage results) keyed by `clientRef`. Metadata rides the claim —
      * description / alt text / localizations / tags / channels / languages /
@@ -759,7 +756,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * Replace an asset's file in place — real `POST /media/assets/{id}/replace`
+     * Replace an asset's file in place — `POST /media/assets/{id}/replace`
      * claims a one-file ticket (its `clientRef` and `assetId` are the asset's
      * id), then the bytes go through the same PUT + `complete` as an upload.
      * Id, path, name, texts, tags, channels and links stay; `url` (its `v`),
@@ -801,7 +798,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * Rename and/or move an asset — real `POST /media/assets/{id}/relocate`. A
+     * Rename and/or move an asset — `POST /media/assets/{id}/relocate`. A
      * full replace: a move sends the current `name`, a rename the current
      * `folderId`. The updated asset comes back on `200` **or** `202`; a `202`
      * that started a move carries its `moveId`, and until the move lands
@@ -821,7 +818,7 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * Restore a soft-deleted asset from trash — real
+     * Restore a soft-deleted asset from trash —
      * `POST /media/assets/{id}/restore`. Deleting is soft on Geins.Media (30-day
      * retention), so this is the undo. The response body is not relied on (the backend may answer `200` or `204`) — callers
      * refresh the library read instead.
