@@ -80,6 +80,10 @@ export default defineConfig({
                 link: '/composables/useListFilters.md',
               },
               { text: 'useListQuery', link: '/composables/useListQuery.md' },
+              {
+                text: 'useRefetchDim',
+                link: '/composables/useRefetchDim.md',
+              },
               { text: 'useTable', link: '/composables/useTable.md' },
             ],
           },

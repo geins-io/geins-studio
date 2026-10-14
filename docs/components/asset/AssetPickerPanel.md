@@ -77,7 +77,7 @@ Initial folder scope (the server-side filter). `null` starts at all assets.
 defineModel<boolean>('open'); // default false
 ```
 
-Visibility. Each time it flips **true** the panel resets its transient state (view, folder, search, sort, page, page size, selection ← `preselectedIds`) and refetches. Skeletons show until that first fetch lands, so rows from the previous open never flash.
+Visibility. Each time it flips **true** the panel resets its transient state (view, folder, search, sort, page, page size, selection ← `preselectedIds`) and refetches. Skeletons show until that first fetch lands, so rows from the previous open never flash. Later fetches (search, folder, sort, page) keep the results on screen and dim them, with a spinner in the search field, once they run past 200 ms ([`useRefetchDim`](/composables/useRefetchDim)).
 
 ## Events
 

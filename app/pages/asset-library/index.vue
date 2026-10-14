@@ -184,8 +184,11 @@ const clearQuery = () => {
   listFilters.clearAll();
 };
 
-// Skeletons on the first load only; later fetches keep the rows on screen.
+// Skeletons on the first load only; later fetches keep the results on screen,
+// dimmed (TableView does the same for the list) and with a search spinner.
 const loading = computed(() => pending.value && !items.value.length);
+const refetching = computed(() => pending.value && !!items.value.length);
+const { dimmed } = useRefetchDim(refetching);
 const fetchError = computed(() => !!error.value);
 
 // Empty-state descriptor shared by the grid (inline <Empty>) and the list
@@ -1052,7 +1055,15 @@ async function confirmEmptyTrash() {
       v-model="searchInput"
       :placeholder="$t('search')"
       class="order-2 w-full sm:order-1 sm:w-64"
-    />
+      input-class="pe-9"
+    >
+      <template v-if="dimmed" #icon>
+        <LucideLoaderCircle
+          class="text-muted-foreground size-4 animate-spin"
+          aria-hidden="true"
+        />
+      </template>
+    </Input>
     <ListFilterBar
       :list-filters="listFilters"
       class="order-3 w-full sm:order-1 sm:w-auto"
@@ -1161,7 +1172,7 @@ async function confirmEmptyTrash() {
           v-model:selected-ids="selectedIds"
           v-model:pagination="pagination"
           v-model:sorting="sorting"
-          :loading="loading"
+          :loading="pending"
           :entity-key="entityKey"
           :columns="columns"
           data-source="server"
@@ -1241,7 +1252,13 @@ async function confirmEmptyTrash() {
 
         <div
           v-else
-          class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4 p-0.5 sm:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]"
+          :class="
+            cn(
+              'grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4 p-0.5 transition-opacity sm:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]',
+              dimmed && 'pointer-events-none opacity-60',
+            )
+          "
+          :aria-busy="refetching || undefined"
         >
           <AssetCard
             v-for="asset in items"
