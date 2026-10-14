@@ -279,6 +279,9 @@ describe('uploadRejectionMessageKey', () => {
     expect(uploadRejectionMessageKey('PATH_ALREADY_EXISTS')).toBe(
       'asset_library.upload_reject_path_already_exists',
     );
+    expect(uploadRejectionMessageKey('METADATA_INVALID')).toBe(
+      'asset_library.upload_reject_metadata_invalid',
+    );
   });
 
   it('gives a path held by a trashed asset its own copy', () => {

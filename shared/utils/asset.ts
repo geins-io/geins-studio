@@ -1,6 +1,8 @@
 import type {
   AssetApiOptions,
   AssetCapabilities,
+  AssetLabelKind,
+  AssetLabelLimitBreach,
   AssetLinkTargetType,
   AssetSelectionKind,
   AssetSortField,
@@ -107,6 +109,7 @@ const UPLOAD_REJECTION_KEYS: Record<UploadRejectionCode, string> = {
   FOLDER_INVALID: 'asset_library.upload_reject_folder_invalid',
   FOLDER_DEPTH_EXCEEDED: 'asset_library.upload_reject_folder_depth_exceeded',
   FORBIDDEN: 'asset_library.upload_reject_forbidden',
+  METADATA_INVALID: 'asset_library.upload_reject_metadata_invalid',
   QUOTA_EXCEEDED: 'asset_library.upload_reject_quota_exceeded',
   BLOB_MISSING: 'asset_library.upload_reject_blob_missing',
   CONTENT_TYPE_MISMATCH: 'asset_library.upload_reject_content_type_mismatch',
@@ -497,7 +500,17 @@ export const ASSET_LABEL_LIMITS = {
   tags: { maxCount: 100, maxLength: 64 },
   channels: { maxCount: 50, maxLength: 50 },
   languages: { maxCount: 50, maxLength: 50 },
-} as const;
+} as const satisfies Record<
+  AssetLabelKind,
+  { maxCount: number; maxLength: number }
+>;
+
+/** The entity i18n key each label list is named by in UI copy. */
+export const ASSET_LABEL_ENTITY_KEYS = {
+  tags: 'tag',
+  channels: 'channel',
+  languages: 'content_language',
+} as const satisfies Record<AssetLabelKind, string>;
 
 /**
  * Tags / channels the way the backend stores them: trimmed, blanks dropped, and
@@ -523,8 +536,8 @@ export function normalizeAssetLabels(values: readonly string[]): string[] {
  */
 export function assetLabelLimitError(
   values: readonly string[],
-  kind: keyof typeof ASSET_LABEL_LIMITS,
-): 'count' | 'length' | null {
+  kind: AssetLabelKind,
+): AssetLabelLimitBreach | null {
   const { maxCount, maxLength } = ASSET_LABEL_LIMITS[kind];
   const normalized = normalizeAssetLabels(values);
   if (normalized.length > maxCount) return 'count';

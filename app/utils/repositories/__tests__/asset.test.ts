@@ -818,6 +818,8 @@ describe('assetRepo', () => {
           clientRef: 'a',
           folderId: null,
           localizations: { en: { altText: 'Logo' } },
+          tags: ['summer'],
+          channels: ['1|se'],
           languages: ['sv', 'en'],
           links: [{ targetType: 'productimage', targetId: 'p1' }],
         },
@@ -826,6 +828,9 @@ describe('assetRepo', () => {
           file: new File(['x'], 'hero.png', { type: 'image/png' }),
           clientRef: 'b',
           name: 'campaigns/hero.png',
+          // Empty lists are left off, so an overwrite keeps the stored set.
+          tags: [],
+          channels: [],
         },
       ]);
 
@@ -843,6 +848,8 @@ describe('assetRepo', () => {
                 mimeType: 'image/png',
                 overwrite: false,
                 localizations: { en: { altText: 'Logo' } },
+                tags: ['summer'],
+                channels: ['1|se'],
                 languages: ['sv', 'en'],
                 links: [{ targetType: 'productimage', targetId: 'p1' }],
               },

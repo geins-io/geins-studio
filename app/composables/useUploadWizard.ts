@@ -1,5 +1,9 @@
-import type { LocalizedText } from '#shared/types';
-import { sameAssetLabels } from '#shared/utils/asset';
+import type {
+  AssetLabelKind,
+  AssetLabelLimitBreach,
+  LocalizedText,
+} from '#shared/types';
+import { assetLabelLimitError, sameAssetLabels } from '#shared/utils/asset';
 import type { InjectionKey, Ref, ComputedRef } from 'vue';
 
 /**
@@ -57,7 +61,19 @@ interface UseUploadWizardReturnType {
   setBulkLanguages: (ids: string[], languages: string[]) => void;
   bulkSharedTags: (ids: string[]) => string[];
   applyBulkTags: (ids: string[], next: string[]) => void;
+  // Backend label limits, checked on what upload would send.
+  labelLimitError: (
+    ids: string[],
+    kind: AssetLabelKind,
+  ) => AssetLabelLimitBreach | null;
+  hasLabelLimitError: ComputedRef<boolean>;
 }
+
+const LABEL_KINDS: readonly AssetLabelKind[] = [
+  'tags',
+  'channels',
+  'languages',
+];
 
 /**
  * Working state for the multi-step upload wizard (`/asset-library/upload`).
@@ -190,6 +206,23 @@ export function useUploadWizard(): UseUploadWizardReturnType {
     }
   }
 
+  // First limit any of the files breaks for this list. An over-limit file would
+  // be rejected as METADATA_INVALID, so upload is blocked until it's fixed.
+  function labelLimitError(
+    ids: string[],
+    kind: AssetLabelKind,
+  ): AssetLabelLimitBreach | null {
+    for (const id of ids) {
+      const breach = assetLabelLimitError(settingsOf(id)[kind] ?? [], kind);
+      if (breach) return breach;
+    }
+    return null;
+  }
+  const hasLabelLimitError = computed(() => {
+    const ids = files.value.map((f) => f.id);
+    return LABEL_KINDS.some((kind) => labelLimitError(ids, kind) !== null);
+  });
+
   return {
     files,
     settings,
@@ -209,6 +242,8 @@ export function useUploadWizard(): UseUploadWizardReturnType {
     setBulkLanguages,
     bulkSharedTags,
     applyBulkTags,
+    labelLimitError,
+    hasLabelLimitError,
   };
 }
 
