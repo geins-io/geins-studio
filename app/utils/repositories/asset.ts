@@ -60,6 +60,8 @@ export interface UploadTicketItem {
   description?: string;
   altText?: string;
   localizations?: Localized<AssetLocalizations>;
+  tags?: string[];
+  channels?: string[];
   languages?: string[];
   /** Links created when the ticket completes (max 100). */
   links?: AssetLinkTarget[];
@@ -667,8 +669,9 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
      * fetch, no auth header), then confirm with
      * `complete`. Returns the per-file outcomes (ticket-stage rejections +
      * complete-stage results) keyed by `clientRef`. Metadata rides the claim —
-     * description / alt text / localizations / `links` are applied when the
-     * ticket completes, so no follow-up `PATCH` per created asset.
+     * description / alt text / localizations / tags / channels / languages /
+     * `links` are applied when the ticket completes, so no follow-up `PATCH`
+     * per created asset.
      *
      * An item's `folderId` is forwarded as given (`null` = library root) and
      * omitted entirely when the item leaves it out, which is how the backend is
@@ -723,6 +726,8 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
             ...(it.localizations && Object.keys(it.localizations).length
               ? { localizations: it.localizations }
               : {}),
+            ...(it.tags?.length ? { tags: it.tags } : {}),
+            ...(it.channels?.length ? { channels: it.channels } : {}),
             ...(it.languages?.length ? { languages: it.languages } : {}),
             ...(it.links?.length ? { links: it.links } : {}),
           };

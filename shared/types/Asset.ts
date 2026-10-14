@@ -171,6 +171,12 @@ export interface AssetLinkTarget<T extends string = AssetLinkTargetType> {
  */
 export type AssetSelectionKind = 'images' | 'files' | 'mixed';
 
+/** The free-label lists on an asset that share the backend's `PATCH` rules. */
+export type AssetLabelKind = 'tags' | 'channels' | 'languages';
+
+/** Which backend limit a label list breaks: too many values, or one too long. */
+export type AssetLabelLimitBreach = 'count' | 'length';
+
 /**
  * How a bulk link treats the selection: `byType` links images/svg as product
  * images and everything else as files; `file` links everything as files.
@@ -284,6 +290,10 @@ export interface UploadTicketFile {
   altText?: string;
   /** Per-locale `{ description, altText }`, applied on complete. */
   localizations?: Localized<AssetLocalizations>;
+  /** Tags, applied on complete under the `PATCH` rules. */
+  tags?: string[];
+  /** Channel ids, applied on complete under the `PATCH` rules. */
+  channels?: string[];
   /** Content languages, applied on complete under the `PATCH` rules. */
   languages?: string[];
   /** Links created when the ticket completes (max 100 per file). */
@@ -303,6 +313,7 @@ export type UploadRejectionCode =
   | 'FOLDER_INVALID'
   | 'FOLDER_DEPTH_EXCEEDED'
   | 'FORBIDDEN'
+  | 'METADATA_INVALID'
   | 'QUOTA_EXCEEDED'
   | 'BLOB_MISSING'
   | 'CONTENT_TYPE_MISMATCH'

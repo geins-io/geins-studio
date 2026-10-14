@@ -25,10 +25,9 @@ const {
   setBulkLanguages,
   bulkSharedTags,
   applyBulkTags,
+  labelLimitError,
 } = useUploadWizardContext();
-// The upload ticket doesn't take tags + channels yet, so they're disabled
-// (values persist in wizard state). See AssetWizardManage.
-const caps = useAssetCapabilities();
+const { limitMessages } = useAssetLabelLimits();
 
 const folder = computed<string | null | undefined>({
   get: () => bulkFolderId(props.ids),
@@ -57,6 +56,11 @@ const tags = computed<string[]>({
   get: () => bulkSharedTags(props.ids),
   set: (value) => applyBulkTags(props.ids, value),
 });
+
+// Checked per file, so a breach in a value only some files hold still shows.
+const limits = computed(() =>
+  limitMessages((kind) => labelLimitError(props.ids, kind)),
+);
 
 function removeSelected() {
   removeFiles(props.ids);
@@ -104,11 +108,7 @@ function removeSelected() {
         />
       </div>
 
-      <fieldset
-        :disabled="!caps.canUploadTagsAndChannels"
-        class="m-0 min-w-0 space-y-1.5 border-0 p-0"
-        :class="{ 'opacity-60': !caps.canUploadTagsAndChannels }"
-      >
+      <div class="space-y-1.5">
         <Label>
           {{ $t('channel', 2) }}
           <span class="text-muted-foreground font-normal">
@@ -117,13 +117,12 @@ function removeSelected() {
         </Label>
         <FormInputChannels v-model="channels" :item-class="channelItemClass" />
         <p class="text-muted-foreground text-xs">
-          {{
-            caps.canUploadTagsAndChannels
-              ? $t('asset_library.wizard_channels_partial_hint')
-              : $t('asset_library.wizard_field_not_saved')
-          }}
+          {{ $t('asset_library.wizard_channels_partial_hint') }}
         </p>
-      </fieldset>
+        <p v-if="limits.channels" class="text-destructive text-xs">
+          {{ limits.channels }}
+        </p>
+      </div>
 
       <div class="space-y-1.5">
         <Label>
@@ -140,13 +139,12 @@ function removeSelected() {
               : $t('asset_library.content_languages_hint')
           }}
         </p>
+        <p v-if="limits.languages" class="text-destructive text-xs">
+          {{ limits.languages }}
+        </p>
       </div>
 
-      <fieldset
-        :disabled="!caps.canUploadTagsAndChannels"
-        class="m-0 min-w-0 space-y-1.5 border-0 p-0"
-        :class="{ 'opacity-60': !caps.canUploadTagsAndChannels }"
-      >
+      <div class="space-y-1.5">
         <Label>{{ $t('tag', 2) }}</Label>
         <FormInputTagsSearch
           v-model="tags"
@@ -154,13 +152,10 @@ function removeSelected() {
           :data-set="tagOptions"
           :allow-custom-tags="true"
         />
-        <p
-          v-if="!caps.canUploadTagsAndChannels"
-          class="text-muted-foreground text-xs"
-        >
-          {{ $t('asset_library.wizard_field_not_saved') }}
+        <p v-if="limits.tags" class="text-destructive text-xs">
+          {{ limits.tags }}
         </p>
-      </fieldset>
+      </div>
 
       <div class="space-y-1.5">
         <Label>{{ $t('remove') }}</Label>

@@ -14,13 +14,16 @@ const { assetApi } = useGeinsRepository();
 const { meta } = useAssetType();
 const { resolveIcon } = useLucideIcon();
 const { folderName } = useFolders();
-const { files, settingsOf, patchSettings, removeFiles, linkProducts } =
-  useUploadWizardContext();
+const {
+  files,
+  settingsOf,
+  patchSettings,
+  removeFiles,
+  linkProducts,
+  labelLimitError,
+} = useUploadWizardContext();
 const { matchOf } = useProductMatch();
-// Name, folder, description and alt text all ride the ticket claim; the ticket
-// doesn't take tags + channels yet, so those fields are disabled. Values still
-// live in the wizard state — nothing is lost once the ticket accepts them.
-const caps = useAssetCapabilities();
+const { limitMessages } = useAssetLabelLimits();
 
 // A file whose filename ref resolves to a product (only when auto-link is on).
 const isLinked = (file: File): boolean => linkProducts.value && !!matchOf(file);
@@ -132,6 +135,12 @@ const altText = computed<LocalizedText>({
   set: (value) => {
     if (active.value) patchSettings(active.value.id, { altText: value });
   },
+});
+
+// The page blocks upload while any file breaks a limit; this says which field.
+const limits = computed(() => {
+  const ids = active.value ? [active.value.id] : [];
+  return limitMessages((kind) => labelLimitError(ids, kind));
 });
 
 const rowFolderName = (id: string): string | undefined => {
@@ -287,11 +296,7 @@ const rowFolderName = (id: string): string | undefined => {
               <AssetFolderPicker v-model="folderId" />
             </div>
 
-            <fieldset
-              :disabled="!caps.canUploadTagsAndChannels"
-              class="m-0 min-w-0 space-y-1.5 border-0 p-0"
-              :class="{ 'opacity-60': !caps.canUploadTagsAndChannels }"
-            >
+            <div class="space-y-1.5">
               <Label>
                 {{ $t('channel', 2) }}
                 <span class="text-muted-foreground font-normal">
@@ -299,13 +304,10 @@ const rowFolderName = (id: string): string | undefined => {
                 </span>
               </Label>
               <FormInputChannels v-model="channels" />
-              <p
-                v-if="!caps.canUploadTagsAndChannels"
-                class="text-muted-foreground text-xs"
-              >
-                {{ $t('asset_library.wizard_field_not_saved') }}
+              <p v-if="limits.channels" class="text-destructive text-xs">
+                {{ limits.channels }}
               </p>
-            </fieldset>
+            </div>
 
             <div class="space-y-1.5">
               <Label>
@@ -317,6 +319,9 @@ const rowFolderName = (id: string): string | undefined => {
               <FormInputLanguages v-model="languages" />
               <p class="text-muted-foreground text-xs">
                 {{ $t('asset_library.content_languages_hint') }}
+              </p>
+              <p v-if="limits.languages" class="text-destructive text-xs">
+                {{ limits.languages }}
               </p>
             </div>
 
@@ -330,11 +335,7 @@ const rowFolderName = (id: string): string | undefined => {
               <Textarea v-model="description" />
             </div>
 
-            <fieldset
-              :disabled="!caps.canUploadTagsAndChannels"
-              class="m-0 min-w-0 space-y-1.5 border-0 p-0"
-              :class="{ 'opacity-60': !caps.canUploadTagsAndChannels }"
-            >
+            <div class="space-y-1.5">
               <Label>
                 {{ $t('tag', 2) }}
                 <span class="text-muted-foreground font-normal">
@@ -347,13 +348,10 @@ const rowFolderName = (id: string): string | undefined => {
                 :data-set="tagOptions"
                 :allow-custom-tags="true"
               />
-              <p
-                v-if="!caps.canUploadTagsAndChannels"
-                class="text-muted-foreground text-xs"
-              >
-                {{ $t('asset_library.wizard_field_not_saved') }}
+              <p v-if="limits.tags" class="text-destructive text-xs">
+                {{ limits.tags }}
               </p>
-            </fieldset>
+            </div>
           </div>
         </template>
 

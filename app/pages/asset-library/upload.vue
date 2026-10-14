@@ -44,7 +44,8 @@ watch(
 // inject so they read/write the same files + settings.
 const wizard = useUploadWizard();
 provide(uploadWizardKey, wizard);
-const { files, totalSize, addFiles, removeFiles, clear } = wizard;
+const { files, totalSize, addFiles, removeFiles, clear, hasLabelLimitError } =
+  wizard;
 
 const { currentStep, nextStep, previousStep, isFirstStep, isLastStep } =
   useStepManagement(3);
@@ -63,10 +64,13 @@ const steps = computed(() => [
   { step: 3, title: t('asset_library.wizard_step_review') },
 ]);
 
-// Step 1 needs at least one file before advancing; later steps have no gate yet.
-const canProceed = computed(
-  () => currentStep.value !== 1 || files.value.length > 0,
-);
+// Step 1 needs at least one file; step 2 holds while a file breaks a label
+// limit, since the ticket would reject that file.
+const canProceed = computed(() => {
+  if (currentStep.value === 1) return files.value.length > 0;
+  if (currentStep.value === 2) return !hasLabelLimitError.value;
+  return true;
+});
 
 const { assetApi } = useGeinsRepository();
 const { restoreAsset } = useAssetActions();
@@ -140,6 +144,8 @@ async function submit() {
       folderId: s.folderId ?? null,
       name: s.name || wf.file.name,
       localizations: buildLocalizations(s.description, s.altText ?? {}),
+      tags: normalizeAssetLabels(s.tags ?? []),
+      channels: normalizeAssetLabels(s.channels ?? []),
       languages: normalizeAssetLabels(s.languages ?? []),
       ...(product
         ? {
@@ -238,9 +244,12 @@ function leave() {
       <div class="shrink-0 pb-6">
         <Stepper v-model="currentStep" class="w-full items-start gap-0">
           <template v-for="(s, i) in steps" :key="s.step">
+            <!-- Reka's linear stepper lets the next header be clicked; hold it to
+                 the same gate as Next. -->
             <StepperItem
               v-slot="{ state }"
               :step="s.step"
+              :disabled="s.step > currentStep && !canProceed"
               class="shrink-0 flex-col items-center"
             >
               <StepperTrigger class="flex-col gap-1.5">
@@ -493,7 +502,7 @@ function leave() {
           <ButtonIcon
             v-if="isLastStep"
             icon="upload"
-            :disabled="!files.length"
+            :disabled="!files.length || hasLabelLimitError"
             @click="submit"
           >
             {{ $t('upload') }}

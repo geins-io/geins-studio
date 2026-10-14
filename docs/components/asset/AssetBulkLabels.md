@@ -8,7 +8,7 @@
 - `kind="tags"`: [`FormInputTagsSearch`](/components/form/input/FormInputTagsSearch) with suggestions from `assetApi.listTags()` (`GET media/tags`, the shared `asset-tags` key) and custom tags allowed, since sending a new tag creates it.
 - `kind="channels"`: [`FormInputChannels`](/components/form/input/FormInputChannels), fed from the account's channels.
 - `kind="languages"`: [`FormInputLanguages`](/components/form/input/FormInputLanguages), fed from the account's languages.
-- An inline error when the list breaks a backend limit (`assetLabelLimitError` on the normalized values: 100 tags ≤ 64 chars, 50 channels ≤ 50 chars, 50 languages ≤ 50 chars). The action's `isValid` checks the same thing, so Run stays disabled.
+- An inline error when the list breaks a backend limit (`assetLabelLimitError` on the normalized values: 100 tags ≤ 64 chars, 50 channels ≤ 50 chars, 50 languages ≤ 50 chars), worded by [`useAssetLabelLimits`](/composables/useAssetLabelLimits). The action's `isValid` checks the same thing, so Run stays disabled.
 
 ## Usage
 
@@ -31,9 +31,9 @@ const tagsAction = computed<BulkAction<string[]>>(() => ({
 
 ## Props
 
-| Prop   | Type                                  | Notes                     |
-| ------ | ------------------------------------- | ------------------------- |
-| `kind` | `'tags' \| 'channels' \| 'languages'` | Which input and limit set |
+| Prop   | Type                                                     | Notes                     |
+| ------ | -------------------------------------------------------- | ------------------------- |
+| `kind` | `AssetLabelKind` (`'tags' \| 'channels' \| 'languages'`) | Which input and limit set |
 
 ## Models
 
