@@ -156,37 +156,7 @@ const setupEntityColumns = () => {
     }
     columns = columns.map((col) => {
       if (col.id === 'select') {
-        const originalCell = col.cell;
-        return {
-          ...col,
-          id: 'select' as string,
-          header: () => null,
-          cell: (props: { table: Table<T>; row: Row<T> }) => {
-            const { table, row } = props;
-            // Hide checkbox for parent rows (rows that CAN expand)
-            if (row.getCanExpand()) {
-              return h(
-                'div',
-                {
-                  class: cn(
-                    getBasicCellStyle(table),
-                    'px-3 flex items-center justify-center text-2xl!',
-                  ),
-                },
-                row.getIsSomeSelected() ? '▣' : '',
-              );
-            }
-            // Show checkbox for child rows
-            if (typeof originalCell === 'function') {
-              const selectCell = row
-                .getAllCells()
-                .find((c) => c.column.id === 'select');
-              if (!selectCell) return null;
-              return originalCell(selectCell.getContext());
-            }
-            return null;
-          },
-        } as ColumnDef<T>;
+        return { ...col, header: () => null };
       }
 
       if (col.id === '_id') {
