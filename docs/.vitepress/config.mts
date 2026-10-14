@@ -135,10 +135,6 @@ export default defineConfig({
               },
               { text: 'useAssetActions', link: '/composables/useAssetActions.md' },
               {
-                text: 'useAssetCapabilities',
-                link: '/composables/useAssetCapabilities.md',
-              },
-              {
                 text: 'useAssetLabelLimits',
                 link: '/composables/useAssetLabelLimits.md',
               },
