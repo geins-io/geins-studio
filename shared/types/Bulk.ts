@@ -15,13 +15,28 @@ export interface BulkRunResult {
   responses: unknown[];
 }
 
+/** How the confirm step shows an action's value. */
+export type BulkConfirmSummary =
+  /** One pill per value, e.g. the tags being added. */
+  | { tags: string[] }
+  /** A trail from the root, e.g. the destination folder. */
+  | { path: string[]; icon?: string }
+  /** A short bullet list, e.g. the link count and how the links are made. */
+  | { list: string[] };
+
+/** A consequence the confirm step calls out, e.g. URLs that change. */
+export interface BulkConfirmWarning {
+  title: string;
+  description: string;
+}
+
 /**
  * One action in a bulk action sheet. Method signatures (not arrow properties)
  * keep `BulkAction<string[]>` assignable to `BulkAction` in an actions list.
  */
 export interface BulkAction<TValue = unknown> {
   key: string;
-  /** Translated label for the action list and the confirm step. */
+  /** Translated label for the action list and the confirm button. */
   label: string;
   /** Lucide icon name, resolved with `useLucideIcon`. */
   icon: string;
@@ -36,9 +51,16 @@ export interface BulkAction<TValue = unknown> {
   initialValue?(): TValue;
   /** Run stays disabled until this passes. Defaults to valid. */
   isValid?(value: TValue): boolean;
-  /** What the confirm step shows about the value. Defaults to the label. */
-  summary?(value: TValue): string;
-  /** Extra line under the summary, e.g. whether the change can be undone. */
+  /**
+   * The confirm step's question for `count` items, e.g. "Add 2 tags to 63
+   * assets?". Without it the confirm falls back to a generic title + line.
+   */
+  confirmTitle?(count: number, value: TValue): string;
+  /** What the confirm step shows about the value. Omit when the title says it. */
+  summary?(value: TValue): BulkConfirmSummary | undefined;
+  /** A consequence the confirm step calls out above the note. */
+  warning?(value: TValue): BulkConfirmWarning | undefined;
+  /** Muted line under the summary, e.g. whether the change can be undone. */
   note?(value: TValue): string | undefined;
   /**
    * Properties-pane line for an action with no `component`, saying what Run
