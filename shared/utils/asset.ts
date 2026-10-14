@@ -1,6 +1,5 @@
 import type {
   AssetApiOptions,
-  AssetCapabilities,
   AssetLabelKind,
   AssetLabelLimitBreach,
   AssetLinkTargetType,
@@ -472,24 +471,6 @@ export function folderRestoreFailure(
   if (code.includes('MOVE_PENDING') || code.includes('UPLOAD_PENDING'))
     return 'pending';
   return 'path_taken';
-}
-
-/**
- * Feature availability against the shipped Geins.Media surface. Browse,
- * upload, `PATCH` (incl. tags + channels), `relocate`, `DELETE` (+ restore),
- * folder delete actions, replace, usage links and `GET media/tags` all ship
- * unconditionally, so none of them carry a flag. Tags/channels on the upload
- * ticket stay off. Pure so it can be unit-tested and reused by
- * `useAssetCapabilities`.
- *
- * cutover: REVISIT@phase2 — the whole capability mechanism is temporary; remove
- * it (+ its consumers) once the gated features land. Ledger:
- * docs/domains/assets-cutover.md.
- */
-export function assetCapabilities(): AssetCapabilities {
-  return {
-    canUploadTagsAndChannels: false,
-  };
 }
 
 /**

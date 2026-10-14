@@ -91,7 +91,7 @@ Part of every change, and always before/at merge:
 When the user asks what can run in parallel (separate worktrees / spawned task chips):
 
 1. **Pick for low conflict.** For each candidate issue, check against the work already in flight:
-   - **Files:** the pages, components, repos and capability flags it will touch. Shared hot spots — `i18n/locales/*.json`, `docs/domains/*.md`, `docs/.vitepress/config.mts` — conflict trivially; overlap in the same component/page block is a real risk.
+   - **Files:** the pages, components and repos it will touch. Shared hot spots — `i18n/locales/*.json`, `docs/domains/*.md`, `docs/.vitepress/config.mts` — conflict trivially; overlap in the same component/page block is a real risk.
    - **Dependencies:** `blockedBy`, and soft ones (a helper, vocabulary or endpoint another in-flight issue introduces or relies on).
    - **Context groups:** an issue's group goes into the same chip, built back-to-back.
    - **Backend blockers:** skip anything waiting on the platform.

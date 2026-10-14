@@ -1,7 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import {
-  assetCapabilities,
   assetSelectionKind,
   bulkLinkCalls,
   normalizeAssetLabels,
@@ -64,15 +63,6 @@ describe('mimeToAssetType', () => {
 
   it('prefers svg over the generic image/ prefix', () => {
     expect(mimeToAssetType('image/svg+xml')).toBe('svg');
-  });
-});
-
-describe('assetCapabilities', () => {
-  it('reports only the features phase 1 does not serve yet', () => {
-    expect(assetCapabilities()).toEqual({
-      // The upload ticket doesn't take tags/channels yet.
-      canUploadTagsAndChannels: false,
-    });
   });
 });
 

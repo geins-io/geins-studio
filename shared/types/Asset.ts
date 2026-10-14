@@ -559,24 +559,8 @@ export interface FolderDeletion {
 }
 
 // =============================================================================
-// Backend capabilities
+// Upload wizard product matching
 // =============================================================================
-
-/**
- * Feature availability for the shipped Geins.Media surface — the UI gates on
- * these so controls phase 1 can't fulfil disable cleanly instead of erroring.
- * Only still-gated features carry a flag: browse, upload, metadata `PATCH`,
- * `relocate`, `DELETE` + restore, folder delete actions, replace and usage
- * links all ship, so they have none.
- * Read via `assetCapabilities`.
- */
-export interface AssetCapabilities {
-  /**
-   * The upload ticket accepts tags + channels. Until it does, the wizard holds
-   * them in state but can't send them (the detail panel `PATCH` already can).
-   */
-  canUploadTagsAndChannels: boolean;
-}
 
 /**
  * The subset of a product the wizard shows when an image links to one — enough

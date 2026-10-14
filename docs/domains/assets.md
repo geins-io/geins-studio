@@ -9,7 +9,7 @@
 
 The Assets domain manages media files (images, SVGs, documents, PDFs, video, audio) and the folders that organise them. Assets carry metadata (name, description, localized alt text, tags, publication channels, content languages) and are referenced by other domains (product images, CMS). The UI is a workspace-level library at `/asset-library` with grid and list views and a slide-in editing panel.
 
-**Status:** the library runs against the **Geins.Media phase-1 API** through the catch-all proxy; every feature the UI offers is served by it — the leftover [`useAssetCapabilities`](/composables/useAssetCapabilities) mechanism gates nothing any more.
+**Status:** the library runs against the **Geins.Media phase-1 API** through the catch-all proxy, and every feature the UI offers is served by it.
 
 ## Key Concepts
 
@@ -255,7 +255,7 @@ The header quota bar and [`AssetStoragePanel`](/components/asset/AssetStoragePan
 
 ### What is left for phase 2
 
-The capability gating in [`useAssetCapabilities`](/composables/useAssetCapabilities) is the only temporary machinery still standing. As each phase-2 feature lands, remove its flag **and** its consumers rather than flipping the flag to `true` — an always-true flag is dead gating. The [cutover ledger](./assets-cutover.md) tracks the remaining rows.
+Only client-side stand-ins are left: product matching and link resolution in [`useProductMatch`](/composables/useProductMatch), which scan the whole product list until the backend can filter or resolve targets. When phase 2 takes one over, delete the client-side version rather than keeping both paths. The [cutover ledger](./assets-cutover.md) tracks them.
 
 ## Dependencies
 
@@ -264,16 +264,15 @@ The capability gating in [`useAssetCapabilities`](/composables/useAssetCapabilit
 
 ## Key Files
 
-| Layer        | Path                                                                                      |
-| ------------ | ----------------------------------------------------------------------------------------- |
-| Types        | `shared/types/Asset.ts` (Asset + Folder)                                                  |
-| Registry     | `shared/utils/entities.ts` (`asset`, `folder`)                                            |
-| Repository   | `app/utils/repositories/asset.ts` (`assetApi`, `.folder` sub-repo)                        |
-| Async jobs   | `shared/utils/job.ts` (`settleJob` + one check per delayed job)                           |
-| Storage      | `app/composables/useAssetStorage.ts`, `shared/utils/asset-usage.ts`                       |
-| Capabilities | `app/composables/useAssetCapabilities.ts`, `assetCapabilities` in `shared/utils/asset.ts` |
-| Pages        | `app/pages/asset-library/index.vue` (grid + list browse, folder nav, detail panel)        |
-| Picker       | `app/composables/useAssetPicker.ts`, `app/components/asset/AssetPicker{,Host,Panel}.vue`  |
+| Layer      | Path                                                                                     |
+| ---------- | ---------------------------------------------------------------------------------------- |
+| Types      | `shared/types/Asset.ts` (Asset + Folder)                                                 |
+| Registry   | `shared/utils/entities.ts` (`asset`, `folder`)                                           |
+| Repository | `app/utils/repositories/asset.ts` (`assetApi`, `.folder` sub-repo)                       |
+| Async jobs | `shared/utils/job.ts` (`settleJob` + one check per delayed job)                          |
+| Storage    | `app/composables/useAssetStorage.ts`, `shared/utils/asset-usage.ts`                      |
+| Pages      | `app/pages/asset-library/index.vue` (grid + list browse, folder nav, detail panel)       |
+| Picker     | `app/composables/useAssetPicker.ts`, `app/components/asset/AssetPicker{,Host,Panel}.vue` |
 
 ## Decision Log
 
