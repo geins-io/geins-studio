@@ -22,6 +22,8 @@ export type BackgroundJobSpec =
       moveIds: string[];
       /** The assets being moved, when known — replace waits on them. */
       assetIds?: string[];
+      /** The folder being renamed or moved — its subtree waits on it. */
+      folderIds?: string[];
     }
   | {
       kind: 'replace';

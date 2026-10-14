@@ -12,6 +12,8 @@ export interface UseBackgroundJobsReturnType {
   hasFinished: ComputedRef<boolean>;
   /** Assets a pending move holds; replace is refused on them meanwhile. */
   movingAssetIds: ComputedRef<Set<string>>;
+  /** Folders a pending rename/move holds; rename/move is refused meanwhile. */
+  movingFolderIds: ComputedRef<Set<string>>;
   panelOpen: Ref<boolean>;
   /** Track a job that was just accepted, and toast that it started. */
   start: (job: BackgroundJobStart) => BackgroundJob;
@@ -30,8 +32,14 @@ export function useBackgroundJobs(): UseBackgroundJobsReturnType {
   const { t } = useI18n();
   const { toast } = useToast();
   const store = useBackgroundJobsStore();
-  const { jobs, pending, hasFinished, movingAssetIds, panelOpen } =
-    storeToRefs(store);
+  const {
+    jobs,
+    pending,
+    hasFinished,
+    movingAssetIds,
+    movingFolderIds,
+    panelOpen,
+  } = storeToRefs(store);
 
   const message = (msg: JobMessage): string =>
     msg.plural === undefined
@@ -61,6 +69,7 @@ export function useBackgroundJobs(): UseBackgroundJobsReturnType {
     pending,
     hasFinished,
     movingAssetIds,
+    movingFolderIds,
     panelOpen,
     start,
     message,

@@ -355,6 +355,14 @@ export default defineConfig({
                 link: '/components/asset/AssetFolderTree.md',
               },
               {
+                text: 'AssetFolderTreeItem',
+                link: '/components/asset/AssetFolderTreeItem.md',
+              },
+              {
+                text: 'AssetFolderMoveDialog',
+                link: '/components/asset/AssetFolderMoveDialog.md',
+              },
+              {
                 text: 'AssetReplaceDialog',
                 link: '/components/asset/AssetReplaceDialog.md',
               },
