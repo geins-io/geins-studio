@@ -8,6 +8,8 @@ import {
   LucidePause,
   LucidePlay,
   LucideCircleAlert,
+  LucideTriangleAlert,
+  LucideCircleSlash,
 } from '#components';
 
 export interface ExecutionStatusVisual {
@@ -19,6 +21,8 @@ interface UseExecutionStatusReturnType {
   resolveStatusIcon: (
     status: string | null | undefined,
   ) => ExecutionStatusVisual;
+  /** True for statuses that carry an error: `failed` and `timedout`. */
+  isFailedStatus: (status: string | null | undefined) => boolean;
 }
 
 const STATUS_ICON_MAP: Record<string, ExecutionStatusVisual> = {
@@ -30,7 +34,12 @@ const STATUS_ICON_MAP: Record<string, ExecutionStatusVisual> = {
   timedout: { icon: LucideTimer, class: 'text-yellow-500' },
   suspended: { icon: LucidePause, class: 'text-yellow-500' },
   pending: { icon: LucidePlay, class: 'text-muted-foreground' },
+  completedwitherrors: { icon: LucideTriangleAlert, class: 'text-yellow-500' },
+  terminated: { icon: LucideBan, class: 'text-muted-foreground' },
+  skipped: { icon: LucideCircleSlash, class: 'text-muted-foreground' },
 };
+
+const FAILED_STATUSES = new Set(['failed', 'timedout']);
 
 const FALLBACK: ExecutionStatusVisual = {
   icon: LucideCircleAlert,
@@ -52,5 +61,8 @@ export const useExecutionStatus = (): UseExecutionStatusReturnType => {
     return STATUS_ICON_MAP[status?.toLowerCase() ?? ''] ?? FALLBACK;
   };
 
-  return { resolveStatusIcon };
+  const isFailedStatus = (status: string | null | undefined): boolean =>
+    FAILED_STATUSES.has(status?.toLowerCase() ?? '');
+
+  return { resolveStatusIcon, isFailedStatus };
 };

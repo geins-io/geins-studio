@@ -5,6 +5,7 @@ type NodeExecution = {
   input?: Record<string, unknown> | null;
   output?: Record<string, unknown> | null;
   status?: string;
+  error?: string | null;
 } | null;
 
 const props = defineProps<{
@@ -12,6 +13,9 @@ const props = defineProps<{
 }>();
 
 const hasExecutionOutput = computed(() => props.nodeExecution?.output != null);
+const executionError = computed(() =>
+  props.nodeExecution?.error ? { message: props.nodeExecution.error } : null,
+);
 
 const formatJson = (value: unknown): string => {
   if (value == null) return '{}';
@@ -39,6 +43,12 @@ const formatJson = (value: unknown): string => {
       />
     </div>
     <div class="flex-1 overflow-y-auto p-3" style="scrollbar-gutter: stable">
+      <OrchestratorExecutionErrorDetails
+        v-if="executionError"
+        :error="executionError"
+        compact
+        class="mb-3"
+      />
       <!-- Execution output data -->
       <template v-if="hasExecutionOutput">
         <h4
@@ -58,7 +68,7 @@ const formatJson = (value: unknown): string => {
         </div>
       </template>
       <div
-        v-else
+        v-else-if="!executionError"
         class="text-muted-foreground flex flex-col items-center justify-center gap-2 py-8 text-center text-xs"
       >
         <LucideInbox class="h-8 w-8 opacity-40" />

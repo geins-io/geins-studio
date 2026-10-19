@@ -53,7 +53,10 @@ const page = (
 
 const scopeDep = ref('all');
 
-function setup(fetcher: Fetcher = async (state) => page(state)) {
+function setup(
+  fetcher: Fetcher = async (state) => page(state),
+  searchDebounceMs = 20,
+) {
   scopeDep.value = 'all';
   const spy = vi.fn(fetcher);
   scope = effectScope();
@@ -63,7 +66,7 @@ function setup(fetcher: Fetcher = async (state) => page(state)) {
       fetcher: spy,
       defaults: { filters: {}, pageSize: 10 },
       pageSizes: [10, 20],
-      searchDebounceMs: 20,
+      searchDebounceMs,
       deps: () => scopeDep.value,
     }),
   )!;
@@ -148,7 +151,9 @@ describe('useListQuery', () => {
   });
 
   it('debounces search, then resets to page 1 and drops the batch', async () => {
-    const { query, spy, lastCall } = setup();
+    // Windows rounds timers up to ~16ms, so `settle()` alone can outlast a
+    // short debounce; keep it well above three ticks.
+    const { query, spy, lastCall } = setup(undefined, 200);
     await settle();
     query.page.value = 2;
     await settle();
@@ -157,7 +162,7 @@ describe('useListQuery', () => {
     query.searchInput.value = 'logo ';
     await settle();
     expect(spy.mock.calls.length).toBe(calls);
-    await settle(30);
+    await settle(80);
     expect(query.search.value).toBe('logo');
     expect(spy.mock.calls.length).toBe(calls + 1);
     expect(lastCall()[0]).toMatchObject({ page: 1, search: 'logo' });
