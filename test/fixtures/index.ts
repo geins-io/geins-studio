@@ -1,5 +1,4 @@
 export { nextId, resetIdCounter } from './ids';
-export { buildAsset, buildFolder } from './asset';
 export {
   buildChannel,
   buildChannelListItem,

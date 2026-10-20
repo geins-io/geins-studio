@@ -1,6 +1,6 @@
 # `LayoutHeader`
 
-`LayoutHeader` is the top header bar of the app shell — sidebar toggle button on the left, the breadcrumb trail after it, and the background-jobs button at the right end. Mounted by the default Nuxt layout; not used standalone.
+`LayoutHeader` is the top header bar of the app shell — sidebar toggle button on the left and the breadcrumb trail on the right. Mounted by the default Nuxt layout; not used standalone.
 
 ## Features
 
@@ -9,7 +9,6 @@
 - Mobile breadcrumb prepends a logo link to `/` so users can always reach home
 - Suppresses the toggle tooltip on touch-only devices (`@media (hover: hover)` check)
 - Calls [`useNavigation()`](/composables/useNavigation) on mount to wire navigation state
-- Renders [`LayoutBackgroundJobs`](/components/layout/LayoutBackgroundJobs) at the right end: a spinning icon while jobs run, with a panel of their progress
 
 ## Usage
 

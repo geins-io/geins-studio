@@ -1,26 +1,10 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import type { ChannelListItem } from '#shared/types';
 import type { Updater } from '@tanstack/vue-table';
 import type { Ref } from 'vue';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
-}
-
-/**
- * Active/inactive colours for a segmented toggle button (grid/list view, folder
- * toggle, wizard "group by"): the active option is plain white (`card`) and
- * holds its colour on hover; the rest sit on the gray `background` with muted
- * text. Structure — borders, joining — stays with `ButtonGroup` + the Button
- * `outline` variant; this only swaps the fill/text so the toggles read the same.
- * The `dark:` fills are required: `outline` sets `dark:bg-muted`, which beats the
- * plain fills and made both states identical in dark mode (twMerge swaps them).
- */
-export function segmentedButtonClass(active: boolean): string {
-  return active
-    ? 'bg-card text-foreground hover:bg-card hover:text-foreground dark:bg-secondary dark:hover:bg-secondary'
-    : 'bg-background text-muted-foreground hover:text-foreground dark:bg-background';
 }
 
 /**
@@ -102,20 +86,6 @@ export function languageToCountryCode(langCode: string): string {
   };
   const code = langCode.toLowerCase().split('-')[0] ?? langCode.toLowerCase();
   return map[code] || code;
-}
-
-/**
- * The account's default UI language: the current channel's `defaultLanguage`,
- * falling back to the first channel's. Both are Language `_id`s (e.g. `sv`),
- * the same space as the `geins-language` cookie. Returns `undefined` when no
- * channel resolves one, so callers keep their static fallback.
- */
-export function pickChannelDefaultLanguage(
-  channels: Pick<ChannelListItem, '_id' | 'defaultLanguage'>[],
-  currentChannelId: string,
-): string | undefined {
-  const current = channels.find((c) => c._id === String(currentChannelId));
-  return current?.defaultLanguage || channels[0]?.defaultLanguage || undefined;
 }
 
 /**

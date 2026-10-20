@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type {
   ExecutionDetailsResponse,
-  ExecutionError,
   ExecutionLog,
   ExecutionNodeExecution,
   LiveConsoleLine,
@@ -73,36 +72,6 @@ const nodeExecutions = computed<ExecutionNodeExecution[]>(
 );
 const isRunning = computed(
   () => execution.value?.status?.toLowerCase() === 'running',
-);
-
-const { executionErrors, nodeErrorMessage } = useExecutionErrors();
-const errors = computed(() => executionErrors(execution.value));
-const nodeExecutionsPanel = useTemplateRef('nodeExecutionsPanel');
-
-// No failed node means the run failed outside any step (input validation,
-// workflow timeout), so there is no step to jump to.
-const errorTitle = (err: ExecutionError) => {
-  const node = err.failedNodeName ?? err.failedNodeId;
-  return node
-    ? t('executions.failed_at_node', { node })
-    : t('executions.workflow_failed');
-};
-const hasStep = (err: ExecutionError) =>
-  !!err.failedNodeId &&
-  nodeExecutions.value.some((n) => n.nodeId === err.failedNodeId);
-
-const executionStatus = computed(
-  () => execution.value?.status?.toLowerCase() ?? '',
-);
-const showCancellation = computed(
-  () =>
-    ['cancelled', 'canceled'].includes(executionStatus.value) &&
-    !!(execution.value?.cancellationReason || execution.value?.cancelledBy),
-);
-const showPause = computed(
-  () =>
-    ['suspended', 'paused'].includes(executionStatus.value) &&
-    !!(execution.value?.pauseReason || execution.value?.pausedBy),
 );
 
 const asRecord = (value: unknown): Record<string, unknown> | null =>
@@ -232,7 +201,7 @@ const liveDurationMs = computed(() => {
   return execution.value.durationMs ?? null;
 });
 
-const { resolveStatusIcon, isFailedStatus } = useExecutionStatus();
+const { resolveStatusIcon } = useExecutionStatus();
 
 const shortenId = (id: string, head = 12, tail = 8): string => {
   if (!id || id.length <= head + tail + 1) return id;
@@ -354,29 +323,6 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
       }`,
     });
     const status = node.status?.toLowerCase();
-    const failed = isFailedStatus(status);
-    const failureMessage = failed
-      ? nodeErrorMessage(node, execution.value)
-      : null;
-    const retryErrors = node.retryErrors ?? [];
-    // The final attempt is usually the failure itself, logged below.
-    const attempts =
-      failureMessage && retryErrors.at(-1) === failureMessage
-        ? retryErrors.slice(0, -1)
-        : retryErrors;
-    attempts.forEach((message, idx) => {
-      lines.push({
-        id: ++id,
-        timestamp: formatTimestamp(node.endTime ?? node.startTime),
-        level: 'warn',
-        source: node.nodeId,
-        message: `↻ ${t('executions.console_attempt_failed', {
-          node: nodeLabel,
-          attempt: idx + 1,
-          message,
-        })}`,
-      });
-    });
     if (status === 'completed') {
       lines.push({
         id: ++id,
@@ -388,22 +334,13 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
           duration: formatDuration(node.durationMs),
         })}`,
       });
-    } else if (failed) {
-      const params = { node: nodeLabel, message: failureMessage };
-      const text =
-        status === 'timedout'
-          ? params.message
-            ? t('executions.console_node_timed_out_message', params)
-            : t('executions.console_node_timed_out', params)
-          : params.message
-            ? t('executions.console_node_failed_message', params)
-            : t('executions.console_node_failed', params);
+    } else if (status === 'failed') {
       lines.push({
         id: ++id,
         timestamp: formatTimestamp(node.endTime),
         level: 'error',
         source: node.nodeId,
-        message: `✖ ${text}`,
+        message: `✖ ${t('executions.console_node_failed', { node: nodeLabel })}`,
       });
     }
   }
@@ -660,48 +597,6 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
       </Card>
     </div>
 
-    <div v-if="errors.length" class="flex flex-col gap-2">
-      <OrchestratorExecutionErrorDetails
-        v-for="(err, idx) in errors"
-        :key="`${err.failedNodeId ?? ''}-${idx}`"
-        :error="err"
-        :title="errorTitle(err)"
-      >
-        <template v-if="err.failedNodeId && hasStep(err)" #actions>
-          <Button
-            size="sm"
-            variant="link"
-            class="h-auto p-0 text-xs"
-            @click="nodeExecutionsPanel?.focusNode(err.failedNodeId)"
-          >
-            {{ $t('executions.show_step') }}
-          </Button>
-        </template>
-      </OrchestratorExecutionErrorDetails>
-    </div>
-
-    <Feedback v-if="showCancellation" type="warning">
-      <template #title>{{ $t('executions.cancelled_title') }}</template>
-      <template #description>
-        <p v-if="execution.cancellationReason">
-          {{ execution.cancellationReason }}
-        </p>
-        <p v-if="execution.cancelledBy" class="text-muted-foreground text-xs">
-          {{ $t('executions.by_label') }} {{ execution.cancelledBy }}
-        </p>
-      </template>
-    </Feedback>
-
-    <Feedback v-if="showPause" type="info">
-      <template #title>{{ $t('executions.paused_title') }}</template>
-      <template #description>
-        <p v-if="execution.pauseReason">{{ execution.pauseReason }}</p>
-        <p v-if="execution.pausedBy" class="text-muted-foreground text-xs">
-          {{ $t('executions.by_label') }} {{ execution.pausedBy }}
-        </p>
-      </template>
-    </Feedback>
-
     <!-- Workflow input -->
     <OrchestratorExecutionInput
       :input="workflowInput"
@@ -711,10 +606,8 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
     <!-- Main content: nodes + console -->
     <div class="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
       <OrchestratorNodeExecutions
-        ref="nodeExecutionsPanel"
         class="min-h-50 shadow-xs lg:col-span-1"
         :nodes="nodeExecutions"
-        :execution="execution"
         :timeline-start="timelineStart"
         :timeline-end="timelineEnd"
       />

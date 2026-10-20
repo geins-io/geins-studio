@@ -5,8 +5,7 @@
 ## Features
 
 - Localized row counter ("X of Y rows selected" / "X rows total")
-- Page-size dropdown (`pageSizes`, default 30 / 60 / 120 / 240) — only in advanced mode
-- Server-mode aware: the total comes from the table's `rowCount` option when set
+- Page-size dropdown (30 / 60 / 120 / 240) — only in advanced mode
 - First / Prev / Next / Last navigation with disabled states tied to TanStack Table
 - Responsive: collapses on small viewports
 
@@ -73,28 +72,6 @@ advanced: boolean;
 ```
 
 Shows the page-size selector. Hidden in simple/minimal modes.
-
-### `pageSizes`
-
-```ts
-pageSizes?: number[]
-```
-
-Options in the page-size selector.
-
-- **Default:** `[30, 60, 120, 240]`
-
-### `selectedCount`
-
-```ts
-selectedCount?: number
-```
-
-Overrides the "N selected" count, which otherwise comes from the row model. `TableView` passes it in server mode, where the selection spans pages the row model doesn't hold.
-
-## Row total
-
-The total is `table.options.rowCount` when set (server mode), otherwise the number of filtered rows. It deliberately isn't `table.getRowCount()`: without `rowCount` that counts the expanded row model, so an expanding table's total would grow as rows are expanded.
 
 ## Dependencies
 

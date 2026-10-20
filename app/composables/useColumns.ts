@@ -1,7 +1,6 @@
 import { h } from 'vue';
 import { TableMode } from '#shared/types';
 import { entityEditUrl } from '#shared/utils/entities';
-import { formatFileSize } from '#shared/utils/file';
 import type { ColumnDef, Table, Row, Column } from '@tanstack/vue-table';
 import {
   Checkbox,
@@ -85,8 +84,6 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
   const { currentCurrency: _currentCurrency } = storeToRefs(accountStore);
   const { formatDate } = useDate();
   const { handleImageError } = useGeinsImage();
-  // Not useI18n(): some callers build columns in watcher callbacks, outside setup.
-  const { $i18n } = useNuxtApp();
 
   // BASIC HEADER STYLE
   const basicHeaderTextStyle = 'text-xs font-semibold uppercase';
@@ -131,19 +128,6 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
     return fullStyle;
   };
 
-  const getPageCheckState = (table: Table<T>): boolean | 'indeterminate' => {
-    if (table.getIsAllPageRowsSelected()) return true;
-    return table.getIsSomePageRowsSelected() ? 'indeterminate' : false;
-  };
-
-  // Parent rows follow their sub-rows: expanding tables only sync leaf ids back
-  // through `selectedIds`, so the parent's own selection flag gets dropped.
-  const getRowCheckState = (row: Row<T>): boolean | 'indeterminate' => {
-    if (!row.subRows.length) return row.getIsSelected();
-    if (row.getIsAllSubRowsSelected()) return true;
-    return row.getIsSomeSelected() ? 'indeterminate' : false;
-  };
-
   const selectableColumn: ColumnDef<T> = {
     id: 'select',
     header: ({ table }: { table: Table<T> }) =>
@@ -156,10 +140,10 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
           ),
         },
         h(Checkbox, {
-          modelValue: getPageCheckState(table),
+          modelValue: table.getIsAllPageRowsSelected(),
           'onUpdate:model-value': (value: boolean) =>
             table.toggleAllPageRowsSelected(!!value),
-          ariaLabel: $i18n.t('select_all'),
+          ariaLabel: 'Select all',
         }),
       ),
     cell: ({ table, row }: { table: Table<T>; row: Row<T> }) =>
@@ -173,10 +157,10 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
           'data-checkbox': true,
         },
         h(Checkbox, {
-          modelValue: getRowCheckState(row),
+          modelValue: row.getIsSelected(),
           'onUpdate:model-value': (value: boolean) =>
             row.toggleSelected(!!value),
-          ariaLabel: $i18n.t('select_row'),
+          ariaLabel: 'Select row',
         }),
       ),
 
@@ -781,16 +765,6 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
           columnSize = { size: 80, minSize: 80, maxSize: 80 };
           skipInactiveDim = true;
           break;
-        case 'filesize':
-          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
-            const value = Number(row.getValue(key) ?? 0);
-            return h(
-              'div',
-              { class: getBasicCellStyle(table) },
-              formatFileSize(value),
-            );
-          };
-          break;
         default:
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const value = row.getValue(key);
@@ -832,7 +806,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
         accessorKey: key,
         header: headerRenderer,
         cell: cellRenderer,
-        enableSorting: colSortable,
+        enableSorting: sortable,
         meta: { type: columnType, title: columnTitle, skipInactiveDim },
         ...columnSize,
       });

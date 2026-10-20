@@ -51,8 +51,6 @@ export default defineConfig({
           { text: 'Entities', link: '/concepts/entities' },
           { text: 'Authentication', link: '/concepts/authentication' },
           { text: 'API Repositories', link: '/concepts/api-repositories' },
-          { text: 'List queries', link: '/concepts/list-queries' },
-          { text: 'Background jobs', link: '/concepts/background-jobs' },
         ],
       },
       {
@@ -63,7 +61,6 @@ export default defineConfig({
             text: 'API ',
             items: [
               { text: 'useBatchQuery', link: '/composables/useBatchQuery.md' },
-              { text: 'useBulkRunner', link: '/composables/useBulkRunner.md' },
               { text: 'useGeinsApi', link: '/composables/useGeinsApi.md' },
               {
                 text: 'useGeinsRepository',
@@ -75,15 +72,6 @@ export default defineConfig({
             text: 'Data Tables',
             items: [
               { text: 'useColumns', link: '/composables/useColumns.md' },
-              {
-                text: 'useListFilters',
-                link: '/composables/useListFilters.md',
-              },
-              { text: 'useListQuery', link: '/composables/useListQuery.md' },
-              {
-                text: 'useRefetchDim',
-                link: '/composables/useRefetchDim.md',
-              },
               { text: 'useTable', link: '/composables/useTable.md' },
             ],
           },
@@ -119,55 +107,10 @@ export default defineConfig({
               { text: 'useGeinsImage', link: '/composables/useGeinsImage.md' },
               { text: 'useGeinsLog', link: '/composables/useGeinsLog.md' },
               { text: 'useLayout', link: '/composables/useLayout.md' },
-              {
-                text: 'useBackgroundJobs',
-                link: '/composables/useBackgroundJobs.md',
-              },
               { text: 'useNavigation', link: '/composables/useNavigation.md' },
               { text: 'usePageError', link: '/composables/usePageError.md' },
               { text: 'usePageTitle', link: '/composables/usePageTitle.md' },
               { text: 'usePrice', link: '/composables/usePrice.md' },
-              {
-                text: 'useUserRouteCookie',
-                link: '/composables/useUserRouteCookie.md',
-              },
-              { text: 'usePanelStack', link: '/composables/usePanelStack.md' },
-              { text: 'usePanelDirty', link: '/composables/usePanelDirty.md' },
-              {
-                text: 'usePendingCommits',
-                link: '/composables/usePendingCommits.md',
-              },
-              { text: 'useAssetActions', link: '/composables/useAssetActions.md' },
-              {
-                text: 'useAssetLabelLimits',
-                link: '/composables/useAssetLabelLimits.md',
-              },
-              {
-                text: 'useAssetStorage',
-                link: '/composables/useAssetStorage.md',
-              },
-              {
-                text: 'useAssetZipDownload',
-                link: '/composables/useAssetZipDownload.md',
-              },
-              {
-                text: 'useProductMatch',
-                link: '/composables/useProductMatch.md',
-              },
-              { text: 'useAssetType', link: '/composables/useAssetType.md' },
-              {
-                text: 'useAssetListFilters',
-                link: '/composables/useAssetListFilters.md',
-              },
-              {
-                text: 'useAssetPicker',
-                link: '/composables/useAssetPicker.md',
-              },
-              { text: 'useFolders', link: '/composables/useFolders.md' },
-              {
-                text: 'useUploadWizard',
-                link: '/composables/useUploadWizard.md',
-              },
               { text: 'useSkeleton', link: '/composables/useSkeleton.md' },
             ],
           },
@@ -181,15 +124,6 @@ export default defineConfig({
               {
                 text: 'useCustomerCompanies',
                 link: '/composables/useCustomerCompanies.md',
-              },
-            ],
-          },
-          {
-            text: 'Orchestrator',
-            items: [
-              {
-                text: 'useExecutionErrors',
-                link: '/composables/useExecutionErrors.md',
               },
             ],
           },
@@ -233,7 +167,6 @@ export default defineConfig({
             text: 'shadcn-vue primitives',
             link: '/components/shadcn-vue.md',
           },
-          { text: 'AppLoader', link: '/components/AppLoader.md' },
           {
             text: 'Buttons',
             collapsed: true,
@@ -260,154 +193,6 @@ export default defineConfig({
             ],
           },
           {
-            text: 'Panels',
-            collapsed: true,
-            items: [
-              { text: 'PanelEdit', link: '/components/panel/PanelEdit.md' },
-              {
-                text: 'PanelTranslation',
-                link: '/components/panel/PanelTranslation.md',
-              },
-            ],
-          },
-          {
-            text: 'Assets',
-            collapsed: true,
-            items: [
-              { text: 'AssetCard', link: '/components/asset/AssetCard.md' },
-              {
-                text: 'AssetCardSkeleton',
-                link: '/components/asset/AssetCardSkeleton.md',
-              },
-              {
-                text: 'AssetPicker',
-                link: '/components/asset/AssetPicker.md',
-              },
-              {
-                text: 'AssetPickerHost',
-                link: '/components/asset/AssetPickerHost.md',
-              },
-              {
-                text: 'AssetPickerPanel',
-                link: '/components/asset/AssetPickerPanel.md',
-              },
-              {
-                text: 'AssetActionsMenu',
-                link: '/components/asset/AssetActionsMenu.md',
-              },
-              {
-                text: 'AssetStoragePanel',
-                link: '/components/asset/AssetStoragePanel.md',
-              },
-              {
-                text: 'AssetFolderDeleteDialog',
-                link: '/components/asset/AssetFolderDeleteDialog.md',
-              },
-              {
-                text: 'AssetFileRow',
-                link: '/components/asset/AssetFileRow.md',
-              },
-              {
-                text: 'AssetDropzone',
-                link: '/components/asset/AssetDropzone.md',
-              },
-              {
-                text: 'AssetFolderPicker',
-                link: '/components/asset/AssetFolderPicker.md',
-              },
-              {
-                text: 'AssetWizardManage',
-                link: '/components/asset/AssetWizardManage.md',
-              },
-              {
-                text: 'AssetWizardProductLinking',
-                link: '/components/asset/AssetWizardProductLinking.md',
-              },
-              {
-                text: 'AssetReviewRow',
-                link: '/components/asset/AssetReviewRow.md',
-              },
-              {
-                text: 'AssetLinkedProduct',
-                link: '/components/asset/AssetLinkedProduct.md',
-              },
-              {
-                text: 'AssetWizardBulkPane',
-                link: '/components/asset/AssetWizardBulkPane.md',
-              },
-              {
-                text: 'AssetWizardReview',
-                link: '/components/asset/AssetWizardReview.md',
-              },
-              {
-                text: 'AssetDetailPanel',
-                link: '/components/asset/AssetDetailPanel.md',
-              },
-              {
-                text: 'AssetUsedIn',
-                link: '/components/asset/AssetUsedIn.md',
-              },
-              {
-                text: 'AssetLinkProductsDialog',
-                link: '/components/asset/AssetLinkProductsDialog.md',
-              },
-              {
-                text: 'AssetBulkLabels',
-                link: '/components/asset/AssetBulkLabels.md',
-              },
-              {
-                text: 'AssetBulkMoveFolder',
-                link: '/components/asset/AssetBulkMoveFolder.md',
-              },
-              {
-                text: 'AssetBulkLinkProducts',
-                link: '/components/asset/AssetBulkLinkProducts.md',
-              },
-              {
-                text: 'AssetFolderTree',
-                link: '/components/asset/AssetFolderTree.md',
-              },
-              {
-                text: 'AssetFolderTreeItem',
-                link: '/components/asset/AssetFolderTreeItem.md',
-              },
-              {
-                text: 'AssetFolderMoveDialog',
-                link: '/components/asset/AssetFolderMoveDialog.md',
-              },
-              {
-                text: 'AssetReplaceDialog',
-                link: '/components/asset/AssetReplaceDialog.md',
-              },
-              {
-                text: 'AssetUploadDialog',
-                link: '/components/asset/AssetUploadDialog.md',
-              },
-              {
-                text: 'AssetTypeBadge',
-                link: '/components/asset/AssetTypeBadge.md',
-              },
-              {
-                text: 'AssetThumbnail',
-                link: '/components/asset/AssetThumbnail.md',
-              },
-            ],
-          },
-          {
-            text: 'Product',
-            collapsed: true,
-            items: [
-              {
-                text: 'ProductThumbnail',
-                link: '/components/product/ProductThumbnail.md',
-              },
-              {
-                text: 'ProductMultiSelect',
-                link: '/components/product/ProductMultiSelect.md',
-              },
-            ],
-          },
-          {
             text: 'Form',
             collapsed: true,
             items: [
@@ -418,10 +203,6 @@ export default defineConfig({
                   {
                     text: 'FormGridWrap',
                     link: '/components/form/FormGridWrap.md',
-                  },
-                  {
-                    text: 'FormTranslatableField',
-                    link: '/components/form/FormTranslatableField.md',
                   },
                   {
                     text: 'FormItemSwitch',
@@ -465,10 +246,6 @@ export default defineConfig({
                     link: '/components/form/input/FormInputLanguageSelect.md',
                   },
                   {
-                    text: 'FormInputLanguages',
-                    link: '/components/form/input/FormInputLanguages.md',
-                  },
-                  {
                     text: 'FormInputLocked',
                     link: '/components/form/input/FormInputLocked.md',
                   },
@@ -497,54 +274,6 @@ export default defineConfig({
             ],
           },
           {
-            text: 'List bulk actions',
-            collapsed: true,
-            items: [
-              {
-                text: 'ListBulkBar',
-                link: '/components/list/bulk/ListBulkBar.md',
-              },
-              {
-                text: 'ListBulkActionSheet',
-                link: '/components/list/bulk/ListBulkActionSheet.md',
-              },
-              {
-                text: 'ListBulkActionConfirm',
-                link: '/components/list/bulk/ListBulkActionConfirm.md',
-              },
-            ],
-          },
-          {
-            text: 'List filters',
-            collapsed: true,
-            items: [
-              {
-                text: 'ListFilterBar',
-                link: '/components/list/filter/ListFilterBar.md',
-              },
-              {
-                text: 'ListFilterPinned',
-                link: '/components/list/filter/ListFilterPinned.md',
-              },
-              {
-                text: 'ListFilterSheet',
-                link: '/components/list/filter/ListFilterSheet.md',
-              },
-              {
-                text: 'ListFilterValues',
-                link: '/components/list/filter/ListFilterValues.md',
-              },
-              {
-                text: 'ListFilterMultiSelect',
-                link: '/components/list/filter/ListFilterMultiSelect.md',
-              },
-              {
-                text: 'ListFilterDateRange',
-                link: '/components/list/filter/ListFilterDateRange.md',
-              },
-            ],
-          },
-          {
             text: 'Tables',
             collapsed: true,
             items: [
@@ -567,10 +296,6 @@ export default defineConfig({
                   {
                     text: 'TableCellActions',
                     link: '/components/table/cell/TableCellActions.md',
-                  },
-                  {
-                    text: 'TableCellAssetThumbnail',
-                    link: '/components/table/cell/TableCellAssetThumbnail.md',
                   },
                   {
                     text: 'TableCellBoolean',
@@ -796,10 +521,6 @@ export default defineConfig({
                 link: '/components/layout/LayoutHeader.md',
               },
               {
-                text: 'LayoutBackgroundJobs',
-                link: '/components/layout/LayoutBackgroundJobs.md',
-              },
-              {
                 text: 'LayoutSidebar',
                 link: '/components/layout/sidebar/LayoutSidebar.md',
               },
@@ -949,16 +670,6 @@ export default defineConfig({
             ],
           },
           {
-            text: 'Orchestrator',
-            collapsed: true,
-            items: [
-              {
-                text: 'OrchestratorExecutionErrorDetails',
-                link: '/components/orchestrator/OrchestratorExecutionErrorDetails.md',
-              },
-            ],
-          },
-          {
             text: 'Quotation',
             collapsed: true,
             items: [
@@ -1001,14 +712,12 @@ export default defineConfig({
               { text: 'Feedback', link: '/components/Feedback.md' },
               { text: 'FlagIcon', link: '/components/FlagIcon.md' },
               { text: 'JsonCodeEditor', link: '/components/JsonCodeEditor.md' },
-              { text: 'PaginationBar', link: '/components/PaginationBar.md' },
               {
                 text: 'SchemaFormField',
                 link: '/components/SchemaFormField.md',
               },
               { text: 'SchemaRenderer', link: '/components/SchemaRenderer.md' },
               { text: 'StatusBadge', link: '/components/StatusBadge.md' },
-              { text: 'Tag', link: '/components/Tag.md' },
             ],
           },
         ],

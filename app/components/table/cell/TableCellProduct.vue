@@ -1,5 +1,5 @@
 <script setup lang="ts">
-withDefaults(
+const props = withDefaults(
   defineProps<{
     name: string;
     articleNumber?: string;
@@ -10,10 +10,18 @@ withDefaults(
     imageUrl: '',
   },
 );
+
+const { handleImageError, getProductThumbnail } = useGeinsImage();
+const imgSrc = computed(() => getProductThumbnail(props.imageUrl));
 </script>
 <template>
   <div class="flex items-center gap-3 py-1">
-    <ProductThumbnail :src="imageUrl" :alt="name" />
+    <img
+      :src="imgSrc"
+      :alt="name"
+      class="size-10 shrink-0 rounded-md border object-cover"
+      @error="handleImageError"
+    />
     <div class="min-w-0">
       <p class="truncate text-sm leading-tight font-medium">{{ name }}</p>
       <p

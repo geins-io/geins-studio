@@ -9,21 +9,11 @@ interface DataTablePaginationProps {
   rowsSelectable: boolean;
   entityKey: string;
   advanced: boolean;
-  pageSizes?: number[];
-  /** Overrides the row-model count — server mode selects across pages. */
-  selectedCount?: number;
 }
 
-const props = withDefaults(defineProps<DataTablePaginationProps>(), {
-  pageSizes: () => [30, 60, 120, 240],
-});
+const props = defineProps<DataTablePaginationProps>();
 
-// Not `getRowCount()`: without `rowCount` it counts expanded child rows too.
-const totalRows = computed(
-  () =>
-    props.table.options.rowCount ??
-    props.table.getFilteredRowModel().rows.length,
-);
+const totalRows = computed(() => props.table.getFilteredRowModel().rows.length);
 const viewport = useViewport();
 
 const setPageSize = (value: AcceptableValue) => {
@@ -45,9 +35,7 @@ const setPageSize = (value: AcceptableValue) => {
           t(
             'rows_selected',
             {
-              selected:
-                selectedCount ??
-                table.getFilteredSelectedRowModel().rows.length,
+              selected: table.getFilteredSelectedRowModel().rows.length,
               total: totalRows,
               entityKey,
             },
@@ -78,7 +66,7 @@ const setPageSize = (value: AcceptableValue) => {
           </SelectTrigger>
           <SelectContent side="top">
             <SelectItem
-              v-for="pageSize in pageSizes"
+              v-for="pageSize in [30, 60, 120, 240]"
               :key="pageSize"
               :value="`${pageSize}`"
             >

@@ -240,21 +240,6 @@ export interface WorkflowValidationError {
 
 // -- Executions -------------------------------------------------------------
 
-/**
- * Error recorded by the orchestrator. On an execution it names the failing
- * node; on a node execution `failedNodeId`/`failedNodeName` are omitted.
- * `context` carries `child*` fields for child-workflow failures and `code`
- * for Fail nodes.
- */
-export interface ExecutionError {
-  message: string;
-  type?: string | null;
-  failedNodeId?: string | null;
-  failedNodeName?: string | null;
-  timestamp?: string;
-  context?: Record<string, unknown> | null;
-}
-
 export interface ExecutionNodeExecution {
   nodeId: string;
   nodeName?: string;
@@ -269,7 +254,6 @@ export interface ExecutionNodeExecution {
   executionOrder?: number;
   input?: Record<string, unknown> | null;
   output?: Record<string, unknown> | null;
-  error?: ExecutionError | null;
 }
 
 export interface ExecutionLog {
@@ -307,8 +291,7 @@ export interface ExecutionLog {
   pausedAt?: string | null;
   cancelledBy?: string | null;
   cancellationReason?: string | null;
-  error?: ExecutionError | null;
-  errors?: ExecutionError[] | null;
+  errors?: string[] | null;
   errorCount?: number;
   isTestRun?: boolean;
   nodeExecutions?: ExecutionNodeExecution[] | null;

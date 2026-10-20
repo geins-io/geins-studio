@@ -76,15 +76,6 @@ When set, renders as a `NuxtLink` instead of a plain `<div>` inside the `Button`
 
 - **Default:** `''`
 
-### `variant` / `size`
-
-```ts
-variant?: ButtonVariants['variant'];
-size?: ButtonVariants['size'];
-```
-
-Forwarded to the underlying [`Button`](/components/shadcn-vue) (e.g. `variant="outline"` for a white/bordered action, `size="sm"` for a compact one). Omit for the `Button` defaults.
-
 ## Slots
 
 ### default

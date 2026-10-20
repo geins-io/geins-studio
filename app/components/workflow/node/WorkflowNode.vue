@@ -41,10 +41,10 @@ const componentForType = computed(
 
 const lastNodeExecutions =
   inject<Ref<Map<string, NodeExecData>>>('lastNodeExecutions');
-const nodeExec = computed(() => lastNodeExecutions?.value?.get(props.id));
-const nodeExecStatus = computed(() => nodeExec.value?.status?.toLowerCase());
-const { isFailedStatus } = useExecutionStatus();
-const hasFailed = computed(() => isFailedStatus(nodeExecStatus.value));
+const nodeExecStatus = computed(() =>
+  lastNodeExecutions?.value?.get(props.id)?.status?.toLowerCase(),
+);
+const hasFailed = computed(() => nodeExecStatus.value === 'failed');
 const hasSucceeded = computed(() => nodeExecStatus.value === 'completed');
 </script>
 
@@ -55,23 +55,12 @@ const hasSucceeded = computed(() => nodeExecStatus.value === 'completed');
       :node-id="props.id"
       :visible="!!props.selected"
     />
-    <TooltipProvider v-if="hasFailed" :delay-duration="100">
-      <Tooltip>
-        <TooltipTrigger as-child>
-          <div
-            class="bg-destructive text-destructive-foreground absolute -top-2 -right-2 z-40 flex h-5 w-5 items-center justify-center rounded-full shadow-sm"
-          >
-            <LucideTriangleAlert class="h-3 w-3" />
-          </div>
-        </TooltipTrigger>
-        <TooltipContent
-          v-if="nodeExec?.error"
-          class="max-w-sm font-mono text-xs wrap-break-word whitespace-pre-wrap"
-        >
-          {{ nodeExec.error }}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <div
+      v-if="hasFailed"
+      class="bg-destructive text-destructive-foreground absolute -top-2 -right-2 z-40 flex h-5 w-5 items-center justify-center rounded-full shadow-sm"
+    >
+      <LucideTriangleAlert class="h-3 w-3" />
+    </div>
     <div
       v-else-if="hasSucceeded"
       class="absolute -top-2 -right-2 z-40 flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-white shadow-sm"

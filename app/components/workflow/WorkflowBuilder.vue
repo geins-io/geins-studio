@@ -16,7 +16,6 @@ import '@vue-flow/controls/dist/style.css';
 import '@vue-flow/minimap/dist/style.css';
 import type {
   ExecutionDetailsResponse,
-  ExecutionLog,
   ExecutionNodeExecution,
   PaletteItem,
   WorkflowDefinition,
@@ -729,7 +728,6 @@ const TERMINAL_STATUSES = new Set([
   'cancelled',
   'timedout',
   'terminated',
-  'completedwitherrors',
 ]);
 
 // Node execution data from the last run — keyed by nodeId so the properties
@@ -742,7 +740,6 @@ type NodeExecData = {
 };
 const lastNodeExecutions = ref<Map<string, NodeExecData>>(new Map());
 provide('lastNodeExecutions', lastNodeExecutions);
-const { nodeErrorMessage } = useExecutionErrors();
 
 const asRecord = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === 'object'
@@ -775,10 +772,7 @@ usePollWhile(
           input: n.input,
           output: n.output,
           status: n.status,
-          error: nodeErrorMessage(
-            n,
-            inner as Pick<ExecutionLog, 'error' | 'errors'>,
-          ),
+          error: null,
         });
       }
       lastNodeExecutions.value = map;

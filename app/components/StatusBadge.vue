@@ -3,8 +3,6 @@ import type { StatusBadgeStatus } from '#shared/types';
 
 const props = defineProps<{
   status: StatusBadgeStatus;
-  /** Translated text; defaults to the sentence-cased status. */
-  label?: string;
 }>();
 
 const { t } = useI18n();
@@ -40,15 +38,12 @@ const badgeVariant = computed(() => {
     case 'draft':
     case false:
       return 'secondary';
-    case 'in-progress':
-      return 'blue';
     default:
       return 'outline';
   }
 });
 
 const badgeText = computed(() => {
-  if (props.label) return props.label;
   switch (props.status) {
     case true:
       return t('active');

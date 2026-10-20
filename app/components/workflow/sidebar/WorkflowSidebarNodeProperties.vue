@@ -11,7 +11,6 @@ type NodeExecution = {
   input?: Record<string, unknown> | null;
   output?: Record<string, unknown> | null;
   status?: string;
-  error?: string | null;
 } | null;
 
 const props = defineProps<{

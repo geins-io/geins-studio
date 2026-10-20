@@ -10,12 +10,9 @@ import {
 } from '@tanstack/vue-table';
 import { useDebounceFn } from '@vueuse/core';
 import { TableMode } from '#shared/types';
-import type { TableDataSource } from '#shared/types';
 import type {
   ColumnDef,
   ColumnFiltersState,
-  PaginationState,
-  RowSelectionState,
   SortingState,
   VisibilityState,
   ColumnOrderState,
@@ -24,7 +21,7 @@ import type {
   ExpandedState,
   Row,
 } from '@tanstack/vue-table';
-import type { Component, Ref } from 'vue';
+import type { Component } from 'vue';
 import {
   LucideSearchX,
   LucideCircleSlash,
@@ -58,12 +55,6 @@ const props = withDefaults(
     enableExpanding?: boolean;
     getSubRows?: (row: TData) => TData[] | undefined;
     dimInactiveRows?: boolean;
-    dataSource?: TableDataSource;
-    /** Server total (`totalItemCount`); drives the counter and page count. */
-    rowCount?: number;
-    /** External filters are active — shows the filtered empty state. */
-    filtered?: boolean;
-    pageSizes?: number[];
   }>(),
   {
     entityKey: 'row',
@@ -76,9 +67,6 @@ const props = withDefaults(
     mode: TableMode.Advanced,
     enableExpanding: false,
     dimInactiveRows: false,
-    dataSource: 'client',
-    filtered: false,
-    pageSizes: () => [30, 60, 120, 240],
     pinnedState: () => ({
       left: ['select'],
       right: ['actions'],
@@ -89,19 +77,9 @@ const props = withDefaults(
 const pinnedState = toRef(props, 'pinnedState');
 
 const emit = defineEmits({
+  clicked: (row) => row,
   selection: (selection: TData[]): TData[] => selection,
-  'update:selectedIds': (ids: string[]) => Array.isArray(ids),
-  'clear-filters': () => true,
 });
-
-// Server mode: the parent owns page, sort and search (bind to `useListQuery`).
-const paginationModel = defineModel<PaginationState>('pagination');
-const sortingModel = defineModel<SortingState>('sorting', {
-  default: () => [],
-});
-const searchModel = defineModel<string>('search', { default: '' });
-
-const serverMode = props.dataSource === 'server';
 
 const { t } = useI18n();
 const showSearch =
@@ -118,34 +96,23 @@ const pinnedStateOverride = computed(() => {
 /**
  * Setup table state
  */
-const sorting: Ref<SortingState> = serverMode
-  ? sortingModel
-  : ref<SortingState>([]);
-if (!serverMode) {
-  watch(
-    () => props.loading,
-    (loading) => {
-      if (
-        !loading &&
-        sorting.value.length === 0 &&
-        props.initSortingState?.length
-      ) {
-        sorting.value = props.initSortingState;
-      }
-    },
-    { immediate: true },
-  );
-}
-// An unbound `v-model:pagination` still needs a state for TanStack to update.
-const serverPagination = computed<PaginationState>({
-  get: () =>
-    paginationModel.value ?? { pageIndex: 0, pageSize: props.pageSize },
-  set: (value) => (paginationModel.value = value),
-});
+const sorting = ref<SortingState>([]);
+watch(
+  () => props.loading,
+  (loading) => {
+    if (
+      !loading &&
+      sorting.value.length === 0 &&
+      props.initSortingState?.length
+    ) {
+      sorting.value = props.initSortingState;
+    }
+  },
+  { immediate: true },
+);
 const columnFilters = ref<ColumnFiltersState>([]);
-// Server mode searches on every keystroke; `useListQuery` owns the debounce.
-const globalFilter: Ref<string> = serverMode ? searchModel : ref('');
-const searchInput: Ref<string> = serverMode ? searchModel : ref('');
+const globalFilter = ref('');
+const searchInput = ref(''); // Local search input for debouncing
 const expanded = ref<ExpandedState>({});
 
 const { getSkeletonColumns, getSkeletonData } = useSkeleton();
@@ -155,29 +122,15 @@ const advancedMode = computed(() => props.mode === TableMode.Advanced);
 const simpleMode = computed(() => props.mode === TableMode.Simple);
 const minimalMode = computed(() => props.mode === TableMode.Minimal);
 
-if (!serverMode) {
-  const debouncedSearch = useDebounceFn((value: string) => {
-    globalFilter.value = value;
-  }, 300);
-  watch(searchInput, (newValue) => {
-    debouncedSearch(newValue);
-  });
-}
+// Debounced search - wait 300ms after user stops typing
+const debouncedSearch = useDebounceFn((value: string) => {
+  globalFilter.value = value;
+}, 300);
 
-if (import.meta.dev && serverMode) {
-  const { geinsLogWarn } = useGeinsLog('components/TableView.vue');
-  if (props.enableExpanding)
-    geinsLogWarn('expanding rows are not supported with dataSource="server"');
-  if (minimalMode.value)
-    geinsLogWarn('TableMode.Minimal is not supported with dataSource="server"');
-}
-
-// Server mode keeps the current rows on screen while the next page loads.
-const showSkeleton = computed(
-  () => props.loading && (!serverMode || props.data.length === 0),
-);
-const refetching = computed(() => props.loading && !showSkeleton.value);
-const { dimmed } = useRefetchDim(refetching);
+// Watch search input and apply debounce
+watch(searchInput, (newValue) => {
+  debouncedSearch(newValue);
+});
 
 onUnmounted(() => {
   tableMaximized.value = false;
@@ -189,7 +142,7 @@ onUnmounted(() => {
 const rowsSelectable = computed(() =>
   props.columns.some((column) => column.id === 'select'),
 );
-const rowSelection = ref<RowSelectionState>(
+const rowSelection = ref(
   props.selectedIds?.reduce((acc, _id) => ({ ...acc, [_id]: true }), {}) || {},
 );
 watch(
@@ -202,72 +155,20 @@ watch(
       (acc, _id) => ({ ...acc, [_id]: true }),
       {},
     );
-    if (serverMode) {
-      syncSelectedRows();
-      emitServerSelection();
-    }
   },
 );
 
 /**
- * Server mode: row models only hold the current page, so selected rows are
- * kept here across pages, in selection order. `undefined` = selected (e.g.
- * seeded via `selectedIds`) but its row hasn't been loaded yet.
- */
-const selectedRows = new Map<string, TData | undefined>();
-const rowIdOf = (row: TData) => String(row[props.idColumn as keyof TData]);
-const selectedCount = ref(0);
-
-const syncSelectedRows = () => {
-  const ids = Object.keys(rowSelection.value).filter(
-    (id) => rowSelection.value[id],
-  );
-  const idSet = new Set(ids);
-  for (const id of selectedRows.keys()) {
-    if (!idSet.has(id)) selectedRows.delete(id);
-  }
-  for (const id of ids) {
-    if (!selectedRows.has(id)) selectedRows.set(id, undefined);
-  }
-  // Re-setting an existing key keeps its place, so order is preserved.
-  for (const row of props.data) {
-    const id = rowIdOf(row);
-    if (selectedRows.has(id)) selectedRows.set(id, row);
-  }
-  selectedCount.value = selectedRows.size;
-};
-
-// Deduped on the loaded ids, so a parent echoing `selectedIds` back can't loop.
-const loadedSelectedRows = () =>
-  [...selectedRows.values()].filter((row): row is TData => row !== undefined);
-let lastEmittedSelection: string | undefined;
-const emitServerSelection = () => {
-  const loaded = loadedSelectedRows();
-  const signature = JSON.stringify(loaded.map(rowIdOf));
-  if (signature === lastEmittedSelection) return;
-  lastEmittedSelection = signature;
-  emit('selection', loaded);
-};
-
-if (serverMode) {
-  syncSelectedRows();
-  // Like client mode, no emit for the initial seed; only for later changes.
-  lastEmittedSelection = JSON.stringify(loadedSelectedRows().map(rowIdOf));
-  watch(
-    () => props.data,
-    () => {
-      syncSelectedRows();
-      emitServerSelection();
-    },
-  );
-}
-
-/**
  * Setup column visibility
  **/
+const { path } = useRoute();
+const { user } = useUserStore();
+const userId = user?._id || 'default';
+const cookieKey = `${userId + path}`;
 const columnVisibilityCookie = advancedMode.value
-  ? useUserRouteCookie<VisibilityState>('geins-cols', {
+  ? useCookie<VisibilityState>(`geins-cols-${cookieKey}`, {
       default: () => props.initVisibilityState || {},
+      maxAge: 60 * 60 * 24 * 365,
     })
   : ref(props.initVisibilityState || {});
 const columnVisibility = ref(
@@ -286,7 +187,10 @@ watch(columnVisibility, updateVisibilityCookie, { deep: true });
  * Setup column order
  **/
 const columnOrderCookie = advancedMode.value
-  ? useUserRouteCookie<ColumnOrderState>('geins-order', { default: () => [] })
+  ? useCookie<ColumnOrderState>(`geins-order-${cookieKey}`, {
+      default: () => [],
+      maxAge: 60 * 60 * 24 * 365,
+    })
   : ref([]);
 const columnOrder = ref(advancedMode.value ? columnOrderCookie.value : []);
 const updateSortingCookie = () => {
@@ -386,28 +290,16 @@ const columnPinningState = computed(() => {
 const table = useVueTable({
   getRowId: (row: TData) => String(row[props.idColumn as keyof TData]),
   get data() {
-    return showSkeleton.value ? getSkeletonData<TData>() : props.data;
+    return props.loading ? getSkeletonData<TData>() : props.data;
   },
   get columns() {
-    return showSkeleton.value ? getSkeletonColumns<TData>() : props.columns;
+    return props.loading ? getSkeletonColumns<TData>() : props.columns;
   },
-  get rowCount() {
-    return serverMode ? props.rowCount : undefined;
-  },
-  manualPagination: serverMode,
-  manualSorting: serverMode,
-  manualFiltering: serverMode,
-  // The backend sorts by a single field.
-  enableMultiSort: serverMode ? false : undefined,
   getCoreRowModel: getCoreRowModel(),
   getPaginationRowModel:
-    props.mode !== TableMode.Minimal && !serverMode
-      ? getPaginationRowModel()
-      : undefined,
+    props.mode !== TableMode.Minimal ? getPaginationRowModel() : undefined,
   getSortedRowModel:
-    props.mode !== TableMode.Minimal && !serverMode
-      ? getSortedRowModel()
-      : undefined,
+    props.mode !== TableMode.Minimal ? getSortedRowModel() : undefined,
   getExpandedRowModel: props.enableExpanding
     ? getExpandedRowModel()
     : undefined,
@@ -447,17 +339,13 @@ const table = useVueTable({
   onSortingChange: (updaterOrValue) => valueUpdater(updaterOrValue, sorting),
   onColumnFiltersChange: (updaterOrValue) =>
     valueUpdater(updaterOrValue, columnFilters),
-  getFilteredRowModel: serverMode ? undefined : getFilteredRowModel(),
+  getFilteredRowModel: getFilteredRowModel(),
   onGlobalFilterChange: (updaterOrValue) =>
     valueUpdater(updaterOrValue, globalFilter),
   getColumnCanGlobalFilter: (column) => {
     // Only allow global filtering on columns specified in searchableFields
     return props.searchableFields?.includes(column.id) ?? false;
   },
-  // Undefined in client mode, so TanStack keeps pagination internal.
-  onPaginationChange: serverMode
-    ? (updaterOrValue) => valueUpdater(updaterOrValue, serverPagination)
-    : undefined,
   onColumnVisibilityChange: (updaterOrValue) => {
     valueUpdater(updaterOrValue, columnVisibility);
   },
@@ -466,11 +354,7 @@ const table = useVueTable({
   onRowSelectionChange: (updaterOrValue) => {
     valueUpdater(updaterOrValue, rowSelection);
 
-    if (serverMode) {
-      syncSelectedRows();
-      emit('update:selectedIds', [...selectedRows.keys()]);
-      emitServerSelection();
-    } else if (props.enableExpanding && props.getSubRows) {
+    if (props.enableExpanding && props.getSubRows) {
       // For expanding tables, getSelectedRowModel() doesn't include child rows properly
       // We need to manually collect all selected rows from the full hierarchy
       const collectSelectedRows = (rows: Row<unknown>[]): Row<unknown>[] => {
@@ -508,10 +392,6 @@ const table = useVueTable({
     ? (updaterOrValue) => valueUpdater(updaterOrValue, expanded)
     : undefined,
   state: {
-    // Undefined falls back to TanStack's internal state (client mode).
-    get pagination() {
-      return serverMode ? serverPagination.value : undefined;
-    },
     get sorting() {
       return sorting.value;
     },
@@ -549,14 +429,6 @@ const table = useVueTable({
   },
 });
 
-// The prop is only the initial size in `initialState`; follow later changes.
-watch(
-  () => props.pageSize,
-  (size) => {
-    if (!serverMode && !minimalMode.value) table.setPageSize(size);
-  },
-);
-
 // Auto-expand all rows when searching in expandable tables
 watch(
   [globalFilter, () => props.data],
@@ -583,15 +455,9 @@ watch(
   { immediate: false },
 );
 
-/** Deselects every row, including rows on other pages in server mode. */
-const clearSelection = () => table.setRowSelection({});
-defineExpose({ clearSelection });
-
 const emptyState = computed(() => {
   const hasActiveFilter =
-    globalFilter.value?.trim() !== '' ||
-    columnFilters.value.length > 0 ||
-    props.filtered;
+    globalFilter.value?.trim() !== '' || columnFilters.value.length > 0;
 
   return {
     isFiltered: hasActiveFilter,
@@ -608,18 +474,12 @@ const emptyState = computed(() => {
 });
 
 const clearFilters = () => {
-  searchInput.value = '';
   globalFilter.value = '';
   columnFilters.value = [];
-  // Filters outside the table (see `filtered`) belong to the parent.
-  emit('clear-filters');
 };
 
-// Server mode searches whatever the backend searches, not `searchableFields`.
 const hasSearchableColumns = computed(() => {
-  return (
-    serverMode || (props.searchableFields && props.searchableFields.length > 0)
-  );
+  return props.searchableFields && props.searchableFields.length > 0;
 });
 </script>
 
@@ -628,8 +488,7 @@ const hasSearchableColumns = computed(() => {
     v-if="showSearch"
     :class="
       cn(
-        'mb-3 flex origin-top transform items-center gap-2 transition-transform',
-        $slots.toolbar && 'flex-wrap @2xl:flex-nowrap',
+        'mb-3 flex origin-top transform items-center transition-transform',
         `${tableMaximized ? 'scale-y-0' : ''}`,
       )
     "
@@ -652,15 +511,6 @@ const hasSearchableColumns = computed(() => {
       </span>
     </div>
 
-    <!-- Wraps below the search on narrow containers; the bar scrolls itself. -->
-    <div
-      v-if="$slots.toolbar"
-      class="w-full min-w-0 @2xl:w-auto @2xl:flex-1"
-      data-test="table-toolbar"
-    >
-      <slot name="toolbar" />
-    </div>
-
     <TableColumnToggle v-if="advancedMode && columns?.length" :table="table" />
   </div>
   <div
@@ -673,14 +523,8 @@ const hasSearchableColumns = computed(() => {
         `${advancedMode && !tableMaximized ? '-mt-40' : ''}`,
       )
     "
-    :aria-busy="refetching || undefined"
   >
-    <Table
-      :style="maxHeight ? { maxHeight } : {}"
-      :class="
-        cn('transition-opacity', dimmed && 'pointer-events-none opacity-60')
-      "
-    >
+    <Table :style="maxHeight ? { maxHeight } : {}">
       <TableHeader v-if="table.getRowModel().rows?.length">
         <TableRow
           v-for="headerGroup in table.getHeaderGroups()"
@@ -806,10 +650,8 @@ const hasSearchableColumns = computed(() => {
       v-if="!minimalMode"
       :entity-key="entityKey"
       :rows-selectable="rowsSelectable"
-      :selected-count="serverMode ? selectedCount : undefined"
       :table="table"
       :advanced="advancedMode"
-      :page-sizes="pageSizes"
     />
     <Button
       v-if="advancedMode"

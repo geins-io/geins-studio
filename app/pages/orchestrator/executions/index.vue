@@ -17,7 +17,6 @@ export interface ExecutionListItem {
   durationFormatted: string;
   durationMs: number;
   errorCount: number;
-  error: string;
   nodeCount: number;
   isTestRun: boolean;
 }
@@ -171,7 +170,6 @@ watch(
 );
 
 // ─── Data Mapping ──────────────────────────────────────────────────
-const { executionErrors } = useExecutionErrors();
 const mapToListData = (list: ExecutionLog[]): EntityList[] => {
   return list.map((e) => {
     const groupName = e.group ?? '';
@@ -191,7 +189,6 @@ const mapToListData = (list: ExecutionLog[]): EntityList[] => {
       durationFormatted: formatDuration(e.durationMs ?? undefined),
       durationMs: e.durationMs ?? 0,
       errorCount: e.errorCount ?? 0,
-      error: executionErrors(e)[0]?.message ?? '',
       nodeCount: e.nodeExecutions?.length ?? 0,
       isTestRun: e.isTestRun ?? false,
     };
@@ -348,7 +345,6 @@ onMounted(() => {
       endTime: t('executions.end_time'),
       durationFormatted: t('executions.duration'),
       errorCount: t('executions.errors'),
-      error: t('executions.error'),
       nodeCount: t('executions.nodes'),
       isTestRun: t('executions.test_run'),
     },
@@ -375,7 +371,6 @@ const searchableFields: Array<keyof EntityList> = [
   'workflowName',
   'group',
   'status',
-  'error',
 ];
 </script>
 
