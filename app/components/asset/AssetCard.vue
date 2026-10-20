@@ -1,0 +1,185 @@
+<script setup lang="ts">
+import type { Asset } from '#shared/types';
+import { formatFileSize } from '#shared/utils/file';
+
+/**
+ * Grid tile for a single asset: thumbnail, name, type badge, folder, tags, and
+ * size/modified meta (moved-to-trash date in `trashed` mode). Click (name or card) or the action menu opens the asset.
+ *
+ * In `selectable` mode a checkbox overlays the thumbnail. In the asset picker
+ * (`selectOnClick`, the default) the whole tile toggles selection instead of
+ * opening, and `hideActions` drops the per-card actions menu. The library turns
+ * `selectOnClick` off: the checkbox selects and the tile still opens.
+ *
+ * In `trashed` mode (trash view) the tile is inert apart from its menu, which
+ * offers Restore and Delete permanently — there is no detail panel for a
+ * soft-deleted asset.
+ */
+const props = withDefaults(
+  defineProps<{
+    asset: Asset;
+    /** Resolved folder name (the asset only carries `folderId`). */
+    folderName?: string;
+    /** Picker mode — render a selection checkbox and toggle on tile click. */
+    selectable?: boolean;
+    /** Reflected selected state (driven by the parent). */
+    selected?: boolean;
+    /** With `selectable`, a tile click toggles selection instead of opening. */
+    selectOnClick?: boolean;
+    /** Suppress the actions menu (the picker has selection only). */
+    hideActions?: boolean;
+    /** Trash view — the tile doesn't open, and the menu offers Restore only. */
+    trashed?: boolean;
+  }>(),
+  {
+    selectable: false,
+    selected: false,
+    selectOnClick: true,
+    hideActions: false,
+    trashed: false,
+  },
+);
+
+const emit = defineEmits<{
+  open: [];
+  download: [];
+  copyUrl: [];
+  delete: [];
+  restore: [];
+  purge: [];
+  toggleSelect: [];
+}>();
+
+const { formatDate } = useDate();
+const size = computed(() => formatFileSize(props.asset.sizeBytes));
+
+// In the picker, the tile is a selection target — clicking the thumbnail or
+// name toggles selection rather than opening the (nonexistent) detail panel.
+const togglesOnClick = computed(() => props.selectable && props.selectOnClick);
+const activate = () => {
+  if (props.trashed) return;
+  if (togglesOnClick.value) {
+    emit('toggleSelect');
+  } else {
+    emit('open');
+  }
+};
+</script>
+
+<template>
+  <Card
+    :class="
+      cn(
+        'group flex h-full flex-col gap-0 overflow-hidden py-0 transition-colors hover:shadow-sm',
+        selectable && selected
+          ? 'border-primary ring-primary ring-2'
+          : 'hover:border-ring/40',
+      )
+    "
+  >
+    <div class="relative">
+      <button
+        type="button"
+        class="block w-full cursor-pointer disabled:cursor-default"
+        :disabled="trashed"
+        :aria-label="
+          togglesOnClick
+            ? $t('select_named', { name: asset.name })
+            : $t('asset_library.view_details')
+        "
+        @click="activate"
+      >
+        <AssetThumbnail
+          :type="asset.type"
+          :url="asset.url"
+          :alt="asset.name"
+          size="card"
+          class="rounded-none"
+        />
+      </button>
+      <div
+        v-if="selectable"
+        :class="
+          cn(
+            'absolute top-2 left-2 transition-opacity',
+            selected
+              ? 'opacity-100'
+              : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100',
+          )
+        "
+      >
+        <Checkbox
+          :model-value="selected"
+          :aria-label="$t('select_named', { name: asset.name })"
+          class="bg-white/90 shadow-xs"
+          @click.stop="emit('toggleSelect')"
+        />
+      </div>
+      <div
+        v-if="!hideActions"
+        class="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
+      >
+        <AssetActionsMenu
+          :asset="asset"
+          :trashed="trashed"
+          @open="emit('open')"
+          @download="emit('download')"
+          @copy-url="emit('copyUrl')"
+          @delete="emit('delete')"
+          @restore="emit('restore')"
+          @purge="emit('purge')"
+        />
+      </div>
+    </div>
+
+    <div class="flex flex-1 flex-col gap-2 p-3">
+      <span v-if="trashed" class="truncate text-sm">{{ asset.name }}</span>
+      <button
+        v-else
+        type="button"
+        class="link-text truncate text-left text-sm"
+        @click="activate"
+      >
+        {{ asset.name }}
+      </button>
+
+      <div>
+        <AssetTypeBadge :type="asset.type" />
+      </div>
+
+      <div
+        v-if="folderName"
+        class="text-muted-foreground flex items-center gap-1.5 text-xs"
+      >
+        <LucideFolder class="size-3 shrink-0" aria-hidden="true" />
+        <span class="truncate">{{ folderName }}</span>
+      </div>
+
+      <div v-if="asset.tags.length" class="flex items-center gap-1.5">
+        <LucideTag
+          class="text-muted-foreground size-3 shrink-0"
+          aria-hidden="true"
+        />
+        <div class="flex flex-wrap items-center gap-1.5">
+          <Tag v-for="tag in asset.tags" :key="tag" :label="tag" size="sm" />
+        </div>
+      </div>
+
+      <div
+        class="text-muted-foreground mt-auto flex items-center justify-between text-xs"
+      >
+        <span>{{ size }}</span>
+        <span v-if="trashed && asset.deletedAt">
+          {{
+            $t('asset_library.moved_to_trash_on', {
+              date: formatDate(asset.deletedAt, { dateStyle: 'medium' }),
+            })
+          }}
+        </span>
+        <span v-else>
+          {{ formatDate(asset.updatedAt, { dateStyle: 'medium' }) }}
+        </span>
+      </div>
+    </div>
+  </Card>
+</template>

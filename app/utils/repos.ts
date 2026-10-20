@@ -1,4 +1,5 @@
 import { accountRepo } from './repositories/account';
+import { assetRepo } from './repositories/asset';
 import { changelogRepo } from './repositories/changelog';
 import { customerRepo } from './repositories/customer';
 import { entityRepo } from './repositories/entity';
@@ -10,6 +11,7 @@ import { userRepo } from './repositories/user';
 
 export const repo = {
   account: accountRepo,
+  asset: assetRepo,
   entityBase: entityBaseRepo,
   entity: entityRepo,
   product: productRepo,

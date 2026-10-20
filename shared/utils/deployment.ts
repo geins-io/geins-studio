@@ -43,3 +43,20 @@ export function getAuthBaseUrl() {
   }
   return `${baseUrl}/api/auth`;
 }
+
+/**
+ * Whether the dev-only pages under `app/pages/dev/**` are part of the build.
+ *
+ * Read from `nuxt.config.ts` so the routes are dropped at build time, not
+ * hidden at runtime — the harness copy is hardcoded English and must not reach
+ * the bundle. `import.meta.dev` is false on every Vercel build, and the QA
+ * project deploys as production against the QA API, so the opt-in flag is set
+ * on the QA and preview projects and never on prod. Local `nuxt dev` gets the
+ * pages without it.
+ */
+export function includeDevPages() {
+  return (
+    process.env.NODE_ENV !== 'production' ||
+    process.env.INCLUDE_DEV_PAGES === 'true'
+  );
+}

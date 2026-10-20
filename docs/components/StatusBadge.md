@@ -43,6 +43,17 @@ The status value to render. Drives both the badge variant (color) and the displa
 - **Type:** `StatusBadgeStatus`
 - **Required:** yes
 
+### `label`
+
+```ts
+label?: string;
+```
+
+Translated text to show instead of the sentence-cased status. Pass it whenever the status isn't a boolean, so the label is localized — e.g. the background jobs panel renders `<StatusBadge status="in-progress" :label="$t('background_jobs.in_progress')" />`.
+
+- **Type:** `string`
+- **Required:** no
+
 ## Type Definitions
 
 ```ts
@@ -66,6 +77,7 @@ type StatusBadgeStatus =
   | 'completed'
   | 'confirmed'
   | 'draft'
+  | 'in-progress' // blue
   | boolean
   | string;
 ```

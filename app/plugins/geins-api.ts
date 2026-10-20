@@ -233,12 +233,15 @@ export default defineNuxtPlugin(() => {
 
       // Surface mutation failures globally. Reads (GET/HEAD) render page-level
       // error/empty states instead, and 401 is the silent token refresh/retry
-      // path. A call opts out per-request via `suppressErrorToast` (e.g.
-      // `validateVatNumber`, which surfaces validity inline).
+      // path. 412 (optimistic-concurrency precondition failure, from an
+      // `If-Match` update) is always resolved inline by the caller with a
+      // reload prompt — never the generic toast. A call opts out per-request via
+      // `suppressErrorToast` (e.g. `validateVatNumber`, which surfaces inline).
       const isMutation = !['GET', 'HEAD'].includes(method.toUpperCase());
       if (
         isMutation &&
         response.status !== 401 &&
+        response.status !== 412 &&
         !options.suppressErrorToast
       ) {
         void showGlobalErrorToast(

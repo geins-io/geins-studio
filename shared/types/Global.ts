@@ -27,7 +27,8 @@ export type StatusBadgeKnownStatus =
   | 'degraded'
   | 'unhealthy'
   | 'idle'
-  | 'enabled';
+  | 'enabled'
+  | 'in-progress';
 
 /**
  * StatusBadge accepts booleans (active/inactive), known statuses with
@@ -216,4 +217,10 @@ export interface Price {
 export interface FlagText {
   code: string;
   label: string;
+}
+
+/** Locale-keyed localized fields: `{ en: { … }, sv: { … } }`. Shared shape for
+ * entity `localizations` (products, assets, …). */
+export interface Localized<T> {
+  [lang: string]: T;
 }

@@ -5,6 +5,7 @@
 ## Features
 
 - Three layout modes (`Advanced`, `Simple`, `Minimal`) via the `TableMode` enum
+- Client or server data source: sort, page and search in the browser, or let the backend do it (see [Server mode](#server-mode))
 - Built-in global search with 300ms debounce and field allowlist
 - Column visibility + order persisted per user/route via cookies
 - Sticky pinned columns (left + right) with shadow indicators
@@ -66,6 +67,83 @@ For tables embedded inside cards or panels — no search, no pagination, no pinn
 </template>
 ```
 
+### Server mode
+
+With `data-source="server"`, `data` is one page the backend has already sorted, paged and searched. The table doesn't re-sort, re-page or filter the rows. It reads and writes page, sort and search through `v-model`s, so bind them to [`useListQuery`](/composables/useListQuery):
+
+```vue
+<script setup lang="ts">
+const {
+  items,
+  total,
+  pending,
+  error,
+  searchInput,
+  hasActiveQuery,
+  pagination,
+  sorting,
+  refresh,
+  resetFilters,
+} = useListQuery<Asset, AssetQueryFilters>({
+  key: 'asset-list',
+  fetcher: (state, options) => assetApi.query(state, undefined, options),
+  defaults: { filters: {} },
+});
+</script>
+
+<template>
+  <TableView
+    v-model:pagination="pagination"
+    v-model:sorting="sorting"
+    v-model:search="searchInput"
+    data-source="server"
+    entity-key="asset"
+    :columns="columns"
+    :data="items"
+    :row-count="total"
+    :loading="pending"
+    :filtered="hasActiveQuery"
+    :error="!!error"
+    :on-retry="refresh"
+    @clear-filters="resetFilters"
+  />
+</template>
+```
+
+How server mode differs from client mode:
+
+- **Sorting** is single-column. Clearing a header's sort sets `sorting` to `[]`, which means "the endpoint's default". Only columns the column definitions mark sortable can be sorted. Mark columns the backend can't sort as non-sortable with `useColumns`'s `sortableColumns`. `TableView` knows nothing about backend field names. `initSortingState` is ignored; set the initial sort in `useListQuery`'s `defaults.sort`.
+- **Search** writes `search` on every keystroke with no debounce. `useListQuery` owns the debounce. `searchableFields` doesn't apply.
+- **Loading** shows skeleton rows only when there are no rows yet, so pass `pending` straight through. Later fetches keep the current page on screen with `aria-busy`, and dim it (`opacity-60`, no pointer events) once the fetch runs past 200 ms ([`useRefetchDim`](/composables/useRefetchDim)).
+- **Not supported:** `TableMode.Minimal` (it has no pagination) and expanding rows. Both log a dev warning.
+
+#### Selection in server mode
+
+TanStack's row models only hold the loaded page, so `TableView` keeps the selected rows itself, keyed by `idColumn`. A selection survives page, sort, search and filter changes. The parent decides when to drop it and calls `clearSelection()`.
+
+- `selection` emits **every** selected row across pages, in selection order. A selected id whose row isn't loaded yet (e.g. seeded through `selectedIds`) still counts as selected, and is emitted once a page containing it loads.
+- `v-model:selected-ids` gives you the ids only, including rows that aren't loaded. Use it for bulk calls. Setting it from outside selects or deselects, including rows on other pages.
+- The header checkbox selects or clears **the current page** only. "Select all N matching" isn't part of the table.
+- The footer's "N selected" counts the whole selection. The total is `rowCount`.
+
+```vue
+<script setup lang="ts">
+const selectedIds = ref<string[]>([]);
+const tableView = ref<{ clearSelection: () => void }>();
+</script>
+
+<template>
+  <TableView
+    ref="tableView"
+    v-model:selected-ids="selectedIds"
+    data-source="server"
+    ...
+  />
+</template>
+```
+
+A working example lives at `/dev/server-table` (dev builds only).
+
 ## Props
 
 ### `columns`
@@ -82,7 +160,7 @@ TanStack column definitions. Use [`useColumns`](/composables/useColumns) to comp
 data: TData[]
 ```
 
-Row data. While `loading` is `true`, skeleton rows replace this entirely.
+Row data. While `loading` is `true`, skeleton rows replace this entirely. In server mode that only happens while `data` is empty.
 
 ### `entityKey`
 
@@ -110,9 +188,47 @@ Field used as the stable row identifier for selection persistence.
 pageSize?: number
 ```
 
-Initial page size. Ignored in `Minimal` mode (no pagination).
+Page size in client mode. Later changes to the prop are applied too. Ignored in `Minimal` mode (no pagination). In server mode the size comes from the `pagination` model.
 
 - **Default:** `30`
+
+### `pageSizes`
+
+```ts
+pageSizes?: number[]
+```
+
+Options in the rows-per-page selector (`Advanced` mode). In server mode, match `useListQuery`'s `pageSizes`.
+
+- **Default:** `[30, 60, 120, 240]`
+
+### `dataSource`
+
+```ts
+dataSource?: TableDataSource // 'client' | 'server'
+```
+
+`'client'` sorts, pages and searches `data` in the browser. `'server'` treats `data` as a page the backend prepared. See [Server mode](#server-mode). Read once at setup.
+
+- **Default:** `'client'`
+
+### `rowCount`
+
+```ts
+rowCount?: number
+```
+
+Server mode: the total across all pages (`totalItemCount`). Drives the row counter and the page count.
+
+### `filtered`
+
+```ts
+filtered?: boolean
+```
+
+Filters outside the table are active. Shows the "no results" empty state (with **Clear search**, which emits `clear-filters`) even when the search is empty.
+
+- **Default:** `false`
 
 ### `loading`
 
@@ -120,7 +236,7 @@ Initial page size. Ignored in `Minimal` mode (no pagination).
 loading?: boolean
 ```
 
-Renders skeleton rows when `true`.
+Renders skeleton rows when `true`. In server mode, only while `data` is empty; with rows on screen it marks them busy and dims them instead (see [Server mode](#server-mode)).
 
 - **Default:** `false`
 
@@ -176,7 +292,7 @@ Initial column pinning. Defaults to pinning `select` left and `actions` right.
 selectedIds?: string[]
 ```
 
-Pre-select rows by id. Two-way: changing this externally updates internal selection.
+Pre-select rows by id. Changing it from outside replaces the selection. In server mode it's also a model (`v-model:selected-ids`): the table emits `update:selectedIds` with every selected id, loaded or not.
 
 ### `emptyText` / `emptyDescription`
 
@@ -240,6 +356,14 @@ initVisibilityState?: VisibilityState
 
 Initial column visibility map. In `Advanced` mode this is overlaid with the per-user cookie.
 
+### `initSortingState`
+
+```ts
+initSortingState?: SortingState
+```
+
+Client mode: the sort applied once loading finishes, if nothing is sorted yet. Ignored in server mode.
+
 ### `enableExpanding`
 
 ```ts
@@ -268,15 +392,25 @@ Renders rows where `row.original.active === false` at 50% opacity. Cells with `m
 
 - **Default:** `false`
 
+## Models
+
+Server mode only. Client mode keeps this state internal.
+
+| Model                | Type              | Notes                                            |
+| -------------------- | ----------------- | ------------------------------------------------ |
+| `v-model:pagination` | `PaginationState` | 0-based `pageIndex` + `pageSize`.                |
+| `v-model:sorting`    | `SortingState`    | At most one entry. `[]` is the endpoint default. |
+| `v-model:search`     | `string`          | Raw input, not debounced.                        |
+
 ## Events
 
-### `clicked`
+### `clear-filters`
 
 ```ts
-(row: TData): TData
+() => void
 ```
 
-Emitted when a row is clicked.
+Emitted by the empty state's **Clear search** button, after the table has cleared its own search. Reset any outside filters here: `useListFilters`' `clearAll` with a filter kit, or `useListQuery`'s `resetFilters` without one.
 
 ### `selection`
 
@@ -284,9 +418,43 @@ Emitted when a row is clicked.
 (selection: TData[]): TData[]
 ```
 
-Emitted with the current selection. For expandable tables, only leaf rows (no children) are emitted.
+Emitted with the current selection. For expandable tables, only leaf rows (no children) are emitted. In server mode it holds every loaded selected row across pages. See [Selection in server mode](#selection-in-server-mode).
+
+### `update:selectedIds`
+
+```ts
+(ids: string[]) => void
+```
+
+Server mode only. Every selected id, in selection order, including rows that aren't loaded.
+
+## Exposed
+
+### `clearSelection`
+
+```ts
+clearSelection(): void
+```
+
+Deselects every row, including rows on other pages in server mode. Emits `selection` and, in server mode, `update:selectedIds`.
 
 ## Slots
+
+### `toolbar`
+
+Extra controls in the search row, between the search input and the column options. Use it for a list's [`ListFilterBar`](/components/list/filter/ListFilterBar). The slot sits beside the search from the `@2xl` container width up and wraps below it on narrower containers. Pages with their own toolbar, such as the asset library, place the bar themselves.
+
+```vue
+<TableView
+  :filtered="hasActiveQuery"
+  @clear-filters="listFilters.clearAll"
+  v-bind="tableProps"
+>
+  <template #toolbar>
+    <ListFilterBar :list-filters="listFilters" @open-all="sheetOpen = true" />
+  </template>
+</TableView>
+```
 
 ### `empty-actions`
 

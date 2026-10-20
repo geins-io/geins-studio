@@ -1,8 +1,26 @@
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
-import { getBaseUrl, getAuthBaseUrl } from './shared/utils/deployment';
+import {
+  getBaseUrl,
+  getAuthBaseUrl,
+  includeDevPages,
+} from './shared/utils/deployment';
 
 const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
+
+// Scratch dirs that may hold cloned repos / other worktrees with their own
+// node_modules — watching them blows the fd limit (EMFILE).
+const SCRATCH_DIRS = ['.temp', '.agents', '.mint', '.claude'];
+const rootDir = fileURLToPath(new URL('.', import.meta.url));
+// Root-anchored on purpose: a `**/.claude/**` glob also matches the project
+// itself when it runs from a Claude Code worktree (<repo>/.claude/worktrees/…),
+// silently disabling HMR. A function, since Nitro's chokidar 5 treats string
+// matchers as exact paths (no globs).
+const isScratchPath = (path: string) =>
+  SCRATCH_DIRS.some(
+    (dir) => path === rootDir + dir || path.startsWith(`${rootDir}${dir}/`),
+  );
 
 export default defineNuxtConfig({
   ssr: false,
@@ -15,6 +33,15 @@ export default defineNuxtConfig({
           content: `${pkg.version}+${process.env.GIT_SHA || 'dev'}`,
         },
       ],
+      // Each weight is its own @font-face, fetched only on first use — preload
+      // so the first semibold text doesn't swap in after paint.
+      link: ['SuisseIntl-Regular', 'SuisseIntl-Medium'].map((file) => ({
+        rel: 'preload',
+        as: 'font',
+        type: 'font/woff2',
+        href: `/fonts/${file}.woff2`,
+        crossorigin: 'anonymous',
+      })),
     },
   },
 
@@ -41,7 +68,14 @@ export default defineNuxtConfig({
     normalizeComponentNames: true,
   },
 
-  ignore: ['.temp/**', '.agents/**', '.mint/**', '.claude/**'],
+  ignore: [
+    // Nuxt matches these relative to rootDir, so they're already anchored.
+    ...SCRATCH_DIRS.map((dir) => `${dir}/**`),
+    // Dev harnesses are excluded from the build itself, not gated at runtime,
+    // so their hardcoded copy never reaches a prod bundle. INCLUDE_DEV_PAGES=true
+    // brings them back for the QA + preview projects.
+    ...(includeDevPages() ? [] : ['app/pages/dev/**']),
+  ],
 
   modules: [
     '@sidebase/nuxt-auth',
@@ -87,21 +121,14 @@ export default defineNuxtConfig({
     },
     server: {
       watch: {
-        ignored: [
-          '**/.temp/**',
-          '**/.agents/**',
-          '**/.mint/**',
-          '**/.claude/**',
-          '**/.output/**',
-          '**/.nuxt/**',
-        ],
+        ignored: [isScratchPath, '**/.output/**', '**/.nuxt/**'],
       },
     },
   },
 
   nitro: {
     watchOptions: {
-      ignored: ['**/.temp/**', '**/.agents/**', '**/.mint/**', '**/.claude/**'],
+      ignored: [isScratchPath],
     },
     ...(process.env.NITRO_PRESET && { preset: process.env.NITRO_PRESET }),
   },

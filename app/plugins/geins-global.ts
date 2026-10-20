@@ -2,6 +2,7 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
   const accountStore = useAccountStore();
   const productsStore = useProductsStore();
   const { isAuthenticated } = useGeinsAuth();
+  const { status } = useAuth();
 
   // Prevent execution on the server
   if (import.meta.server) return;
@@ -12,10 +13,18 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
     return;
   }
 
+  // A token refresh puts nuxt-auth in 'loading', which reads as logged out.
+  // Hold the last settled value through it, or every refresh resets the stores
+  // (and drops their in-flight loads) mid-session.
+  let settled: boolean = isAuthenticated.value;
+  const settledAuth = () =>
+    status.value === 'loading' ? settled : isAuthenticated.value;
+
   // Watch for authentication changes
   watch(
-    isAuthenticated,
+    settledAuth,
     async (value) => {
+      settled = value;
       if (value) {
         accountStore.init();
       } else {

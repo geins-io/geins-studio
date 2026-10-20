@@ -1,0 +1,86 @@
+# `AssetDetailPanel`
+
+`AssetDetailPanel` is the slide-in detail/edit panel for a single asset, built on [`PanelEdit`](/components/panel/PanelEdit). It edits the asset's metadata and shows read-only info; the library page opens it from a grid card or list row.
+
+It is the first real consumer of the `PanelEdit` primitive. The unsaved-changes guard comes from [`usePanelDirty`](/composables/usePanelDirty) fed into `PanelEdit`'s `:dirty`, **or** from an unsaved inline folder name held by [`AssetFolderPicker`](/components/asset/AssetFolderPicker) ([`usePendingCommits`](/composables/usePendingCommits)'s `hasPending`) — so a typed-but-unsaved folder name enables **Save** and is created by it, instead of disappearing with the panel.
+
+## Usage
+
+```vue
+<AssetDetailPanel
+  v-model:open="detailOpen"
+  :asset="detailAsset"
+  @updated="refresh"
+/>
+```
+
+The page sets `detailAsset` + `detailOpen` in `openAsset(asset)`.
+
+## Props
+
+### `asset`
+
+```ts
+asset: Asset | null;
+```
+
+The asset to edit. The form resets from it each time the panel opens.
+
+## v-model
+
+### `open`
+
+```ts
+v-model:open: boolean
+```
+
+## Events
+
+### `updated`
+
+Emitted after a successful save **or delete** (the page refreshes the library list).
+
+### `replaced`
+
+```ts
+replaced: [asset: Asset];
+```
+
+Emitted with the updated asset after a file replace; the page sets `detailAsset` to it. The panel then closes unless it holds unsaved edits: the replace continues as a background job in the header's jobs panel.
+
+## Actions
+
+An action row under the preview:
+
+- **Copy URL** — writes the asset's `url` to the clipboard (`entity_copied` toast); disabled when the asset has no `url`.
+- **Download** — anchor `download` of `url` (falls back to opening in a new tab); disabled when there is no `url`.
+- **Replace** — opens [`AssetReplaceDialog`](/components/asset/AssetReplaceDialog) to swap the underlying file (same id + metadata).
+
+Footer is the standard **Cancel + Save**. Trashing lives in a **section at the bottom of the panel** (like `CompanyBuyerPanel`): a `ContentCardHeader` ("Move to trash", restorable for 30 days) + secondary **Move to trash** button → [`DialogDelete`](/components/dialog/DialogDelete) with the soft `title` / `description` / `confirmLabel` → `assetApi.delete(id)` (a soft delete) → refresh `asset-library-list` + toast + close.
+
+## Editable fields
+
+- **name** (required, no slash), **folder** (`Select` from [`useFolders`](/composables/useFolders) with inline create), **description** (multi-line [`FormTranslatableField`](/components/form/FormTranslatableField) — `multiline`), **alt text** (images only — a [`FormTranslatableField`](/components/form/FormTranslatableField): current-language input + flag that opens the translation panel, which auto-stacks over this one), **tags** ([`FormInputTagsSearch`](/components/form/input/FormInputTagsSearch), suggestions from `assetApi.listTags()` under the `asset-tags` key, custom tags allowed), **channels** ([`FormInputChannels`](/components/form/input/FormInputChannels)), **content languages** ([`FormInputLanguages`](/components/form/input/FormInputLanguages) — account language codes, with a `FormDescription` saying the languages are the ones the asset is _intended_ for).
+- **Description and alt text are both per-locale.** Each is edited as a locale→string map in the form; on save they merge into one `localizations` object (`{ [lang]: { description, altText } }`, blanks dropped) — the product-standard shape (see [assets domain](/domains/assets)). No top-level `description` is sent; the default-language value is derived server-side. Legacy rows whose description lived in the top-level column seed the current language on open so it isn't lost.
+- **Name and folder are not saved by the `PATCH`.** They go through `assetApi.relocate(id, { name, folderId })` — one endpoint that covers both rename and move as a full replace. The schema rejects a slash in `name` (the API answers `422`).
+- Save is therefore up to **two calls, in this order**: `assetApi.update(id, …)` with the `If-Match` first, then `relocate` only when `name` or `folderId` actually changed. The etag-checked write goes first on purpose — `relocate` carries no precondition, so a concurrent change surfaces as a `412` _before_ the move rather than after it. The panel advances its held etag from the `PATCH` response so a retry after a failed relocate isn't rejected as stale. Then refresh `asset-library-list`.
+- **Tags, channels and content languages are full replaces, sent only when changed.** Each set is normalized the way the backend stores it (`normalizeAssetLabels`: trimmed, blanks dropped, case-insensitive duplicates collapsed) and compared to the loaded asset (`sameAssetLabels`, order-insensitive). An unchanged set is **omitted** from the `PATCH` so a stale copy never overwrites it; a cleared one goes as `[]`. The schema enforces the backend limits (`ASSET_LABEL_LIMITS`: 100 tags ≤ 64 chars, 50 channels ≤ 50 chars, 50 languages ≤ 50 chars) on the normalized values. A save that changed tags refreshes `asset-tags`, since sending a new tag creates it.
+- A failed `PATCH` (anything but `412`) shows an inline warning `Alert` with the backend's title + detail — e.g. a `422` the client-side rules let through. The call passes `suppressErrorToast: true`.
+- A failed relocate leaves the panel **open** with an inline warning `Alert` (the call passes `suppressErrorToast: true`): a `409` reads as a name clash in the target folder, anything else as a generic retry. The metadata write has already landed at that point, so the list is refreshed and `updated` emitted before returning. A `202` with a `moveId` (move accepted, not yet settled) also starts a `move` [background job](/composables/useBackgroundJobs) ("Moving {name}", or "Renaming {name}" when only the name changed) that refreshes `asset-library-list` and toasts `entity_updated` once the file has moved. A `200` saves silently, as before.
+- **Replace waits for a move.** While a pending move job holds the asset (`movingAssetIds`), the **Replace** button is disabled with a tooltip (`replace_move_pending`) — the replace claim would answer `409 ASSET_MOVE_IN_FLIGHT`.
+
+## Optimistic concurrency
+
+Save sends the loaded asset's `etag` as an `If-Match` header (via `RepoFetchOptions.headers`). If the asset changed elsewhere since it loaded, the update returns **`412`** — the global toast is skipped for `412`, and the panel shows an inline **warning `Alert`** ("changed elsewhere — reload") instead. **Reload** emits `updated` (the page re-fetches the list) and closes; the stale local edits are discarded, and reopening edits fresh data with the current etag. See the [assets domain](/domains/assets) concurrency note.
+
+## Read-only info
+
+Preview ([`AssetThumbnail`](/components/asset/AssetThumbnail)), type badge, size, created / modified, created by.
+
+## Where it's used
+
+Between the info list and the remove section the panel shows a **"Where it's used"** section — [`AssetUsedIn`](/components/asset/AssetUsedIn), what the asset is linked to (products today), where it can also be linked to a product as an image or a file, or have a product link removed.
+
+## Not here
+
+Replace-file is a separate change (STU-289).

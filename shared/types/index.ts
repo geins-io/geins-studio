@@ -14,3 +14,8 @@ export * from './Utils';
 export * from './Customer';
 export * from './Changelog';
 export * from './Workflow';
+export * from './Asset';
+export * from './ListFilter';
+export * from './ListQuery';
+export * from './Bulk';
+export * from './BackgroundJob';

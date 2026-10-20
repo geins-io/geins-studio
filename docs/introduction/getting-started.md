@@ -24,13 +24,14 @@ cd geins-studio
 
 Create an `.env` file in the root of your project and add your variables. Below is a list of all available environment variables you can use in this project. Read more about AUTH_SECRET [here](https://auth.sidebase.io/guide/authjs/nuxt-auth-handler#secret).
 
-| Variable        | Description                                                                               | Default                 | Required      |
-| --------------- | ----------------------------------------------------------------------------------------- | ----------------------- | ------------- |
-| `GEINS_API_URL` | The URL to the Geins API                                                                  | -                       | Always        |
-| `AUTH_SECRET`   | A secret key used to hash tokens, sign and encrypt cookie and generate cryptographic keys | -                       | Always        |
-| `BASE_URL`      | The URL to the application                                                                | `http://localhost:3000` | In production |
-| `GEINS_DEBUG`   | Geins debug flag                                                                          | `false`                 | Optional      |
-| `AUTH_PATH`     | The path to your auth server function                                                     | `/api/auth`             | Optional      |
+| Variable            | Description                                                                                                                                                                                                                    | Default                 | Required      |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------- | ------------- |
+| `GEINS_API_URL`     | The URL to the Geins API                                                                                                                                                                                                       | -                       | Always        |
+| `AUTH_SECRET`       | A secret key used to hash tokens, sign and encrypt cookie and generate cryptographic keys                                                                                                                                      | -                       | Always        |
+| `BASE_URL`          | The URL to the application                                                                                                                                                                                                     | `http://localhost:3000` | In production |
+| `GEINS_DEBUG`       | Geins debug flag                                                                                                                                                                                                               | `false`                 | Optional      |
+| `AUTH_PATH`         | The path to your auth server function                                                                                                                                                                                          | `/api/auth`             | Optional      |
+| `INCLUDE_DEV_PAGES` | Include the dev-only pages under `app/pages/dev/**` (e.g. `/dev/asset-picker`) in the build. Always on in `pnpm dev`; set to `true` on the QA and preview deploys, never on production — the harness copy is hardcoded English | unset                   | Optional      |
 
 ## Theming
 

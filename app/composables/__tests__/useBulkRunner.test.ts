@@ -1,0 +1,196 @@
+// @vitest-environment node
+/* eslint-disable import/order, import/first */
+import { mockNuxtImport } from '@nuxt/test-utils/runtime';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { BulkAction } from '#shared/types';
+
+const { toast, geinsLogError } = vi.hoisted(() => ({
+  toast: vi.fn(),
+  geinsLogError: vi.fn(),
+}));
+
+mockNuxtImport('useI18n', () => () => ({ t: (key: string) => key }));
+mockNuxtImport('useGeinsLog', () => () => ({ geinsLogError }));
+
+vi.mock('@/components/ui/toast/use-toast', () => ({
+  useToast: () => ({ toast }),
+}));
+
+import { useBulkRunner } from '../useBulkRunner';
+
+const ids = (n: number) => Array.from({ length: n }, (_, i) => `a${i}`);
+
+const action = (
+  run: BulkAction['run'] = vi.fn().mockResolvedValue(undefined),
+): BulkAction => ({
+  key: 'trash',
+  label: 'Move to trash',
+  icon: 'Trash2',
+  run,
+  successMessage: (count) => `done ${count}`,
+});
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
+describe('useBulkRunner', () => {
+  it('keeps the global error toast for a single chunk', async () => {
+    const run = vi.fn().mockResolvedValue(undefined);
+    await useBulkRunner().run(action(run), ids(3), undefined, 'asset');
+    expect(run).toHaveBeenCalledWith(ids(3), undefined, {});
+    expect(toast).toHaveBeenCalledWith({
+      title: 'done 3',
+      variant: 'positive',
+    });
+  });
+
+  it('silences per-call toasts and chunks by 100 when there are several chunks', async () => {
+    const run = vi.fn().mockResolvedValue(undefined);
+    const result = await useBulkRunner().run(
+      action(run),
+      ids(150),
+      'v',
+      'asset',
+    );
+    expect(run).toHaveBeenCalledTimes(2);
+    expect(run.mock.calls[0]![0]).toHaveLength(100);
+    expect(run.mock.calls[1]![0]).toHaveLength(50);
+    expect(run.mock.calls[0]![2]).toEqual({ suppressErrorToast: true });
+    expect(result.failed).toEqual([]);
+    expect(toast).toHaveBeenCalledWith({
+      title: 'done 150',
+      variant: 'positive',
+    });
+  });
+
+  it('gives one summary toast on a partial failure across chunks', async () => {
+    const run = vi
+      .fn()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce({ data: { title: 'Assets not found.' } });
+    const result = await useBulkRunner().run(
+      action(run),
+      ids(150),
+      undefined,
+      'asset',
+    );
+    expect(result.succeeded).toHaveLength(100);
+    expect(result.failed).toEqual(ids(150).slice(100));
+    expect(toast).toHaveBeenCalledTimes(1);
+    expect(toast).toHaveBeenCalledWith({
+      title: 'bulk_action_partial',
+      description: 'Assets not found. bulk_action_failed_kept',
+      variant: 'negative',
+    });
+  });
+
+  it('passes the chunk responses to the success message', async () => {
+    const successMessage = vi.fn(() => 'done');
+    const run = vi.fn().mockResolvedValue(null);
+    await useBulkRunner().run(
+      { ...action(run), successMessage },
+      ids(2),
+      undefined,
+      'asset',
+    );
+    expect(successMessage).toHaveBeenCalledWith(2, [null]);
+  });
+
+  it('owns the failure toast for an action with describeError, even for one chunk', async () => {
+    const error = { statusCode: 409, data: { title: 'raw' } };
+    const run = vi.fn().mockRejectedValue(error);
+    const describeError = vi.fn(() => 'friendly');
+    await useBulkRunner().run(
+      { ...action(run), describeError },
+      ids(2),
+      undefined,
+      'asset',
+    );
+    expect(run).toHaveBeenCalledWith(ids(2), undefined, {
+      suppressErrorToast: true,
+    });
+    expect(describeError).toHaveBeenCalledWith(error);
+    expect(toast).toHaveBeenCalledWith({
+      title: 'bulk_action_failed',
+      description: 'friendly',
+      variant: 'negative',
+    });
+  });
+
+  it('adds no toast of its own when the only chunk fails', async () => {
+    const run = vi.fn().mockRejectedValue(new Error('boom'));
+    const result = await useBulkRunner().run(
+      action(run),
+      ids(2),
+      undefined,
+      'asset',
+    );
+    expect(result.failed).toEqual(ids(2));
+    expect(toast).not.toHaveBeenCalled();
+    expect(geinsLogError).toHaveBeenCalled();
+  });
+
+  describe('startJob', () => {
+    it('drops the success toast when a background job started', async () => {
+      const startJob = vi.fn().mockReturnValue(true);
+      const run = vi.fn().mockResolvedValue({ moveId: 'm1' });
+      await useBulkRunner().run(
+        { ...action(run), startJob },
+        ids(3),
+        undefined,
+        'asset',
+      );
+      expect(startJob).toHaveBeenCalledWith(3, [{ moveId: 'm1' }], ids(3));
+      expect(toast).not.toHaveBeenCalled();
+    });
+
+    it('keeps the success toast when no job started', async () => {
+      const startJob = vi.fn().mockReturnValue(false);
+      await useBulkRunner().run(
+        { ...action(), startJob },
+        ids(3),
+        undefined,
+        'asset',
+      );
+      expect(toast).toHaveBeenCalledWith({
+        title: 'done 3',
+        variant: 'positive',
+      });
+    });
+
+    it('starts a job for the chunks that went through on a partial run', async () => {
+      const startJob = vi.fn().mockReturnValue(true);
+      const run = vi
+        .fn()
+        .mockResolvedValueOnce({ moveId: 'm1' })
+        .mockRejectedValueOnce(new Error('boom'));
+      await useBulkRunner().run(
+        { ...action(run), startJob },
+        ids(150),
+        undefined,
+        'asset',
+      );
+      expect(startJob).toHaveBeenCalledWith(
+        100,
+        [{ moveId: 'm1' }],
+        ids(150).slice(0, 100),
+      );
+      expect(toast).toHaveBeenCalledWith(
+        expect.objectContaining({ variant: 'negative' }),
+      );
+    });
+
+    it('never starts a job when every chunk failed', async () => {
+      const startJob = vi.fn();
+      const run = vi.fn().mockRejectedValue(new Error('boom'));
+      await useBulkRunner().run(
+        { ...action(run), startJob },
+        ids(2),
+        undefined,
+        'asset',
+      );
+      expect(startJob).not.toHaveBeenCalled();
+    });
+  });
+});

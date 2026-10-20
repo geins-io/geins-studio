@@ -24,7 +24,7 @@ The Account & Auth domain handles everything related to identity and merchant co
 
 **MFA** — Supported via `mfaRequired` / `mfaMethod` on `AuthResponse`. The `AuthForm` component switches to `verify` mode when MFA is triggered.
 
-**Account store** — `useAccountStore` caches merchant-level data (channels, currencies, languages) and persists user preferences (`currentChannelId`, `currentCurrency`, `currentLanguage`) in cookies. Initialized by the `geins-global.ts` plugin on session start.
+**Account store** — `useAccountStore` caches merchant-level data (channels, currencies, languages) and persists user preferences (`currentChannelId`, `currentCurrency`, `currentLanguage`) in cookies. Initialized by the `geins-global.ts` plugin on session start. On logout the plugin resets it and the products store. It ignores the brief `loading` status during a token refresh, so a refresh never counts as a logout.
 
 **User store** — `useUserStore` derives display properties from the session (`userInitials`, `userName`, `userEmail`) and provides role/permission checks (`hasAnyRole`, `hasAnyPermission` — currently TODO stubs).
 

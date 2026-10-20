@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, it, expect } from 'vitest';
@@ -20,6 +21,56 @@ import { ENTITIES } from '../entities';
 describe('entity registry', () => {
   it('en.json and sv.json have identical keys', () => {
     expect(Object.keys(en).sort()).toEqual(Object.keys(sv).sort());
+  });
+
+  // Top-level parity above treats a nested object (e.g. `asset_library`) as one
+  // key, so guard its sub-keys explicitly — a missing locale variant inside it
+  // would otherwise render the raw key path.
+  it('asset_library sub-keys match across locales', () => {
+    expect(Object.keys(en.asset_library).sort()).toEqual(
+      Object.keys(sv.asset_library).sort(),
+    );
+  });
+
+  it('asset_library.asset_type sub-keys match across locales', () => {
+    expect(Object.keys(en.asset_library.asset_type).sort()).toEqual(
+      Object.keys(sv.asset_library.asset_type).sort(),
+    );
+  });
+
+  // A message that interpolates an entity name must resolve the key itself
+  // (`@.lower:` mid-sentence, `@.capitalize:`/`@:` sentence-initial). A bare
+  // `{entityKey}` leaves the caller no option but to pass an already-translated
+  // `$t(key)` — a hard block — and renders the entity's own capitalization
+  // mid-sentence ("delete this Price list").
+  const MODIFIED_ENTITY_KEY = /@(\.lower:|\.capitalize:|:)\{entityKey\}/;
+  const entityKeyMessages = (
+    messages: Record<string, unknown>,
+    prefix = '',
+  ): [string, string][] =>
+    Object.entries(messages).flatMap(([key, value]) => {
+      const path = `${prefix}${key}`;
+      if (value && typeof value === 'object')
+        return entityKeyMessages(value as Record<string, unknown>, `${path}.`);
+      return typeof value === 'string' && value.includes('{entityKey}')
+        ? [[path, value] as [string, string]]
+        : [];
+    });
+
+  it.each([
+    ['en', en],
+    ['sv', sv],
+  ])('every %s message with {entityKey} carries a link modifier', (_, msgs) => {
+    // The locale JSON is compiled to a message AST by the i18n vite plugin, so
+    // the raw text sits at `<key>.loc.source` — trim that back to the key path.
+    const bare = [
+      ...new Set(
+        entityKeyMessages(msgs as Record<string, unknown>)
+          .filter(([, value]) => !MODIFIED_ENTITY_KEY.test(value))
+          .map(([path]) => path.replace(/\.loc\.source$/, '')),
+      ),
+    ];
+    expect(bare).toEqual([]);
   });
 
   const entityKeys = Object.keys(ENTITIES);
