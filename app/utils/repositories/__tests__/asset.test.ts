@@ -155,10 +155,39 @@ describe('assetRepo', () => {
         expect(lastBody()).toEqual({ trashed: true, page: 1, pageSize: 50 });
       });
 
+      it('sends every filter', async () => {
+        await api.query({
+          ...state,
+          filters: {
+            assetTypes: ['image'],
+            channels: ['1|se'],
+            languages: ['no'],
+            createdBy: 'u1',
+            modifiedFrom: '2026-01-01T00:00:00.000Z',
+            modifiedTo: '2026-01-31T23:59:59.999Z',
+          },
+        });
+        expect(lastBody()).toEqual({
+          assetTypes: ['image'],
+          channels: ['1|se'],
+          languages: ['no'],
+          createdBy: 'u1',
+          modifiedFrom: '2026-01-01T00:00:00.000Z',
+          modifiedTo: '2026-01-31T23:59:59.999Z',
+          page: 1,
+          pageSize: 50,
+        });
+      });
+
       it('keeps all when filters are empty', async () => {
         await api.query({
           ...state,
-          filters: { assetTypes: [], channels: [], createdBy: '' },
+          filters: {
+            assetTypes: [],
+            channels: [],
+            languages: [],
+            createdBy: '',
+          },
         });
         expect(lastBody()).toEqual({ all: true, page: 1, pageSize: 50 });
       });
