@@ -125,6 +125,7 @@ function assetFilterCriteria(filters: AssetQueryFilters): AssetQueryFilters {
   return {
     ...(filters.assetTypes?.length ? { assetTypes: filters.assetTypes } : {}),
     ...(filters.channels?.length ? { channels: filters.channels } : {}),
+    ...(filters.languages?.length ? { languages: filters.languages } : {}),
     ...(filters.createdBy ? { createdBy: filters.createdBy } : {}),
     ...(filters.modifiedFrom ? { modifiedFrom: filters.modifiedFrom } : {}),
     ...(filters.modifiedTo ? { modifiedTo: filters.modifiedTo } : {}),
