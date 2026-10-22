@@ -35,7 +35,7 @@ Must be rendered inside a `SidebarProvider` / `Sidebar` (the library page provid
 v-model:selected: string | null
 ```
 
-The selected folder id, `null` for "All assets", `ROOT_FOLDER_KEY` for "Uncategorised" (assets with no folder), `TRASH_KEY` for the soft-deleted set, or `trashedFolderKey(id)` for one trashed folder's trashed contents. It is also the `?folder=` URL value on the library page, so every view deep-links.
+The selected folder id, `null` for "All assets", `ROOT_FOLDER_KEY` for "Uncategorised" (assets with no folder), `TRASH_KEY` for the soft-deleted set, or `trashedFolderKey(id)` for one trashed folder's trashed contents. It is also the `?folder=` URL value on the library page, so every view deep-links. A selected subfolder opens its parents (from a link, or after a quick upload lands in it), so the active row is always in view; collapsing a parent by hand afterwards sticks.
 
 ## Props
 
