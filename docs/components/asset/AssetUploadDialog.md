@@ -10,6 +10,7 @@ Controlled via `v-model:open`; opened from the library page's "Upload assets" bu
 <AssetUploadDialog
   v-model:open="uploadOpen"
   :default-folder-id="selectedFolder"
+  @uploaded="showUploadFolder"
 />
 ```
 
@@ -44,10 +45,10 @@ Allow selecting several files in quick upload. `false` constrains it to a single
 ### `uploaded`
 
 ```ts
-uploaded: [assets: Asset[]];
+uploaded: [assets: Asset[], folderId: string | null];
 ```
 
-Fires with the created assets after upload (the completed subset on a partial success), alongside the toast + library refresh. Embedders like the asset picker listen to auto-select the new assets.
+Fires with the created assets after upload (the completed subset on a partial success) and the folder they landed in (`null` = the library root), alongside the toast + library refresh. The asset picker listens to auto-select the new assets. The library page opens the target folder: a chosen or newly created folder, or **Uncategorised** for a root upload made from a folder view (**All assets** already lists root files, so it stays).
 
 ## v-model
 
