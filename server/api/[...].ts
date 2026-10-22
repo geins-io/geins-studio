@@ -9,6 +9,7 @@ import {
   getRequestHost,
 } from 'h3';
 import { resolveAppId } from '#shared/utils/app';
+import { restoreIfMatch } from '#shared/utils/proxy-headers';
 import { describeNetworkError } from '../utils/error-logging';
 import {
   refreshSalesPortal,
@@ -107,6 +108,7 @@ export default defineEventHandler(async (event) => {
     ...headers,
     ...(token ? { authorization: `Bearer ${token}` } : {}),
   };
+  restoreIfMatch(apiHeaders);
 
   if (!apiHeaders['x-app']) {
     apiHeaders['x-app'] = resolveAppId(

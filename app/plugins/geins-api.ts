@@ -1,5 +1,6 @@
 import type { GeinsApiError, GeinsApiFetch, Session } from '#shared/types';
 import { resolveAppId } from '#shared/utils/app';
+import { tunnelIfMatch } from '#shared/utils/proxy-headers';
 /**
  * Nuxt plugin for handling Geins API requests.
  *
@@ -97,6 +98,9 @@ export default defineNuxtPlugin(() => {
     retry: 1,
     retryDelay: 1000,
     async onRequest({ options }) {
+      // Outside the try: a failed token refresh must not let a raw `If-Match`
+      // reach Vercel's edge, which would answer it with its own 412.
+      tunnelIfMatch(options.headers);
       try {
         // Check token expiration
         if (isExpired() || expiresSoon()) {
