@@ -139,6 +139,8 @@ await assetApi.update(id, payload, undefined, {
 
 A `412 Precondition Failed` is treated like `401`: the plugin **skips the global toast** for it (see `plugins/geins-api.ts`), so the caller resolves it inline — typically a "changed elsewhere — reload" prompt.
 
+The plugin sends `If-Match` to the proxy as `x-geins-if-match`, and the proxy restores it toward the backend (`shared/utils/proxy-headers.ts`). Vercel's edge would otherwise evaluate the header against the function's response and answer its own `412`, even after a successful write.
+
 ## Type Definitions
 
 Repositories use generic types to ensure type safety across all operations:
