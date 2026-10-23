@@ -3,7 +3,7 @@
 `useAssetActions` bundles the shared asset row/panel actions — **copy URL**, **download**, **delete**, **restore**, and **purge** — so the library page, the grid [`AssetCard`](/components/asset/AssetCard), and the [`AssetDetailPanel`](/components/asset/AssetDetailPanel) stay consistent.
 
 :::tip NOTE
-`deleteAsset`, `restoreAsset` and `purgeAsset` refresh the `asset-library-list` read and toast on their own (`purgeAsset` once its background job lands), but callers own the surrounding UI — the confirm dialog ([`DialogDelete`](/components/dialog/DialogDelete)), closing a panel, clearing a pending selection.
+`deleteAsset`, `restoreAsset` and `purgeAsset` refresh the `asset-library-list` read and toast on their own (`purgeAsset` once its background job lands). Delete and restore resolve as soon as the call succeeds: the refetch starts but isn't awaited, so a caller closes its dialog or panel at once instead of after a slow list query. The action has already succeeded by then, so a failed refetch only logs a warning. Callers own the surrounding UI — the confirm dialog ([`DialogDelete`](/components/dialog/DialogDelete)), closing a panel, clearing a pending selection.
 :::
 
 ## Usage
@@ -46,7 +46,7 @@ Triggers an anchor download of the asset's `url` (cross-origin storage URLs fall
 deleteAsset: (asset: Asset) => Promise<boolean>;
 ```
 
-Moves the asset to trash (`assetApi.delete`), refreshes `asset-library-list`, and toasts (`entity_moved_to_trash`). Returns `true` on success, `false` on failure (the error surfaces via the global API-error toast). Callers close their dialog / panel on `true`.
+Moves the asset to trash (`assetApi.delete`), toasts (`entity_moved_to_trash`), and starts an `asset-library-list` refresh without awaiting it. Returns `true` on success, `false` on failure (the error surfaces via the global API-error toast). Callers close their dialog / panel on `true`.
 
 `Geins.Media` moves the asset to **trash** rather than dropping it, so every caller uses the soft "Move to trash" copy — see [assets](/domains/assets#delete-vocabulary).
 
@@ -56,7 +56,7 @@ Moves the asset to trash (`assetApi.delete`), refreshes `asset-library-list`, an
 restoreAsset: (asset: Asset) => Promise<boolean>;
 ```
 
-Restores a trashed asset (`assetApi.restore` → `POST /media/assets/{id}/restore`), refreshes `asset-library-list`, `asset-folders` and `asset-trash-folders` (if the asset's folder is in the trash, the backend brings that folder and its trashed parents back too, without their other contents), and toasts (`entity_restored`). Returns `true` on success. The refresh is what removes the row from the Trash view, so callers need no local bookkeeping.
+Restores a trashed asset (`assetApi.restore` → `POST /media/assets/{id}/restore`), toasts (`entity_restored`), and starts a refresh of `asset-library-list`, `asset-folders` and `asset-trash-folders` without awaiting it (if the asset's folder is in the trash, the backend brings that folder and its trashed parents back too, without their other contents). Returns `true` on success. The refresh is what removes the row from the Trash view, so callers need no local bookkeeping.
 
 ### `purgeAsset`
 
