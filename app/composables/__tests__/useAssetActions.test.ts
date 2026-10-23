@@ -5,7 +5,7 @@ import { buildAsset } from '../../../test/fixtures';
 
 const { assetApi, toast, refreshNuxtData, geinsLogError, startJob } =
   vi.hoisted(() => ({
-    assetApi: { delete: vi.fn(), bulkPurge: vi.fn() },
+    assetApi: { delete: vi.fn(), restore: vi.fn(), bulkPurge: vi.fn() },
     toast: vi.fn(),
     refreshNuxtData: vi.fn(),
     geinsLogError: vi.fn(),
@@ -101,12 +101,49 @@ describe('useAssetActions — deleteAsset', () => {
     );
   });
 
+  it('resolves and toasts without waiting for the list refetch', async () => {
+    assetApi.delete.mockResolvedValue(undefined);
+    refreshNuxtData.mockReturnValue(new Promise(() => {}));
+    const { deleteAsset } = useAssetActions();
+
+    await expect(deleteAsset(buildAsset())).resolves.toBe(true);
+    expect(toast).toHaveBeenCalled();
+  });
+
   it('returns false and logs when the delete fails', async () => {
     assetApi.delete.mockRejectedValue(new Error('boom'));
     const { deleteAsset } = useAssetActions();
     const ok = await deleteAsset(buildAsset());
 
     expect(ok).toBe(false);
+    expect(geinsLogError).toHaveBeenCalled();
+    expect(toast).not.toHaveBeenCalled();
+  });
+});
+
+describe('useAssetActions — restoreAsset', () => {
+  it('restores, toasts and resolves without waiting for the refetch', async () => {
+    assetApi.restore.mockResolvedValue(undefined);
+    refreshNuxtData.mockReturnValue(new Promise(() => {}));
+    const { restoreAsset } = useAssetActions();
+
+    await expect(restoreAsset(buildAsset({ _id: 'a9' }))).resolves.toBe(true);
+    expect(assetApi.restore).toHaveBeenCalledWith('a9');
+    expect(refreshNuxtData).toHaveBeenCalledWith([
+      'asset-library-list',
+      'asset-folders',
+      'asset-trash-folders',
+    ]);
+    expect(toast).toHaveBeenCalledWith(
+      expect.objectContaining({ variant: 'positive' }),
+    );
+  });
+
+  it('returns false and logs when the restore fails', async () => {
+    assetApi.restore.mockRejectedValue(new Error('boom'));
+    const { restoreAsset } = useAssetActions();
+
+    await expect(restoreAsset(buildAsset())).resolves.toBe(false);
     expect(geinsLogError).toHaveBeenCalled();
     expect(toast).not.toHaveBeenCalled();
   });

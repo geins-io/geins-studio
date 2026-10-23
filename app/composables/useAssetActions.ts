@@ -7,9 +7,15 @@ export interface UseAssetActionsReturnType {
   copyUrl: (asset: Asset) => Promise<void>;
   /** Download the file from its `url` (new-tab fallback). No-op if unset. */
   download: (asset: Asset) => void;
-  /** Move the asset to trash, refresh the library list, toast. Returns success. */
+  /**
+   * Move the asset to trash, toast, and start a library-list refresh without
+   * awaiting it. Returns success.
+   */
   deleteAsset: (asset: Asset) => Promise<boolean>;
-  /** Restore a trashed asset, refresh the library list, toast. Returns success. */
+  /**
+   * Restore a trashed asset, toast, and start a library-list refresh without
+   * awaiting it. Returns success.
+   */
   restoreAsset: (asset: Asset) => Promise<boolean>;
   /**
    * Purge a trashed asset as a background job, which refreshes the library
@@ -22,8 +28,10 @@ export interface UseAssetActionsReturnType {
  * Shared asset row/panel actions (copy URL, download, delete, restore, purge)
  * so the library page, grid card, and detail panel stay consistent. Delete,
  * restore and purge refresh the `asset-library-list` read (purge once its job
- * lands); callers own their confirm dialog + surrounding UI (closing a panel,
- * clearing selection).
+ * lands). Delete and restore resolve as soon as the call succeeds, without
+ * waiting for that refetch, so a caller can close its dialog or panel at once.
+ * Callers own their confirm dialog + surrounding UI (closing a panel, clearing
+ * selection).
  */
 export function useAssetActions(): UseAssetActionsReturnType {
   const { t } = useI18n();
@@ -62,7 +70,7 @@ export function useAssetActions(): UseAssetActionsReturnType {
   async function deleteAsset(asset: Asset): Promise<boolean> {
     try {
       await assetApi.delete(asset._id);
-      await refreshNuxtData('asset-library-list');
+      void refreshNuxtData('asset-library-list');
       toast({
         title: t('entity_moved_to_trash', { entityKey }),
         variant: 'positive',
@@ -79,7 +87,7 @@ export function useAssetActions(): UseAssetActionsReturnType {
       await assetApi.restore(asset._id);
       // Restoring an asset whose folder is in the trash brings that folder
       // (and any trashed parents) back too.
-      await refreshNuxtData([
+      void refreshNuxtData([
         'asset-library-list',
         'asset-folders',
         'asset-trash-folders',
