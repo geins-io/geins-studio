@@ -38,8 +38,17 @@ export function useAssetActions(): UseAssetActionsReturnType {
   const { toast } = useToast();
   const { assetApi } = useGeinsRepository();
   const backgroundJobs = useBackgroundJobs();
-  const { geinsLogError } = useGeinsLog('composables/useAssetActions');
+  const { geinsLogError, geinsLogWarn } = useGeinsLog(
+    'composables/useAssetActions',
+  );
   const entityKey = ENTITIES.asset.key;
+
+  // Not awaited, so the caller can close its dialog at once. The action has
+  // already succeeded, so a failed refetch only logs.
+  const refreshAfter = (keys: string | string[]) =>
+    void refreshNuxtData(keys).catch((error) =>
+      geinsLogWarn('refresh after action failed', error),
+    );
 
   async function copyUrl(asset: Asset) {
     if (!asset.url) return;
@@ -70,7 +79,7 @@ export function useAssetActions(): UseAssetActionsReturnType {
   async function deleteAsset(asset: Asset): Promise<boolean> {
     try {
       await assetApi.delete(asset._id);
-      void refreshNuxtData('asset-library-list');
+      refreshAfter('asset-library-list');
       toast({
         title: t('entity_moved_to_trash', { entityKey }),
         variant: 'positive',
@@ -87,7 +96,7 @@ export function useAssetActions(): UseAssetActionsReturnType {
       await assetApi.restore(asset._id);
       // Restoring an asset whose folder is in the trash brings that folder
       // (and any trashed parents) back too.
-      void refreshNuxtData([
+      refreshAfter([
         'asset-library-list',
         'asset-folders',
         'asset-trash-folders',

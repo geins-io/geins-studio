@@ -3,7 +3,7 @@
 `useAssetActions` bundles the shared asset row/panel actions — **copy URL**, **download**, **delete**, **restore**, and **purge** — so the library page, the grid [`AssetCard`](/components/asset/AssetCard), and the [`AssetDetailPanel`](/components/asset/AssetDetailPanel) stay consistent.
 
 :::tip NOTE
-`deleteAsset`, `restoreAsset` and `purgeAsset` refresh the `asset-library-list` read and toast on their own (`purgeAsset` once its background job lands). Delete and restore resolve as soon as the call succeeds: the refetch starts but isn't awaited, so a caller closes its dialog or panel at once instead of after a slow list query. Callers own the surrounding UI — the confirm dialog ([`DialogDelete`](/components/dialog/DialogDelete)), closing a panel, clearing a pending selection.
+`deleteAsset`, `restoreAsset` and `purgeAsset` refresh the `asset-library-list` read and toast on their own (`purgeAsset` once its background job lands). Delete and restore resolve as soon as the call succeeds: the refetch starts but isn't awaited, so a caller closes its dialog or panel at once instead of after a slow list query. The action has already succeeded by then, so a failed refetch only logs a warning. Callers own the surrounding UI — the confirm dialog ([`DialogDelete`](/components/dialog/DialogDelete)), closing a panel, clearing a pending selection.
 :::
 
 ## Usage
