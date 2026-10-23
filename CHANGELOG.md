@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.6.1 - 2026-10-23
+
+### 🐛 Bug Fixes
+
+- Assets library — the detail panel no longer shows the previously opened asset's description and alt text (saving could write them onto the wrong asset) ([#448](https://github.com/geins-io/geins-studio/pull/448))
+- Assets library — saving an asset on the Vercel-hosted Studio no longer fails with a false "changed elsewhere" (412) error ([#445](https://github.com/geins-io/geins-studio/pull/445))
+- Assets library — saves confirm with a toast and close the panel right away; trash and restore no longer wait for the list to reload ([#447](https://github.com/geins-io/geins-studio/pull/447))
+- Assets library — filtering by content language now narrows the results ([#443](https://github.com/geins-io/geins-studio/pull/443))
+- Assets library — after a quick upload, the library opens the folder the files went into ([#444](https://github.com/geins-io/geins-studio/pull/444))
+
+### ❤️ Contributors
+
+- Olivia Axelsson ([@olivia-geins](https://github.com/olivia-geins))
+
 ## v0.6.0 - 2026-10-20
 
 ### 🚀 Enhancements

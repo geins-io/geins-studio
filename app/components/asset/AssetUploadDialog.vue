@@ -17,8 +17,9 @@ type UploadMethodId = 'quick' | 'wizard' | 'csv';
  * `methods` restricts the offered methods; when only one remains the chooser is
  * skipped entirely (the asset picker embeds it as quick-only so it never routes
  * away from the entity). `multiple` = false constrains quick upload to a single
- * file. On success `uploaded` emits the created assets so an embedder (e.g. the
- * picker) can auto-select them.
+ * file. On success `uploaded` emits the created assets and the folder they
+ * landed in, so an embedder can auto-select them (the picker) or open that
+ * folder (the library page).
  */
 const props = withDefaults(
   defineProps<{
@@ -38,7 +39,9 @@ const props = withDefaults(
 
 const open = defineModel<boolean>('open', { default: false });
 
-const emit = defineEmits<{ uploaded: [assets: Asset[]] }>();
+const emit = defineEmits<{
+  uploaded: [assets: Asset[], folderId: string | null];
+}>();
 
 const { assetApi } = useGeinsRepository();
 const { restoreAsset } = useAssetActions();
@@ -181,7 +184,7 @@ async function upload() {
             ),
         variant: fails.length ? 'warning' : 'positive',
       });
-      emit('uploaded', created);
+      emit('uploaded', created, target);
     }
 
     // Nothing uploaded → keep the dialog open and show why; otherwise close.

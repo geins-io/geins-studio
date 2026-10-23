@@ -39,7 +39,7 @@ It emits `create` with the trimmed name, or `cancel`, exactly once (a guard stop
 | Prop          | Type             | Notes                                                                                |
 | ------------- | ---------------- | ------------------------------------------------------------------------------------ |
 | `node`        | `FolderNode`     | The folder, with `children`                                                          |
-| `selected`    | `string \| null` | The tree's selection; the row is active when it matches                              |
+| `selected`    | `string \| null` | The tree's selection; the row is active when it matches, and opens when it's nested  |
 | `readonly`    | `boolean`        | Picker mode: no actions                                                              |
 | `busyIds`     | `string[]`       | Folders whose delete or update is being prepared; their `⋯` (or trash) icon spins    |
 | `trashed`     | `boolean`        | A folder under Trash: selects `trashedFolderKey(id)`, restore + delete permanently   |

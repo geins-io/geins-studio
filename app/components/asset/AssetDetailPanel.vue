@@ -18,6 +18,7 @@ import {
 } from '#shared/utils/asset';
 import { ENTITIES } from '#shared/utils/entities';
 import { formatFileSize } from '#shared/utils/file';
+import { useToast } from '@/components/ui/toast/use-toast';
 
 /**
  * Asset detail/edit panel — the standard slide-in edit panel (PanelEdit) for a
@@ -33,6 +34,7 @@ const open = defineModel<boolean>('open', { default: false });
 const emit = defineEmits<{ updated: []; replaced: [Asset] }>();
 
 const { t } = useI18n();
+const { toast } = useToast();
 const { currentLanguage } = storeToRefs(useAccountStore());
 const { assetApi } = useGeinsRepository();
 const { formatDate } = useDate();
@@ -133,6 +135,14 @@ const { isDirty, captureBaseline } = usePanelDirty(() => form.values);
 // An unsaved inline folder name is unsaved work too: it enables Save and trips
 // the close guard, so it can be committed instead of lost with the panel.
 const dirty = computed(() => isDirty.value || hasPending.value);
+// Name and folder save through `relocate`; everything else is the PATCH's. A
+// save that only starts a move job leaves its success toast to the job.
+const { isDirty: metadataDirty, captureBaseline: captureMetadataBaseline } =
+  usePanelDirty(() => ({
+    ...form.values,
+    name: undefined,
+    folderId: undefined,
+  }));
 
 // description + altText are LocalizedText maps (locale→string) bound to
 // FormTranslatableField, mapped to/from the wire `localizations` shape at
@@ -197,8 +207,11 @@ watch(open, (value) => {
       channels: [...props.asset.channels],
       languages: [...(props.asset.languages ?? [])],
     };
-    form.resetForm({ values });
+    // Without `force`, vee-validate deep-merges onto the previous asset's values,
+    // so locales this asset lacks would keep the last asset's text.
+    form.resetForm({ values }, { force: true });
     captureBaseline();
+    captureMetadataBaseline();
   }
 });
 
@@ -222,6 +235,7 @@ async function handleSave() {
   const channels = normalizeAssetLabels(form.values.channels ?? []);
   const languages = normalizeAssetLabels(form.values.languages ?? []);
   const tagsChanged = !sameAssetLabels(tags, asset.tags);
+  const metadataChanged = metadataDirty.value;
   loading.value = true;
   relocateFailed.value = null;
   saveError.value = null;
@@ -249,8 +263,8 @@ async function handleSave() {
     // Sending a new tag creates it, so the suggestions may have grown.
     if (tagsChanged) refreshTags();
 
+    let moveId: string | null | undefined;
     if (name !== asset.name || folderId !== asset.folderId) {
-      let moveId: string | null | undefined;
       try {
         // Relocate answers 200 or 202 — a 202 with a `moveId` copies the file
         // in the background, so a job refreshes the list once it lands.
@@ -266,30 +280,36 @@ async function handleSave() {
           getErrorStatus(error) === 409 ? 'conflict' : 'error';
         // The metadata write landed — surface it while the panel stays open on
         // the failed rename/move.
-        await refreshNuxtData('asset-library-list');
         emit('updated');
         return;
       }
-      if (moveId) {
-        const renameOnly = folderId === asset.folderId;
-        backgroundJobs.start({
-          spec: { kind: 'move', moveIds: [moveId], assetIds: [asset._id] },
-          label: {
-            key: renameOnly
-              ? 'asset_library.job_renaming_asset'
-              : 'asset_library.job_moving_asset',
-            params: { name: asset.name },
-          },
-          ...(renameOnly && { activity: { key: 'background_jobs.renaming' } }),
-          doneMessage: { key: 'entity_updated', params: { entityKey } },
-          refreshKeys: ['asset-library-list'],
-        });
-      }
     }
 
-    await refreshNuxtData('asset-library-list');
-    emit('updated');
+    // Every write is accepted, so close now instead of after the list refetch.
+    // The page refetches on `updated` even for a move-only save: the PATCH
+    // advanced the etag, so a stale row would reopen into a false 412. A 202
+    // move hasn't landed: its job toasts that it started, then refreshes the
+    // list and toasts success once it has.
     open.value = false;
+    emit('updated');
+    if (!moveId || metadataChanged) {
+      toast({ title: t('entity_updated', { entityKey }), variant: 'positive' });
+    }
+    if (moveId) {
+      const renameOnly = folderId === asset.folderId;
+      backgroundJobs.start({
+        spec: { kind: 'move', moveIds: [moveId], assetIds: [asset._id] },
+        label: {
+          key: renameOnly
+            ? 'asset_library.job_renaming_asset'
+            : 'asset_library.job_moving_asset',
+          params: { name: asset.name },
+        },
+        ...(renameOnly && { activity: { key: 'background_jobs.renaming' } }),
+        doneMessage: { key: 'entity_updated', params: { entityKey } },
+        refreshKeys: ['asset-library-list'],
+      });
+    }
   } catch (error) {
     if (getErrorStatus(error) === 412) {
       stale.value = true;
@@ -328,7 +348,6 @@ async function handleDelete() {
   if (!ok) return;
   deleteOpen.value = false;
   open.value = false;
-  emit('updated');
 }
 </script>
 

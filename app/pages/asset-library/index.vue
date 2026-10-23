@@ -100,6 +100,13 @@ const selectedFolder = computed<string | null>({
 const uploadFolderId = computed(() =>
   folderIdForSelection(selectedFolder.value),
 );
+// Land where the upload went. All assets already lists root files, so a root
+// upload only leaves a folder view, for Uncategorised.
+function showUploadFolder(_assets: Asset[], folderId: string | null) {
+  const target =
+    folderId ?? (selectedFolder.value === null ? null : ROOT_FOLDER_KEY);
+  if (target !== selectedFolder.value) selectedFolder.value = target;
+}
 // Trash lists the soft-deleted assets instead of a folder scope: restore and
 // purge are the only actions there, and upload / detail panel / trash are off.
 // A trashed folder's view is trash too, scoped to that folder.
@@ -907,6 +914,7 @@ async function confirmEmptyTrash() {
   <AssetUploadDialog
     v-model:open="uploadOpen"
     :default-folder-id="uploadFolderId"
+    @uploaded="showUploadFolder"
   />
   <AssetDetailPanel
     v-model:open="detailOpen"

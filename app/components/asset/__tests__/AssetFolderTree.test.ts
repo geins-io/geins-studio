@@ -52,8 +52,8 @@ async function flush() {
 }
 
 let mounted: { unmount: () => void }[] = [];
-async function mountTree() {
-  const tree = await mountWithSidebar(AssetFolderTree);
+async function mountTree(props?: { selected?: string | null }) {
+  const tree = await mountWithSidebar(AssetFolderTree, { props });
   mounted.push(tree);
   return tree;
 }
@@ -100,6 +100,37 @@ describe('AssetFolderTree — loading', () => {
     folderState.loading.value = true;
     await nextTick();
     expect(skeletons(tree)).toHaveLength(0);
+  });
+});
+
+describe('AssetFolderTree — selection', () => {
+  const withSubfolder = (): FolderNode[] => [
+    {
+      ...MARKETING,
+      children: [
+        {
+          ...buildFolder({
+            _id: 'fld-spring',
+            name: 'Spring',
+            parentFolderId: 'fld-mkt',
+          }),
+          children: [],
+        },
+      ],
+    },
+  ];
+
+  it('opens the parents of a selected subfolder', async () => {
+    folderState.tree.value = withSubfolder();
+    const tree = await mountTree({ selected: 'fld-spring' });
+    expect(tree.text()).toContain('Spring');
+  });
+
+  it('keeps the parents closed otherwise', async () => {
+    folderState.tree.value = withSubfolder();
+    const tree = await mountTree({ selected: 'fld-mkt' });
+    expect(tree.text()).toContain('Marketing');
+    expect(tree.text()).not.toContain('Spring');
   });
 });
 

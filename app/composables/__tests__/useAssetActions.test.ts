@@ -3,18 +3,25 @@ import { mockNuxtImport } from '@nuxt/test-utils/runtime';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { buildAsset } from '../../../test/fixtures';
 
-const { assetApi, toast, refreshNuxtData, geinsLogError, startJob } =
-  vi.hoisted(() => ({
-    assetApi: { delete: vi.fn(), bulkPurge: vi.fn() },
-    toast: vi.fn(),
-    refreshNuxtData: vi.fn(),
-    geinsLogError: vi.fn(),
-    startJob: vi.fn(),
-  }));
+const {
+  assetApi,
+  toast,
+  refreshNuxtData,
+  geinsLogError,
+  geinsLogWarn,
+  startJob,
+} = vi.hoisted(() => ({
+  assetApi: { delete: vi.fn(), restore: vi.fn(), bulkPurge: vi.fn() },
+  toast: vi.fn(),
+  refreshNuxtData: vi.fn(),
+  geinsLogError: vi.fn(),
+  geinsLogWarn: vi.fn(),
+  startJob: vi.fn(),
+}));
 
 mockNuxtImport('useGeinsRepository', () => () => ({ assetApi }));
 mockNuxtImport('useI18n', () => () => ({ t: (key: string) => key }));
-mockNuxtImport('useGeinsLog', () => () => ({ geinsLogError }));
+mockNuxtImport('useGeinsLog', () => () => ({ geinsLogError, geinsLogWarn }));
 mockNuxtImport('refreshNuxtData', () => refreshNuxtData);
 mockNuxtImport('useBackgroundJobs', () => () => ({ start: startJob }));
 
@@ -28,6 +35,7 @@ const writeText = vi.fn().mockResolvedValue(undefined);
 
 beforeEach(() => {
   vi.clearAllMocks();
+  refreshNuxtData.mockResolvedValue(undefined);
   vi.stubGlobal('navigator', { clipboard: { writeText } });
 });
 
@@ -101,12 +109,59 @@ describe('useAssetActions — deleteAsset', () => {
     );
   });
 
+  it('resolves and toasts without waiting for the list refetch', async () => {
+    assetApi.delete.mockResolvedValue(undefined);
+    refreshNuxtData.mockReturnValueOnce(new Promise(() => {}));
+    const { deleteAsset } = useAssetActions();
+
+    await expect(deleteAsset(buildAsset())).resolves.toBe(true);
+    expect(toast).toHaveBeenCalled();
+  });
+
+  it('only logs when the list refetch fails', async () => {
+    assetApi.delete.mockResolvedValue(undefined);
+    refreshNuxtData.mockRejectedValueOnce(new Error('refetch'));
+    const { deleteAsset } = useAssetActions();
+
+    await expect(deleteAsset(buildAsset())).resolves.toBe(true);
+    await vi.waitFor(() => expect(geinsLogWarn).toHaveBeenCalled());
+    expect(geinsLogError).not.toHaveBeenCalled();
+  });
+
   it('returns false and logs when the delete fails', async () => {
     assetApi.delete.mockRejectedValue(new Error('boom'));
     const { deleteAsset } = useAssetActions();
     const ok = await deleteAsset(buildAsset());
 
     expect(ok).toBe(false);
+    expect(geinsLogError).toHaveBeenCalled();
+    expect(toast).not.toHaveBeenCalled();
+  });
+});
+
+describe('useAssetActions — restoreAsset', () => {
+  it('restores, toasts and resolves without waiting for the refetch', async () => {
+    assetApi.restore.mockResolvedValue(undefined);
+    refreshNuxtData.mockReturnValueOnce(new Promise(() => {}));
+    const { restoreAsset } = useAssetActions();
+
+    await expect(restoreAsset(buildAsset({ _id: 'a9' }))).resolves.toBe(true);
+    expect(assetApi.restore).toHaveBeenCalledWith('a9');
+    expect(refreshNuxtData).toHaveBeenCalledWith([
+      'asset-library-list',
+      'asset-folders',
+      'asset-trash-folders',
+    ]);
+    expect(toast).toHaveBeenCalledWith(
+      expect.objectContaining({ variant: 'positive' }),
+    );
+  });
+
+  it('returns false and logs when the restore fails', async () => {
+    assetApi.restore.mockRejectedValue(new Error('boom'));
+    const { restoreAsset } = useAssetActions();
+
+    await expect(restoreAsset(buildAsset())).resolves.toBe(false);
     expect(geinsLogError).toHaveBeenCalled();
     expect(toast).not.toHaveBeenCalled();
   });

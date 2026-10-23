@@ -7,9 +7,15 @@ export interface UseAssetActionsReturnType {
   copyUrl: (asset: Asset) => Promise<void>;
   /** Download the file from its `url` (new-tab fallback). No-op if unset. */
   download: (asset: Asset) => void;
-  /** Move the asset to trash, refresh the library list, toast. Returns success. */
+  /**
+   * Move the asset to trash, toast, and start a library-list refresh without
+   * awaiting it. Returns success.
+   */
   deleteAsset: (asset: Asset) => Promise<boolean>;
-  /** Restore a trashed asset, refresh the library list, toast. Returns success. */
+  /**
+   * Restore a trashed asset, toast, and start a library-list refresh without
+   * awaiting it. Returns success.
+   */
   restoreAsset: (asset: Asset) => Promise<boolean>;
   /**
    * Purge a trashed asset as a background job, which refreshes the library
@@ -22,16 +28,27 @@ export interface UseAssetActionsReturnType {
  * Shared asset row/panel actions (copy URL, download, delete, restore, purge)
  * so the library page, grid card, and detail panel stay consistent. Delete,
  * restore and purge refresh the `asset-library-list` read (purge once its job
- * lands); callers own their confirm dialog + surrounding UI (closing a panel,
- * clearing selection).
+ * lands). Delete and restore resolve as soon as the call succeeds, without
+ * waiting for that refetch, so a caller can close its dialog or panel at once.
+ * Callers own their confirm dialog + surrounding UI (closing a panel, clearing
+ * selection).
  */
 export function useAssetActions(): UseAssetActionsReturnType {
   const { t } = useI18n();
   const { toast } = useToast();
   const { assetApi } = useGeinsRepository();
   const backgroundJobs = useBackgroundJobs();
-  const { geinsLogError } = useGeinsLog('composables/useAssetActions');
+  const { geinsLogError, geinsLogWarn } = useGeinsLog(
+    'composables/useAssetActions',
+  );
   const entityKey = ENTITIES.asset.key;
+
+  // Not awaited, so the caller can close its dialog at once. The action has
+  // already succeeded, so a failed refetch only logs.
+  const refreshAfter = (keys: string | string[]) =>
+    void refreshNuxtData(keys).catch((error) =>
+      geinsLogWarn('refresh after action failed', error),
+    );
 
   async function copyUrl(asset: Asset) {
     if (!asset.url) return;
@@ -62,7 +79,7 @@ export function useAssetActions(): UseAssetActionsReturnType {
   async function deleteAsset(asset: Asset): Promise<boolean> {
     try {
       await assetApi.delete(asset._id);
-      await refreshNuxtData('asset-library-list');
+      refreshAfter('asset-library-list');
       toast({
         title: t('entity_moved_to_trash', { entityKey }),
         variant: 'positive',
@@ -79,7 +96,7 @@ export function useAssetActions(): UseAssetActionsReturnType {
       await assetApi.restore(asset._id);
       // Restoring an asset whose folder is in the trash brings that folder
       // (and any trashed parents) back too.
-      await refreshNuxtData([
+      refreshAfter([
         'asset-library-list',
         'asset-folders',
         'asset-trash-folders',

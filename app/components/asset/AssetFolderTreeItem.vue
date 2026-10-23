@@ -53,6 +53,20 @@ const disabled = computed(() => !!props.disabledIds?.includes(props.node._id));
 const locked = computed(() => !!props.lockedIds?.includes(props.node._id));
 const creating = computed(() => !!props.creatingIds?.includes(props.node._id));
 
+// A selected descendant (a `?folder=` link, an upload's target folder) opens
+// its ancestors so the active row shows. Collapsing it again sticks.
+const containsSelected = (node: FolderNode): boolean =>
+  node.children.some(
+    (child) => child._id === props.selected || containsSelected(child),
+  );
+watch(
+  () => containsSelected(props.node),
+  (contains) => {
+    if (contains) open.value = true;
+  },
+  { immediate: true },
+);
+
 // Open-folder icon when expanded or active, closed otherwise.
 const folderIcon = computed(() =>
   resolveIcon(open.value || isActive.value ? 'FolderOpen' : 'Folder'),
