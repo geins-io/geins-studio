@@ -469,7 +469,7 @@ const backToLogin = () => {
             <PinInput
               id="pin-input"
               v-model="verificationCode"
-              placeholder="○"
+              placeholder="⚬"
               :otp="true"
               @complete="handleVerify"
             >
@@ -478,7 +478,7 @@ const backToLogin = () => {
                   v-for="(id, index) in 6"
                   :key="id"
                   :index="index"
-                  class="w-1/6"
+                  class="w-1/6 placeholder:font-[family-name:system-ui]"
                 />
               </PinInputGroup>
             </PinInput>
