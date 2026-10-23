@@ -197,7 +197,9 @@ watch(open, (value) => {
       channels: [...props.asset.channels],
       languages: [...(props.asset.languages ?? [])],
     };
-    form.resetForm({ values });
+    // Without `force`, vee-validate deep-merges onto the previous asset's values,
+    // so locales this asset lacks would keep the last asset's text.
+    form.resetForm({ values }, { force: true });
     captureBaseline();
   }
 });
