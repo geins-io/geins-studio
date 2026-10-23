@@ -6,6 +6,11 @@ const { jobs, pending, hasFinished, panelOpen, message, clearFinished } =
   useBackgroundJobs();
 const { t } = useI18n();
 
+// Fully controlled, hidden while the panel is open. Toggling `:open` between
+// `false` and `undefined` instead makes reka's passive v-model store
+// `undefined`, which warns on every re-render.
+const tooltipOpen = ref(false);
+
 // Newest first. The store appends restored jobs, so sort rather than reverse.
 const rows = computed(() =>
   [...jobs.value].sort((a, b) => b.startedAt - a.startedAt),
@@ -54,7 +59,10 @@ const detail = (job: BackgroundJob): string | null => {
        anchors to the nearest one — the other way round the panel gets no
        anchor and renders off-screen. -->
   <TooltipProvider v-if="jobs.length" :delay-duration="100">
-    <Tooltip :open="panelOpen ? false : undefined">
+    <Tooltip
+      :open="tooltipOpen && !panelOpen"
+      @update:open="tooltipOpen = $event"
+    >
       <Popover v-model:open="panelOpen">
         <TooltipTrigger as-child>
           <PopoverTrigger as-child>
