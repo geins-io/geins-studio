@@ -47,14 +47,19 @@ const buyerActive = computed(() =>
 
 watch(open, (value) => {
   if (value) {
-    // resetForm (not setValues) so meta.dirty starts false and tracks real edits
-    form.resetForm({
-      values: {
-        ...buyer.value,
-        email: buyer.value?._id,
-        active: buyerActive.value,
+    // resetForm (not setValues) so meta.dirty starts false and tracks real edits.
+    // `force` replaces instead of merging, so fields the previous buyer had (or
+    // every field, when adding) don't leak into this one.
+    form.resetForm(
+      {
+        values: {
+          ...buyer.value,
+          email: buyer.value?._id,
+          active: buyerActive.value,
+        },
       },
-    });
+      { force: true },
+    );
     // Mirror the toggle to whether this buyer actually has price lists —
     // otherwise a stale `true` from a previously-edited buyer leaks over and
     // shows the picker for a buyer with none.
