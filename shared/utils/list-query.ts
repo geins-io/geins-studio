@@ -160,7 +160,8 @@ export function dateRangeParam(): ListQueryParam<ListDateRange> {
   };
 }
 
-function firstString(value: unknown): string | undefined {
+/** A route query value as one string (the first of a repeated key). */
+export function firstString(value: unknown): string | undefined {
   const first = Array.isArray(value) ? value[0] : value;
   return typeof first === 'string' ? first : undefined;
 }
@@ -171,7 +172,8 @@ export function serializeSort(sort: ListSort | null): string {
   return sort.direction === 'desc' ? `-${sort.field}` : sort.field;
 }
 
-function parseSort(
+/** Parses a `?sort` value; `undefined` when it names no (allowed) field. */
+export function parseSort(
   raw: string,
   sortFields?: readonly string[],
 ): ListSort | null | undefined {

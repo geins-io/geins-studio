@@ -392,6 +392,16 @@ Renders rows where `row.original.active === false` at 50% opacity. Cells with `m
 
 - **Default:** `false`
 
+### `urlSync`
+
+```ts
+urlSync?: boolean
+```
+
+Client mode only. Mirrors the search to `?q` and the sort to `?sort` (`field` or `-field`) on the page URL, so a link, or the Studio agent, can open the list already filtered or sorted. A missing `?sort` means `initSortingState`; `?sort=` means no sort; an unknown column is ignored. Server mode keeps its URL state in [`useListQuery`](/composables/useListQuery) instead.
+
+- **Default:** `false`
+
 ## Models
 
 Server mode only. Client mode keeps this state internal.

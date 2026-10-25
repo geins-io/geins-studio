@@ -10,7 +10,7 @@ import {
 } from '@tanstack/vue-table';
 import { useDebounceFn } from '@vueuse/core';
 import { TableMode } from '#shared/types';
-import type { TableDataSource } from '#shared/types';
+import type { ListSort, TableDataSource } from '#shared/types';
 import type {
   ColumnDef,
   ColumnFiltersState,
@@ -64,6 +64,11 @@ const props = withDefaults(
     /** External filters are active — shows the filtered empty state. */
     filtered?: boolean;
     pageSizes?: number[];
+    /**
+     * Client mode: mirror search and sort to `?q` / `?sort` on the page URL,
+     * so a link (or the Studio agent) can open the list pre-filtered.
+     */
+    urlSync?: boolean;
   }>(),
   {
     entityKey: 'row',
@@ -78,6 +83,7 @@ const props = withDefaults(
     dimInactiveRows: false,
     dataSource: 'client',
     filtered: false,
+    urlSync: false,
     pageSizes: () => [30, 60, 120, 240],
     pinnedState: () => ({
       left: ['select'],
@@ -587,6 +593,114 @@ watch(
 const clearSelection = () => table.setRowSelection({});
 defineExpose({ clearSelection });
 
+const toListSort = (state: SortingState): ListSort | null =>
+  state[0]
+    ? { field: state[0].id, direction: state[0].desc ? 'desc' : 'asc' }
+    : null;
+
+if (props.urlSync && !serverMode) {
+  const route = useRoute();
+  const router = useRouter();
+  // The table outlives a route change by a tick; ignore the next page's query.
+  const ownPath = route.path;
+  const defaultSort = serializeSort(toListSort(props.initSortingState ?? []));
+  const sortableColumns = () =>
+    table
+      .getAllLeafColumns()
+      .filter((column) => column.getCanSort())
+      .map((column) => column.id);
+
+  const applyRouteQuery = () => {
+    if (route.path !== ownPath) return;
+    const search = firstString(route.query.q) ?? '';
+    // `?q` is written trimmed; compare trimmed, or a pause after typing a
+    // space would strip it from the input.
+    if (search !== globalFilter.value.trim()) {
+      searchInput.value = search;
+      globalFilter.value = search;
+    }
+    const target = routeSorting();
+    if (
+      target &&
+      serializeSort(toListSort(target)) !==
+        serializeSort(toListSort(sorting.value))
+    ) {
+      sorting.value = target;
+    }
+  };
+  // Like `?q`, a missing `?sort` means the default order; `?sort=` is none.
+  // `undefined`: an unknown column, which leaves the order as it is.
+  const routeSorting = (): SortingState | undefined => {
+    const raw = firstString(route.query.sort);
+    if (raw === undefined) return props.initSortingState ?? [];
+    const sort = parseSort(raw, sortableColumns());
+    if (sort === undefined) return undefined;
+    return sort ? [{ id: sort.field, desc: sort.direction === 'desc' }] : [];
+  };
+  applyRouteQuery();
+  watch(() => route.query, applyRouteQuery);
+
+  watch(
+    [globalFilter, sorting],
+    () => {
+      if (route.path !== ownPath) return;
+      const q = globalFilter.value.trim() || undefined;
+      const current = serializeSort(toListSort(sorting.value));
+      // An explicit `?sort=` when the user cleared a default order.
+      const sort = current !== defaultSort ? current : undefined;
+      if (
+        firstString(route.query.q) === q &&
+        firstString(route.query.sort) === sort
+      ) {
+        return;
+      }
+      router.replace({ query: { ...route.query, q, sort } });
+    },
+    { deep: true },
+  );
+}
+
+const AGENT_ROW_SAMPLE = 30;
+if (advancedMode.value || props.urlSync) {
+  const unregisterAgentList = useAgentPageStore().registerList({
+    getState: () => ({
+      entityKey: props.entityKey,
+      urlSync: props.urlSync && !serverMode,
+      search: globalFilter.value,
+      sort: serializeSort(toListSort(sorting.value)) || undefined,
+      sortableColumns: table
+        .getAllLeafColumns()
+        .filter((column) => column.getCanSort())
+        .map((column) => column.id),
+      rowCount: serverMode
+        ? (props.rowCount ?? 0)
+        : table.getPrePaginationRowModel().rows.length,
+      page: table.getState().pagination.pageIndex + 1,
+      pageCount: table.getPageCount(),
+      rows: table
+        .getRowModel()
+        .rows.slice(0, AGENT_ROW_SAMPLE)
+        .map((row) => agentListRow(row.original, row.id)),
+    }),
+    reveal: async (ids) => {
+      // Server mode only holds the current page; client mode can page to it.
+      const rows = serverMode
+        ? table.getRowModel().rows
+        : table.getPrePaginationRowModel().rows;
+      const found = ids.filter((id) => rows.some((row) => row.id === id));
+      if (!serverMode && found.length) {
+        const index = rows.findIndex((row) => row.id === found[0]);
+        table.setPageIndex(
+          Math.floor(index / table.getState().pagination.pageSize),
+        );
+        await nextTick();
+      }
+      return found;
+    },
+  });
+  onBeforeUnmount(unregisterAgentList);
+}
+
 const emptyState = computed(() => {
   const hasActiveFilter =
     globalFilter.value?.trim() !== '' ||
@@ -711,6 +825,7 @@ const hasSearchableColumns = computed(() => {
           <TableRow
             v-for="row in table.getRowModel().rows"
             :key="row.id"
+            :data-row-id="row.id"
             :data-state="row.getIsSelected() ? 'selected' : undefined"
             :data-is-child="row.depth > 0 ? 'true' : undefined"
           >

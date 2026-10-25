@@ -145,6 +145,7 @@ visibilityState.value = getVisibilityState(hiddenColumns);
   <ContentHeader :title="$t('navigation.channels')" />
   <NuxtErrorBoundary>
     <TableView
+      url-sync
       :loading="loading"
       :entity-key="entityKey"
       :columns="columns"

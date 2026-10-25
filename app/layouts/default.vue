@@ -2,6 +2,7 @@
 usePageTitle();
 const { currentSidebarWidth, sidebarOpen } = useLayout();
 const route = useRoute();
+const agentEnabled = import.meta.dev || useRuntimeConfig().public.agentPoc;
 
 const mainWidthStyle = computed(() => {
   const sidebarWidth = currentSidebarWidth.value;
@@ -40,5 +41,6 @@ const contentClasses = computed(() => {
       </div>
       <NuxtAnnouncer />
     </SidebarInset>
+    <AgentPanel v-if="agentEnabled" />
   </SidebarProvider>
 </template>

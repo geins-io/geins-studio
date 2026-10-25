@@ -387,6 +387,28 @@ export function useEntityEdit<
     }
   };
 
+  // Lets the Studio agent read this page and fill its form. It never saves:
+  // the user reviews the filled fields and saves through the page itself.
+  const unregisterAgentEntity = useAgentPageStore().registerEntity({
+    getState: () => ({
+      entityKey,
+      entityId: createMode.value ? undefined : entityId.value,
+      createMode: createMode.value,
+      currentTab: currentTab.value,
+      hasUnsavedChanges: hasUnsavedChanges.value,
+      values: form.values,
+    }),
+    setTab: (tab) => {
+      currentTab.value = tab;
+    },
+    setFieldValue: (path, value) => form.setFieldValue(path, value),
+    validate: async () => {
+      const { valid, errors } = await form.validate({ mode: 'silent' });
+      return { valid, errors };
+    },
+  });
+  onScopeDispose(unregisterAgentEntity);
+
   return {
     // State
     entityKey,

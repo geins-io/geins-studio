@@ -10,6 +10,7 @@ import {
   type Node,
 } from '@vue-flow/core';
 import { MiniMap } from '@vue-flow/minimap';
+import { until } from '@vueuse/core';
 import '@vue-flow/core/dist/style.css';
 import '@vue-flow/core/dist/theme-default.css';
 import '@vue-flow/controls/dist/style.css';
@@ -139,9 +140,19 @@ onMounted(() => {
     initialNodes.value = [buildTriggerNode()];
     return;
   }
-  const { nodes: canvasNodes, edges: canvasEdges } = toCanvas(
+  const graph = buildCanvasGraph(
     currentWorkflow.value as WorkflowDefinition | null,
   );
+  initialNodes.value = graph.nodes;
+  initialEdges.value = graph.edges;
+});
+
+/** API definition → canvas nodes/edges, with the trigger node and legacy ids fixed up. */
+function buildCanvasGraph(workflow: WorkflowDefinition | null): {
+  nodes: Node[];
+  edges: Edge[];
+} {
+  const { nodes: canvasNodes, edges: canvasEdges } = toCanvas(workflow);
   // If the API payload omits a trigger node, prepend our derived one so the
   // canvas always has a trigger to anchor downstream nodes to.
   const existingTrigger = canvasNodes.find((n) => n.type === 'trigger');
@@ -195,9 +206,8 @@ onMounted(() => {
     }
   }
 
-  initialNodes.value = finalNodes;
-  initialEdges.value = finalEdges;
-});
+  return { nodes: finalNodes, edges: finalEdges };
+}
 
 const {
   onConnect,
@@ -211,6 +221,7 @@ const {
   nodes,
   edges,
   setNodes,
+  setEdges,
   fitView,
   zoomIn,
   zoomOut,
@@ -320,6 +331,7 @@ onConnect((params) => {
 // onPaneReady fires once the viewport has stabilized, which is the real "ok
 // to listen for user edits now" signal.
 const canvasReady = ref(false);
+const CANVAS_READY_TIMEOUT_MS = 5000;
 
 const executionSnapshot = computed(() => {
   const n = nodes.value.map((node) => ({
@@ -877,9 +889,40 @@ const handleRunWithoutSaving = async () => {
   await startExecution();
 };
 
+/**
+ * Replace the whole graph (used by the Studio agent). Goes through the same
+ * snapshot watchers as user edits, so the page turns dirty and Save applies it.
+ */
+const setGraph = async (
+  graph: Pick<WorkflowDefinition, 'nodes' | 'connections'>,
+) => {
+  // A freshly mounted canvas ignores edits until it settles (see canvasReady);
+  // wait, or the page never learns it changed. Bounded: the agent's call must
+  // fail rather than hang if the canvas never settles.
+  await until(canvasReady)
+    .toBe(true, { timeout: CANVAS_READY_TIMEOUT_MS, throwOnTimeout: true })
+    .catch(() => {
+      throw new Error('The workflow canvas did not finish loading.');
+    });
+  const next = buildCanvasGraph({
+    ...(currentWorkflow.value as WorkflowDefinition | null),
+    nodes: graph.nodes,
+    connections: graph.connections,
+  } as WorkflowDefinition);
+  setNodes(next.nodes);
+  setEdges(next.edges);
+  await nextTick();
+  if (graph.nodes?.some((node) => !node.ui?.position)) {
+    await tidyUp();
+  } else {
+    fitView({ padding: 0.2 });
+  }
+};
+
 // ─── Expose ──────────────────────────────────────────────────────
 defineExpose({
   getGraph: () => toApi({ nodes: nodes.value, edges: edges.value }),
+  setGraph,
   startExecution,
   getUi: (): WorkflowCanvasUi => {
     const triggerNode =

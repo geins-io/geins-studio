@@ -230,6 +230,7 @@ const searchableFields: Array<keyof EntityList> = [
   </ContentHeader>
   <NuxtErrorBoundary>
     <TableView
+      url-sync
       :loading="loading"
       :entity-key="entityKey"
       :columns="columns"
