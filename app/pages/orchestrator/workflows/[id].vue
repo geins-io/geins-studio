@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { toTypedSchema } from '@vee-validate/zod';
+import { until } from '@vueuse/core';
 import cronstrue from 'cronstrue';
-import { useForm } from 'vee-validate';
+import { useForm, type Path, type PathValue } from 'vee-validate';
 import * as z from 'zod';
 import 'cronstrue/locales/sv';
 import { DataItemDisplayType } from '#shared/types';
 import type {
+  AgentWorkflowGraph,
   RetryPolicy,
   WorkflowDefinition,
   WorkflowInput,
@@ -246,8 +248,11 @@ watch(
   { immediate: true },
 );
 
-// View mode switcher (top-level: Settings vs Builder).
-const viewMode = ref<'settings' | 'builder'>('settings');
+// View mode switcher (top-level: Settings vs Builder). `?view=builder` opens
+// straight on the canvas (used after creating a workflow with nodes).
+const viewMode = ref<'settings' | 'builder'>(
+  route.query.view === 'builder' ? 'builder' : 'settings',
+);
 const viewModes = computed(
   () =>
     [
@@ -279,14 +284,25 @@ const refreshExecutions = () => executionsRef.value?.refresh();
 // Template ref to the Builder so handleSave can pull the current canvas
 // graph (nodes + connections with position ui) instead of persisting the
 // stale cached `wf.nodes` / `wf.connections`.
-const builderRef = ref<{
+interface BuilderExposed {
   getGraph: () => {
     nodes: WorkflowNode[];
     connections: WorkflowNodeConnection[];
   };
   getUi: () => Record<string, unknown>;
   startExecution: () => Promise<void>;
-} | null>(null);
+  setGraph: (graph: AgentWorkflowGraph) => Promise<void>;
+}
+const builderRef = ref<BuilderExposed | null>(null);
+// Vue clears a template ref when <KeepAlive> hides the builder, though the
+// instance and its canvas live on; save and validate would then fall back to
+// the cached graph and drop canvas edits. Keep the last instance instead.
+const keepBuilderRef = (instance: unknown) => {
+  if (instance) builderRef.value = instance as BuilderExposed;
+};
+// A graph the Studio agent drafted on `/new`, where no canvas is shown yet;
+// `handleCreate` sends it along so the created workflow opens with it.
+const pendingAgentGraph = ref<AgentWorkflowGraph>();
 
 // ─── Trigger & cron helpers ────────────────────────────────────────
 const cronDescription = computed(() => {
@@ -360,6 +376,8 @@ const editableState = computed(
       inputGroups: additionalInputGroups.value,
       builderChanges: builderChangeCount.value,
       builderUiChanges: builderUiChangeCount.value,
+      // The agent's draft on /new: leaving would lose it.
+      ...(pendingAgentGraph.value && { agentGraph: pendingAgentGraph.value }),
     }) as Record<string, unknown>,
 );
 
@@ -410,6 +428,56 @@ onMounted(() => {
 type WorkflowEditorDefinition = WorkflowDefinition & {
   trigger?: Record<string, unknown>;
 };
+
+// Lets the Studio agent read this workflow and draft changes: form fields via
+// `setFieldValue`, nodes via `setGraph` on the live canvas. It never saves.
+const unregisterAgentEntity = useAgentPageStore().registerEntity({
+  getState: () => {
+    const wf = currentWorkflow.value as WorkflowEditorDefinition | null;
+    return {
+      entityKey,
+      entityId: isNew.value ? undefined : workflowId.value,
+      createMode: isNew.value,
+      currentTab: currentTab.value,
+      hasUnsavedChanges: hasUnsavedChanges.value,
+      values: form.values,
+      graph: builderRef.value?.getGraph() ??
+        pendingAgentGraph.value ?? {
+          nodes: wf?.nodes ?? [],
+          connections: wf?.connections ?? [],
+        },
+    };
+  },
+  setTab: (tab) => {
+    viewMode.value = 'settings';
+    currentTab.value = tab;
+  },
+  setFieldValue: (path, value) =>
+    form.setFieldValue(
+      path as Path<WorkflowFormValues>,
+      value as PathValue<WorkflowFormValues, Path<WorkflowFormValues>>,
+    ),
+  validate: async () => {
+    const { valid, errors } = await form.validate({ mode: 'silent' });
+    return { valid, errors };
+  },
+  setGraph: async (graph) => {
+    if (isNew.value) {
+      pendingAgentGraph.value = graph;
+      return { pending: true };
+    }
+    viewMode.value = 'builder';
+    // Bounded, like the canvas wait inside: the agent's call must fail, not hang.
+    await until(builderRef)
+      .toBeTruthy({ timeout: 5000, throwOnTimeout: true })
+      .catch(() => {
+        throw new Error('The workflow builder did not open.');
+      });
+    await builderRef.value?.setGraph(graph);
+    return { pending: false };
+  },
+});
+onScopeDispose(unregisterAgentEntity);
 
 const isEnabled = computed(() => currentWorkflow.value?.enabled ?? false);
 const menuBusy = ref(false);
@@ -546,6 +614,10 @@ const handleCreate = async () => {
       group: values.details.group || undefined,
       tags: values.details.tags,
       type: 'onDemand',
+      ...(pendingAgentGraph.value && {
+        nodes: sanitizeWorkflowNodes(pendingAgentGraph.value.nodes),
+        connections: pendingAgentGraph.value.connections,
+      }),
     });
     // Snapshot so the route guard doesn't block navigation to the new page.
     originalEditableState.value = JSON.stringify(editableState.value);
@@ -553,7 +625,12 @@ const handleCreate = async () => {
       title: t('entity_created', { entityKey }),
       variant: 'positive',
     });
-    await navigateTo(`/orchestrator/workflows/${created.id}`);
+    await navigateTo({
+      path: `/orchestrator/workflows/${created.id}`,
+      query: pendingAgentGraph.value?.nodes.length
+        ? { view: 'builder' }
+        : undefined,
+    });
   } catch (err) {
     geinsLogError('Failed to create workflow', err);
   } finally {
@@ -1660,7 +1737,7 @@ const { summaryProps } = useEntityEditSummary({
     <WorkflowBuilder
       v-if="viewMode === 'builder'"
       :key="viewMode"
-      ref="builderRef"
+      :ref="keepBuilderRef"
       class="-mx-3 -mt-4 -mb-12 @2xl:-mx-8 @2xl:-mb-14"
       :workflow-id="workflowId"
       :is-new="isNew"

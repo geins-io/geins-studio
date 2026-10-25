@@ -123,6 +123,14 @@ export default defineNuxtConfig({
       watch: {
         ignored: [isScratchPath, '**/.output/**', '**/.nuxt/**'],
       },
+      // Dev server only: lets `ngrok http 3000` share a local Studio. A
+      // leading dot matches every subdomain of the tunnel domain.
+      allowedHosts: [
+        '.ngrok-free.dev',
+        '.ngrok-free.app',
+        '.ngrok.app',
+        '.ngrok.dev',
+      ],
     },
   },
 
@@ -194,6 +202,12 @@ export default defineNuxtConfig({
       debug: process.env.GEINS_DEBUG === 'true',
       appId: process.env.NUXT_PUBLIC_APP_ID || '',
       isVercel: !!process.env.VERCEL,
+      // Studio agent panel, backed by the local helper (Synapse / `geins
+      // serve`); always on in dev, behind this flag elsewhere.
+      agentPoc: process.env.NUXT_PUBLIC_AGENT_POC === 'true',
+      agentDownloadUrl:
+        process.env.NUXT_PUBLIC_AGENT_DOWNLOAD_URL ||
+        'https://github.com/geins-io/geins-cli/releases/latest',
     },
     private: {
       authSecret: process.env.AUTH_SECRET,

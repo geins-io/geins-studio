@@ -120,6 +120,14 @@ export default defineConfig({
               { text: 'useGeinsLog', link: '/composables/useGeinsLog.md' },
               { text: 'useLayout', link: '/composables/useLayout.md' },
               {
+                text: 'useAgentCompanion',
+                link: '/composables/useAgentCompanion.md',
+              },
+              {
+                text: 'useAgentPairing',
+                link: '/composables/useAgentPairing.md',
+              },
+              {
                 text: 'useBackgroundJobs',
                 link: '/composables/useBackgroundJobs.md',
               },
