@@ -35,8 +35,10 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # outputs.version (the deployed tag) is the highest-priority tag; keep the
+          # immutable sha on top so every deploy changes the image Azure pulls.
           tags: |
-            type=sha,prefix=
+            type=sha,prefix=,priority=300
             type=raw,value=dev
 
       - name: Build and push
