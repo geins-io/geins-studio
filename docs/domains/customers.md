@@ -21,7 +21,9 @@ The Customers domain manages B2B wholesale accounts. A company is the central en
 
 ## API Shape Quirks
 
-**`priceLists` type mismatch** — The response returns `CustomerPriceList[]` (objects with `_id`, `name`, `channel`, `currency`, `active`, `productCount`). Create and update requests expect `string[]` (just price list IDs).
+**`priceLists` type mismatch** — The response returns `CustomerPriceList[]` (objects with `_id`, `name`, `channel`, `currency`, `active`, `productCount`, `accountSpecific`, `wholesaleAccountId`, `readOnly`). Create and update requests expect `string[]` (just price list IDs).
+
+**Connected vs own price lists** — `priceLists` mixes the company's connected lists (shared, or account lists owned by another account) with its own account lists (see [Pricing → Shared and account lists](./pricing.md#shared-and-account-lists)). The company page's **Pricing** tab splits them with `isOwnAccountPriceList(pl, company._id)`: connected lists fill the "Connected price lists" card, quick add and sidebar count; own lists are kept apart. Updates send connected ids only — the account update keeps its own lists when `priceLists` leaves them out. A buyer's `priceLists` keeps nothing back, so the buyer panel's options add the buyer's assigned account lists (the list endpoint never returns them).
 
 **`buyers` in create/update** — `CompanyBuyerCreate` currently requires `_id: string` (marked as TODO to remove). Buyer `priceLists` follows the same pattern: objects in response, string IDs in requests.
 

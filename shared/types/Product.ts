@@ -236,6 +236,10 @@ export interface ProductPriceListBase {
   forced: boolean;
   rules?: PriceListRule[];
   productSelectionQuery?: SelectorSelectionQueryBase;
+  // Optional here so create bodies omit them: a set wholesaleAccountId makes
+  // an account list, and PATCH ignores it.
+  wholesaleAccountId?: string;
+  readOnly?: boolean;
 }
 
 export interface ProductPriceListCreate extends CreateEntity<ProductPriceListBase> {
@@ -245,6 +249,11 @@ export interface ProductPriceListUpdate extends UpdateEntity<ProductPriceListBas
   products?: PriceListProduct[];
 }
 export interface ProductPriceList extends ResponseEntity<ProductPriceListBase> {
+  accountSpecific: boolean;
+  /** Owning account's `_id` on an account list, `""` on a shared list. */
+  wholesaleAccountId: string;
+  readOnly: boolean;
+  productCount: number;
   products?: BatchQueryResult<PriceListProduct>;
 }
 
@@ -266,6 +275,7 @@ export interface PriceListProduct {
   productId: string;
   name?: string;
   thumbnail?: string;
+  thumbnailUrl?: string;
   price?: number;
   regularPrice?: number;
   margin?: number;
