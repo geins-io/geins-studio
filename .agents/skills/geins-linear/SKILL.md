@@ -12,8 +12,8 @@ The single runbook for how we work with Linear issues, projects, and the code th
 ## Ground rules (always)
 
 - **Never commit or push without explicit user approval.** Present a diff-shaped summary first; wait for a clear "yes / merge".
-- **Never `git push --force` to `main` or `next`.** Feature-branch force-push (after amend) is fine.
-- **Feature work targets `next`, never `main`.** The `next → main` release is a separate squash flow.
+- **Never `git push --force` to `main` or `next`** — except the post-release reset of `next` in `geins-release` step 7. Feature-branch force-push (after amend) is fine.
+- **Feature work targets `next`, never `main`.** The `next → main` release is a separate squash flow (`.agents/skills/geins-release/SKILL.md`).
 - **One issue → one branch → one squash-merged PR.** Keep PRs diff-shaped and scoped to the issue.
 
 ## Status lifecycle
