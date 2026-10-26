@@ -14,6 +14,7 @@ import {
   type CompanyBuyerList,
 } from '#shared/types';
 import { ENTITIES, NEW_ENTITY_URL_SEGMENT } from '#shared/utils/entities';
+import { isOwnAccountPriceList } from '#shared/utils/price-list';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { LucideUser, LucidePackage } from '#components';
 
@@ -119,7 +120,7 @@ const addressBase: AddressBase = {
 const tabs = [
   t('general'),
   t('buyer', 2),
-  t('price_list', 2),
+  t('navigation.pricing'),
   t('order', 2),
   t('settings'),
 ];
@@ -228,7 +229,13 @@ const {
     });
     entityLiveStatus.value = company.active || false;
     companyGroups.value = extractCompanyGroupsFromTags(company.tags || []);
-    addedPriceLists.value = company.priceLists || [];
+    const priceLists = company.priceLists || [];
+    addedPriceLists.value = priceLists.filter(
+      (pl) => !isOwnAccountPriceList(pl, company._id),
+    );
+    ownAccountPriceLists.value = priceLists.filter((pl) =>
+      isOwnAccountPriceList(pl, company._id),
+    );
 
     billingAddress.value = {
       ...company.addresses?.find(
@@ -302,7 +309,13 @@ const {
           )
         : entityData.addresses,
       salesReps: entityData.salesReps?.map((salesRep) => salesRep._id),
-      priceLists: entityData.priceLists?.map((priceList) => priceList._id),
+      // The account update keeps the company's own lists when `priceLists`
+      // leaves them out, so only connected (shared) lists round-trip.
+      priceLists: entityData.priceLists
+        ?.filter(
+          (priceList) => !isOwnAccountPriceList(priceList, entityData._id),
+        )
+        .map((priceList) => priceList._id),
       buyers: undefined,
     };
   },
@@ -446,11 +459,13 @@ watch(buyerPanelOpen, async (open) => {
 // PRICELISTS MANAGEMENT
 // =====================================================================================
 // Intent: Manage the association of price lists to this company.
-// Maintains local addedPriceLists state synced to entityDataUpdate.priceLists.
-// Fetches all available price lists for the selector dropdown.
+// addedPriceLists holds the connected lists (shared, or owned by another account)
+// and syncs to entityDataUpdate.priceLists; the company's own account lists are
+// kept apart in ownAccountPriceLists. Fetches all shared lists for the selector.
 
 const { productApi } = useGeinsRepository();
 const addedPriceLists = ref<CustomerPriceList[]>([]);
+const ownAccountPriceLists = ref<CustomerPriceList[]>([]);
 const addedPriceListsIds = computed(() => {
   return addedPriceLists.value.map((pl) => pl._id);
 });
@@ -532,8 +547,9 @@ watch(addedPriceLists, (newPriceLists) => {
 });
 
 if (!createMode.value) {
-  const { data, error } = await useAsyncData<ProductPriceList[]>(() =>
-    productApi.priceList.list({ fields: ['products'] }),
+  const { data, error } = await useAsyncData<ProductPriceList[]>(
+    'company-price-lists',
+    () => productApi.priceList.list(),
   );
 
   if (!data.value || error.value) {
@@ -542,12 +558,21 @@ if (!createMode.value) {
       error.value,
     );
   } else {
-    allPriceLists.value = data.value.map((priceList) => ({
-      ...priceList,
-      productCount: priceList.products?.totalItemCount || 0,
-    }));
+    allPriceLists.value = data.value;
   }
 }
+
+// The list endpoint never returns account lists, so a buyer's assigned
+// account lists are added to the options or their chips would show raw ids.
+const buyerPriceListOptions = computed<CustomerPriceList[]>(() => {
+  const assigned =
+    buyers.value.find((buyer) => buyer._id === buyerToEdit.value?._id)
+      ?.priceLists ?? [];
+  const missing = assigned.filter(
+    (pl) => !allPriceLists.value.some((option) => option._id === pl._id),
+  );
+  return [...allPriceLists.value, ...missing];
+});
 
 // =====================================================================================
 // ORDERS MANAGEMENT
@@ -793,7 +818,7 @@ const otherSummary = computed<DataItem[]>(() => {
   }
   if (entityData.value?.priceLists?.length) {
     const displayValue = entityData.value.priceLists
-      .map((pl: string) => getEntityNameById(pl, allPriceLists.value))
+      .map((pl: string) => getEntityNameById(pl, addedPriceLists.value))
       .join(', ');
     dataList.push({
       label: t('price_list', 2),
@@ -885,7 +910,12 @@ if (!createMode.value) {
     await fetchOrders(
       orderSelectionQuery,
       { fields: ['pricelists', 'itemcount'] },
-      allPriceLists.value,
+      // Account lists are missing from allPriceLists; add the company's for names.
+      [
+        ...allPriceLists.value,
+        ...addedPriceLists.value,
+        ...ownAccountPriceLists.value,
+      ],
       undefined,
       buyers.value,
     );
@@ -1255,7 +1285,7 @@ if (!createMode.value) {
                   :buyer="buyerToEdit"
                   :company-id="entityDataUpdate?._id || ''"
                   :company-name="entityDataUpdate.name || ''"
-                  :price-lists="allPriceLists"
+                  :price-lists="buyerPriceListOptions"
                 >
                   <ButtonIcon
                     v-if="!createMode"
@@ -1289,7 +1319,7 @@ if (!createMode.value) {
           >
             <ContentEditCard
               :create-mode="createMode"
-              :title="$t('price_list', 2)"
+              :title="$t('customers.connected_price_lists')"
               :description="$t('customers.price_lists_description')"
             >
               <template #header-action>

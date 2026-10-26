@@ -132,7 +132,7 @@ export interface CustomerOrder {
   status: string;
 }
 
-export interface CustomerPriceList extends Omit<
+export type CustomerPriceList = Omit<
   ProductPriceList,
   | 'products'
   | 'rules'
@@ -140,6 +140,4 @@ export interface CustomerPriceList extends Omit<
   | 'autoAddProducts'
   | 'forced'
   | 'dateCreated'
-> {
-  productCount: number;
-}
+>;

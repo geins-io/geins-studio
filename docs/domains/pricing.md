@@ -22,7 +22,38 @@ The Pricing domain manages price lists — named collections of product prices s
 - `POST /product/pricelist/{id}/preview` — Preview the entire price list with proposed changes
 - `POST /product/pricelist/{id}/previewprice` — Preview a single product's calculated price
 
-**Copy** — `POST /product/pricelist/{id}/copy` creates a duplicate price list. Accessed via `productApi.priceList.id(id).copy()`.
+**Copy** — `POST /product/pricelist/{id}/copy` creates a duplicate price list. Accessed via `productApi.priceList.id(id).copy()`. A copy is always a shared list.
+
+## Shared and account lists
+
+There are two kinds of price list. A **shared** list can be assigned to any number of wholesale accounts (companies). An **account list** belongs to exactly one account and holds the prices agreed with it; an account owns at most one per channel and currency. Every price list response, on both `product/pricelist` and `wholesale/account`, says which kind it is:
+
+| Field                | Shared list         | Account list                      |
+| -------------------- | ------------------- | --------------------------------- |
+| `accountSpecific`    | `false`             | `true`                            |
+| `wholesaleAccountId` | `""` (never `null`) | the owning account's `_id`        |
+| `readOnly`           | usually `false`     | `true` when an ERP import owns it |
+
+Branch on `accountSpecific` — never null-check `wholesaleAccountId`. `isOwnAccountPriceList(priceList, accountId)` (`#shared/utils/price-list`) answers "is this the account's own list". A list with `accountSpecific: true` and a different owner was assigned here from another account and behaves like a shared list in that account's UI.
+
+- **Finding them** — account lists never appear in `GET product/pricelist/list` or a product's `pricelists`. Start from the account: `GET wholesale/account/{id}?fields=pricelists` returns shared and account lists mixed.
+- **Creating** — `POST product/pricelist` with `wholesaleAccountId` (and `active: true`; lists are inactive by default) creates an account list and assigns it. The owner is fixed: `PATCH` ignores `wholesaleAccountId`, so sending a GET body back is safe. That's why `wholesaleAccountId`/`readOnly` are optional on `ProductPriceListBase` (create bodies omit them) and required only on the `ProductPriceList` response.
+- **Account updates** keep the account's own lists even when `priceLists` leaves them out, so the company page sends connected (shared) ids only. **Buyer updates** keep nothing back: a list left out of a buyer's `priceLists` is removed from that buyer, account lists included. An account list assigned to a buyer has no pricing effect (see restricted buyers below), but Studio still keeps such assignments on save — the company page's `buyerPriceListOptions` feeds them to the buyer panel — so it never drops data silently.
+- **Renamed fields** — earlier builds sent `customerId`/`customerSpecific` on price lists; both are gone. Use `wholesaleAccountId`/`accountSpecific`.
+
+**Read-only lists and `force`** — `readOnly: true` means an ERP import maintains the list (today the Monitor import: identifiers `MON-` for shared, `MONC-` for account lists; branch on `readOnly`, not the prefix). `PATCH` and `DELETE` answer `422` unless the request has `?force=true`. A forced edit is undone by the next import, and a forced delete is permanent (a re-import gets a new id). Studio shows these lists locked.
+
+**Which price wins** — for the products and quantity tiers it prices, an account list beats the catalog price and every shared list, even a cheaper one (`forced` has no effect on an account list). Storefront order:
+
+1. An `x-prices` token or a configured-product (CPQ) price
+2. The account's own list
+3. Lists assigned directly to the buyer, and forced lists
+4. The cheapest shared list assigned to the account
+5. The catalog price
+
+Quotations rank one step differently: a list assigned to the buyer comes first, then the account list, then shared lists. The most specific list that prices a product wins even when a broader one is cheaper.
+
+**Restricted buyers** — a buyer with `restrictToDedicatedPriceLists` is priced only from the lists assigned to it and never gets the account's own list, ERP or Studio-managed (step 2 is skipped). Assigning the account list to such a buyer doesn't work either; to give a restricted buyer special prices, create a normal shared list and put it in the buyer's `priceLists`. This applies in the storefront today. Quotations follow once PLA-893 ships; until then a quote for a restricted buyer can still use the account list.
 
 ## Composable Architecture
 
@@ -58,6 +89,7 @@ These compose together on the `[id].vue` edit page. `usePriceListProducts` manag
 | Layer       | Path                                                                                                                                                       |
 | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Types       | `shared/types/Product.ts` (price list types colocated with product types)                                                                                  |
+| Utils       | `shared/utils/price-list.ts` (`isOwnAccountPriceList`)                                                                                                     |
 | Repository  | `app/utils/repositories/product.ts` (`.priceList` sub-repo)                                                                                                |
 | Composables | `usePriceListProducts.ts`, `usePriceListProductsTable.ts`, `usePriceListRules.ts`, `usePriceListVolumePricing.ts`, `usePriceListPreview.ts`, `usePrice.ts` |
 | Components  | `app/components/price-list/`                                                                                                                               |
@@ -67,6 +99,9 @@ These compose together on the `[id].vue` edit page. `usePriceListProducts` manag
 
 **2025-07-01: Price list types colocated in Product.ts**
 Price lists are tightly coupled to products (each price list contains product pricing entries). Keeping the types in `Product.ts` reflects this relationship and avoids circular imports.
+
+**2026-10-26: Account lists kept apart from connected lists**
+A company's own account lists are not "connected" lists: they can't be added or removed through `priceLists`, and they outrank shared lists. The company Pricing tab splits them out so the connected-lists card, quick add and save only ever touch shared ids, and the own lists feed the Company set prices card.
 
 **2025-08-01: Six composables for separation of concerns**
 The pricing page is the most complex in the app. Splitting into focused composables (products, products-table, rules, volume-pricing, preview, price-formatting) keeps each unit testable and avoids a monolithic page script.
