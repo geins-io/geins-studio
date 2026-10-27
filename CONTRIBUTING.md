@@ -88,7 +88,7 @@ geinsLog('Something happened', data);
 - PRs target `next`
 - CI runs `lint:check`, `format:check`, `typecheck`, `test --run` and `build` on every PR
 - `next` requires the CI check to pass before merge — merge with `gh pr merge --auto`
-- The pre-push hook runs the static checks + only the tests affected by your branch; the full suite runs in CI
+- The pre-commit hook only formats + lint-fixes staged files; there is no pre-push hook. Before opening a PR, run `pnpm lint:check && pnpm typecheck && pnpm test:changed` — the full suite + build run in CI
 
 ## Scripts Reference
 
