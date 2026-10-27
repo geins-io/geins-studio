@@ -356,9 +356,14 @@ const pinnedStyles = computed(() => {
           ? column.getStart('left')
           : column.getAfter('right');
 
+      // The offsets assume every pinned column renders at exactly getSize();
+      // auto table layout would otherwise shrink cells with narrow content
+      // (text, not inputs) and leave gaps between the sticky columns.
       return {
         [isPinned]: `${position}px`,
         width: `${width}px`,
+        minWidth: `${width}px`,
+        maxWidth: `${width}px`,
       };
     }
     return { width: width ? `${width}px` : undefined };
@@ -694,6 +699,8 @@ const hasSearchableColumns = computed(() => {
               cn(
                 `z-30 ${getCellClasses(header.column, true)} table-view__header`,
                 `${simpleMode || minimalMode ? 'bg-background' : ''}`,
+                header.column.columnDef.meta?.highlight &&
+                  'table-view__header--highlight',
               )
             "
             :style="pinnedStyles(header.column)"

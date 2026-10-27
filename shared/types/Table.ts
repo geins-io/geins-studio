@@ -103,7 +103,7 @@ declare module '@tanstack/vue-table' {
     title?: string;
     type: ColumnType;
     skipInactiveDim?: boolean;
-    /** Tints the column's cells and bolds them to draw the eye. */
+    /** Tints the column (header and cells) and bolds its text to draw the eye. */
     highlight?: boolean;
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

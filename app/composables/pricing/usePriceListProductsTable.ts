@@ -143,8 +143,15 @@ export const usePriceListProductsTable =
         },
         excludeColumns: ['volumePricing', 'priceMode'],
       }).map((column) =>
+        // Same width as the editable list price, so its longer title fits.
         column.id === 'listPrice' && column.meta
-          ? { ...column, meta: { ...column.meta, highlight: true } }
+          ? {
+              ...column,
+              size: 180,
+              minSize: 180,
+              maxSize: 180,
+              meta: { ...column.meta, highlight: true },
+            }
           : column,
       );
       return addVolumePricingColumn(
