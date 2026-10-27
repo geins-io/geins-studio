@@ -255,6 +255,10 @@ export interface ProductPriceList extends ResponseEntity<ProductPriceListBase> {
   readOnly: boolean;
   productCount: number;
   products?: BatchQueryResult<PriceListProduct>;
+  /** Products with a price of their own (fixed, margin, discount or rule); only with `fields: ['counts']`. */
+  manualPriceProductCount?: number | null;
+  /** Products with a price at a quantity above 1; only with `fields: ['counts']`. */
+  volumePriceProductCount?: number | null;
 }
 
 export type ProductPriceListFieldsFilter =
@@ -263,7 +267,8 @@ export type ProductPriceListFieldsFilter =
   | 'products'
   | 'rules'
   | 'selectionquery'
-  | 'productinfo';
+  | 'productinfo'
+  | 'counts';
 
 export interface ProductPriceListApiOptions extends ApiOptions<ProductPriceListFieldsFilter> {
   pageSize?: string;
