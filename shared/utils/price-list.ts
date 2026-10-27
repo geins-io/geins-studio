@@ -59,6 +59,29 @@ export function getCompanyPriceListSaveAction(
   return enabled ? 'activate' : 'deactivate';
 }
 
+export interface PriceListSummaryCounts {
+  manual: number;
+  volume: number;
+}
+
+/**
+ * The manual and volume price counts from `fields: ['counts']`. Undefined
+ * while the API leaves either one null, so the summary hides the line.
+ */
+export function getPriceListSummaryCounts(
+  priceList?: Pick<
+    ProductPriceList,
+    'manualPriceProductCount' | 'volumePriceProductCount'
+  > | null,
+): PriceListSummaryCounts | undefined {
+  const manual = priceList?.manualPriceProductCount;
+  const volume = priceList?.volumePriceProductCount;
+  if (typeof manual !== 'number' || typeof volume !== 'number') {
+    return undefined;
+  }
+  return { manual, volume };
+}
+
 /** Name of a company list Studio creates, e.g. "Sonora Lab AB SEK". */
 export function companyPriceListName(
   companyName: string,

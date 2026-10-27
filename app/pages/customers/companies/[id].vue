@@ -18,6 +18,7 @@ import {
   companyPriceListIdentifier,
   companyPriceListName,
   getCompanyPriceListSaveAction,
+  getPriceListSummaryCounts,
   isOwnAccountPriceList,
   pickAccountPriceList,
 } from '#shared/utils/price-list';
@@ -728,6 +729,39 @@ const companyPricesLoading = computed(
   () =>
     companyPricesStatus.value === 'idle' ||
     companyPricesStatus.value === 'pending',
+);
+
+// Summary of a Studio-managed list. The key follows the list id, so a list
+// created on "Save company" is fetched once it exists. A background read: on
+// failure the fold falls back to the list's `productCount` and hides the counts.
+const studioPriceListId = computed(() =>
+  companyPriceList.value && !companyPriceList.value.readOnly
+    ? companyPriceList.value._id
+    : undefined,
+);
+const { data: studioPriceListData, error: studioPriceListError } = useAsyncData(
+  () => `company-set-prices-counts-${studioPriceListId.value ?? 'none'}`,
+  async () => {
+    if (!studioPriceListId.value) return null;
+    return await productApi.priceList.get(
+      studioPriceListId.value,
+      { fields: ['counts'] },
+      { suppressErrorToast: true },
+    );
+  },
+  { default: () => null },
+);
+const studioPriceListCounts = computed(() =>
+  studioPriceListError.value ? undefined : studioPriceListData.value,
+);
+const studioPriceListProductCount = computed(
+  () =>
+    studioPriceListCounts.value?.productCount ??
+    companyPriceList.value?.productCount ??
+    0,
+);
+const studioPriceListSummaryCounts = computed(() =>
+  getPriceListSummaryCounts(studioPriceListCounts.value),
 );
 
 // =====================================================================================
@@ -1561,7 +1595,41 @@ if (!createMode.value) {
                 :description="
                   $t('customers.company_set_prices_studio_description')
                 "
-              />
+              >
+                <div class="border-t pt-4">
+                  <Item class="p-0">
+                    <ItemContent v-if="studioPriceListProductCount > 0">
+                      <ItemTitle>
+                        {{
+                          $t(
+                            'customers.company_set_prices_product_count',
+                            { count: studioPriceListProductCount },
+                            studioPriceListProductCount,
+                          )
+                        }}
+                      </ItemTitle>
+                      <ItemDescription v-if="studioPriceListSummaryCounts">
+                        {{
+                          $t('customers.company_set_prices_counts', {
+                            manual: studioPriceListSummaryCounts.manual,
+                            volume: studioPriceListSummaryCounts.volume,
+                          })
+                        }}
+                      </ItemDescription>
+                    </ItemContent>
+                    <ItemContent v-else>
+                      <ItemTitle>
+                        {{ $t('no_entity_yet', { entityKey: 'product' }, 2) }}
+                      </ItemTitle>
+                      <ItemDescription>
+                        {{
+                          $t('customers.company_set_prices_empty_description')
+                        }}
+                      </ItemDescription>
+                    </ItemContent>
+                  </Item>
+                </div>
+              </ContentSwitch>
             </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>

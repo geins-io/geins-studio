@@ -4,6 +4,7 @@ import {
   companyPriceListIdentifier,
   companyPriceListName,
   getCompanyPriceListSaveAction,
+  getPriceListSummaryCounts,
   isOwnAccountPriceList,
   pickAccountPriceList,
 } from '../price-list';
@@ -141,5 +142,37 @@ describe('companyPriceListIdentifier', () => {
     expect(companyPriceListIdentifier(undefined, 'SEK')).toBeUndefined();
     expect(companyPriceListIdentifier('', 'SEK')).toBeUndefined();
     expect(companyPriceListIdentifier('  ', 'SEK')).toBeUndefined();
+  });
+});
+
+describe('getPriceListSummaryCounts', () => {
+  it('returns both counts when the API sends numbers', () => {
+    expect(
+      getPriceListSummaryCounts({
+        manualPriceProductCount: 3,
+        volumePriceProductCount: 0,
+      }),
+    ).toEqual({ manual: 3, volume: 0 });
+  });
+
+  it('hides the counts while either one is null', () => {
+    expect(
+      getPriceListSummaryCounts({
+        manualPriceProductCount: null,
+        volumePriceProductCount: null,
+      }),
+    ).toBeUndefined();
+    expect(
+      getPriceListSummaryCounts({
+        manualPriceProductCount: 2,
+        volumePriceProductCount: null,
+      }),
+    ).toBeUndefined();
+  });
+
+  it('hides the counts without a list or when they were not requested', () => {
+    expect(getPriceListSummaryCounts(undefined)).toBeUndefined();
+    expect(getPriceListSummaryCounts(null)).toBeUndefined();
+    expect(getPriceListSummaryCounts({})).toBeUndefined();
   });
 });
