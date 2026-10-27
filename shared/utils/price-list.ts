@@ -38,3 +38,44 @@ export function pickAccountPriceList<
   if (match) return { priceList: match, fallback: false };
   return { priceList: lists[0], fallback: lists.length > 0 };
 }
+
+export type CompanyPriceListSaveAction =
+  | 'create'
+  | 'activate'
+  | 'deactivate'
+  | 'none';
+
+/**
+ * What "Save company" does to the company's own list for the switch state
+ * `enabled`. Off keeps the list (and its prices) and only deactivates it. A
+ * read-only (ERP) list is never saved: `PATCH` on it answers 422.
+ */
+export function getCompanyPriceListSaveAction(
+  priceList: Pick<ProductPriceList, 'active' | 'readOnly'> | undefined,
+  enabled: boolean,
+): CompanyPriceListSaveAction {
+  if (!priceList) return enabled ? 'create' : 'none';
+  if (priceList.readOnly || priceList.active === enabled) return 'none';
+  return enabled ? 'activate' : 'deactivate';
+}
+
+/** Name of a company list Studio creates, e.g. "Sonora Lab AB SEK". */
+export function companyPriceListName(
+  companyName: string,
+  currency: string,
+): string {
+  return `${companyName.trim()} ${currency}`;
+}
+
+/**
+ * Identifier of a company list Studio creates, e.g. "10234-SEK". A list's
+ * `identifier` is for external references, so it only exists when the company
+ * has an `externalId`.
+ */
+export function companyPriceListIdentifier(
+  externalId: string | undefined,
+  currency: string,
+): string | undefined {
+  const id = externalId?.trim();
+  return id ? `${id}-${currency}` : undefined;
+}

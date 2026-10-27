@@ -706,6 +706,7 @@
     "company_set_prices_description": "Prices set specifically for this company. They override price list prices for this company's buyers.",
     "use_company_set_prices": "Use company set prices",
     "company_set_prices_erp_description": "Managed outside of Studio. Prices are synced and can't be edited here.",
+    "company_set_prices_studio_description": "If disabled, this company's buyers get prices from the assigned price lists only.",
     "company_set_prices_locked_tooltip": "Managed externally, outside of Studio. Such as from your ERP.",
     "orders_description": "Orders placed by buyers connected to this company.",
     "buyers_description": "Buyers connected to this company",

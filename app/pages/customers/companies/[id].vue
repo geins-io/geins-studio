@@ -15,6 +15,9 @@ import {
 } from '#shared/types';
 import { ENTITIES, NEW_ENTITY_URL_SEGMENT } from '#shared/utils/entities';
 import {
+  companyPriceListIdentifier,
+  companyPriceListName,
+  getCompanyPriceListSaveAction,
   isOwnAccountPriceList,
   pickAccountPriceList,
 } from '#shared/utils/price-list';
@@ -155,6 +158,15 @@ const companyTags = ref<EntityBaseWithName[]>([]);
 // Form validation
 const createDisabled = ref(true);
 
+// Company set prices: the switch saves with "Save company", so it counts as
+// an unsaved change until the saved list matches it (see COMPANY SET PRICES).
+const companyPriceList = ref<CustomerPriceList>();
+const companyPriceListEnabled = ref(false);
+const companyPriceListHasChanges = computed(
+  () =>
+    companyPriceListEnabled.value !== (companyPriceList.value?.active ?? false),
+);
+
 // =====================================================================================
 // ENTITY EDIT COMPOSABLE
 // =====================================================================================
@@ -202,6 +214,7 @@ const {
   initialEntityData: entityBase,
   initialUpdateData: entityBase,
   stepValidationMap,
+  externalChanges: companyPriceListHasChanges,
   getInitialFormValues: (entityData) => ({
     details: {
       name: entityData.name || '',
@@ -581,18 +594,17 @@ const buyerPriceListOptions = computed<CustomerPriceList[]>(() => {
 // =====================================================================================
 // COMPANY SET PRICES
 // =====================================================================================
-// Intent: Show the company's own account price list read-only when an ERP import
-// maintains it (`readOnly`). v1 shows one list: the one in the company's default
-// channel and currency. Rows load like the price list page — one unpaginated query,
-// grouped per product, searched and paged client-side by TableView.
+// Intent: The company's own account price list. v1 shows one list: the one in the
+// company's default channel and currency. An ERP import's list (`readOnly`) shows
+// locked with a read-only grid; rows load like the price list page — one unpaginated
+// query, grouped per product, searched and paged client-side by TableView. Any other
+// company gets a Studio-managed switch that "Save company" saves (saveCompanyPriceList).
 
 const { transformProductsForList } = usePriceListProducts();
 const { setupReadOnlyPriceListColumns, getPinnedState } =
   usePriceListProductsTable();
 const { batchQueryNoPagination } = useBatchQuery();
 
-const companyPriceList = ref<CustomerPriceList>();
-// Editable (Studio-managed) company lists get their own UI in a later phase.
 const erpPriceList = computed(() =>
   companyPriceList.value?.readOnly ? companyPriceList.value : undefined,
 );
@@ -601,10 +613,11 @@ const erpPriceListId = computed(() =>
   erpPriceList.value?.active ? erpPriceList.value._id : undefined,
 );
 
+const getDefaultCurrency = (channel?: string) =>
+  channel ? accountStore.getCurrenciesByChannelId(channel)[0] : undefined;
+
 const selectCompanyPriceList = (channel?: string) => {
-  const currency = channel
-    ? accountStore.getCurrenciesByChannelId(channel)[0]
-    : undefined;
+  const currency = getDefaultCurrency(channel);
   const { priceList, fallback } = pickAccountPriceList(
     ownAccountPriceLists.value,
     channel,
@@ -616,6 +629,54 @@ const selectCompanyPriceList = (channel?: string) => {
     );
   }
   companyPriceList.value = priceList;
+  companyPriceListEnabled.value = priceList?.active ?? false;
+};
+
+// Runs before the company update, whose reload (`fields: all`) brings the new or
+// changed list back. On failure the global API error toast says why and the save
+// stops, so everything stays unsaved for a retry.
+const saveCompanyPriceList = async (): Promise<boolean> => {
+  const priceList = companyPriceList.value;
+  const action = getCompanyPriceListSaveAction(
+    priceList,
+    companyPriceListEnabled.value,
+  );
+  if (action === 'none') return true;
+
+  loading.value = true;
+  try {
+    if (!priceList) {
+      const channel = entityData.value.channels?.[0] ?? '';
+      const currency = getDefaultCurrency(channel) ?? '';
+      companyPriceList.value = await productApi.priceList.create({
+        name: companyPriceListName(entityData.value.name ?? '', currency),
+        identifier: companyPriceListIdentifier(
+          entityData.value.externalId,
+          currency,
+        ),
+        channel,
+        currency,
+        wholesaleAccountId: entityId.value,
+        active: true,
+        exVat: true,
+        // The list starts empty; `forced` has no effect on an account list.
+        autoAddProducts: false,
+        forced: false,
+        dateCreated: '',
+      });
+    } else {
+      const active = action === 'activate';
+      await productApi.priceList.update(priceList._id, { active });
+      // Kept locally too, so a failed company update can't re-send this on retry.
+      companyPriceList.value = { ...priceList, active };
+    }
+    return true;
+  } catch (error) {
+    geinsLogError('error saving company price list:', error);
+    return false;
+  } finally {
+    loading.value = false;
+  }
 };
 
 const {
@@ -800,18 +861,15 @@ const handleCreateCompany = async () => {
 };
 
 const handleUpdateCompany = async () => {
-  await updateEntity(
-    async () => {
-      const stepsValid = await validateSteps([1]);
-      if (!stepsValid) {
-        validateOnChange.value = true;
-        return false;
-      }
-      validateOnChange.value = false;
-      return true;
-    },
-    { fields: ['all'] },
-  );
+  // Validate before the company list saves, so an invalid form saves nothing.
+  const stepsValid = await validateSteps([1]);
+  if (!stepsValid) {
+    validateOnChange.value = true;
+    return;
+  }
+  validateOnChange.value = false;
+  if (!(await saveCompanyPriceList())) return;
+  await updateEntity(undefined, { fields: ['all'] });
 };
 
 // =====================================================================================
@@ -1455,12 +1513,12 @@ if (!createMode.value) {
               </div>
             </ContentEditCard>
             <ContentEditCard
-              v-if="erpPriceList"
               :create-mode="createMode"
               :title="$t('company_set_price', 2)"
               :description="$t('customers.company_set_prices_description')"
             >
               <ContentSwitch
+                v-if="erpPriceList"
                 :checked="erpPriceList.active"
                 locked
                 :label="$t('customers.use_company_set_prices')"
@@ -1496,6 +1554,14 @@ if (!createMode.value) {
                   />
                 </div>
               </ContentSwitch>
+              <ContentSwitch
+                v-else
+                v-model:checked="companyPriceListEnabled"
+                :label="$t('customers.use_company_set_prices')"
+                :description="
+                  $t('customers.company_set_prices_studio_description')
+                "
+              />
             </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>

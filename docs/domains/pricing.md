@@ -43,6 +43,14 @@ Branch on `accountSpecific` — never null-check `wholesaleAccountId`. `isOwnAcc
 - **Account updates** keep the account's own lists even when `priceLists` leaves them out, so the company page sends connected (shared) ids only. **Buyer updates** keep nothing back: a list left out of a buyer's `priceLists` is removed from that buyer, account lists included. An account list assigned to a buyer has no pricing effect (see restricted buyers below), but Studio still keeps such assignments on save — the company page's `buyerPriceListOptions` feeds them to the buyer panel — so it never drops data silently.
 - **Renamed fields** — earlier builds sent `customerId`/`customerSpecific` on price lists; both are gone. Use `wholesaleAccountId`/`accountSpecific`.
 
+**Studio-managed company lists** — a company without an ERP list turns its company set prices on and off with one switch on the company Pricing tab. The switch maps to the list's `active` and saves with "Save company": `handleUpdateCompany` saves the list first, then the company (`fields: ['all']`, whose reload brings the list back). `getCompanyPriceListSaveAction(list, enabled)` (`#shared/utils/price-list`) picks the call:
+
+- **Create** (on, no list yet) — `POST product/pricelist` with `wholesaleAccountId`, `active: true`, the company's default channel (`channels[0]`) and that channel's default currency, `exVat: true`, and `autoAddProducts: false` so the list starts empty. `name` is `{company name} {currency}` (`companyPriceListName`); `identifier` is `{externalId}-{currency}` (`companyPriceListIdentifier`) and left out when the company has no `externalId`. A taken channel/currency slot or identifier answers `409`.
+- **Activate / deactivate** (list exists, switch changed) — `PATCH product/pricelist/{id}` with `{ active }` only. Off keeps the list and its prices.
+- **None** — the switch matches the list, or the list is read-only (`PATCH` on it answers `422`).
+
+If the list call fails, the save stops before the company update, so everything stays unsaved for a retry (the global API error toast shows why). The switch counts as an unsaved change through `useEntityEdit`'s `externalChanges` until the saved list matches it.
+
 **Read-only lists and `force`** — `readOnly: true` means an ERP import maintains the list (today the Monitor import: identifiers `MON-` for shared, `MONC-` for account lists; branch on `readOnly`, not the prefix). `PATCH` and `DELETE` answer `422` unless the request has `?force=true`. A forced edit is undone by the next import, and a forced delete is permanent (a re-import gets a new id). Studio shows these lists locked.
 
 **Which price wins** — for the products and quantity tiers it prices, an account list beats the catalog price and every shared list, even a cheaper one (`forced` has no effect on an account list). Storefront order:
