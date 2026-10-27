@@ -43,7 +43,7 @@ const breadcrumbsStore = useBreadcrumbsStore();
 // =====================================================================================
 // Intent: Create typed API repository instances and extract reactive store refs.
 // Uses the repository factory pattern — see app/utils/repositories/ for implementation.
-const { productApi } = useGeinsRepository();
+const { productApi, customerApi } = useGeinsRepository();
 const { channels, currentCurrencies, currentChannelId, currentCurrency } =
   storeToRefs(accountStore);
 
@@ -127,6 +127,13 @@ const priceListBaseRuleInput = ref<number>();
 // Edited products for form tracking
 const editedProducts = ref<PriceListProduct[]>([]);
 
+// An ERP import maintains read-only lists: PATCH and DELETE answer 422.
+const readOnly = ref(false);
+// Owning company of an account list
+const ownerAccountId = ref<string>();
+const volumePricingOpen = ref(false);
+const volumePricingProduct = ref<PriceListProductList>();
+
 // =====================================================================================
 // PRICELIST PRODUCTS MANAGEMENT
 // =====================================================================================
@@ -141,7 +148,8 @@ const {
   convertPriceModeToRuleField,
 } = usePriceListProducts();
 
-const { setupPriceListColumns, getPinnedState } = usePriceListProductsTable();
+const { setupPriceListColumns, setupReadOnlyPriceListColumns, getPinnedState } =
+  usePriceListProductsTable();
 
 const vatDescription = computed(() => {
   return entityData.value?.exVat ? t('ex_vat') : t('inc_vat');
@@ -165,6 +173,20 @@ const cellEditCallback = (
 };
 
 const setupColumns = () => {
+  if (readOnly.value) {
+    columns = setupReadOnlyPriceListColumns(
+      selectedProducts.value,
+      vatDescription.value,
+      t('pricing.price_list_price'),
+      ({ id }) => {
+        volumePricingProduct.value = selectedProducts.value.find(
+          (product) => product._id === id,
+        );
+        volumePricingOpen.value = true;
+      },
+    );
+    return;
+  }
   columns = setupPriceListColumns(
     selectedProducts.value,
     vatDescription.value,
@@ -275,6 +297,10 @@ const {
   }),
   parseEntityData: (entity) => {
     entityLiveStatus.value = entity.active;
+    readOnly.value = entity.readOnly;
+    ownerAccountId.value = entity.accountSpecific
+      ? entity.wholesaleAccountId
+      : undefined;
     breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
     if (entity.productSelectionQuery) {
       productSelection.value = entity.productSelectionQuery;
@@ -365,6 +391,58 @@ const { selectedProducts, hasProductSelection, previewPriceList } =
     convertPriceModeToRuleField,
     getPriceListProduct,
   });
+
+// =====================================================================================
+// READ-ONLY LISTS
+// =====================================================================================
+// Intent: A read-only list has nothing to preview, so its saved rows load read-only
+// (an ERP list may have no selection query to preview from). An account list's
+// owning company is fetched for the summary.
+
+const { batchQueryNoPagination } = useBatchQuery();
+const {
+  data: readOnlyRows,
+  error: readOnlyRowsError,
+  status: readOnlyRowsStatus,
+  execute: loadReadOnlyRows,
+} = useAsyncData(
+  `price-list-rows-${entityId.value}`,
+  async () => {
+    if (!entityId.value) return [];
+    const result = await productApi.priceList.id(entityId.value).query(
+      batchQueryNoPagination.value,
+      { fields: ['products', 'productinfo'] },
+      // A failure shows inline as the table's error state.
+      { suppressErrorToast: true },
+    );
+    return result.items ?? [];
+  },
+  { immediate: false, default: () => [] },
+);
+// `immediate: false` leaves the status `idle` until the load starts.
+const readOnlyRowsLoading = computed(
+  () =>
+    readOnly.value &&
+    (readOnlyRowsStatus.value === 'idle' ||
+      readOnlyRowsStatus.value === 'pending'),
+);
+
+watch(readOnlyRows, (rows) => {
+  selectedProducts.value = transformProductsForList(
+    rows,
+    entityDataUpdate.value,
+  );
+  setupColumns();
+});
+
+const { data: ownerCompany } = useAsyncData(
+  `price-list-owner-${entityId.value}`,
+  async () =>
+    ownerAccountId.value
+      ? await customerApi.company.get(ownerAccountId.value)
+      : null,
+  { watch: [ownerAccountId], immediate: false },
+);
 
 // =====================================================================================
 // RULES & VOLUME PRICING MANAGEMENT
@@ -589,6 +667,16 @@ const summary = computed<DataItem[]>(() => {
       : undefined,
   });
 
+  if (ownerAccountId.value) {
+    dataList.push({
+      label: t('owner'),
+      value: ownerCompany.value?.name || ownerAccountId.value,
+      displayType: DataItemDisplayType.Link,
+      href: entityEditUrl('company', ownerAccountId.value),
+      target: '_blank',
+    });
+  }
+
   if (entityData.value?.channel) {
     const channelId = entityData.value.channel;
     const displayValue = accountStore.getChannelNameById(channelId);
@@ -665,6 +753,13 @@ if (!createMode.value) {
       error.value,
       data.value,
     );
+
+    if (priceList.readOnly) {
+      await parseAndSaveData(priceList);
+      productsStore.init();
+      await loadReadOnlyRows();
+      return;
+    }
 
     const hasSelection = !!priceList.productSelectionQuery;
     await parseAndSaveData(priceList, !hasSelection);
@@ -802,6 +897,20 @@ if (!createMode.value) {
     </AlertDialogContent>
   </AlertDialog>
   <PriceListVolumePricingPanel
+    v-if="readOnly"
+    v-model:open="volumePricingOpen"
+    readonly
+    :rules="volumePricingProduct?.volumePricing ?? []"
+    :product="volumePricingProduct"
+    :product-id="volumePricingProduct?._id ?? ''"
+    :product-name="volumePricingProduct?.name ?? ''"
+    :price-list-id="entityId"
+    :currency="entityData.currency"
+    :vat-description="vatDescription"
+    :description="$t('pricing.price_list_readonly_breaks_description')"
+  />
+  <PriceListVolumePricingPanel
+    v-else
     v-model:open="rulesPanelOpen"
     v-model:price-list-products="editedProducts"
     :product-id="rulesProductId"
@@ -821,7 +930,7 @@ if (!createMode.value) {
             v-if="!createMode"
             icon="save"
             :loading="loading"
-            :disabled="!hasUnsavedChanges || saveInProgress"
+            :disabled="readOnly || !hasUnsavedChanges || saveInProgress"
             @click="handleSave"
           >
             {{ $t('save_entity', { entityKey }) }}
@@ -846,7 +955,7 @@ if (!createMode.value) {
                 </button>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem @click="openDeleteDialog">
+              <DropdownMenuItem :disabled="readOnly" @click="openDeleteDialog">
                 <LucideTrash class="mr-2 size-4" />
                 <span>{{ $t('delete_entity', { entityKey }) }}</span>
               </DropdownMenuItem>
@@ -914,7 +1023,11 @@ if (!createMode.value) {
                         {{ $t('entity_name', { entityKey }) }}
                       </FormLabel>
                       <FormControl>
-                        <Input v-bind="componentField" type="text" />
+                        <Input
+                          v-bind="componentField"
+                          type="text"
+                          :disabled="readOnly"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1022,6 +1135,7 @@ if (!createMode.value) {
                       :description="
                         $t('pricing.price_list_override_prices_description')
                       "
+                      :disabled="readOnly"
                       :model-value="value"
                       @update:model-value="handleChange"
                     />
@@ -1096,6 +1210,7 @@ if (!createMode.value) {
                       v-model:mode="priceListBaseRuleMode"
                       :title="$t('pricing.price_list_base_rule')"
                       mode-id="priceListBaseRuleMode"
+                      :disabled="readOnly"
                     >
                       <Label class="w-full">
                         {{ $t(priceListBaseRuleMode) }}
@@ -1105,14 +1220,20 @@ if (!createMode.value) {
                         class="w-full sm:w-48"
                         size="md"
                         :loading="baseRuleLoading"
+                        :disabled="readOnly"
                       >
                         <template #valueDescriptor>%</template>
                       </Input>
-                      <Button variant="outline" @click="handleApplyBaseRule">
+                      <Button
+                        variant="outline"
+                        :disabled="readOnly"
+                        @click="handleApplyBaseRule"
+                      >
                         {{ $t('apply') }}
                       </Button>
                       <Button
                         variant="outline"
+                        :disabled="readOnly"
                         @click="handleApplyBaseRuleAndOverwrite"
                       >
                         {{ $t('pricing.price_list_apply_overwrite') }}
@@ -1122,6 +1243,7 @@ if (!createMode.value) {
                           v-if="baseRule && baseRuleText && !baseRuleLoading"
                           class="mt-2"
                           :label="baseRuleText"
+                          :removable="!readOnly"
                           @remove="removeBaseRulePromptVisible = true"
                         />
                       </template>
@@ -1132,11 +1254,13 @@ if (!createMode.value) {
                       v-model:mode="priceListRulesMode"
                       :title="$t('pricing.price_list_volume_pricing')"
                       mode-id="priceListRulesMode"
+                      :disabled="readOnly"
                     >
                       <PriceListRules
                         v-model:loading="volumePricingLoading"
                         :rules="quantityLevelRules"
                         :mode="priceListRulesMode"
+                        :disabled="readOnly"
                         @apply="applyRule"
                         @apply-overwrite="applyAndOverwriteRule"
                         @remove="removeRule"
@@ -1158,7 +1282,24 @@ if (!createMode.value) {
           <ContentEditSummary
             v-model:active="entityDataUpdate.active"
             v-bind="summaryProps"
-          />
+            :disabled="readOnly"
+          >
+            <template v-if="readOnly" #before-active-switch>
+              <Item variant="outline">
+                <ItemMedia variant="icon">
+                  <LucideLock class="text-muted-foreground" />
+                </ItemMedia>
+                <ItemContent>
+                  <ItemTitle>
+                    {{ $t('pricing.price_list_read_only_title') }}
+                  </ItemTitle>
+                  <ItemDescription>
+                    {{ $t('customers.company_set_prices_locked_tooltip') }}
+                  </ItemDescription>
+                </ItemContent>
+              </Item>
+            </template>
+          </ContentEditSummary>
         </template>
         <template v-if="currentTab === 1 && !createMode" #secondary>
           <ContentCard>
@@ -1169,6 +1310,7 @@ if (!createMode.value) {
               :selection-strategy="SelectorSelectionStrategy.None"
               :currency="entityData.currency"
               :fetch-entities-externally="true"
+              :disabled="readOnly"
             >
               <template #list="{ selectorEntityKey }">
                 <ContentHeading>
@@ -1192,6 +1334,9 @@ if (!createMode.value) {
                   :page-size="15"
                   :pinned-state="pinnedState"
                   :show-search="true"
+                  :loading="readOnlyRowsLoading"
+                  :error="readOnly && !!readOnlyRowsError"
+                  :on-retry="loadReadOnlyRows"
                 />
               </template>
             </Selector>

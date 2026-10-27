@@ -86,7 +86,7 @@ Forwarded to each row (only used in `all` mode).
 disabled?: boolean
 ```
 
-Hides the Add break button — used to render the global-rules preview as read-only.
+Hides the Add break button and disables every row (inputs and buttons, via `PriceListRule`'s `disabled`) — used for the global-rules preview and for read-only price lists.
 
 - **Default:** `false`
 

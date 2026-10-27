@@ -135,6 +135,14 @@ listPriceTitle?: string
 
 Read-only mode only: label for `listPrice` in the header, suffixed with `vatDescription`. Defaults to "Price list price".
 
+### `description`
+
+```ts
+description?: string
+```
+
+Read-only mode only: description under the product's price breaks heading. Defaults to the company wording ("…for this company"); the price list page passes its own.
+
 ## v-model
 
 ### `open`

@@ -778,6 +778,8 @@
     "price_list_no_global_breaks": "Inga globala prisavbrott definierade.",
     "price_list_volume_pricing_sheet_description": "Lägg till antal-baserade prisavbrott för",
     "price_list_volume_pricing_readonly_description": "Antal-baserade prisavbrott för",
+    "price_list_readonly_breaks_description": "Dessa prisavbrott gäller endast denna produkt i denna prislista.",
+    "price_list_read_only_title": "Skrivskyddad prislista",
     "company_volume_pricing_description": "Dessa prisavbrott gäller endast denna produkt för detta företag.",
     "price_list_no_product_breaks": "Inga prisavbrott för denna produkt.",
     "error_applying_quick_action": "Fel vid tillämpning av snabbåtgärd",

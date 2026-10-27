@@ -52,6 +52,16 @@ modeId: string;
 
 `id` for the mode `Select` — pair with the `Label`'s `for` attribute.
 
+### `disabled`
+
+```ts
+disabled?: boolean
+```
+
+Disables the mode `Select`. Slot content handles its own disabled state.
+
+- **Default:** `false`
+
 ## v-model
 
 ### `mode`

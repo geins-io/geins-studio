@@ -146,6 +146,16 @@ columnsOrder?: (keyof T)[]
 - **Default:** `['_id', 'name', 'price']`
 - **Description:** Column display order for the entity table inside the panel.
 
+### `disabled`
+
+```ts
+disabled?: boolean
+```
+
+- **Type:** `boolean`
+- **Default:** `false`
+- **Description:** View-only. Shows the current selection without quick add, Browse or tag removal; the exclusions switch is disabled. Forwarded to `SelectorHeader` and both `SelectorSelection`s. Used for read-only price lists.
+
 ## Model
 
 ### `selection`

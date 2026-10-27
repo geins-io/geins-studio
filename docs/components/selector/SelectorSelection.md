@@ -100,6 +100,16 @@ selectionStrategy?: SelectorSelectionStrategy
 - **Type:** `SelectorSelectionStrategy`
 - **Description:** Affects the "no selection" label — `All` shows "All products", `None` shows "No products".
 
+### `disabled`
+
+```ts
+disabled?: boolean
+```
+
+- **Type:** `boolean`
+- **Default:** `false`
+- **Description:** View-only. Hides the Browse button (and its `SelectorPanel`), makes the tags non-removable and disables the and/or condition.
+
 ## Model
 
 ### `selection`
