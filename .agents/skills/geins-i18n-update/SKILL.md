@@ -36,4 +36,4 @@ Make translation changes safely and consistently. See `CLAUDE.md` → "Stack" (i
 - Start dev server and navigate to the relevant UI.
 - Toggle locale (if supported) or sanity-check at least English and Swedish paths.
 - Run `pnpm lint:check` and `pnpm typecheck` when code usage changed alongside the locale keys.
-- Run `pnpm test --run` when tests exist for the changed code.
+- Run the affected tests (`pnpm test:changed`).

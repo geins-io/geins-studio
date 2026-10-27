@@ -13,7 +13,7 @@ concurrency:
 jobs:
   quality:
     runs-on: ubuntu-latest
-    name: Lint, Typecheck & Test
+    name: Lint, Typecheck, Test & Build
     steps:
       - uses: actions/checkout@v4
 
@@ -40,3 +40,7 @@ jobs:
 
       - name: Run tests
         run: pnpm test --run
+
+      # Only the build compiles i18n messages, so bad message syntax (literal braces) fails here
+      - name: Build
+        run: pnpm build

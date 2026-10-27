@@ -20,6 +20,7 @@
     "format:check": "prettier --check .",
     "format": "prettier --write .",
     "test": "vitest",
+    "test:changed": "base=$(git merge-base HEAD origin/next) && vitest run --changed \"$base\" --passWithNoTests",
     "test:coverage": "vitest run --coverage",
     "infra:setup": "bash infra/scripts/setup.sh",
     "infra:setup:rg": "bash infra/scripts/setup.sh --rg-only",

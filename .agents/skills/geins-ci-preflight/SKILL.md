@@ -18,7 +18,11 @@ Do not commit with known failures.
 
 ## Tests
 
-Run `pnpm test --run` when tests exist for the changed code. This is part of the commit gate, not just a PR-only step.
+```bash
+pnpm test:changed
+```
+
+Runs only the tests affected by the branch's changes — the same set the pre-push hook runs. The full suite and `pnpm build` run in CI (`.github/workflows/ci-quality-gate.yml`), which `next` requires before merging. Run `pnpm build` locally too when i18n messages or template syntax changed.
 
 ## If lint fails
 
@@ -30,4 +34,4 @@ Fix types without weakening established patterns — don't `any` around errors u
 
 ## If tests fail
 
-Fix the failing spec(s), then re-run `pnpm test --run`.
+First decide whether the failure is a regression or a stale expectation (`docs/guides/testing.md` → "When a test fails"). Fix accordingly, then re-run the tests.
