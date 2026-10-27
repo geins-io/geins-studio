@@ -1,6 +1,12 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest';
-import { isOwnAccountPriceList, pickAccountPriceList } from '../price-list';
+import {
+  companyPriceListIdentifier,
+  companyPriceListName,
+  getCompanyPriceListSaveAction,
+  isOwnAccountPriceList,
+  pickAccountPriceList,
+} from '../price-list';
 
 describe('isOwnAccountPriceList', () => {
   it('is true for an account list owned by the account', () => {
@@ -77,5 +83,63 @@ describe('pickAccountPriceList', () => {
       priceList: undefined,
       fallback: false,
     });
+  });
+});
+
+describe('getCompanyPriceListSaveAction', () => {
+  const active = { active: true, readOnly: false };
+  const inactive = { active: false, readOnly: false };
+
+  it('creates a list when switched on without one', () => {
+    expect(getCompanyPriceListSaveAction(undefined, true)).toBe('create');
+  });
+
+  it('does nothing when switched off without a list', () => {
+    expect(getCompanyPriceListSaveAction(undefined, false)).toBe('none');
+  });
+
+  it('activates an inactive list when switched on', () => {
+    expect(getCompanyPriceListSaveAction(inactive, true)).toBe('activate');
+  });
+
+  it('deactivates an active list when switched off', () => {
+    expect(getCompanyPriceListSaveAction(active, false)).toBe('deactivate');
+  });
+
+  it('does nothing when the switch matches the list', () => {
+    expect(getCompanyPriceListSaveAction(active, true)).toBe('none');
+    expect(getCompanyPriceListSaveAction(inactive, false)).toBe('none');
+  });
+
+  it('never saves a read-only list', () => {
+    expect(
+      getCompanyPriceListSaveAction({ active: true, readOnly: true }, false),
+    ).toBe('none');
+  });
+});
+
+describe('companyPriceListName', () => {
+  it('joins the company name and the currency', () => {
+    expect(companyPriceListName('Sonora Lab AB', 'SEK')).toBe(
+      'Sonora Lab AB SEK',
+    );
+  });
+
+  it('trims the company name', () => {
+    expect(companyPriceListName(' Sonora Lab AB ', 'SEK')).toBe(
+      'Sonora Lab AB SEK',
+    );
+  });
+});
+
+describe('companyPriceListIdentifier', () => {
+  it('joins the external id and the currency', () => {
+    expect(companyPriceListIdentifier('10234', 'SEK')).toBe('10234-SEK');
+  });
+
+  it('is left out without an external id', () => {
+    expect(companyPriceListIdentifier(undefined, 'SEK')).toBeUndefined();
+    expect(companyPriceListIdentifier('', 'SEK')).toBeUndefined();
+    expect(companyPriceListIdentifier('  ', 'SEK')).toBeUndefined();
   });
 });

@@ -703,6 +703,7 @@
     "company_set_prices_description": "Priser satta specifikt för detta företag. De ersätter prislistornas priser för företagets köpare.",
     "use_company_set_prices": "Använd företagspriser",
     "company_set_prices_erp_description": "Hanteras utanför Studio. Priserna synkas och kan inte redigeras här.",
+    "company_set_prices_studio_description": "Om inaktiverat får företagets köpare bara priser från de tilldelade prislistorna.",
     "company_set_prices_locked_tooltip": "Hanteras externt, utanför Studio, till exempel från ditt affärssystem.",
     "orders_description": "Ordrar gjorda av köpare kopplade till detta företag.",
     "buyers_description": "Köpare kopplade till detta företag",
