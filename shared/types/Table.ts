@@ -27,6 +27,7 @@ export type EditableColumnType =
 export type ColumnType =
   | 'default'
   | 'currency'
+  | 'percentage'
   | 'price'
   | 'date'
   | 'number'
@@ -102,6 +103,8 @@ declare module '@tanstack/vue-table' {
     title?: string;
     type: ColumnType;
     skipInactiveDim?: boolean;
+    /** Tints the column's cells and bolds them to draw the eye. */
+    highlight?: boolean;
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface TableMeta<TData extends RowData> {

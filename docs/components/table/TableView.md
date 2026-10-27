@@ -392,6 +392,10 @@ Renders rows where `row.original.active === false` at 50% opacity. Cells with `m
 
 - **Default:** `false`
 
+### Column highlight (`meta.highlight`)
+
+Not a prop: a column whose `columnDef.meta.highlight` is `true` gets a tinted, semibold body (`bg-background font-semibold` on its cells) to draw the eye — e.g. the company price in `setupReadOnlyPriceListColumns`. Set it on the column definition; never style `ui/table/` primitives for this.
+
 ## Models
 
 Server mode only. Client mode keeps this state internal.

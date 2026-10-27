@@ -1,12 +1,13 @@
 # `ContentSwitch`
 
-A bordered toggle row with a label, optional description, optional icon, and an optional disabled tooltip. When the switch is on, an animated panel expands to reveal a default slot.
+A bordered toggle row with a label, optional description, optional icon, an optional disabled tooltip, and an optional locked state. When the switch is on, an animated panel expands to reveal a default slot.
 
 ## Features
 
 - Two-way v-model binding for the boolean toggle state
 - Animated expand/collapse of the slot content when toggled (CSS height transition)
 - Optional `disabledTooltip` shown via `TooltipProvider` when `disabled` is `true`
+- `locked` state for values managed elsewhere: disabled switch plus a lock icon carrying the `disabledTooltip`
 - Icon rendered via `useLucideIcon` (any PascalCase Lucide icon name)
 
 ## Usage
@@ -57,6 +58,24 @@ const active = ref(false);
 </template>
 ```
 
+### Locked (managed elsewhere)
+
+The switch is disabled and a lock icon sits next to it; `disabledTooltip` shows on the lock instead of the switch. The slot still folds open when `checked` is `true`, so read-only content can sit under it.
+
+```vue
+<template>
+  <ContentSwitch
+    :checked="priceList.active"
+    locked
+    :label="$t('customers.use_company_set_prices')"
+    :description="$t('customers.company_set_prices_erp_description')"
+    :disabled-tooltip="$t('customers.company_set_prices_locked_tooltip')"
+  >
+    <TableView ... />
+  </ContentSwitch>
+</template>
+```
+
 ## Props
 
 ### `label`
@@ -94,7 +113,16 @@ disabledTooltip?: string
 ```
 
 - **Type:** `string`
-- **Description:** Tooltip text shown on hover when the switch is disabled.
+- **Description:** Tooltip text shown on hover when the switch is disabled. With `locked`, it shows on the lock icon.
+
+### `locked`
+
+```ts
+locked?: boolean
+```
+
+- **Type:** `boolean`
+- **Description:** Disables the switch and shows a `Lock` icon before it, for a value managed outside Studio (e.g. an ERP).
 
 ### `icon`
 

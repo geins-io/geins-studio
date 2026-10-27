@@ -726,6 +726,8 @@ const hasSearchableColumns = computed(() => {
                     !cell.column.columnDef.meta?.skipInactiveDim
                     ? 'opacity-50'
                     : '',
+                  cell.column.columnDef.meta?.highlight &&
+                    'bg-background font-semibold',
                 )
               "
               :style="pinnedStyles(cell.column)"

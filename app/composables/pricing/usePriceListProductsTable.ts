@@ -24,10 +24,16 @@ interface UsePriceListProductsTableReturnType {
       row: Row<PriceListProductList>,
     ) => void,
   ) => ColumnDef<PriceListProductList>[];
+  setupReadOnlyPriceListColumns: (
+    products: PriceListProductList[],
+    vatDescription: string,
+    listPriceTitle: string,
+  ) => ColumnDef<PriceListProductList>[];
   addVolumePricingColumn: (
     columns: ColumnDef<PriceListProductList>[],
     onEdit: (payload: { id: string; name: string }) => void,
     vatDescription: string,
+    readonly?: boolean,
   ) => ColumnDef<PriceListProductList>[];
   getPinnedState: ComputedRef<{
     left: never[];
@@ -43,6 +49,7 @@ interface UsePriceListProductsTableReturnType {
  *
  * @returns {UsePriceListProductsTableReturnType} - An object containing table setup utilities
  * @property {function} setupPriceListColumns - Creates complete column configuration for price list products
+ * @property {function} setupReadOnlyPriceListColumns - Read-only columns (no inputs, price mode or actions) with the list price highlighted
  * @property {function} addVolumePricingColumn - Adds volume pricing column to existing columns
  * @property {ComputedRef} getPinnedState - Computed pinned state based on layout space
  */
@@ -118,10 +125,34 @@ export const usePriceListProductsTable =
       return columns;
     };
 
+    const setupReadOnlyPriceListColumns = (
+      products: PriceListProductList[],
+      vatDescription: string,
+      listPriceTitle: string,
+    ) => {
+      const columns = getColumns(products, {
+        columnTypes: {
+          discount: 'percentage',
+          margin: 'percentage',
+        },
+        columnTitles: {
+          listPrice: `${listPriceTitle} (${vatDescription})`,
+          regularPrice: `${t('price')} (${vatDescription})`,
+        },
+        excludeColumns: ['volumePricing', 'priceMode'],
+      }).map((column) =>
+        column.id === 'listPrice' && column.meta
+          ? { ...column, meta: { ...column.meta, highlight: true } }
+          : column,
+      );
+      return addVolumePricingColumn(columns, () => {}, vatDescription, true);
+    };
+
     const addVolumePricingColumn = (
       columns: ColumnDef<PriceListProductList>[],
       onEdit: (payload: { id: string; name: string }) => void,
       vatDescription: string,
+      readonly = false,
     ): ColumnDef<PriceListProductList>[] => {
       const volumePricingColumn: ColumnDef<PriceListProductList> = {
         id: 'volumePricing',
@@ -138,6 +169,7 @@ export const usePriceListProductsTable =
             vatDescription,
             id: rowData._id,
             name: rowData.name,
+            readonly,
             onEdit,
           });
         },
@@ -194,6 +226,7 @@ export const usePriceListProductsTable =
 
     return {
       setupPriceListColumns,
+      setupReadOnlyPriceListColumns,
       addVolumePricingColumn,
       getPinnedState,
     };

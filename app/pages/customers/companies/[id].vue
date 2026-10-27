@@ -14,7 +14,10 @@ import {
   type CompanyBuyerList,
 } from '#shared/types';
 import { ENTITIES, NEW_ENTITY_URL_SEGMENT } from '#shared/utils/entities';
-import { isOwnAccountPriceList } from '#shared/utils/price-list';
+import {
+  isOwnAccountPriceList,
+  pickAccountPriceList,
+} from '#shared/utils/price-list';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { LucideUser, LucidePackage } from '#components';
 
@@ -39,7 +42,7 @@ const {
   addressSchema,
 } = useCustomerCompanies();
 const { t } = useI18n();
-const { geinsLogError } = useGeinsLog(scope);
+const { geinsLogError, geinsLogWarn } = useGeinsLog(scope);
 const accountStore = useAccountStore();
 const { toast } = useToast();
 const viewport = useViewport();
@@ -236,6 +239,7 @@ const {
     ownAccountPriceLists.value = priceLists.filter((pl) =>
       isOwnAccountPriceList(pl, company._id),
     );
+    selectCompanyPriceList(company.channels?.[0]);
 
     billingAddress.value = {
       ...company.addresses?.find(
@@ -573,6 +577,86 @@ const buyerPriceListOptions = computed<CustomerPriceList[]>(() => {
   );
   return [...allPriceLists.value, ...missing];
 });
+
+// =====================================================================================
+// COMPANY SET PRICES
+// =====================================================================================
+// Intent: Show the company's own account price list read-only when an ERP import
+// maintains it (`readOnly`). v1 shows one list: the one in the company's default
+// channel and currency. Rows load like the price list page — one unpaginated query,
+// grouped per product, searched and paged client-side by TableView.
+
+const { transformProductsForList } = usePriceListProducts();
+const { setupReadOnlyPriceListColumns, getPinnedState } =
+  usePriceListProductsTable();
+const { batchQueryNoPagination } = useBatchQuery();
+
+const companyPriceList = ref<CustomerPriceList>();
+// Editable (Studio-managed) company lists get their own UI in a later phase.
+const erpPriceList = computed(() =>
+  companyPriceList.value?.readOnly ? companyPriceList.value : undefined,
+);
+// An inactive list stays folded, so its rows are only fetched when active.
+const erpPriceListId = computed(() =>
+  erpPriceList.value?.active ? erpPriceList.value._id : undefined,
+);
+
+const selectCompanyPriceList = (channel?: string) => {
+  const currency = channel
+    ? accountStore.getCurrenciesByChannelId(channel)[0]
+    : undefined;
+  const { priceList, fallback } = pickAccountPriceList(
+    ownAccountPriceLists.value,
+    channel,
+    currency,
+  );
+  if (fallback) {
+    geinsLogWarn(
+      `no account price list for channel ${channel} / ${currency}, showing ${priceList?._id}`,
+    );
+  }
+  companyPriceList.value = priceList;
+};
+
+const {
+  data: companyPriceRows,
+  error: companyPricesError,
+  status: companyPricesStatus,
+  refresh: refreshCompanyPrices,
+} = useAsyncData(
+  `company-set-prices-${entityId.value}`,
+  async () => {
+    if (!erpPriceListId.value) return [];
+    const result = await productApi.priceList.id(erpPriceListId.value).query(
+      batchQueryNoPagination.value,
+      { fields: ['products', 'productinfo'] },
+      // A failure shows inline as the table's error state.
+      { suppressErrorToast: true },
+    );
+    return result.items ?? [];
+  },
+  { watch: [erpPriceListId], immediate: false, default: () => [] },
+);
+
+const companyPriceProducts = computed(() =>
+  erpPriceList.value
+    ? transformProductsForList(companyPriceRows.value, erpPriceList.value)
+    : [],
+);
+const companyPriceColumns = computed(() =>
+  setupReadOnlyPriceListColumns(
+    companyPriceProducts.value,
+    erpPriceList.value?.exVat ? t('ex_vat') : t('inc_vat'),
+    t('pricing.company_price'),
+  ),
+);
+// `immediate: false` leaves the status `idle` until the id watcher fires, so
+// treat idle as loading too, or the empty state flashes first.
+const companyPricesLoading = computed(
+  () =>
+    companyPricesStatus.value === 'idle' ||
+    companyPricesStatus.value === 'pending',
+);
 
 // =====================================================================================
 // ORDERS MANAGEMENT
@@ -1345,6 +1429,49 @@ if (!createMode.value) {
                   "
                 />
               </div>
+            </ContentEditCard>
+            <ContentEditCard
+              v-if="erpPriceList"
+              :create-mode="createMode"
+              :title="$t('company_set_price', 2)"
+              :description="$t('customers.company_set_prices_description')"
+            >
+              <ContentSwitch
+                :checked="erpPriceList.active"
+                locked
+                :label="$t('customers.use_company_set_prices')"
+                :description="
+                  $t('customers.company_set_prices_erp_description')
+                "
+                :disabled-tooltip="
+                  $t('customers.company_set_prices_locked_tooltip')
+                "
+              >
+                <div class="border-t pt-4">
+                  <TableView
+                    :mode="TableMode.Simple"
+                    entity-key="product"
+                    :columns="companyPriceColumns"
+                    :data="companyPriceProducts"
+                    :loading="companyPricesLoading"
+                    :error="!!companyPricesError"
+                    :on-retry="refreshCompanyPrices"
+                    :empty-text="
+                      $t('no_entity', { entityKey: 'company_set_price' }, 2)
+                    "
+                    :empty-description="
+                      $t(
+                        'empty_description',
+                        { entityKey: 'company_set_price' },
+                        2,
+                      )
+                    "
+                    :page-size="20"
+                    :pinned-state="getPinnedState"
+                    :show-search="true"
+                  />
+                </div>
+              </ContentSwitch>
             </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>

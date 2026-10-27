@@ -352,6 +352,7 @@ When no specific `columnTypes` are provided, the system automatically infers typ
 | `default`             | Basic text display with truncation, boolean indicators, and array formatting                                   |
 | `product`             | Displays product info (image, name, article number) using `TableCellProduct`                                   |
 | `currency`            | Expects object with `price` and `currency` properties, displays formatted currency                             |
+| `percentage`          | Read-only number with a `%` prefix, in the same prefixed layout as `currency` (`TableCellCurrency`)            |
 | `price`               | Simple number formatting as currency with current locale and current currency                                  |
 | `date`                | Formats to date using current locale                                                                           |
 | `image`               | Displays images as small thumbnails with alt text                                                              |
