@@ -16,6 +16,8 @@ const props = withDefaults(
     product?: PriceListProductList;
     /** Label for the product's list price in the read-only header. */
     listPriceTitle?: string;
+    /** Read-only price breaks description; defaults to the company wording. */
+    description?: string;
   }>(),
   {},
 );
@@ -211,7 +213,9 @@ const handleRemove = async (rule: PriceListRule) => {
         <ContentCardHeader
           size="sm"
           :title="$t('pricing.price_list_product_volume_pricing')"
-          :description="$t('pricing.company_volume_pricing_description')"
+          :description="
+            description || $t('pricing.company_volume_pricing_description')
+          "
           class="mb-4"
         />
         <div class="overflow-hidden rounded-lg border">

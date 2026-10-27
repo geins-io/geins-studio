@@ -6,6 +6,7 @@ const props = withDefaults(
     selection: SelectorSelectionInternal;
     entities: T[];
     entityKey: string;
+    disabled?: boolean;
   }>(),
   {},
 );
@@ -18,7 +19,7 @@ const selectedIds = computed(() => props.selection?.ids || []);
   </div>
   <div class="mt-3 flex w-full gap-6 @3xl:mt-0 @3xl:w-2/5">
     <SelectorQuickAdd
-      v-if="entities.length"
+      v-if="entities.length && !disabled"
       :entities="entities"
       :selection="selectedIds"
       :entity-key="entityKey"

@@ -90,6 +90,16 @@ entityKey: string;
 - **Required:** yes
 - **Description:** Singular entity name passed to `SelectorQuickAdd` for placeholder text.
 
+### `disabled`
+
+```ts
+disabled?: boolean
+```
+
+- **Type:** `boolean`
+- **Default:** `false`
+- **Description:** Hides the quick-add input.
+
 ## Events
 
 ### `add`

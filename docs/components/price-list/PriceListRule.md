@@ -76,6 +76,16 @@ When `true` (and mode is `all`), disables every input — the row is a read-only
 
 - **Default:** `false`
 
+### `disabled`
+
+```ts
+disabled?: boolean
+```
+
+View-only: disables every input and the Apply, Apply & overwrite and remove buttons, in any mode. Used for read-only price lists.
+
+- **Default:** `false`
+
 ## v-model
 
 ### `quantity` / `margin` / `discount` / `price` / `applied`

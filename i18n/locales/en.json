@@ -780,6 +780,8 @@
     "price_list_no_global_breaks": "No global price breaks defined.",
     "price_list_volume_pricing_sheet_description": "Add quantity-based price breaks for",
     "price_list_volume_pricing_readonly_description": "Quantity-based price breaks for",
+    "price_list_readonly_breaks_description": "These price breaks apply only to this product in this price list.",
+    "price_list_read_only_title": "Read-only price list",
     "company_volume_pricing_description": "These price breaks apply only to this product for this company.",
     "price_list_no_product_breaks": "No price breaks for this product.",
     "error_applying_quick_action": "Error applying quick action",
