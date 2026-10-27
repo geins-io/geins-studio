@@ -4,10 +4,15 @@ const props = defineProps<{
   description?: string;
   disabled?: boolean;
   disabledTooltip?: string;
+  /** Disables the switch and shows a lock icon; `disabledTooltip` moves to the lock. */
+  locked?: boolean;
   icon?: string;
 }>();
 
-const showTooltip = computed(() => !!props.disabled && !!props.disabledTooltip);
+const switchDisabled = computed(() => props.disabled || props.locked);
+const showTooltip = computed(
+  () => !props.locked && !!props.disabled && !!props.disabledTooltip,
+);
 
 const checked = defineModel<boolean>('checked');
 
@@ -48,17 +53,32 @@ const hasSlotContent = computed(() => !!slots.default);
         </ItemDescription>
       </ItemContent>
       <ItemActions>
+        <template v-if="locked">
+          <TooltipProvider v-if="disabledTooltip" :delay-duration="100">
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <span tabindex="0" :aria-label="disabledTooltip" class="flex">
+                  <LucideLock class="text-muted-foreground size-4" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent class="max-w-60">
+                {{ disabledTooltip }}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <LucideLock v-else class="text-muted-foreground size-4" />
+        </template>
         <TooltipProvider v-if="showTooltip">
           <Tooltip>
             <TooltipTrigger as-child>
               <span tabindex="0">
-                <Switch v-model="checked" :disabled="props.disabled" />
+                <Switch v-model="checked" :disabled="switchDisabled" />
               </span>
             </TooltipTrigger>
             <TooltipContent>{{ disabledTooltip }}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        <Switch v-else v-model="checked" :disabled="props.disabled" />
+        <Switch v-else v-model="checked" :disabled="switchDisabled" />
       </ItemActions>
     </Item>
     <transition

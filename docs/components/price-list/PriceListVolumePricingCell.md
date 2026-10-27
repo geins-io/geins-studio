@@ -8,6 +8,7 @@
   - **Has rules:** count + tooltip with a quantity / margin / discount / price preview table; trailing pencil button
   - **No rules:** muted `0` + trailing plus button
 - Both buttons emit `edit` with `{ id, name }` so the parent can open the editor sheet pre-filtered to this product
+- `readonly` mode shows the count only (muted when `0`), with no tooltip or button — used by read-only price grids
 
 ## Usage
 
@@ -66,6 +67,14 @@ className?: string
 ```
 
 Extra Tailwind classes for the wrapper.
+
+### `readonly`
+
+```ts
+readonly?: boolean
+```
+
+Shows the tier count only, without the tooltip or the edit/add button. Set by `addVolumePricingColumn(..., readonly)`.
 
 ## Events
 

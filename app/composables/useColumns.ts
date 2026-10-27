@@ -688,6 +688,19 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
           };
           columnSize = { size: 134, minSize: 134, maxSize: 134 };
           break;
+        case 'percentage':
+          // Read-only twin of `editable-percentage`: same prefixed layout as currency.
+          cellRenderer = ({ row, table }: { row: Row<T>; table: Table<T> }) => {
+            const value = row.getValue(key);
+            return h(TableCellCurrency, {
+              price: value == null ? '' : String(value),
+              currency: '%',
+              className: getBasicCellStyle(table),
+              ...cellProps,
+            });
+          };
+          columnSize = { size: 134, minSize: 134, maxSize: 134 };
+          break;
 
         case 'editable-currency':
           cellRenderer = ({

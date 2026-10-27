@@ -14,6 +14,7 @@ This composable is specifically designed for price list product tables and will 
 - **Responsive column pinning** based on layout space
 - **Integrated actions** for product management
 - **VAT-aware labeling** for pricing columns
+- **Read-only variant** (`setupReadOnlyPriceListColumns`) for prices that can't be edited, e.g. a company's ERP-maintained account list
 
 ## Usage
 
@@ -80,6 +81,18 @@ Creates a complete column configuration for price list products with all necessa
 - **Returns**: Complete array of column definitions
 - **Features**: Editable columns, actions, volume pricing, price modes
 
+### `setupReadOnlyPriceListColumns`
+
+```ts
+setupReadOnlyPriceListColumns(
+  products: PriceListProductList[],
+  vatDescription: string,
+  listPriceTitle: string,
+): ColumnDef<PriceListProductList>[]
+```
+
+Read-only counterpart of `setupPriceListColumns`: the same columns without inputs, the price mode column or row actions. Discount and margin use the read-only `percentage` column type, the list price column is titled `` `${listPriceTitle} (${vatDescription})` `` and highlighted (`meta.highlight`), and the volume pricing cell shows the tier count only (`readonly`). Pair it with `getPinnedState`, which pins the list price, discount, margin and volume pricing columns. Used by the company page's Company set prices card.
+
 ### `addVolumePricingColumn`
 
 ```ts
@@ -87,6 +100,7 @@ addVolumePricingColumn(
   columns: ColumnDef<PriceListProductList>[],
   onEdit: (payload: { id: string; name: string }) => void,
   vatDescription: string,
+  readonly?: boolean,
 ): ColumnDef<PriceListProductList>[]
 ```
 
@@ -96,6 +110,7 @@ Adds a volume pricing column to an existing column configuration.
   - `columns`: Existing column definitions
   - `onEdit`: Handler for editing volume pricing
   - `vatDescription`: VAT status for proper labeling
+  - `readonly`: render the cell's tier count only, without the edit/add button (default `false`)
 
 - **Returns**: Updated column array with volume pricing column
 - **Features**: Custom cell component, fixed sizing, interactive editing
@@ -141,10 +156,16 @@ interface UsePriceListProductsTableReturnType {
       row: Row<PriceListProductList>,
     ) => void,
   ) => ColumnDef<PriceListProductList>[];
+  setupReadOnlyPriceListColumns: (
+    products: PriceListProductList[],
+    vatDescription: string,
+    listPriceTitle: string,
+  ) => ColumnDef<PriceListProductList>[];
   addVolumePricingColumn: (
     columns: ColumnDef<PriceListProductList>[],
     onEdit: (payload: { id: string; name: string }) => void,
     vatDescription: string,
+    readonly?: boolean,
   ) => ColumnDef<PriceListProductList>[];
   getPinnedState: ComputedRef<{
     left: never[];

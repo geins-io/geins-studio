@@ -9,6 +9,7 @@ import type {
   BatchQuery,
   ProductApiOptions,
   ProductPriceListApiOptions,
+  PriceListProduct,
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
 import { ENTITIES } from '#shared/utils/entities';
@@ -170,6 +171,22 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
                   priceList,
                   batchQuery,
                 },
+                query: buildQueryObject(options),
+                ...fetchOptions,
+              },
+            );
+          },
+          /** Read-only rows of a saved list (no preview, needs only read access). */
+          async query(
+            batchQuery: BatchQuery,
+            options?: ProductPriceListApiOptions,
+            fetchOptions?: RepoFetchOptions,
+          ): Promise<BatchQueryResult<PriceListProduct>> {
+            return await fetch<BatchQueryResult<PriceListProduct>>(
+              `${priceListIdEndpoint}/query`,
+              {
+                method: 'POST',
+                body: batchQuery,
                 query: buildQueryObject(options),
                 ...fetchOptions,
               },

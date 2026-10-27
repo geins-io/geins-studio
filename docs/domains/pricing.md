@@ -22,6 +22,8 @@ The Pricing domain manages price lists — named collections of product prices s
 - `POST /product/pricelist/{id}/preview` — Preview the entire price list with proposed changes
 - `POST /product/pricelist/{id}/previewprice` — Preview a single product's calculated price
 
+**Query** — `POST /product/pricelist/{id}/query` returns a saved list's rows read-only (needs only read access). `productApi.priceList.id(id).query(batchQuery, options)` with `batchQueryNoPagination` and `fields: ['products', 'productinfo']` returns the same rows as preview; feed them to `transformProductsForList`. Used where nothing is previewed (the company Company set prices grid).
+
 **Copy** — `POST /product/pricelist/{id}/copy` creates a duplicate price list. Accessed via `productApi.priceList.id(id).copy()`. A copy is always a shared list.
 
 ## Shared and account lists
