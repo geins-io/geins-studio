@@ -118,3 +118,54 @@ jobs:
             --name studio-prod-app \
             --slot staging \
             --target-slot production
+
+  notify:
+    name: Notify Teams
+    needs: swap
+    runs-on: ubuntu-latest
+    # A broken webhook must not turn a successful release red.
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      # TEAMS_WEBHOOK_URL is a Teams Workflows webhook ("Send webhook alerts to a channel"),
+      # which only renders Adaptive Cards — the old O365 connector MessageCard format is retired.
+      - name: Post release to Teams
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+        run: |
+          if [ -z "$TEAMS_WEBHOOK_URL" ]; then
+            echo "::warning::TEAMS_WEBHOOK_URL is not set, skipping Teams notification"
+            exit 0
+          fi
+          jq -n \
+            --arg version "v$(jq -r .version package.json)" \
+            --arg sha "${GITHUB_SHA::7}" \
+            --arg changelog "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/blob/$GITHUB_SHA/CHANGELOG.md" \
+            '{
+              type: "message",
+              attachments: [{
+                contentType: "application/vnd.microsoft.card.adaptive",
+                content: {
+                  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                  type: "AdaptiveCard",
+                  version: "1.4",
+                  body: [
+                    { type: "TextBlock", text: "🚀✨ A new release is live!", weight: "Bolder", size: "Large", wrap: true },
+                    { type: "FactSet", facts: [
+                      { title: "Version", value: $version },
+                      { title: "Commit", value: $sha }
+                    ] }
+                  ],
+                  actions: [
+                    { type: "Action.OpenUrl", title: "Open litium.studio", url: "https://litium.studio" },
+                    { type: "Action.OpenUrl", title: "Open geins.studio", url: "https://geins.studio" },
+                    { type: "Action.OpenUrl", title: "Changelog", url: $changelog }
+                  ]
+                }
+              }]
+            }' > teams-payload.json
+          curl --fail-with-body -sS -X POST -H 'Content-Type: application/json' \
+            --data @teams-payload.json "$TEAMS_WEBHOOK_URL"
