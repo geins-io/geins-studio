@@ -286,6 +286,8 @@ pinnedState?: ColumnPinningState | null
 
 Initial column pinning. Defaults to pinning `select` left and `actions` right.
 
+Pinned cells get `width`, `min-width` and `max-width` all set to the column's `getSize()`, and their sticky `left`/`right` offsets are summed from those sizes. So a pinned column renders at exactly its declared size: content that's too wide is clipped, not allowed to grow the column. Give every pinned column a `size` that fits its header and cells (as `useColumns` does per column type). Without the min/max, auto table layout shrinks cells with narrow text content and leaves gaps between the sticky columns.
+
 ### `selectedIds`
 
 ```ts
@@ -394,7 +396,7 @@ Renders rows where `row.original.active === false` at 50% opacity. Cells with `m
 
 ### Column highlight (`meta.highlight`)
 
-Not a prop: a column whose `columnDef.meta.highlight` is `true` gets a tinted, semibold body (`bg-background font-semibold` on its cells) to draw the eye — e.g. the company price in `setupReadOnlyPriceListColumns`. Set it on the column definition; never style `ui/table/` primitives for this.
+Not a prop: a column whose `columnDef.meta.highlight` is `true` is tinted from header to last row to draw the eye. Its cells get `bg-background font-semibold`. Its header gets `.table-view__header--highlight` (`main.css`: `bg-background` plus bold header text). The header rule is plain CSS because `.table-view__header` is too, and a utility can't override it — e.g. the company price in `setupReadOnlyPriceListColumns`. Set it on the column definition; never style `ui/table/` primitives for this.
 
 ## Models
 
