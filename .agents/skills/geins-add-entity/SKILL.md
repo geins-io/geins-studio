@@ -183,7 +183,7 @@ pnpm lint:check
 pnpm typecheck
 ```
 
-Run `pnpm test --run` when tests exist for the changed code.
+Run the affected tests (`pnpm test:changed`).
 
 Manual smoke test:
 - Create → confirm auto-navigate to edit URL
