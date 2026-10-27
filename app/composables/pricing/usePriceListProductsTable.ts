@@ -28,6 +28,7 @@ interface UsePriceListProductsTableReturnType {
     products: PriceListProductList[],
     vatDescription: string,
     listPriceTitle: string,
+    onViewVolumePricing: (payload: { id: string; name: string }) => void,
   ) => ColumnDef<PriceListProductList>[];
   addVolumePricingColumn: (
     columns: ColumnDef<PriceListProductList>[],
@@ -129,6 +130,7 @@ export const usePriceListProductsTable =
       products: PriceListProductList[],
       vatDescription: string,
       listPriceTitle: string,
+      onViewVolumePricing: (payload: { id: string; name: string }) => void,
     ) => {
       const columns = getColumns(products, {
         columnTypes: {
@@ -145,7 +147,12 @@ export const usePriceListProductsTable =
           ? { ...column, meta: { ...column.meta, highlight: true } }
           : column,
       );
-      return addVolumePricingColumn(columns, () => {}, vatDescription, true);
+      return addVolumePricingColumn(
+        columns,
+        onViewVolumePricing,
+        vatDescription,
+        true,
+      );
     };
 
     const addVolumePricingColumn = (

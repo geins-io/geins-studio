@@ -643,11 +643,22 @@ const companyPriceProducts = computed(() =>
     ? transformProductsForList(companyPriceRows.value, erpPriceList.value)
     : [],
 );
+const companyPriceVatDescription = computed(() =>
+  erpPriceList.value?.exVat ? t('ex_vat') : t('inc_vat'),
+);
+const volumePricingOpen = ref(false);
+const volumePricingProduct = ref<PriceListProductList>();
 const companyPriceColumns = computed(() =>
   setupReadOnlyPriceListColumns(
     companyPriceProducts.value,
-    erpPriceList.value?.exVat ? t('ex_vat') : t('inc_vat'),
+    companyPriceVatDescription.value,
     t('pricing.company_price'),
+    ({ id }) => {
+      volumePricingProduct.value = companyPriceProducts.value.find(
+        (product) => product._id === id,
+      );
+      volumePricingOpen.value = true;
+    },
   ),
 );
 // `immediate: false` leaves the status `idle` until the id watcher fires, so
@@ -1008,6 +1019,19 @@ if (!createMode.value) {
 </script>
 
 <template>
+  <PriceListVolumePricingPanel
+    v-if="erpPriceList"
+    v-model:open="volumePricingOpen"
+    readonly
+    :rules="volumePricingProduct?.volumePricing ?? []"
+    :product="volumePricingProduct"
+    :product-id="volumePricingProduct?._id ?? ''"
+    :product-name="volumePricingProduct?.name ?? ''"
+    :price-list-id="erpPriceList._id"
+    :currency="erpPriceList.currency"
+    :vat-description="companyPriceVatDescription"
+    :list-price-title="$t('pricing.company_price')"
+  />
   <DialogUnsavedChanges
     v-model:open="unsavedChangesDialogOpen"
     :entity-key="entityKey"

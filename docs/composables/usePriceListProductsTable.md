@@ -88,10 +88,11 @@ setupReadOnlyPriceListColumns(
   products: PriceListProductList[],
   vatDescription: string,
   listPriceTitle: string,
+  onViewVolumePricing: (payload: { id: string; name: string }) => void,
 ): ColumnDef<PriceListProductList>[]
 ```
 
-Read-only counterpart of `setupPriceListColumns`: the same columns without inputs, the price mode column or row actions. Discount and margin use the read-only `percentage` column type, the list price column is titled `` `${listPriceTitle} (${vatDescription})` `` and highlighted (`meta.highlight`), and the volume pricing cell shows the tier count only (`readonly`). Pair it with `getPinnedState`, which pins the list price, discount, margin and volume pricing columns. Used by the company page's Company set prices card.
+Read-only counterpart of `setupPriceListColumns`: the same columns without inputs, the price mode column or row actions. Discount and margin use the read-only `percentage` column type, the list price column is titled `` `${listPriceTitle} (${vatDescription})` `` and highlighted (`meta.highlight`), and the volume pricing cell shows the tier count only (`readonly`) as a link that calls `onViewVolumePricing` — open `PriceListVolumePricingPanel` with `readonly` from it. Pair it with `getPinnedState`, which pins the list price, discount, margin and volume pricing columns. Used by the company page's Company set prices card.
 
 ### `addVolumePricingColumn`
 
@@ -160,6 +161,7 @@ interface UsePriceListProductsTableReturnType {
     products: PriceListProductList[],
     vatDescription: string,
     listPriceTitle: string,
+    onViewVolumePricing: (payload: { id: string; name: string }) => void,
   ) => ColumnDef<PriceListProductList>[];
   addVolumePricingColumn: (
     columns: ColumnDef<PriceListProductList>[],
