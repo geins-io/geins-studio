@@ -5,7 +5,7 @@ const _props = defineProps<{
   volumePricing: PriceListRule[];
   className?: string;
   vatDescription: string;
-  /** Show the tier count only, without the edit/add button. */
+  /** Show the tier count only, as a link that emits `edit` when above 0. */
   readonly?: boolean;
 }>();
 
@@ -16,13 +16,15 @@ const emit = defineEmits<{
 <template>
   <div :class="cn(className, 'pl-5')">
     <div v-if="readonly" class="flex w-full items-center">
-      <span
-        :class="
-          cn('tabular-nums', !volumePricing.length && 'text-muted-foreground')
-        "
+      <button
+        v-if="volumePricing.length"
+        type="button"
+        class="link-text tabular-nums"
+        @click="emit('edit', { id, name })"
       >
         {{ volumePricing.length }}
-      </span>
+      </button>
+      <span v-else class="text-muted-foreground tabular-nums">0</span>
     </div>
     <div v-else class="flex w-full items-center justify-center">
       <div

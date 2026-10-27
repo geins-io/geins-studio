@@ -8,7 +8,7 @@
   - **Has rules:** count + tooltip with a quantity / margin / discount / price preview table; trailing pencil button
   - **No rules:** muted `0` + trailing plus button
 - Both buttons emit `edit` with `{ id, name }` so the parent can open the editor sheet pre-filtered to this product
-- `readonly` mode shows the count only (muted when `0`), with no tooltip or button — used by read-only price grids
+- `readonly` mode shows the count as a link that emits `edit` (open a read-only panel) when above 0, or a muted `0` with no link — no tooltip or edit/add button. Used by read-only price grids
 
 ## Usage
 
@@ -74,7 +74,7 @@ Extra Tailwind classes for the wrapper.
 readonly?: boolean
 ```
 
-Shows the tier count only, without the tooltip or the edit/add button. Set by `addVolumePricingColumn(..., readonly)`.
+Shows the tier count only: a link emitting `edit` when above 0, a muted `0` otherwise. No tooltip or edit/add button. Set by `addVolumePricingColumn(..., readonly)`.
 
 ## Events
 

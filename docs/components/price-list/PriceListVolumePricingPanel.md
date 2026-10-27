@@ -11,6 +11,7 @@
 - Save flow: validates each rule (quantity > 1, at least one numeric value) and converts to `PriceListProduct[]` via [`usePriceListProducts`](/composables/usePriceListProducts) — surfaces a [`Feedback`](/components/Feedback) banner when invalid
 - Cancel discards local changes; Save commits via the `save` event
 - Two-way `v-model:open` and `v-model:priceListProducts` so the parent's selected-products state stays in sync
+- **Read-only mode** (`readonly`) for prices that can't be edited (the company page's ERP company set prices): a price / list price / margin header for the product, a plain table of its price breaks (quantity `10+`, price, discount, margin), no global section, no inputs, Close-only footer
 
 ## Usage
 
@@ -38,6 +39,27 @@ const onSave = (products: PriceListProduct[]) => {
   />
 </template>
 ```
+
+### Read-only
+
+```vue
+<template>
+  <PriceListVolumePricingPanel
+    v-model:open="open"
+    readonly
+    :rules="product?.volumePricing ?? []"
+    :product="product"
+    :product-id="product?._id ?? ''"
+    :product-name="product?.name ?? ''"
+    :price-list-id="priceList._id"
+    :currency="priceList.currency"
+    :vat-description="vatDescription"
+    :list-price-title="$t('pricing.company_price')"
+  />
+</template>
+```
+
+`product` is a `PriceListProductList` row from `transformProductsForList`, so the tiers come from the grid's data — no extra fetch.
 
 ## Props
 
@@ -88,6 +110,30 @@ vatDescription?: string
 ```
 
 Localized VAT descriptor (e.g. `"ex VAT"`).
+
+### `readonly`
+
+```ts
+readonly?: boolean
+```
+
+View-only mode: the product's price breaks (all of `rules`, including global ones) in a plain table, no inputs, no global section, Close-only footer. The editable mode is unchanged.
+
+### `product`
+
+```ts
+product?: PriceListProductList
+```
+
+Read-only mode only: supplies the header values (`regularPrice`, `listPrice`, `margin`).
+
+### `listPriceTitle`
+
+```ts
+listPriceTitle?: string
+```
+
+Read-only mode only: label for `listPrice` in the header, suffixed with `vatDescription`. Defaults to "Price list price".
 
 ## v-model
 
