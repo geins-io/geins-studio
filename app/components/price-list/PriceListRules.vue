@@ -140,6 +140,7 @@ const thClasses = 'text-xs font-bold text-left py-2';
             :mode="mode"
             :index="index"
             :global="rule.global"
+            :disabled="disabled"
             :currency="currency"
             :loading="loading && loadingIndex === index"
             :last-field-changed="rule.lastFieldChanged"

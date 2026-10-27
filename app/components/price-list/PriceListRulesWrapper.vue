@@ -4,6 +4,7 @@ import type { PriceListRuleMode } from '#shared/types';
 const _props = defineProps<{
   title: string;
   modeId: string;
+  disabled?: boolean;
 }>();
 
 const mode = defineModel<PriceListRuleMode>('mode', { required: true });
@@ -23,7 +24,12 @@ const mode = defineModel<PriceListRuleMode>('mode', { required: true });
         <Label :for="modeId" class="text-xs">
           {{ $t('pricing.calculate_by') }}
         </Label>
-        <Select :id="modeId" v-model="mode" class="mb-4 w-28 sm:w-48!">
+        <Select
+          :id="modeId"
+          v-model="mode"
+          :disabled="disabled"
+          class="mb-4 w-28 sm:w-48!"
+        >
           <SelectTrigger class="w-28 sm:w-32" size="sm">
             <SelectValue />
           </SelectTrigger>
