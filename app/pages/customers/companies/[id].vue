@@ -650,6 +650,13 @@ const companyPriceColumns = computed(() =>
     t('pricing.company_price'),
   ),
 );
+// `immediate: false` leaves the status `idle` until the id watcher fires, so
+// treat idle as loading too, or the empty state flashes first.
+const companyPricesLoading = computed(
+  () =>
+    companyPricesStatus.value === 'idle' ||
+    companyPricesStatus.value === 'pending',
+);
 
 // =====================================================================================
 // ORDERS MANAGEMENT
@@ -1446,7 +1453,7 @@ if (!createMode.value) {
                     entity-key="product"
                     :columns="companyPriceColumns"
                     :data="companyPriceProducts"
-                    :loading="companyPricesStatus === 'pending'"
+                    :loading="companyPricesLoading"
                     :error="!!companyPricesError"
                     :on-retry="refreshCompanyPrices"
                     :empty-text="
