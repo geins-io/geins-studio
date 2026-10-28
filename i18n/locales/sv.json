@@ -1204,6 +1204,7 @@
     "add_node": "Lägg till nod",
     "edge_actions": "Anslutningsåtgärder",
     "delete_connection": "Ta bort anslutning",
+    "unrouted_condition_edge": "Inte kopplad till en villkorsgren, så den här vägen körs aldrig. Ta bort anslutningen och anslut den igen från en gren.",
     "status_success": "Lyckades",
     "status_failed": "Misslyckades",
     "status_running": "Körs",
