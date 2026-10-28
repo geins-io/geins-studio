@@ -12,6 +12,8 @@ import type { ColumnDef } from '@tanstack/vue-table';
 
 interface UseCompanyOrdersReturnType {
   ordersList: Ref<CustomerOrder[]>;
+  ordersLoading: Ref<boolean>;
+  ordersError: Ref<boolean>;
   orderColumns: ComputedRef<ColumnDef<CustomerOrder>[]>;
   columnOptionsOrders: ColumnOptions<CustomerOrder>;
   fetchOrders: (
@@ -38,6 +40,8 @@ interface UseCompanyOrdersReturnType {
  *
  * @returns {UseCompanyOrdersReturnType} - An object containing company orders state and utilities
  * @property {Ref<CustomerOrder[]>} ordersList - Reactive list of customer orders
+ * @property {Ref<boolean>} ordersLoading - True while orders are being fetched
+ * @property {Ref<boolean>} ordersError - True when the last order fetch failed
  * @property {ComputedRef} orderColumns - Computed column definitions for orders table
  * @property {object} columnOptionsOrders - Column configuration options for orders
  * @property {function} fetchOrders - Fetches orders from API with filtering and transformation
@@ -55,6 +59,8 @@ export const useCompanyOrders = (): UseCompanyOrdersReturnType => {
 
   // Reactive state
   const ordersList = ref<CustomerOrder[]>([]);
+  const ordersLoading = ref(false);
+  const ordersError = ref(false);
   // Map order ID → raw channel ID for re-resolution when channels load
   const _channelIdMap = new Map<string, string>();
 
@@ -157,12 +163,16 @@ export const useCompanyOrders = (): UseCompanyOrdersReturnType => {
     allCompanies?: CustomerCompany[],
     allBuyers?: CompanyBuyer[],
   ): Promise<void> => {
+    ordersLoading.value = true;
+    ordersError.value = false;
     try {
       const ordersData = ref<BatchQueryResult<Order> | null>(null);
 
+      // A read over POST; the table's error state reports the failure instead.
       ordersData.value = await orderApi.query(
         { ...orderSelectionQuery, ...batchQueryNoPagination.value },
         orderApiOptions,
+        { suppressErrorToast: true },
       );
 
       if (ordersData.value) {
@@ -176,12 +186,17 @@ export const useCompanyOrders = (): UseCompanyOrdersReturnType => {
     } catch (error) {
       geinsLogError('failed to fetch orders', error);
       ordersList.value = [];
+      ordersError.value = true;
+    } finally {
+      ordersLoading.value = false;
     }
   };
 
   return {
     // State
     ordersList,
+    ordersLoading,
+    ordersError,
     orderColumns,
     columnOptionsOrders,
 

@@ -57,6 +57,12 @@ function updateDefaultLabel(val: string) {
   onNodeSettingsChange();
 }
 
+// Labels that edges still carry for branches whose label field is cleared
+// mid-retype, keyed by branch index. Dropped when indexes shift or the panel
+// switches node — leftover edges then show as unrouted on the canvas.
+const pendingEdgeLabels = new Map<number, string>();
+watch(selectedNodeId, () => pendingEdgeLabels.clear());
+
 function addCondition() {
   const color = nextColor();
   const updated = [
@@ -68,10 +74,11 @@ function addCondition() {
 }
 
 function removeCondition(index: number) {
-  const label = conditions.value[index]?.label;
+  const label = conditions.value[index]?.label || pendingEdgeLabels.get(index);
   if (label && selectedNodeId.value) {
     removeEdgesForSourceHandle(selectedNodeId.value, label);
   }
+  pendingEdgeLabels.clear();
   const updated = conditions.value.filter((_, i) => i !== index);
   persistColors(conditionColors.value.filter((_, i) => i !== index));
   updateConditions(updated);
@@ -85,6 +92,7 @@ function duplicateCondition(index: number) {
     ...source,
     label: t('node.settings.condition.copy_suffix', { label: source.label }),
   };
+  pendingEdgeLabels.clear();
   const updated = [...conditions.value];
   updated.splice(index + 1, 0, copy);
   const colors = [...conditionColors.value];
@@ -98,10 +106,15 @@ function updateConditionField(
   field: keyof ConditionEntry,
   value: string,
 ) {
-  if (field === 'label') {
-    const oldLabel = conditions.value[index]?.label;
-    if (oldLabel && oldLabel !== value && selectedNodeId.value) {
-      renameEdgeSourceHandle(selectedNodeId.value, oldLabel, value);
+  if (field === 'label' && selectedNodeId.value) {
+    const rename = resolveBranchLabelRename(
+      pendingEdgeLabels,
+      index,
+      conditions.value[index]?.label ?? '',
+      value,
+    );
+    if (rename) {
+      renameEdgeSourceHandle(selectedNodeId.value, rename.from, rename.to);
     }
   }
   const updated = conditions.value.map((c, i) =>
@@ -319,6 +332,7 @@ function onDrop(index: number) {
   colors.splice(index, 0, movedColor);
   persistColors(colors);
 
+  pendingEdgeLabels.clear();
   updateConditions(updated);
 
   recentlyMoved.value = new Set([index]);

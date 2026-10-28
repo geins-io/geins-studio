@@ -78,7 +78,7 @@ const storefrontUrlDisplay = computed(() => {
             <FormItem>
               <FormLabel>{{ t('channels.mail_bcc_email') }}</FormLabel>
               <FormControl>
-                <Input v-bind="componentField" type="email" />
+                <Input v-bind="componentField" type="email" multiple />
               </FormControl>
               <FormDescription>
                 {{ t('channels.mail_bcc_email_description') }}
