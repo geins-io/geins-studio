@@ -6,6 +6,7 @@
 
 - Master `mail.disabled` switch at the top — when on, hides the rest of the form (kept mounted via `v-show` so VeeValidate doesn't clear the values)
 - Read-only `from email` rendered through [`FormInputLocked`](/components/form/input/FormInputLocked) (set by Geins, not editable)
+- BCC field takes a comma-separated list of addresses (`type="email" multiple`); the parent schema validates each one with `createEmailListSchema` (`app/utils/email-validation.ts`)
 - Login + password-reset URL fields use the storefront URL as a left addon — the user only types the slug
 - "Advanced" group hidden behind a [`ContentSwitch`](/components/content/ContentSwitch) toggle
 - Reads field values from the parent VeeValidate form via `useFieldValue`

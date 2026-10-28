@@ -68,9 +68,9 @@ const formSchema = toTypedSchema(
       .object({
         disabled: z.boolean(),
         displayName: z.string(),
-        orderConfirmationBCCEmail: z
-          .email(t('channels.validation_email_format'))
-          .or(z.literal('')),
+        orderConfirmationBCCEmail: createEmailListSchema(
+          t('channels.validation_email_list_format'),
+        ),
         loginUrl: z.string(),
         passwordResetUrl: z.string(),
       })
