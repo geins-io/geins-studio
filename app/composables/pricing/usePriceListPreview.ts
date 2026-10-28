@@ -3,9 +3,11 @@ import type {
   PriceListProductList,
   ProductPriceListUpdate,
 } from '#shared/types';
+import { isPreviewId } from '#shared/utils/price-list-preview';
 import { useToast } from '@/components/ui/toast/use-toast';
 
 export interface UsePriceListPreviewOptions {
+  /** Saved list to preview changes on; without it, previews a new list. */
   entityId: Ref<string | null>;
   entityDataUpdate: Ref<ProductPriceListUpdate>;
   transformProductsForList: (
@@ -77,31 +79,28 @@ export function usePriceListPreview({
   // =====================================================================================
 
   const previewPriceList = async (
-    feedbackMessage: string = 'Price list preview updated.',
+    feedbackMessage: string = t('price_list_preview_updated'),
     updateProducts: boolean = false,
     showFeedback: boolean = true,
   ) => {
-    if (
-      !entityId.value ||
-      !entityDataUpdate.value.productSelectionQuery ||
-      updateInProgress.value
-    )
+    if (!entityDataUpdate.value.productSelectionQuery || updateInProgress.value)
       return;
 
     try {
       updateInProgress.value = true;
 
       const id = entityId.value;
+      const preview = id
+        ? productApi.priceList.id(id).preview
+        : productApi.priceList.preview;
       // Preview is a read-style POST with its own contextual error toast
       // below — opt out of the global toast to avoid a double.
-      const previewPriceList = await productApi.priceList
-        .id(id)
-        .preview(
-          entityDataUpdate.value,
-          batchQueryNoPagination.value,
-          { fields: ['products', 'productinfo'] },
-          { suppressErrorToast: true },
-        );
+      const previewPriceList = await preview(
+        entityDataUpdate.value,
+        batchQueryNoPagination.value,
+        { fields: ['products', 'productinfo'] },
+        { suppressErrorToast: true },
+      );
 
       priceListProducts.value = previewPriceList.products?.items || [];
 
@@ -125,7 +124,7 @@ export function usePriceListPreview({
               p.staggeredCount ?? 0,
             );
             return {
-              _id: p._id,
+              ...(!isPreviewId(p._id) && { _id: p._id }),
               ...product,
             };
           });
