@@ -1623,9 +1623,7 @@ if (!createMode.value) {
                   :description="
                     $t('customers.company_set_prices_erp_description')
                   "
-                  :disabled-tooltip="
-                    $t('customers.company_set_prices_locked_tooltip')
-                  "
+                  :disabled-tooltip="$t('pricing.managed_externally')"
                 >
                   <div class="border-t pt-4">
                     <TableView
