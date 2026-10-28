@@ -764,6 +764,26 @@ const studioPriceListSummaryCounts = computed(() =>
   getPriceListSummaryCounts(studioPriceListCounts.value),
 );
 
+// No flag says an account's prices come from an external system, so an
+// `externalId` is the hint: an import for the same channel and currency takes
+// over a Studio-created list. Warn only; the switch stays usable.
+const showExternalSystemWarning = computed(
+  () => !erpPriceList.value && !!entityData.value.externalId?.trim(),
+);
+// Buyers restricted to their own lists never get the company's list.
+const restrictedBuyerCount = computed(
+  () =>
+    buyers.value.filter((buyer) => buyer.restrictToDedicatedPriceLists).length,
+);
+const companySetPricesOn = computed(() =>
+  erpPriceList.value
+    ? erpPriceList.value.active
+    : companyPriceListEnabled.value,
+);
+const showRestrictedBuyersNote = computed(
+  () => companySetPricesOn.value && restrictedBuyerCount.value > 0,
+);
+
 // =====================================================================================
 // ORDERS MANAGEMENT
 // =====================================================================================
@@ -1551,85 +1571,115 @@ if (!createMode.value) {
               :title="$t('company_set_price', 2)"
               :description="$t('customers.company_set_prices_description')"
             >
-              <ContentSwitch
-                v-if="erpPriceList"
-                :checked="erpPriceList.active"
-                locked
-                :label="$t('customers.use_company_set_prices')"
-                :description="
-                  $t('customers.company_set_prices_erp_description')
-                "
-                :disabled-tooltip="
-                  $t('customers.company_set_prices_locked_tooltip')
-                "
-              >
-                <div class="border-t pt-4">
-                  <TableView
-                    :mode="TableMode.Simple"
-                    entity-key="product"
-                    :columns="companyPriceColumns"
-                    :data="companyPriceProducts"
-                    :loading="companyPricesLoading"
-                    :error="!!companyPricesError"
-                    :on-retry="refreshCompanyPrices"
-                    :empty-text="
-                      $t('no_entity', { entityKey: 'company_set_price' }, 2)
-                    "
-                    :empty-description="
+              <div class="space-y-4">
+                <Feedback v-if="showExternalSystemWarning" type="warning">
+                  <template #title>
+                    {{ $t('customers.company_set_prices_external_title') }}
+                  </template>
+                  <template #description>
+                    {{
+                      $t('customers.company_set_prices_external_description')
+                    }}
+                  </template>
+                </Feedback>
+                <Feedback v-if="showRestrictedBuyersNote" type="info">
+                  <template #title>
+                    {{
                       $t(
-                        'empty_description',
-                        { entityKey: 'company_set_price' },
-                        2,
+                        'customers.company_set_prices_restricted_buyers_title',
+                        { count: restrictedBuyerCount },
+                        restrictedBuyerCount,
                       )
-                    "
-                    :page-size="20"
-                    :pinned-state="getPinnedState"
-                    :show-search="true"
-                  />
-                </div>
-              </ContentSwitch>
-              <ContentSwitch
-                v-else
-                v-model:checked="companyPriceListEnabled"
-                :label="$t('customers.use_company_set_prices')"
-                :description="
-                  $t('customers.company_set_prices_studio_description')
-                "
-              >
-                <div class="border-t pt-4">
-                  <Item class="p-0">
-                    <ItemContent v-if="studioPriceListProductCount > 0">
-                      <ItemTitle>
-                        {{
-                          $t(
-                            'customers.company_set_prices_product_count',
-                            { count: studioPriceListProductCount },
-                            studioPriceListProductCount,
-                          )
-                        }}
-                      </ItemTitle>
-                      <ItemDescription v-if="studioPriceListSummaryCounts">
-                        {{
-                          $t('customers.company_set_prices_counts', {
-                            manual: studioPriceListSummaryCounts.manual,
-                            volume: studioPriceListSummaryCounts.volume,
-                          })
-                        }}
-                      </ItemDescription>
-                    </ItemContent>
-                    <ItemContent v-else>
-                      <ItemTitle>
-                        {{ $t('no_entity_yet', { entityKey: 'product' }, 2) }}
-                      </ItemTitle>
-                      <ItemDescription>
-                        {{
-                          $t('customers.company_set_prices_empty_description')
-                        }}
-                      </ItemDescription>
-                    </ItemContent>
-                  </Item>
-                </div>
-              </ContentSwitch>
+                    }}
+                  </template>
+                  <template #description>
+                    {{
+                      $t(
+                        'customers.company_set_prices_restricted_buyers_description',
+                      )
+                    }}
+                  </template>
+                </Feedback>
+                <ContentSwitch
+                  v-if="erpPriceList"
+                  :checked="erpPriceList.active"
+                  locked
+                  :label="$t('customers.use_company_set_prices')"
+                  :description="
+                    $t('customers.company_set_prices_erp_description')
+                  "
+                  :disabled-tooltip="
+                    $t('customers.company_set_prices_locked_tooltip')
+                  "
+                >
+                  <div class="border-t pt-4">
+                    <TableView
+                      :mode="TableMode.Simple"
+                      entity-key="product"
+                      :columns="companyPriceColumns"
+                      :data="companyPriceProducts"
+                      :loading="companyPricesLoading"
+                      :error="!!companyPricesError"
+                      :on-retry="refreshCompanyPrices"
+                      :empty-text="
+                        $t('no_entity', { entityKey: 'company_set_price' }, 2)
+                      "
+                      :empty-description="
+                        $t(
+                          'empty_description',
+                          { entityKey: 'company_set_price' },
+                          2,
+                        )
+                      "
+                      :page-size="20"
+                      :pinned-state="getPinnedState"
+                      :show-search="true"
+                    />
+                  </div>
+                </ContentSwitch>
+                <ContentSwitch
+                  v-else
+                  v-model:checked="companyPriceListEnabled"
+                  :label="$t('customers.use_company_set_prices')"
+                  :description="
+                    $t('customers.company_set_prices_studio_description')
+                  "
+                >
+                  <div class="border-t pt-4">
+                    <Item class="p-0">
+                      <ItemContent v-if="studioPriceListProductCount > 0">
+                        <ItemTitle>
+                          {{
+                            $t(
+                              'customers.company_set_prices_product_count',
+                              { count: studioPriceListProductCount },
+                              studioPriceListProductCount,
+                            )
+                          }}
+                        </ItemTitle>
+                        <ItemDescription v-if="studioPriceListSummaryCounts">
+                          {{
+                            $t('customers.company_set_prices_counts', {
+                              manual: studioPriceListSummaryCounts.manual,
+                              volume: studioPriceListSummaryCounts.volume,
+                            })
+                          }}
+                        </ItemDescription>
+                      </ItemContent>
+                      <ItemContent v-else>
+                        <ItemTitle>
+                          {{ $t('no_entity_yet', { entityKey: 'product' }, 2) }}
+                        </ItemTitle>
+                        <ItemDescription>
+                          {{
+                            $t('customers.company_set_prices_empty_description')
+                          }}
+                        </ItemDescription>
+                      </ItemContent>
+                    </Item>
+                  </div>
+                </ContentSwitch>
+              </div>
             </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>
