@@ -790,7 +790,33 @@ const showRestrictedBuyersNote = computed(
 // Intent: Fetch and display orders for this company in a read-only tab.
 // Delegates to useCompanyOrders composable for data fetching and column definitions.
 
-const { ordersList, orderColumns, fetchOrders } = useCompanyOrders();
+const { ordersList, ordersLoading, ordersError, orderColumns, fetchOrders } =
+  useCompanyOrders();
+
+const loadOrders = () =>
+  fetchOrders(
+    {
+      include: [
+        {
+          selections: [
+            {
+              condition: SelectorCondition.And,
+              wholesaleAccountIds: [entityId.value],
+            },
+          ],
+        },
+      ],
+    },
+    { fields: ['pricelists', 'itemcount'] },
+    // Account lists are missing from allPriceLists; add the company's for names.
+    [
+      ...allPriceLists.value,
+      ...addedPriceLists.value,
+      ...ownAccountPriceLists.value,
+    ],
+    undefined,
+    buyers.value,
+  );
 
 // =====================================================================================
 // ADDRESS MANAGEMENT
@@ -1101,31 +1127,7 @@ if (!createMode.value) {
       }));
     }
 
-    const orderSelectionQuery: OrderBatchQuery = {
-      include: [
-        {
-          selections: [
-            {
-              condition: SelectorCondition.And,
-              wholesaleAccountIds: [entityId.value],
-            },
-          ],
-        },
-      ],
-    };
-
-    await fetchOrders(
-      orderSelectionQuery,
-      { fields: ['pricelists', 'itemcount'] },
-      // Account lists are missing from allPriceLists; add the company's for names.
-      [
-        ...allPriceLists.value,
-        ...addedPriceLists.value,
-        ...ownAccountPriceLists.value,
-      ],
-      undefined,
-      buyers.value,
-    );
+    await loadOrders();
   });
 }
 </script>
@@ -1715,6 +1717,9 @@ if (!createMode.value) {
                   :page-size="20"
                   :pinned-state="null"
                   :empty-icon="LucidePackage"
+                  :loading="ordersLoading"
+                  :error="ordersError"
+                  :on-retry="loadOrders"
                 />
               </div>
             </ContentEditCard>
