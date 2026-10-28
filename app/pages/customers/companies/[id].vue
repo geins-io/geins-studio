@@ -1572,6 +1572,21 @@ if (!createMode.value) {
               :description="$t('customers.company_set_prices_description')"
             >
               <div class="space-y-4">
+                <Feedback
+                  v-if="erpPriceList && !erpPriceList.active"
+                  type="info"
+                >
+                  <template #title>
+                    {{ $t('customers.company_set_prices_erp_inactive_title') }}
+                  </template>
+                  <template #description>
+                    {{
+                      $t(
+                        'customers.company_set_prices_erp_inactive_description',
+                      )
+                    }}
+                  </template>
+                </Feedback>
                 <Feedback v-if="showExternalSystemWarning" type="warning">
                   <template #title>
                     {{ $t('customers.company_set_prices_external_title') }}
