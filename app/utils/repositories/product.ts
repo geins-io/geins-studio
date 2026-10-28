@@ -143,6 +143,23 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 
     priceList: {
       ...priceListRepo,
+      /** Preview of a list that isn't saved yet; doesn't check the account's free slot. */
+      async preview(
+        priceList: ProductPriceListUpdate,
+        batchQuery?: BatchQuery,
+        options?: ProductPriceListApiOptions,
+        fetchOptions?: RepoFetchOptions,
+      ): Promise<ProductPriceList> {
+        return await fetch<ProductPriceList>(`${priceListEndpoint}/preview`, {
+          method: 'POST',
+          body: {
+            priceList,
+            batchQuery,
+          },
+          query: buildQueryObject(options),
+          ...fetchOptions,
+        });
+      },
       id: (priceListId: string) => {
         const priceListIdEndpoint = `${priceListEndpoint}/${priceListId}`;
         return {

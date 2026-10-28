@@ -64,6 +64,7 @@ setupPriceListColumns(
   onPriceBlur: (value: string | number, row: Row<PriceListProductList>) => void,
   onMarginBlur: (value: string | number, row: Row<PriceListProductList>) => void,
   onDiscountBlur: (value: string | number, row: Row<PriceListProductList>) => void,
+  listPriceTitle?: string,
 ): ColumnDef<PriceListProductList>[]
 ```
 
@@ -77,6 +78,7 @@ Creates a complete column configuration for price list products with all necessa
   - `onPriceBlur`: Handler for price field blur events
   - `onMarginBlur`: Handler for margin field blur events
   - `onDiscountBlur`: Handler for discount field blur events
+  - `listPriceTitle`: Title of the editable list price column, suffixed with `vatDescription`. Defaults to "Price list price"; the company editor passes `t('pricing.company_price')`
 
 - **Returns**: Complete array of column definitions
 - **Features**: Editable columns, actions, volume pricing, price modes
@@ -156,6 +158,7 @@ interface UsePriceListProductsTableReturnType {
       value: string | number,
       row: Row<PriceListProductList>,
     ) => void,
+    listPriceTitle?: string,
   ) => ColumnDef<PriceListProductList>[];
   setupReadOnlyPriceListColumns: (
     products: PriceListProductList[],

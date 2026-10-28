@@ -33,6 +33,8 @@ export function usePriceListVolumePricing({
   updateEntityRules,
   previewPriceList,
 }: UsePriceListVolumePricingOptions): UsePriceListVolumePricingReturnType {
+  const { t } = useI18n();
+
   // =====================================================================================
   // STATE
   // =====================================================================================
@@ -85,7 +87,10 @@ export function usePriceListVolumePricing({
 
     // Provide feedback with product context
     previewPriceList(
-      `Volume pricing applied for ${rulesProductName.value} (${rulesProductId.value})`,
+      t('pricing.volume_pricing_applied_for', {
+        name: rulesProductName.value,
+        id: rulesProductId.value,
+      }),
     );
   };
 

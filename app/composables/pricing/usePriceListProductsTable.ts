@@ -23,6 +23,7 @@ interface UsePriceListProductsTableReturnType {
       value: string | number,
       row: Row<PriceListProductList>,
     ) => void,
+    listPriceTitle?: string,
   ) => ColumnDef<PriceListProductList>[];
   setupReadOnlyPriceListColumns: (
     products: PriceListProductList[],
@@ -83,6 +84,7 @@ export const usePriceListProductsTable =
         value: string | number,
         row: Row<PriceListProductList>,
       ) => void,
+      listPriceTitle: string = t('pricing.price_list_price'),
     ) => {
       const columnOptions: ColumnOptions<PriceListProductList> = {
         columnTypes: {
@@ -91,7 +93,7 @@ export const usePriceListProductsTable =
           margin: 'editable-percentage',
         },
         columnTitles: {
-          listPrice: `${t('pricing.price_list_price')} (${vatDescription})`,
+          listPrice: `${listPriceTitle} (${vatDescription})`,
           regularPrice: `${t('price')} (${vatDescription})`,
         },
         excludeColumns: ['volumePricing', 'priceMode'],
