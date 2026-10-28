@@ -69,7 +69,7 @@ The switch is disabled and a lock icon sits next to it; `disabledTooltip` shows 
     locked
     :label="$t('customers.use_company_set_prices')"
     :description="$t('customers.company_set_prices_erp_description')"
-    :disabled-tooltip="$t('customers.company_set_prices_locked_tooltip')"
+    :disabled-tooltip="$t('pricing.managed_externally')"
   >
     <TableView ... />
   </ContentSwitch>

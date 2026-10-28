@@ -1294,7 +1294,7 @@ if (!createMode.value) {
                     {{ $t('pricing.price_list_read_only_title') }}
                   </ItemTitle>
                   <ItemDescription>
-                    {{ $t('customers.company_set_prices_locked_tooltip') }}
+                    {{ $t('pricing.managed_externally') }}
                   </ItemDescription>
                 </ItemContent>
               </Item>
