@@ -1,6 +1,6 @@
 ---
 name: geins-release
-description: "Run a Geins Studio release end to end: backup tags, version bump + CHANGELOG on next, next→main squash PR with @claude review, deploy verification on geins.studio (Vercel) and litium.studio (Azure), GitHub release, then reset next to main and retarget feature branches. Use whenever cutting, shipping or publishing a release. Trigger on: release, cut a release, ship vX.Y.Z, release next to main, bump version, changelog for release, gh release, reset next, retarget branches after release."
+description: "Run a Geins Studio release end to end: backup tags, version bump + CHANGELOG on next, next→main squash PR with @claude review, deploy verification on geins.studio (Vercel) and litium.studio (Azure), GitHub release, then reset next to main, retarget feature branches and move released Linear issues from Ready for QA testing to Done. Use whenever cutting, shipping or publishing a release. Trigger on: release, cut a release, ship vX.Y.Z, release next to main, bump version, changelog for release, gh release, reset next, retarget branches after release."
 metadata:
   short-description: Geins Studio release flow (next → main)
 ---
@@ -175,5 +175,11 @@ Rebase replays every `chore: wip` commit against the squashed history and confli
 
 ## 9. Close out
 
-- Linear: issues shipped in the release stay in **Ready for QA testing** (QA moves them to Done).
-- Report back: version, release URL, `app-version` on both hosts, PR review triage, and any follow-ups.
+- **Linear: move released issues from Ready for QA testing to Done.** A release is what makes an issue Done — QA doesn't move issues by hand, so this step is the only way they get there. List the column (`list_issues`, `state: "Ready for QA testing"`) and set each issue whose work is now on `main` to `Done` (`save_issue`, `state: "Done"`). The release squash commit lists the squashed commits, so it holds most of the ids:
+
+  ```bash
+  git log -1 "$MAIN_SHA" --format=%B | grep -oE 'STU-[0-9]+' | sort -u
+  ```
+
+  For an issue not in that list, `git log origin/main --grep=STU-NNN` (or its PR) decides. Issues whose work isn't on `main` yet — merged to `next` after the release PR — stay in QA.
+- Report back: version, release URL, `app-version` on both hosts, the issues moved to Done (and any left in QA), PR review triage, and any follow-ups.

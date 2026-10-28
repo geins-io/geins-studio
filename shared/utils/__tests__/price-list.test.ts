@@ -1,8 +1,11 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest';
+import type { PriceListContent } from '#shared/types';
 import {
+  companyPriceListCreateBody,
   companyPriceListIdentifier,
   companyPriceListName,
+  companyPriceListUpdateBody,
   getCompanyPriceListSaveAction,
   getPriceListSummaryCounts,
   isOwnAccountPriceList,
@@ -116,6 +119,157 @@ describe('getCompanyPriceListSaveAction', () => {
     expect(
       getCompanyPriceListSaveAction({ active: true, readOnly: true }, false),
     ).toBe('none');
+    expect(
+      getCompanyPriceListSaveAction(
+        { active: true, readOnly: true },
+        true,
+        true,
+      ),
+    ).toBe('none');
+  });
+
+  it('updates a list whose content changed, with or without a switch change', () => {
+    expect(getCompanyPriceListSaveAction(active, true, true)).toBe('update');
+    expect(getCompanyPriceListSaveAction(inactive, true, true)).toBe('update');
+    expect(getCompanyPriceListSaveAction(active, false, true)).toBe('update');
+  });
+
+  it('creates or skips a missing list whatever its content', () => {
+    expect(getCompanyPriceListSaveAction(undefined, true, true)).toBe('create');
+    expect(getCompanyPriceListSaveAction(undefined, false, true)).toBe('none');
+  });
+});
+
+const selection: NonNullable<PriceListContent['productSelectionQuery']> = {
+  include: [{ selections: [{ categoryIds: ['12'] }] }],
+  exclude: [],
+};
+
+const content: PriceListContent = {
+  rules: [
+    { _id: 'r1', internalId: 'tmp-1', quantity: 1, margin: 20, global: true },
+    {
+      internalId: 'tmp-2',
+      quantity: 10,
+      discountPercent: 5,
+      applied: true,
+      global: true,
+    },
+  ],
+  productSelectionQuery: selection,
+  products: [
+    // A GET row carries all three price fields; its mode picks one.
+    {
+      _id: 'p1',
+      productId: '100',
+      staggeredCount: 1,
+      priceMode: 'margin',
+      price: 80,
+      margin: 25,
+      discountPercent: 10,
+      name: 'Chair',
+    },
+    { productId: '101', staggeredCount: 1, price: 99 },
+    { productId: '102', staggeredCount: 1 },
+    { productId: '103', staggeredCount: 5, delete: true },
+  ],
+};
+
+describe('companyPriceListCreateBody', () => {
+  const company = {
+    companyId: 'acc-1',
+    companyName: 'Sonora Lab AB',
+    externalId: '10234',
+    channel: '1',
+    currency: 'SEK',
+  };
+
+  it('creates an active, empty account list without content', () => {
+    expect(companyPriceListCreateBody(company)).toEqual({
+      name: 'Sonora Lab AB SEK',
+      identifier: '10234-SEK',
+      channel: '1',
+      currency: 'SEK',
+      wholesaleAccountId: 'acc-1',
+      active: true,
+      exVat: true,
+      autoAddProducts: false,
+      forced: false,
+      dateCreated: '',
+    });
+  });
+
+  it('adds rules without ids, the whole selection and only priced rows', () => {
+    const body = companyPriceListCreateBody({ ...company, content });
+    expect(body.rules).toStrictEqual([
+      { quantity: 1, margin: 20 },
+      { quantity: 10, discountPercent: 5 },
+    ]);
+    expect(body.productSelectionQuery).toEqual(selection);
+    expect(body.products).toStrictEqual([
+      { productId: '100', staggeredCount: 1, margin: 25 },
+      { productId: '101', staggeredCount: 1, price: 99 },
+    ]);
+  });
+});
+
+describe('companyPriceListUpdateBody', () => {
+  const active = { active: true };
+
+  it('sends only active for a switch change', () => {
+    expect(companyPriceListUpdateBody(active, false)).toStrictEqual({
+      active: false,
+    });
+    expect(companyPriceListUpdateBody({ active: false }, true)).toStrictEqual({
+      active: true,
+    });
+  });
+
+  it('sends the content in full, rules with their ids', () => {
+    expect(companyPriceListUpdateBody(active, true, content)).toStrictEqual({
+      rules: [
+        { _id: 'r1', quantity: 1, margin: 20 },
+        { quantity: 10, discountPercent: 5 },
+      ],
+      productSelectionQuery: selection,
+      products: [
+        { productId: '100', staggeredCount: 1, margin: 25 },
+        { productId: '101', staggeredCount: 1, price: 99 },
+        // A bare row resets it to auto.
+        { productId: '102', staggeredCount: 1 },
+        { productId: '103', staggeredCount: 5, delete: true },
+      ],
+    });
+  });
+
+  it('sends an active change together with the content', () => {
+    const body = companyPriceListUpdateBody(active, false, content);
+    expect(body.active).toBe(false);
+    expect(body.rules).toHaveLength(2);
+  });
+
+  it('keeps a zero margin and resets a fixed row without a price', () => {
+    expect(
+      companyPriceListUpdateBody(active, true, {
+        rules: [{ _id: 'r1', quantity: 1, margin: 0 }],
+        products: [
+          { productId: '100', staggeredCount: 1, margin: 0 },
+          { productId: '101', staggeredCount: 1, priceMode: 'fixed' },
+        ],
+      }),
+    ).toStrictEqual({
+      rules: [{ _id: 'r1', quantity: 1, margin: 0 }],
+      products: [
+        { productId: '100', staggeredCount: 1, margin: 0 },
+        { productId: '101', staggeredCount: 1 },
+      ],
+    });
+  });
+
+  it('leaves out content fields that are undefined, but sends empty ones', () => {
+    expect(
+      companyPriceListUpdateBody(active, true, { rules: [], products: [] }),
+    ).toStrictEqual({ rules: [], products: [] });
   });
 });
 

@@ -248,6 +248,11 @@ export interface ProductPriceListCreate extends CreateEntity<ProductPriceListBas
 export interface ProductPriceListUpdate extends UpdateEntity<ProductPriceListBase> {
   products?: PriceListProduct[];
 }
+/** What a price list editor changes and saves: rules, selection and manual rows. */
+export type PriceListContent = Pick<
+  ProductPriceListUpdate,
+  'rules' | 'productSelectionQuery' | 'products'
+>;
 export interface ProductPriceList extends ResponseEntity<ProductPriceListBase> {
   accountSpecific: boolean;
   /** Owning account's `_id` on an account list, `""` on a shared list. */
