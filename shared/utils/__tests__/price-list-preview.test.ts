@@ -41,6 +41,14 @@ describe('calculatePriceListPrices', () => {
     });
   });
 
+  it('gives a price of 0 a full discount and no margin', () => {
+    expect(calculatePriceListPrices('price', 0, base)).toEqual({
+      price: 0,
+      margin: undefined,
+      discountPercent: 100,
+    });
+  });
+
   it('leaves the margin out without a previewed price', () => {
     expect(
       calculatePriceListPrices('price', 90, { regularPrice: 120 }),

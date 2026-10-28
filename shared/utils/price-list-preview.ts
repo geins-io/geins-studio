@@ -57,7 +57,7 @@ export function calculatePriceListPrices(
     margin:
       field === 'margin'
         ? value
-        : price && cost !== undefined
+        : price !== undefined && cost !== undefined
           ? round((1 - cost / price) * 100)
           : undefined,
     discountPercent:
