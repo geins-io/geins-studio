@@ -427,17 +427,17 @@ const renameEdgeSourceHandle = (
   oldHandle: string,
   newHandle: string,
 ) => {
+  // An empty label would detach the edge from its branch for good, and the
+  // engine never routes it — callers keep the old label until a new one lands.
+  if (!newHandle) return;
   for (const e of edges.value) {
     if (
       e.source === sourceId &&
       (e.sourceHandle === oldHandle || e.label === oldHandle)
     ) {
-      e.sourceHandle = newHandle || undefined;
+      e.sourceHandle = newHandle;
       e.label = newHandle;
-      if (e.data)
-        (e.data as Record<string, unknown>).type = newHandle
-          ? 'conditional'
-          : 'sequential';
+      if (e.data) (e.data as Record<string, unknown>).type = 'conditional';
     }
   }
 };

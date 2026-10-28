@@ -1207,6 +1207,7 @@
     "add_node": "Add node",
     "edge_actions": "Edge actions",
     "delete_connection": "Delete connection",
+    "unrouted_condition_edge": "Not linked to a condition branch, so this path never runs. Delete the connection and connect it again from a branch.",
     "status_success": "Success",
     "status_failed": "Failed",
     "status_running": "Running",
