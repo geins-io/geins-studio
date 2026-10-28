@@ -15,7 +15,7 @@ The single runbook for how we work with Linear issues, projects, and the code th
 - **Never `git push --force` to `main` or `next`** — except the post-release reset of `next` in `geins-release` step 7. Feature-branch force-push (after amend) is fine.
 - **Feature work targets `next`, never `main`.** The `next → main` release is a separate squash flow (`.agents/skills/geins-release/SKILL.md`).
 - **One issue → one branch → one squash-merged PR** — or, for a `Context group:`, **one group → one branch → one rebase-merged PR** (§4a). Keep PRs diff-shaped and scoped to the issue(s).
-- **CI gates the merge.** The pre-push hook runs only the tests affected by the branch; the full suite + `pnpm build` run in CI, and `next` requires that check. Merge with `--auto` so GitHub merges once CI is green — never merge around a red or pending check.
+- **CI gates the merge.** The local preflight (§3) runs only the tests affected by the branch and there is no pre-push hook; the full suite + `pnpm build` run in CI, and `next` requires that check. Merge with `--auto` so GitHub merges once CI is green — never merge around a red or pending check.
 
 ## Status lifecycle
 
@@ -52,7 +52,7 @@ Run and get them all green:
 pnpm lint:check && pnpm typecheck && pnpm test:changed
 ```
 
-- This runs only the tests whose module graph touches the branch's changes (same as the pre-push hook). The full suite + `pnpm build` run in CI.
+- This runs only the tests whose module graph touches the branch's changes. It's the only local gate (no pre-push hook), so run it once. The full suite + `pnpm build` run in CI.
 - Still run `pnpm build` locally when the change touches i18n messages or template syntax — only `build` catches bad message/literal-brace syntax, and a local catch beats a red CI round trip.
 - **Verification when the UI is login-walled:** verify at the data layer (curl / the composable's data) or ask the user to check in their browser (HMR). After repo/composable changes, do a real app-boot smoke — auto-import failures crash at runtime, not in curl/typecheck.
 
@@ -71,7 +71,7 @@ pnpm lint:check && pnpm typecheck && pnpm test:changed
    - Fixes: new commit on the branch (not an amend), re-run §3 preflight, push. Then merge — the user's PR approval covers merging after the triage unless a fix changes behaviour beyond the review's scope, in which case confirm first.
 4. Merge: `gh pr merge {n} --squash --auto` — GitHub merges once the required CI check is green. If `--auto` is rejected, the repo's auto-merge setting or `next` ruleset is missing: tell the user, and **never fall back to a plain merge** (that skips the CI gate).
    - **Don't poll or sleep-loop on CI.** End the turn with "auto-merge armed" (step 7 can be done now). If CI goes red, fix with a new commit + push; auto-merge stays armed.
-   - **On the user's next message**, check `gh pr view {n} --json state`. Once it says `MERGED`: delete the remote branch with `gh api -X DELETE repos/{owner}/{repo}/git/refs/heads/{branch}` (a `git push --delete` would run the pre-push hook for nothing) → `git checkout next && git pull --ff-only && git branch -D {branch}` → step 6. Auto-delete of head branches stays off — it would delete `next` after every release PR.
+   - **On the user's next message**, check `gh pr view {n} --json state`. Once it says `MERGED`: delete the remote branch with `git push origin --delete {branch}` → `git checkout next && git pull --ff-only && git branch -D {branch}` → step 6. Auto-delete of head branches stays off — it would delete `next` after every release PR.
    - **In a worktree**, `next` is usually checked out in another worktree, so skip the checkout: `git fetch`, start the next branch from `origin/next` (`git checkout -b {new-branch} origin/next`, or `git checkout --detach origin/next`), then `git branch -D {branch}`.
 5. If pre-commit hooks (prettier/eslint) reformat a file, re-check the result — Vue whitespace/`{{ ' ' }}` separators and import order can shift. Amend + force-push the feature branch if needed.
 6. Once merged, set status → **Ready for QA testing**.

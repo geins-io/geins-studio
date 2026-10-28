@@ -22,7 +22,7 @@ Do not commit with known failures.
 pnpm test:changed
 ```
 
-Runs only the tests affected by the branch's changes — the same set the pre-push hook runs. The full suite and `pnpm build` run in CI (`.github/workflows/ci-quality-gate.yml`), which `next` requires before merging. Run `pnpm build` locally too when i18n messages or template syntax changed.
+Runs only the tests affected by the branch's changes. This preflight is the only local gate (there is no pre-push hook), so run it once, before committing. The full suite and `pnpm build` run in CI (`.github/workflows/ci-quality-gate.yml`), which `next` requires before merging. Run `pnpm build` locally too when i18n messages or template syntax changed.
 
 ## If lint fails
 

@@ -35,10 +35,10 @@ shared/
 pnpm test              # Watch mode
 pnpm test --run        # Single run (used by CI)
 pnpm test --run <path> # Run specific file or folder
-pnpm test:changed      # Only tests affected by the branch (pre-push hook)
+pnpm test:changed      # Only tests affected by the branch (local preflight)
 ```
 
-The pre-push hook runs only the affected tests. The full suite runs in CI on every PR, and `next` requires it to pass before merging.
+Run `test:changed` before you push — there is no pre-push hook. The full suite runs in CI on every PR, and `next` requires it to pass before merging.
 
 `test:changed` follows imports: a changed file selects every test that imports it, directly or indirectly (editing `i18n/locales/*.json` selects the en↔sv key-parity check in `entities.test.ts`). A change to `package.json`, `nuxt.config.ts`, `vitest.config.ts` or the test setup reruns the whole suite.
 
