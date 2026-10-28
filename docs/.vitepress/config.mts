@@ -216,6 +216,10 @@ export default defineConfig({
                 text: 'usePriceListRules',
                 link: '/composables/usePriceListRules.md',
               },
+              {
+                text: 'usePriceListEditor',
+                link: '/composables/usePriceListEditor.md',
+              },
               { text: 'useWholesale', link: '/composables/useWholesale.md' },
               {
                 text: 'useWholesaleOrders',
@@ -922,6 +926,10 @@ export default defineConfig({
             text: 'Price list',
             collapsed: true,
             items: [
+              {
+                text: 'PriceListEditor',
+                link: '/components/price-list/PriceListEditor.md',
+              },
               {
                 text: 'PriceListRulesWrapper',
                 link: '/components/price-list/PriceListRulesWrapper.md',
