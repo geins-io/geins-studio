@@ -73,18 +73,21 @@ Quotations rank one step differently: a list assigned to the buyer comes first, 
 
 ## Composable Architecture
 
-The pricing domain has the most composables (6), each with a focused responsibility:
+The pricing domain has the most composables (7), each with a focused responsibility:
 
-| Composable                  | Purpose                                                          |
-| --------------------------- | ---------------------------------------------------------------- |
-| `usePriceListProducts`      | Product selection and CRUD within a price list                   |
-| `usePriceListProductsTable` | Column definitions and table interactions for the products table |
-| `usePriceListRules`         | Global volume pricing rule management                            |
-| `usePriceListVolumePricing` | Per-product volume pricing panel interactions                    |
-| `usePriceListPreview`       | Preview endpoint calls and result handling                       |
-| `usePrice`                  | Price/currency formatting and conversion utilities               |
+| Composable                  | Purpose                                                                   |
+| --------------------------- | ------------------------------------------------------------------------- |
+| `usePriceListEditor`        | The "Products & pricing" editor of one list, wiring the composables below |
+| `usePriceListProducts`      | Product selection and CRUD within a price list                            |
+| `usePriceListProductsTable` | Column definitions and table interactions for the products table          |
+| `usePriceListRules`         | Global volume pricing rule management                                     |
+| `usePriceListVolumePricing` | Per-product volume pricing panel interactions                             |
+| `usePriceListPreview`       | Preview endpoint calls and result handling                                |
+| `usePrice`                  | Price/currency formatting and conversion utilities                        |
 
-These compose together on the `[id].vue` edit page. `usePriceListProducts` manages the data, `usePriceListProductsTable` renders it, `usePriceListRules`/`usePriceListVolumePricing` handle the rules UI, and `usePriceListPreview` coordinates live calculations.
+`usePriceListEditor` composes the rest: `usePriceListProducts` manages the data, `usePriceListProductsTable` renders it, `usePriceListRules`/`usePriceListVolumePricing` handle the rules UI, and `usePriceListPreview` coordinates live calculations. It takes its list as input (an id and a draft it reads channel, currency and VAT from and writes rules, selection and products to), and `<PriceListEditor :editor>` renders it, so any page can host a list's editor.
+
+The price list page (`[id].vue`) creates the editor in its own setup — the tab is lazily mounted, and the editor's first preview sets the page's clean baseline — seeds it from `parseEntityData`, loads it in `onMounted`, and calls `afterSave()` after `updateEntity`. Dirty state there stays with `useEntityEdit`'s snapshot; a host without one can use the editor's `content` / `isDirty`.
 
 ## Contracts (Cross-Domain Usage)
 
@@ -102,14 +105,14 @@ These compose together on the `[id].vue` edit page. `usePriceListProducts` manag
 
 ## Key Files
 
-| Layer       | Path                                                                                                                                                       |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Types       | `shared/types/Product.ts` (price list types colocated with product types)                                                                                  |
-| Utils       | `shared/utils/price-list.ts` (`isOwnAccountPriceList`)                                                                                                     |
-| Repository  | `app/utils/repositories/product.ts` (`.priceList` sub-repo)                                                                                                |
-| Composables | `usePriceListProducts.ts`, `usePriceListProductsTable.ts`, `usePriceListRules.ts`, `usePriceListVolumePricing.ts`, `usePriceListPreview.ts`, `usePrice.ts` |
-| Components  | `app/components/price-list/`                                                                                                                               |
-| Pages       | `app/pages/pricing/price-lists/index.vue`, `[id].vue`                                                                                                      |
+| Layer       | Path                                                                                                                                                                                |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Types       | `shared/types/Product.ts` (price list types colocated with product types)                                                                                                           |
+| Utils       | `shared/utils/price-list.ts` (`isOwnAccountPriceList`)                                                                                                                              |
+| Repository  | `app/utils/repositories/product.ts` (`.priceList` sub-repo)                                                                                                                         |
+| Composables | `usePriceListEditor.ts`, `usePriceListProducts.ts`, `usePriceListProductsTable.ts`, `usePriceListRules.ts`, `usePriceListVolumePricing.ts`, `usePriceListPreview.ts`, `usePrice.ts` |
+| Components  | `app/components/price-list/`                                                                                                                                                        |
+| Pages       | `app/pages/pricing/price-lists/index.vue`, `[id].vue`                                                                                                                               |
 
 ## Decision Log
 
