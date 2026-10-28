@@ -1,4 +1,13 @@
-import type { ProductPriceList } from '#shared/types';
+import type {
+  PriceListContent,
+  PriceListPriceMode,
+  PriceListProduct,
+  PriceListRule,
+  PriceListRuleField,
+  ProductPriceList,
+  ProductPriceListCreate,
+  ProductPriceListUpdate,
+} from '#shared/types';
 
 type PriceListOwnership = Pick<
   ProductPriceList,
@@ -41,21 +50,26 @@ export function pickAccountPriceList<
 
 export type CompanyPriceListSaveAction =
   | 'create'
+  | 'update'
   | 'activate'
   | 'deactivate'
   | 'none';
 
 /**
  * What "Save company" does to the company's own list for the switch state
- * `enabled`. Off keeps the list (and its prices) and only deactivates it. A
- * read-only (ERP) list is never saved: `PATCH` on it answers 422.
+ * `enabled`. Off keeps the list (and its prices) and only deactivates it.
+ * Edited content makes it an `update`, which also carries an `active` change.
+ * A read-only (ERP) list is never saved: `PATCH` on it answers 422.
  */
 export function getCompanyPriceListSaveAction(
   priceList: Pick<ProductPriceList, 'active' | 'readOnly'> | undefined,
   enabled: boolean,
+  contentDirty = false,
 ): CompanyPriceListSaveAction {
   if (!priceList) return enabled ? 'create' : 'none';
-  if (priceList.readOnly || priceList.active === enabled) return 'none';
+  if (priceList.readOnly) return 'none';
+  if (contentDirty) return 'update';
+  if (priceList.active === enabled) return 'none';
   return enabled ? 'activate' : 'deactivate';
 }
 
@@ -101,4 +115,117 @@ export function companyPriceListIdentifier(
 ): string | undefined {
   const id = externalId?.trim();
   return id ? `${id}-${currency}` : undefined;
+}
+
+const PRICE_FIELDS: PriceListRuleField[] = [
+  'price',
+  'margin',
+  'discountPercent',
+];
+
+const PRICE_FIELD_BY_MODE: Partial<
+  Record<PriceListPriceMode, PriceListRuleField>
+> = {
+  fixed: 'price',
+  margin: 'margin',
+  discount: 'discountPercent',
+};
+
+function priceListRuleBody(
+  rule: PriceListRule,
+  keepId: boolean,
+): PriceListRule {
+  return {
+    ...(keepId && rule._id !== undefined && { _id: rule._id }),
+    quantity: rule.quantity,
+    ...(rule.margin != null && { margin: rule.margin }),
+    ...(rule.discountPercent != null && {
+      discountPercent: rule.discountPercent,
+    }),
+  };
+}
+
+/**
+ * A manual row targeted by `productId` + `staggeredCount`. A GET row carries
+ * all three price fields, so its `priceMode` picks the one to send; a row
+ * without a price is a reset to auto.
+ */
+function priceListProductBody(row: PriceListProduct): PriceListProduct {
+  const { productId, staggeredCount } = row;
+  if (row.delete) return { productId, staggeredCount, delete: true };
+  const field = row.priceMode
+    ? PRICE_FIELD_BY_MODE[row.priceMode]
+    : PRICE_FIELDS.find((f) => row[f] != null);
+  const body: PriceListProduct = { productId, staggeredCount };
+  if (field && row[field] != null) body[field] = row[field];
+  return body;
+}
+
+const hasPrice = (row: PriceListProduct) =>
+  PRICE_FIELDS.some((f) => row[f] !== undefined);
+
+function priceListContentBody(
+  { rules, productSelectionQuery, products }: PriceListContent,
+  create: boolean,
+): PriceListContent {
+  const rows = products?.map(priceListProductBody);
+  return {
+    ...(rules && {
+      rules: rules.map((rule) => priceListRuleBody(rule, !create)),
+    }),
+    ...(productSelectionQuery && { productSelectionQuery }),
+    // A new list has nothing to reset or delete.
+    ...(rows && { products: create ? rows.filter(hasPrice) : rows }),
+  };
+}
+
+export interface CompanyPriceListCreateOptions {
+  companyId: string;
+  companyName: string;
+  externalId?: string;
+  channel: string;
+  currency: string;
+  content?: PriceListContent;
+}
+
+/** `POST` body for a company's own list, with the edited `content` if any. */
+export function companyPriceListCreateBody({
+  companyId,
+  companyName,
+  externalId,
+  channel,
+  currency,
+  content,
+}: CompanyPriceListCreateOptions): ProductPriceListCreate {
+  return {
+    name: companyPriceListName(companyName, currency),
+    identifier: companyPriceListIdentifier(externalId, currency),
+    channel,
+    currency,
+    wholesaleAccountId: companyId,
+    active: true,
+    exVat: true,
+    // Only the selection's products, never ones created later; `forced` has no
+    // effect on an account list.
+    autoAddProducts: false,
+    forced: false,
+    dateCreated: '',
+    ...(content && priceListContentBody(content, true)),
+  };
+}
+
+/**
+ * `PATCH` body for a company's own list: `active` when the switch changed, plus
+ * the edited `content`. Rules and the selection replace what's saved, so pass
+ * them in full; a content field left `undefined` is kept as saved.
+ */
+export function companyPriceListUpdateBody(
+  priceList: Pick<ProductPriceList, 'active'>,
+  enabled: boolean,
+  content?: PriceListContent,
+): ProductPriceListUpdate {
+  return {
+    ...(priceList.active !== enabled && { active: enabled }),
+    ...(content && priceListContentBody(content, false)),
+  };
 }
