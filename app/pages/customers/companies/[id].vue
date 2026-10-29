@@ -12,13 +12,13 @@ import {
   SelectorCondition,
   type CustomerCompanyApiOptions,
   type CompanyBuyerList,
+  type CompanyPriceListRow,
 } from '#shared/types';
 import { ENTITIES, NEW_ENTITY_URL_SEGMENT } from '#shared/utils/entities';
-import {
-  getPriceListSummaryCounts,
-  isOwnAccountPriceList,
-} from '#shared/utils/price-list';
+import { isOwnAccountPriceList } from '#shared/utils/price-list';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast/use-toast';
+import type { Row } from '@tanstack/vue-table';
 import { LucideUser, LucidePackage } from '#components';
 
 // =====================================================================================
@@ -162,8 +162,6 @@ const {
   entries: companyPriceLists,
   hasChanges: companyPriceListHasChanges,
   merge: mergeCompanyPriceLists,
-  addDraft: addCompanyPriceListDraft,
-  removeDraft: removeCompanyPriceListDraft,
   seedFor: companyPriceListSeed,
   save: saveCompanyPriceLists,
 } = useCompanyPriceLists({
@@ -171,14 +169,10 @@ const {
   company: () => entityData.value,
   onSaved: async (entry, saved, action) => {
     // A switch-only save leaves the editor's edits alone; saved content or a new
-    // list re-seeds it.
-    if (
-      (action === 'create' || action === 'update') &&
-      entry.key === companyPriceEditorKey.value
-    ) {
-      await companyPriceEditor.value?.afterSave(saved);
+    // list re-seeds it (and refreshes its counts).
+    if (action === 'create' || action === 'update') {
+      await companyPriceEditors.get(entry.key)?.afterSave(saved);
     }
-    if (action === 'update') await refreshStudioPriceListCounts();
   },
 });
 
@@ -611,189 +605,133 @@ const buyerPriceListOptions = computed<CustomerPriceList[]>(() => {
 // =====================================================================================
 // COMPANY SET PRICES
 // =====================================================================================
-// Intent: The company's own account price lists, held by useCompanyPriceLists. The card
-// shows one: the entry in the company's default channel and currency. An ERP import's
-// list (`readOnly`) shows locked with a read-only grid; rows load like the price list
-// page — one unpaginated query, grouped per product, searched and paged client-side by
-// TableView. Any other company gets a Studio-managed switch that "Save company" saves
-// (saveCompanyPriceLists).
+// Intent: The company's own account price lists (one per channel and currency), held by
+// useCompanyPriceLists and shown as a table. Each row opens a sub view of the Pricing tab
+// with that list's CompanyPriceListEditor: editable for a Studio-managed list, read-only
+// for an ERP import's (`readOnly`). "Save company" saves them (saveCompanyPriceLists).
 
-const { transformProductsForList } = usePriceListProducts();
-const { setupReadOnlyPriceListColumns, getPinnedState } =
-  usePriceListProductsTable();
-const { batchQueryNoPagination } = useBatchQuery();
-
-const getDefaultCurrency = (channel?: string) =>
-  channel ? accountStore.getCurrenciesByChannelId(channel)[0] : undefined;
-
-const companyPriceListDefaultSlot = computed(() => {
-  const channel = entityData.value.channels?.[0] ?? '';
-  return { channel, currency: getDefaultCurrency(channel) ?? '' };
-});
-// Without a list in the default slot, the first saved list shows, as before.
-const companyPriceListEntry = computed(() => {
-  const { channel, currency } = companyPriceListDefaultSlot.value;
-  return (
-    companyPriceLists.value.find(
-      (entry) =>
-        String(entry.channel) === String(channel) &&
-        entry.currency === currency,
-    ) ?? companyPriceLists.value.find((entry) => entry.saved)
-  );
-});
-
-// On without a list adds a draft that "Save company" creates; off on a draft
-// drops it, since there's nothing to save.
-const companyPriceListEnabled = computed({
-  get: () => companyPriceListEntry.value?.active ?? false,
-  set: (enabled: boolean) => {
-    const entry = companyPriceListEntry.value;
-    if (!entry) {
-      if (enabled) addCompanyPriceListDraft(companyPriceListDefaultSlot.value);
-    } else if (!entry.saved && !enabled) {
-      removeCompanyPriceListDraft(entry.key);
-    } else {
-      entry.active = enabled;
-    }
-  },
-});
-
-const erpPriceList = computed(() =>
-  companyPriceListEntry.value?.readOnly
-    ? companyPriceListEntry.value.saved
-    : undefined,
-);
-// An inactive list stays folded, so its rows are only fetched when active.
-const erpPriceListId = computed(() =>
-  erpPriceList.value?.active ? erpPriceList.value._id : undefined,
+const companyPriceListRows = computed<CompanyPriceListRow[]>(() =>
+  companyPriceLists.value.map((entry) => ({
+    key: entry.key,
+    channel: accountStore.getChannelNameById(entry.channel),
+    currency: entry.currency,
+    productCount: entry.productCount,
+    active: entry.active,
+    readOnly: entry.readOnly,
+  })),
 );
 
-// Opened from the switch body; stays mounted once opened, so edits survive going
-// back to the Pricing cards. Keyed by the entry, so another list gets a fresh one.
-const managingCompanyPrices = ref(false);
-const companyPriceEditorKey = ref<string>();
-const companyPriceEditor = useTemplateRef('companyPriceEditor');
-const openCompanyPriceEditor = () => {
-  companyPriceEditorKey.value = companyPriceListEntry.value?.key;
-  managingCompanyPrices.value = true;
+const setCompanyPriceListActive = (key: string, active: boolean) => {
+  const entry = companyPriceLists.value.find((e) => e.key === key);
+  if (entry && !entry.readOnly) entry.active = active;
 };
-const companyPriceEditorEntry = computed(() =>
-  companyPriceLists.value.find(
-    (entry) => entry.key === companyPriceEditorKey.value,
-  ),
-);
-// A list that's gone (a removed draft, or one an ERP import took over) closes
-// its sub view, or the tab would show neither the cards nor an editor.
-watch(companyPriceEditorEntry, (entry) => {
-  if (!entry) managingCompanyPrices.value = false;
+
+const {
+  getColumns: getCompanyPriceListColumns,
+  extendColumns: extendCompanyPriceListColumns,
+  getBasicCellStyle: getCompanyPriceListCellStyle,
+} = useColumns<CompanyPriceListRow>();
+
+// `active` would infer a status badge, so it's typed as a switch explicitly.
+const companyPriceListColumns = computed(() => {
+  const columns = getCompanyPriceListColumns(companyPriceListRows.value, {
+    includeColumns: ['channel', 'currency', 'productCount', 'active'],
+    columnTypes: { active: 'switch' },
+    columnTitles: {
+      channel: t('channel'),
+      currency: t('currency'),
+      productCount: t('product', 2),
+      active: t('active'),
+    },
+    columnCellProps: {
+      active: {
+        onChange: (row: Row<CompanyPriceListRow>) => (value: boolean) =>
+          setCompanyPriceListActive(row.original.key, value),
+        disabled: (row: Row<CompanyPriceListRow>) => row.original.readOnly,
+      },
+    },
+    sortable: false,
+  });
+  return extendCompanyPriceListColumns(columns, {
+    id: 'actions',
+    enableHiding: false,
+    enableSorting: false,
+    cell: ({ table, row }) =>
+      h(
+        'div',
+        { class: cn(getCompanyPriceListCellStyle(table), 'justify-end') },
+        h(
+          Button,
+          {
+            variant: 'secondary',
+            size: 'sm',
+            onClick: () => openCompanyPriceList(row.original.key),
+          },
+          () =>
+            row.original.readOnly
+              ? t('customers.view_prices')
+              : t('customers.manage_prices'),
+        ),
+      ),
+  });
 });
 
-const {
-  data: companyPriceRows,
-  error: companyPricesError,
-  status: companyPricesStatus,
-  refresh: refreshCompanyPrices,
-} = useAsyncData(
-  `company-set-prices-${entityId.value}`,
-  async () => {
-    if (!erpPriceListId.value) return [];
-    const result = await productApi.priceList.id(erpPriceListId.value).query(
-      batchQueryNoPagination.value,
-      { fields: ['products', 'productinfo'] },
-      // A failure shows inline as the table's error state.
-      { suppressErrorToast: true },
-    );
-    return result.items ?? [];
-  },
-  { watch: [erpPriceListId], immediate: false, default: () => [] },
-);
-
-const companyPriceProducts = computed(() =>
-  erpPriceList.value
-    ? transformProductsForList(companyPriceRows.value, erpPriceList.value)
-    : [],
-);
-const companyPriceVatDescription = computed(() =>
-  erpPriceList.value?.exVat ? t('ex_vat') : t('inc_vat'),
-);
-const volumePricingOpen = ref(false);
-const volumePricingProduct = ref<PriceListProductList>();
-const companyPriceColumns = computed(() =>
-  setupReadOnlyPriceListColumns(
-    companyPriceProducts.value,
-    companyPriceVatDescription.value,
-    t('pricing.company_price'),
-    ({ id }) => {
-      volumePricingProduct.value = companyPriceProducts.value.find(
-        (product) => product._id === id,
-      );
-      volumePricingOpen.value = true;
-    },
+// Sub views: an opened list's editor stays mounted (hidden behind the table or
+// another list), so its edits survive going back. Keyed by the entry key, never
+// the `_id`, so a draft's editor isn't remounted once "Save company" creates it.
+const openedCompanyPriceListKeys = ref<string[]>([]);
+const activeCompanyPriceListKey = ref<string>();
+const openedCompanyPriceLists = computed(() =>
+  companyPriceLists.value.filter((entry) =>
+    openedCompanyPriceListKeys.value.includes(entry.key),
   ),
 );
-// `immediate: false` leaves the status `idle` until the id watcher fires, so
-// treat idle as loading too, or the empty state flashes first.
-const companyPricesLoading = computed(
-  () =>
-    companyPricesStatus.value === 'idle' ||
-    companyPricesStatus.value === 'pending',
-);
+const openCompanyPriceList = (key: string) => {
+  if (!openedCompanyPriceListKeys.value.includes(key)) {
+    openedCompanyPriceListKeys.value.push(key);
+  }
+  activeCompanyPriceListKey.value = key;
+};
+// A list that's gone (a removed draft, or one an ERP import took over) drops
+// its sub view, or the tab would show neither the table nor an editor.
+watch(companyPriceLists, (entries) => {
+  const keys = entries.map((entry) => entry.key);
+  openedCompanyPriceListKeys.value = openedCompanyPriceListKeys.value.filter(
+    (key) => keys.includes(key),
+  );
+  if (!keys.includes(activeCompanyPriceListKey.value ?? '')) {
+    activeCompanyPriceListKey.value = undefined;
+  }
+});
 
-// Summary of a Studio-managed list. The key follows the list id, so a list
-// created on "Save company" is fetched once it exists. A background read: on
-// failure the fold falls back to the list's `productCount` and hides the counts.
-const studioPriceListId = computed(() =>
-  companyPriceListEntry.value?.readOnly
-    ? undefined
-    : companyPriceListEntry.value?.saved?._id,
-);
-const {
-  data: studioPriceListData,
-  error: studioPriceListError,
-  refresh: refreshStudioPriceListCounts,
-} = useAsyncData(
-  () => `company-set-prices-counts-${studioPriceListId.value ?? 'none'}`,
-  async () => {
-    if (!studioPriceListId.value) return null;
-    return await productApi.priceList.get(
-      studioPriceListId.value,
-      { fields: ['counts'] },
-      { suppressErrorToast: true },
-    );
-  },
-  { default: () => null },
-);
-const studioPriceListCounts = computed(() =>
-  studioPriceListError.value ? undefined : studioPriceListData.value,
-);
-const studioPriceListProductCount = computed(
-  () =>
-    studioPriceListCounts.value?.productCount ??
-    companyPriceListEntry.value?.productCount ??
-    0,
-);
-const studioPriceListSummaryCounts = computed(() =>
-  getPriceListSummaryCounts(studioPriceListCounts.value),
-);
+interface CompanyPriceEditorHandle {
+  afterSave: (saved: ProductPriceList) => Promise<void>;
+}
+const isCompanyPriceEditor = (el: unknown): el is CompanyPriceEditorHandle =>
+  typeof el === 'object' && el !== null && 'afterSave' in el;
+const companyPriceEditors = new Map<string, CompanyPriceEditorHandle>();
+const setCompanyPriceEditor = (key: string) => (el: unknown) => {
+  if (isCompanyPriceEditor(el)) companyPriceEditors.set(key, el);
+  else companyPriceEditors.delete(key);
+};
 
 // No flag says an account's prices come from an external system, so an
 // `externalId` is the hint: an import for the same channel and currency takes
-// over a Studio-created list. Warn only; the switch stays usable.
+// over a Studio-created list. Warn only, while Studio manages a list.
 const showExternalSystemWarning = computed(
-  () => !erpPriceList.value && !!entityData.value.externalId?.trim(),
+  () =>
+    !!entityData.value.externalId?.trim() &&
+    companyPriceLists.value.some((entry) => !entry.readOnly),
 );
-// Buyers restricted to their own lists never get the company's list.
+// Buyers restricted to their own lists never get the company's lists.
 const restrictedBuyerCount = computed(
   () =>
     buyers.value.filter((buyer) => buyer.restrictToDedicatedPriceLists).length,
 );
-const companySetPricesOn = computed(() =>
-  erpPriceList.value
-    ? erpPriceList.value.active
-    : companyPriceListEnabled.value,
-);
 const showRestrictedBuyersNote = computed(
-  () => companySetPricesOn.value && restrictedBuyerCount.value > 0,
+  () =>
+    restrictedBuyerCount.value > 0 &&
+    companyPriceLists.value.some((entry) => entry.active),
 );
 
 // =====================================================================================
@@ -1150,19 +1088,6 @@ if (!createMode.value) {
 </script>
 
 <template>
-  <PriceListVolumePricingPanel
-    v-if="erpPriceList"
-    v-model:open="volumePricingOpen"
-    readonly
-    :rules="volumePricingProduct?.volumePricing ?? []"
-    :product="volumePricingProduct"
-    :product-id="volumePricingProduct?._id ?? ''"
-    :product-name="volumePricingProduct?.name ?? ''"
-    :price-list-id="erpPriceList._id"
-    :currency="erpPriceList.currency"
-    :vat-description="companyPriceVatDescription"
-    :list-price-title="$t('pricing.company_price')"
-  />
   <DialogUnsavedChanges
     v-model:open="unsavedChangesDialogOpen"
     :entity-key="entityKey"
@@ -1556,7 +1481,10 @@ if (!createMode.value) {
             v-if="currentTab === 2"
             :key="`tab-${currentTab}`"
           >
-            <div v-show="!managingCompanyPrices" class="flex flex-col gap-4">
+            <div
+              v-show="!activeCompanyPriceListKey"
+              class="flex flex-col gap-4"
+            >
               <ContentEditCard
                 :create-mode="createMode"
                 :title="$t('customers.connected_price_lists')"
@@ -1592,23 +1520,6 @@ if (!createMode.value) {
                 :description="$t('customers.company_set_prices_description')"
               >
                 <div class="space-y-4">
-                  <Feedback
-                    v-if="erpPriceList && !erpPriceList.active"
-                    type="info"
-                  >
-                    <template #title>
-                      {{
-                        $t('customers.company_set_prices_erp_inactive_title')
-                      }}
-                    </template>
-                    <template #description>
-                      {{
-                        $t(
-                          'customers.company_set_prices_erp_inactive_description',
-                        )
-                      }}
-                    </template>
-                  </Feedback>
                   <Feedback v-if="showExternalSystemWarning" type="warning">
                     <template #title>
                       {{ $t('customers.company_set_prices_external_title') }}
@@ -1637,125 +1548,40 @@ if (!createMode.value) {
                       }}
                     </template>
                   </Feedback>
-                  <ContentSwitch
-                    v-if="erpPriceList"
-                    :checked="erpPriceList.active"
-                    locked
-                    :label="$t('customers.use_company_set_prices')"
-                    :description="
-                      $t('customers.company_set_prices_erp_description')
+                  <TableView
+                    :mode="TableMode.Simple"
+                    entity-key="company_price_list"
+                    id-column="key"
+                    :columns="companyPriceListColumns"
+                    :data="companyPriceListRows"
+                    :pinned-state="
+                      viewport.isGreaterThan('xs') ? null : undefined
                     "
-                    :disabled-tooltip="$t('pricing.managed_externally')"
-                  >
-                    <div class="border-t pt-4">
-                      <TableView
-                        :mode="TableMode.Simple"
-                        entity-key="product"
-                        :columns="companyPriceColumns"
-                        :data="companyPriceProducts"
-                        :loading="companyPricesLoading"
-                        :error="!!companyPricesError"
-                        :on-retry="refreshCompanyPrices"
-                        :empty-text="
-                          $t('no_entity', { entityKey: 'company_set_price' }, 2)
-                        "
-                        :empty-description="
-                          $t(
-                            'empty_description',
-                            { entityKey: 'company_set_price' },
-                            2,
-                          )
-                        "
-                        :page-size="20"
-                        :pinned-state="getPinnedState"
-                        :show-search="true"
-                      />
-                    </div>
-                  </ContentSwitch>
-                  <ContentSwitch
-                    v-else
-                    v-model:checked="companyPriceListEnabled"
-                    :label="$t('customers.use_company_set_prices')"
-                    :description="
-                      $t('customers.company_set_prices_studio_description')
-                    "
-                  >
-                    <div class="border-t pt-4">
-                      <Item class="p-0">
-                        <ItemContent v-if="studioPriceListProductCount > 0">
-                          <ItemTitle>
-                            {{
-                              $t(
-                                'customers.company_set_prices_product_count',
-                                { count: studioPriceListProductCount },
-                                studioPriceListProductCount,
-                              )
-                            }}
-                          </ItemTitle>
-                          <ItemDescription v-if="studioPriceListSummaryCounts">
-                            {{
-                              $t('customers.company_set_prices_counts', {
-                                manual: studioPriceListSummaryCounts.manual,
-                                volume: studioPriceListSummaryCounts.volume,
-                              })
-                            }}
-                          </ItemDescription>
-                        </ItemContent>
-                        <ItemContent v-else>
-                          <ItemTitle>
-                            {{
-                              $t('no_entity_yet', { entityKey: 'product' }, 2)
-                            }}
-                          </ItemTitle>
-                          <ItemDescription>
-                            {{
-                              $t(
-                                'customers.company_set_prices_empty_description',
-                              )
-                            }}
-                          </ItemDescription>
-                        </ItemContent>
-                        <ItemActions>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            @click="openCompanyPriceEditor"
-                          >
-                            <LucideSquarePen class="size-3.5" />
-                            {{
-                              studioPriceListProductCount > 0
-                                ? $t('customers.manage_company_prices')
-                                : $t('add_entity', { entityKey: 'product' }, 2)
-                            }}
-                          </Button>
-                        </ItemActions>
-                      </Item>
-                    </div>
-                  </ContentSwitch>
+                  />
                 </div>
               </ContentEditCard>
             </div>
             <div
-              v-if="companyPriceEditorEntry"
-              v-show="managingCompanyPrices"
+              v-for="entry in openedCompanyPriceLists"
+              v-show="activeCompanyPriceListKey === entry.key"
+              :key="entry.key"
               class="flex flex-col gap-4"
             >
               <Button
                 variant="link"
                 class="gap-1.5 self-start no-underline"
-                @click="managingCompanyPrices = false"
+                @click="activeCompanyPriceListKey = undefined"
               >
                 <LucideArrowLeft class="size-4" />
                 {{ $t('customers.back_to_pricing') }}
               </Button>
               <CompanyPriceListEditor
-                :key="companyPriceEditorEntry.key"
-                ref="companyPriceEditor"
-                v-model:content="companyPriceEditorEntry.content"
-                v-model:dirty="companyPriceEditorEntry.contentDirty"
-                :list-key="companyPriceEditorEntry.key"
-                :price-list="companyPriceEditorEntry.saved"
-                :seed="companyPriceListSeed(companyPriceEditorEntry)"
+                :ref="setCompanyPriceEditor(entry.key)"
+                v-model:content="entry.content"
+                v-model:dirty="entry.contentDirty"
+                :list-key="entry.key"
+                :price-list="entry.saved"
+                :seed="companyPriceListSeed(entry)"
               />
             </div>
           </ContentEditMainContent>
