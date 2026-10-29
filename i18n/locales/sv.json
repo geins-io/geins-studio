@@ -711,6 +711,8 @@
     "company_set_prices_product_count": "{count} produkt med företagspriser | {count} produkter med företagspriser",
     "company_set_prices_counts": "{manual} med manuellt pris · {volume} med volympris",
     "company_set_prices_empty_description": "Välj de produkter som företaget ska få egna priser för.",
+    "manage_company_prices": "Hantera företagspriser",
+    "back_to_pricing": "Tillbaka till prissättning",
     "company_set_prices_external_title": "Företaget är kopplat till ett externt system",
     "company_set_prices_external_description": "Om det systemet hanterar företagets priser kan nästa synk stänga av företagspriserna och ta bort dem.",
     "company_set_prices_restricted_buyers_title": "{count} köpare får inte företagspriser | {count} köpare får inte företagspriser",

@@ -12,6 +12,7 @@ const { products } = storeToRefs(useProductsStore());
 const {
   readOnly,
   priceListId,
+  listPriceTitle,
   currency,
   vatDescription,
   productSelection,
@@ -47,6 +48,7 @@ const {
   rulesPanelOpen,
   rulesProductId,
   rulesProductName,
+  rulesProduct,
   handleSaveRules,
   overwriteBaseRulePromptVisible,
   overwriteLevelsPromptVisible,
@@ -171,12 +173,14 @@ const {
     :price-list-id="priceListId"
     :currency="currency"
     :vat-description="vatDescription"
+    :list-price-title="listPriceTitle"
     :description="$t('pricing.price_list_readonly_breaks_description')"
   />
   <PriceListVolumePricingPanel
     v-else
     v-model:open="rulesPanelOpen"
     v-model:price-list-products="editedProducts"
+    :product="rulesProduct"
     :product-id="rulesProductId"
     :product-name="rulesProductName"
     :price-list-id="priceListId"
