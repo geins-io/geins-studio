@@ -100,5 +100,5 @@ Everything `PriceListEditor` binds: the selection (`productSelection`, `productS
 
 ## Notes
 
-- Cell edits (price, margin, discount) add to `editedProducts`, which a deep watcher copies into `draft.products`, then preview.
+- `editedProducts` is the single source of the manual rows: cell edits, the volume pricing panel and "Apply and overwrite" (via `usePriceListRules`) all write it, and a deep `flush: 'sync'` watcher copies it into `draft.products`, so the draft is current before the next preview reads it.
 - Consumers: `app/pages/pricing/price-lists/[id].vue`.
