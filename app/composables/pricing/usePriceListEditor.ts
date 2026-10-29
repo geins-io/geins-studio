@@ -216,12 +216,13 @@ export function usePriceListEditor({
     );
   };
 
+  // `sync`: an overwrite replaces the rows right before a preview reads the draft.
   watch(
     editedProducts,
     (newVal) => {
       draft.value.products = newVal;
     },
-    { deep: true },
+    { deep: true, flush: 'sync' },
   );
 
   watch(vatDescription, () => {
@@ -310,6 +311,7 @@ export function usePriceListEditor({
     removeBaseRulePromptVisible,
   } = usePriceListRules({
     entityDataUpdate: draft,
+    editedProducts,
     previewPriceList,
   });
 
