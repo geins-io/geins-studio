@@ -9,6 +9,7 @@ import type {
   AddressCreate,
   AddressUpdate,
   ProductPriceList,
+  PriceListContent,
   Price,
 } from './index';
 
@@ -141,3 +142,19 @@ export type CustomerPriceList = Omit<
   | 'forced'
   | 'dateCreated'
 >;
+
+/** One of the company's own lists on its Pricing tab, saved or an unsaved draft. */
+export interface CompanyPriceListEntry {
+  /** The list's `_id`, or `draft-…` for a draft; kept after a create so its editor stays mounted. */
+  key: string;
+  /** The server copy; a draft has none until "Save company" creates it. */
+  saved?: CustomerPriceList;
+  channel: string;
+  currency: string;
+  active: boolean;
+  readOnly: boolean;
+  productCount: number;
+  /** The editor's content and dirty state (`v-model`). */
+  content?: PriceListContent;
+  contentDirty: boolean;
+}

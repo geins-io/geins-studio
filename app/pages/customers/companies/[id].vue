@@ -15,12 +15,8 @@ import {
 } from '#shared/types';
 import { ENTITIES, NEW_ENTITY_URL_SEGMENT } from '#shared/utils/entities';
 import {
-  companyPriceListCreateBody,
-  companyPriceListUpdateBody,
-  getCompanyPriceListSaveAction,
   getPriceListSummaryCounts,
   isOwnAccountPriceList,
-  pickAccountPriceList,
 } from '#shared/utils/price-list';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { LucideUser, LucidePackage } from '#components';
@@ -46,7 +42,7 @@ const {
   addressSchema,
 } = useCustomerCompanies();
 const { t } = useI18n();
-const { geinsLogError, geinsLogWarn } = useGeinsLog(scope);
+const { geinsLogError } = useGeinsLog(scope);
 const accountStore = useAccountStore();
 const { toast } = useToast();
 const viewport = useViewport();
@@ -159,19 +155,32 @@ const companyTags = ref<EntityBaseWithName[]>([]);
 // Form validation
 const createDisabled = ref(true);
 
-// Company set prices: the switch and the editor's content save with "Save
-// company", so they count as unsaved changes until the saved list matches them
-// (see COMPANY SET PRICES). Edits count only while the switch is on.
-const companyPriceList = ref<CustomerPriceList>();
-const companyPriceListEnabled = ref(false);
-const companyPriceContent = ref<PriceListContent>();
-const companyPriceContentDirty = ref(false);
-const companyPriceListHasChanges = computed(
-  () =>
-    companyPriceListEnabled.value !==
-      (companyPriceList.value?.active ?? false) ||
-    (companyPriceListEnabled.value && companyPriceContentDirty.value),
-);
+// Company set prices: the company's own lists save with "Save company", so their
+// switches, drafts and edited content count as unsaved changes until saved (see
+// COMPANY SET PRICES). The getters and the hook run only after setup.
+const {
+  entries: companyPriceLists,
+  hasChanges: companyPriceListHasChanges,
+  merge: mergeCompanyPriceLists,
+  addDraft: addCompanyPriceListDraft,
+  removeDraft: removeCompanyPriceListDraft,
+  seedFor: companyPriceListSeed,
+  save: saveCompanyPriceLists,
+} = useCompanyPriceLists({
+  companyId: () => entityId.value,
+  company: () => entityData.value,
+  onSaved: async (entry, saved, action) => {
+    // A switch-only save leaves the editor's edits alone; saved content or a new
+    // list re-seeds it.
+    if (
+      (action === 'create' || action === 'update') &&
+      entry.key === companyPriceEditorKey.value
+    ) {
+      await companyPriceEditor.value?.afterSave(saved);
+    }
+    if (action === 'update') await refreshStudioPriceListCounts();
+  },
+});
 
 // =====================================================================================
 // ENTITY EDIT COMPOSABLE
@@ -258,7 +267,12 @@ const {
     ownAccountPriceLists.value = priceLists.filter((pl) =>
       isOwnAccountPriceList(pl, company._id),
     );
-    selectCompanyPriceList(company.channels?.[0]);
+    // Runs on every reload (e.g. after the buyer panel closes); merging keeps
+    // unsaved switch changes and drafts.
+    const removed = mergeCompanyPriceLists(ownAccountPriceLists.value);
+    if (removed.includes(companyPriceEditorKey.value ?? '')) {
+      managingCompanyPrices.value = false;
+    }
 
     billingAddress.value = {
       ...company.addresses?.find(
@@ -600,122 +614,77 @@ const buyerPriceListOptions = computed<CustomerPriceList[]>(() => {
 // =====================================================================================
 // COMPANY SET PRICES
 // =====================================================================================
-// Intent: The company's own account price list. v1 shows one list: the one in the
-// company's default channel and currency. An ERP import's list (`readOnly`) shows
-// locked with a read-only grid; rows load like the price list page — one unpaginated
-// query, grouped per product, searched and paged client-side by TableView. Any other
-// company gets a Studio-managed switch that "Save company" saves (saveCompanyPriceList).
+// Intent: The company's own account price lists, held by useCompanyPriceLists. The card
+// shows one: the entry in the company's default channel and currency. An ERP import's
+// list (`readOnly`) shows locked with a read-only grid; rows load like the price list
+// page — one unpaginated query, grouped per product, searched and paged client-side by
+// TableView. Any other company gets a Studio-managed switch that "Save company" saves
+// (saveCompanyPriceLists).
 
 const { transformProductsForList } = usePriceListProducts();
 const { setupReadOnlyPriceListColumns, getPinnedState } =
   usePriceListProductsTable();
 const { batchQueryNoPagination } = useBatchQuery();
 
+const getDefaultCurrency = (channel?: string) =>
+  channel ? accountStore.getCurrenciesByChannelId(channel)[0] : undefined;
+
+const companyPriceListDefaultSlot = computed(() => {
+  const channel = entityData.value.channels?.[0] ?? '';
+  return { channel, currency: getDefaultCurrency(channel) ?? '' };
+});
+// Without a list in the default slot, the first saved list shows, as before.
+const companyPriceListEntry = computed(() => {
+  const { channel, currency } = companyPriceListDefaultSlot.value;
+  return (
+    companyPriceLists.value.find(
+      (entry) =>
+        String(entry.channel) === String(channel) &&
+        entry.currency === currency,
+    ) ?? companyPriceLists.value.find((entry) => entry.saved)
+  );
+});
+
+// On without a list adds a draft that "Save company" creates; off on a draft
+// drops it, since there's nothing to save.
+const companyPriceListEnabled = computed({
+  get: () => companyPriceListEntry.value?.active ?? false,
+  set: (enabled: boolean) => {
+    const entry = companyPriceListEntry.value;
+    if (!entry) {
+      if (enabled) addCompanyPriceListDraft(companyPriceListDefaultSlot.value);
+    } else if (!entry.saved && !enabled) {
+      removeCompanyPriceListDraft(entry.key);
+    } else {
+      entry.active = enabled;
+    }
+  },
+});
+
 const erpPriceList = computed(() =>
-  companyPriceList.value?.readOnly ? companyPriceList.value : undefined,
+  companyPriceListEntry.value?.readOnly
+    ? companyPriceListEntry.value.saved
+    : undefined,
 );
 // An inactive list stays folded, so its rows are only fetched when active.
 const erpPriceListId = computed(() =>
   erpPriceList.value?.active ? erpPriceList.value._id : undefined,
 );
 
-const getDefaultCurrency = (channel?: string) =>
-  channel ? accountStore.getCurrenciesByChannelId(channel)[0] : undefined;
-
-const selectCompanyPriceList = (channel?: string) => {
-  const currency = getDefaultCurrency(channel);
-  const { priceList, fallback } = pickAccountPriceList(
-    ownAccountPriceLists.value,
-    channel,
-    currency,
-  );
-  if (fallback) {
-    geinsLogWarn(
-      `no account price list for channel ${channel} / ${currency}, showing ${priceList?._id}`,
-    );
-  }
-  companyPriceList.value = priceList;
-  companyPriceListEnabled.value = priceList?.active ?? false;
-};
-
 // Opened from the switch body; stays mounted once opened, so edits survive going
-// back to the Pricing cards.
+// back to the Pricing cards. Keyed by the entry, so another list gets a fresh one.
 const managingCompanyPrices = ref(false);
-const companyPriceEditorOpened = ref(false);
+const companyPriceEditorKey = ref<string>();
 const companyPriceEditor = useTemplateRef('companyPriceEditor');
 const openCompanyPriceEditor = () => {
-  companyPriceEditorOpened.value = true;
+  companyPriceEditorKey.value = companyPriceListEntry.value?.key;
   managingCompanyPrices.value = true;
 };
-
-// A new list is created in the company's default channel and currency.
-const companyPriceListCreateOptions = (content?: PriceListContent) => {
-  const channel = entityData.value.channels?.[0] ?? '';
-  return {
-    companyId: entityId.value,
-    companyName: entityData.value.name ?? '',
-    externalId: entityData.value.externalId,
-    channel,
-    currency: getDefaultCurrency(channel) ?? '',
-    content,
-  };
-};
-const companyPriceListSeed = computed(() =>
-  companyPriceListCreateBody(companyPriceListCreateOptions()),
+const companyPriceEditorEntry = computed(() =>
+  companyPriceLists.value.find(
+    (entry) => entry.key === companyPriceEditorKey.value,
+  ),
 );
-
-// Runs before the company update, whose reload (`fields: all`) brings the new or
-// changed list back. On failure the global API error toast says why and the save
-// stops, so everything stays unsaved for a retry.
-const saveCompanyPriceList = async (): Promise<boolean> => {
-  const priceList = companyPriceList.value;
-  const enabled = companyPriceListEnabled.value;
-  const contentDirty = enabled && companyPriceContentDirty.value;
-  const action = getCompanyPriceListSaveAction(
-    priceList,
-    enabled,
-    contentDirty,
-  );
-  if (action === 'none') return true;
-
-  const content = contentDirty ? companyPriceContent.value : undefined;
-  // Rules and the selection come back, so the editor can re-seed rule `_id`s.
-  const options: ProductPriceListApiOptions = {
-    fields: ['rules', 'selectionquery'],
-  };
-
-  loading.value = true;
-  try {
-    let saved: ProductPriceList;
-    if (!priceList) {
-      saved = await productApi.priceList.create(
-        companyPriceListCreateBody(companyPriceListCreateOptions(content)),
-        options,
-      );
-    } else {
-      saved =
-        (await productApi.priceList.update(
-          priceList._id,
-          companyPriceListUpdateBody(priceList, enabled, content),
-          options,
-        )) ?? (await productApi.priceList.get(priceList._id, options));
-    }
-    // Kept locally too, so a failed company update can't re-send this on retry.
-    companyPriceList.value = saved;
-    // A switch-only save leaves the editor's edits as they are (off keeps them
-    // in memory); saved content or a new list re-seeds it.
-    if (content || !priceList) {
-      await companyPriceEditor.value?.afterSave(saved);
-    }
-    if (action === 'update') await refreshStudioPriceListCounts();
-    return true;
-  } catch (error) {
-    geinsLogError('error saving company price list:', error);
-    return false;
-  } finally {
-    loading.value = false;
-  }
-};
 
 const {
   data: companyPriceRows,
@@ -772,9 +741,9 @@ const companyPricesLoading = computed(
 // created on "Save company" is fetched once it exists. A background read: on
 // failure the fold falls back to the list's `productCount` and hides the counts.
 const studioPriceListId = computed(() =>
-  companyPriceList.value && !companyPriceList.value.readOnly
-    ? companyPriceList.value._id
-    : undefined,
+  companyPriceListEntry.value?.readOnly
+    ? undefined
+    : companyPriceListEntry.value?.saved?._id,
 );
 const {
   data: studioPriceListData,
@@ -798,7 +767,7 @@ const studioPriceListCounts = computed(() =>
 const studioPriceListProductCount = computed(
   () =>
     studioPriceListCounts.value?.productCount ??
-    companyPriceList.value?.productCount ??
+    companyPriceListEntry.value?.productCount ??
     0,
 );
 const studioPriceListSummaryCounts = computed(() =>
@@ -989,7 +958,12 @@ const handleUpdateCompany = async () => {
     return;
   }
   validateOnChange.value = false;
-  if (!(await saveCompanyPriceList())) return;
+  // The company's lists save first; the company reload (`fields: all`) then
+  // brings them back. A failed list stops here, so the company stays unsaved.
+  loading.value = true;
+  const listsSaved = await saveCompanyPriceLists();
+  loading.value = false;
+  if (!listsSaved) return;
   await updateEntity(undefined, { fields: ['all'] });
 };
 
@@ -1760,7 +1734,7 @@ if (!createMode.value) {
               </ContentEditCard>
             </div>
             <div
-              v-if="companyPriceEditorOpened"
+              v-if="companyPriceEditorEntry"
               v-show="managingCompanyPrices"
               class="flex flex-col gap-4"
             >
@@ -1773,11 +1747,12 @@ if (!createMode.value) {
                 {{ $t('customers.back_to_pricing') }}
               </Button>
               <CompanyPriceListEditor
+                :key="companyPriceEditorEntry.key"
                 ref="companyPriceEditor"
-                v-model:content="companyPriceContent"
-                v-model:dirty="companyPriceContentDirty"
-                :price-list="companyPriceList"
-                :seed="companyPriceListSeed"
+                v-model:content="companyPriceEditorEntry.content"
+                v-model:dirty="companyPriceEditorEntry.contentDirty"
+                :price-list="companyPriceEditorEntry.saved"
+                :seed="companyPriceListSeed(companyPriceEditorEntry)"
               />
             </div>
           </ContentEditMainContent>
