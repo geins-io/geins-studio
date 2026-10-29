@@ -15,8 +15,8 @@ import {
 } from '#shared/types';
 import { ENTITIES, NEW_ENTITY_URL_SEGMENT } from '#shared/utils/entities';
 import {
-  companyPriceListIdentifier,
-  companyPriceListName,
+  companyPriceListCreateBody,
+  companyPriceListUpdateBody,
   getCompanyPriceListSaveAction,
   getPriceListSummaryCounts,
   isOwnAccountPriceList,
@@ -159,13 +159,18 @@ const companyTags = ref<EntityBaseWithName[]>([]);
 // Form validation
 const createDisabled = ref(true);
 
-// Company set prices: the switch saves with "Save company", so it counts as
-// an unsaved change until the saved list matches it (see COMPANY SET PRICES).
+// Company set prices: the switch and the editor's content save with "Save
+// company", so they count as unsaved changes until the saved list matches them
+// (see COMPANY SET PRICES). Edits count only while the switch is on.
 const companyPriceList = ref<CustomerPriceList>();
 const companyPriceListEnabled = ref(false);
+const companyPriceContent = ref<PriceListContent>();
+const companyPriceContentDirty = ref(false);
 const companyPriceListHasChanges = computed(
   () =>
-    companyPriceListEnabled.value !== (companyPriceList.value?.active ?? false),
+    companyPriceListEnabled.value !==
+      (companyPriceList.value?.active ?? false) ||
+    (companyPriceListEnabled.value && companyPriceContentDirty.value),
 );
 
 // =====================================================================================
@@ -633,44 +638,76 @@ const selectCompanyPriceList = (channel?: string) => {
   companyPriceListEnabled.value = priceList?.active ?? false;
 };
 
+// Opened from the switch body; stays mounted once opened, so edits survive going
+// back to the Pricing cards.
+const managingCompanyPrices = ref(false);
+const companyPriceEditorOpened = ref(false);
+const companyPriceEditor = useTemplateRef('companyPriceEditor');
+const openCompanyPriceEditor = () => {
+  companyPriceEditorOpened.value = true;
+  managingCompanyPrices.value = true;
+};
+
+// A new list is created in the company's default channel and currency.
+const companyPriceListCreateOptions = (content?: PriceListContent) => {
+  const channel = entityData.value.channels?.[0] ?? '';
+  return {
+    companyId: entityId.value,
+    companyName: entityData.value.name ?? '',
+    externalId: entityData.value.externalId,
+    channel,
+    currency: getDefaultCurrency(channel) ?? '',
+    content,
+  };
+};
+const companyPriceListSeed = computed(() =>
+  companyPriceListCreateBody(companyPriceListCreateOptions()),
+);
+
 // Runs before the company update, whose reload (`fields: all`) brings the new or
 // changed list back. On failure the global API error toast says why and the save
 // stops, so everything stays unsaved for a retry.
 const saveCompanyPriceList = async (): Promise<boolean> => {
   const priceList = companyPriceList.value;
+  const enabled = companyPriceListEnabled.value;
+  const contentDirty = enabled && companyPriceContentDirty.value;
   const action = getCompanyPriceListSaveAction(
     priceList,
-    companyPriceListEnabled.value,
+    enabled,
+    contentDirty,
   );
   if (action === 'none') return true;
 
+  const content = contentDirty ? companyPriceContent.value : undefined;
+  // Rules and the selection come back, so the editor can re-seed rule `_id`s.
+  const options: ProductPriceListApiOptions = {
+    fields: ['rules', 'selectionquery'],
+  };
+
   loading.value = true;
   try {
+    let saved: ProductPriceList;
     if (!priceList) {
-      const channel = entityData.value.channels?.[0] ?? '';
-      const currency = getDefaultCurrency(channel) ?? '';
-      companyPriceList.value = await productApi.priceList.create({
-        name: companyPriceListName(entityData.value.name ?? '', currency),
-        identifier: companyPriceListIdentifier(
-          entityData.value.externalId,
-          currency,
-        ),
-        channel,
-        currency,
-        wholesaleAccountId: entityId.value,
-        active: true,
-        exVat: true,
-        // The list starts empty; `forced` has no effect on an account list.
-        autoAddProducts: false,
-        forced: false,
-        dateCreated: '',
-      });
+      saved = await productApi.priceList.create(
+        companyPriceListCreateBody(companyPriceListCreateOptions(content)),
+        options,
+      );
     } else {
-      const active = action === 'activate';
-      await productApi.priceList.update(priceList._id, { active });
-      // Kept locally too, so a failed company update can't re-send this on retry.
-      companyPriceList.value = { ...priceList, active };
+      saved =
+        (await productApi.priceList.update(
+          priceList._id,
+          companyPriceListUpdateBody(priceList, enabled, content),
+          options,
+        )) ?? (await productApi.priceList.get(priceList._id, options));
     }
+    // Kept locally too, so a failed company update can't re-send this on retry.
+    companyPriceList.value = saved;
+    // A switch-only save leaves the editor's edits as they are (off keeps them
+    // in memory); saved content or a new list re-seeds it.
+    if (content || !priceList) {
+      await companyPriceEditor.value?.afterSave(saved);
+    }
+    if (action === 'update') await refreshStudioPriceListCounts();
     return true;
   } catch (error) {
     geinsLogError('error saving company price list:', error);
@@ -739,7 +776,11 @@ const studioPriceListId = computed(() =>
     ? companyPriceList.value._id
     : undefined,
 );
-const { data: studioPriceListData, error: studioPriceListError } = useAsyncData(
+const {
+  data: studioPriceListData,
+  error: studioPriceListError,
+  refresh: refreshStudioPriceListCounts,
+} = useAsyncData(
   () => `company-set-prices-counts-${studioPriceListId.value ?? 'none'}`,
   async () => {
     if (!studioPriceListId.value) return null;
@@ -1539,163 +1580,206 @@ if (!createMode.value) {
             v-if="currentTab === 2"
             :key="`tab-${currentTab}`"
           >
-            <ContentEditCard
-              :create-mode="createMode"
-              :title="$t('customers.connected_price_lists')"
-              :description="$t('customers.price_lists_description')"
-            >
-              <template #header-action>
-                <SelectorQuickAdd
-                  :entities="allPriceLists"
-                  :selection="addedPriceListsIds"
-                  entity-key="price_list"
-                  :show-image="false"
-                  class="sm:w-60! lg:w-96!"
-                  @add="addPriceList($event)"
-                  @remove="removePriceList($event)"
-                />
-              </template>
-              <div>
-                <TableView
-                  :mode="TableMode.Simple"
-                  entity-key="price_list"
-                  :columns="priceListColumns"
-                  :data="addedPriceLists"
-                  :init-visibility-state="visibilityState"
-                  :pinned-state="
-                    viewport.isGreaterThan('xs') ? null : undefined
-                  "
-                />
-              </div>
-            </ContentEditCard>
-            <ContentEditCard
-              :create-mode="createMode"
-              :title="$t('company_set_price', 2)"
-              :description="$t('customers.company_set_prices_description')"
-            >
-              <div class="space-y-4">
-                <Feedback
-                  v-if="erpPriceList && !erpPriceList.active"
-                  type="info"
-                >
-                  <template #title>
-                    {{ $t('customers.company_set_prices_erp_inactive_title') }}
-                  </template>
-                  <template #description>
-                    {{
-                      $t(
-                        'customers.company_set_prices_erp_inactive_description',
-                      )
-                    }}
-                  </template>
-                </Feedback>
-                <Feedback v-if="showExternalSystemWarning" type="warning">
-                  <template #title>
-                    {{ $t('customers.company_set_prices_external_title') }}
-                  </template>
-                  <template #description>
-                    {{
-                      $t('customers.company_set_prices_external_description')
-                    }}
-                  </template>
-                </Feedback>
-                <Feedback v-if="showRestrictedBuyersNote" type="info">
-                  <template #title>
-                    {{
-                      $t(
-                        'customers.company_set_prices_restricted_buyers_title',
-                        { count: restrictedBuyerCount },
-                        restrictedBuyerCount,
-                      )
-                    }}
-                  </template>
-                  <template #description>
-                    {{
-                      $t(
-                        'customers.company_set_prices_restricted_buyers_description',
-                      )
-                    }}
-                  </template>
-                </Feedback>
-                <ContentSwitch
-                  v-if="erpPriceList"
-                  :checked="erpPriceList.active"
-                  locked
-                  :label="$t('customers.use_company_set_prices')"
-                  :description="
-                    $t('customers.company_set_prices_erp_description')
-                  "
-                  :disabled-tooltip="$t('pricing.managed_externally')"
-                >
-                  <div class="border-t pt-4">
-                    <TableView
-                      :mode="TableMode.Simple"
-                      entity-key="product"
-                      :columns="companyPriceColumns"
-                      :data="companyPriceProducts"
-                      :loading="companyPricesLoading"
-                      :error="!!companyPricesError"
-                      :on-retry="refreshCompanyPrices"
-                      :empty-text="
-                        $t('no_entity', { entityKey: 'company_set_price' }, 2)
-                      "
-                      :empty-description="
+            <div v-show="!managingCompanyPrices" class="flex flex-col gap-4">
+              <ContentEditCard
+                :create-mode="createMode"
+                :title="$t('customers.connected_price_lists')"
+                :description="$t('customers.price_lists_description')"
+              >
+                <template #header-action>
+                  <SelectorQuickAdd
+                    :entities="allPriceLists"
+                    :selection="addedPriceListsIds"
+                    entity-key="price_list"
+                    :show-image="false"
+                    class="sm:w-60! lg:w-96!"
+                    @add="addPriceList($event)"
+                    @remove="removePriceList($event)"
+                  />
+                </template>
+                <div>
+                  <TableView
+                    :mode="TableMode.Simple"
+                    entity-key="price_list"
+                    :columns="priceListColumns"
+                    :data="addedPriceLists"
+                    :init-visibility-state="visibilityState"
+                    :pinned-state="
+                      viewport.isGreaterThan('xs') ? null : undefined
+                    "
+                  />
+                </div>
+              </ContentEditCard>
+              <ContentEditCard
+                :create-mode="createMode"
+                :title="$t('company_set_price', 2)"
+                :description="$t('customers.company_set_prices_description')"
+              >
+                <div class="space-y-4">
+                  <Feedback
+                    v-if="erpPriceList && !erpPriceList.active"
+                    type="info"
+                  >
+                    <template #title>
+                      {{
+                        $t('customers.company_set_prices_erp_inactive_title')
+                      }}
+                    </template>
+                    <template #description>
+                      {{
                         $t(
-                          'empty_description',
-                          { entityKey: 'company_set_price' },
-                          2,
+                          'customers.company_set_prices_erp_inactive_description',
                         )
-                      "
-                      :page-size="20"
-                      :pinned-state="getPinnedState"
-                      :show-search="true"
-                    />
-                  </div>
-                </ContentSwitch>
-                <ContentSwitch
-                  v-else
-                  v-model:checked="companyPriceListEnabled"
-                  :label="$t('customers.use_company_set_prices')"
-                  :description="
-                    $t('customers.company_set_prices_studio_description')
-                  "
-                >
-                  <div class="border-t pt-4">
-                    <Item class="p-0">
-                      <ItemContent v-if="studioPriceListProductCount > 0">
-                        <ItemTitle>
-                          {{
-                            $t(
-                              'customers.company_set_prices_product_count',
-                              { count: studioPriceListProductCount },
-                              studioPriceListProductCount,
-                            )
-                          }}
-                        </ItemTitle>
-                        <ItemDescription v-if="studioPriceListSummaryCounts">
-                          {{
-                            $t('customers.company_set_prices_counts', {
-                              manual: studioPriceListSummaryCounts.manual,
-                              volume: studioPriceListSummaryCounts.volume,
-                            })
-                          }}
-                        </ItemDescription>
-                      </ItemContent>
-                      <ItemContent v-else>
-                        <ItemTitle>
-                          {{ $t('no_entity_yet', { entityKey: 'product' }, 2) }}
-                        </ItemTitle>
-                        <ItemDescription>
-                          {{
-                            $t('customers.company_set_prices_empty_description')
-                          }}
-                        </ItemDescription>
-                      </ItemContent>
-                    </Item>
-                  </div>
-                </ContentSwitch>
-              </div>
-            </ContentEditCard>
+                      }}
+                    </template>
+                  </Feedback>
+                  <Feedback v-if="showExternalSystemWarning" type="warning">
+                    <template #title>
+                      {{ $t('customers.company_set_prices_external_title') }}
+                    </template>
+                    <template #description>
+                      {{
+                        $t('customers.company_set_prices_external_description')
+                      }}
+                    </template>
+                  </Feedback>
+                  <Feedback v-if="showRestrictedBuyersNote" type="info">
+                    <template #title>
+                      {{
+                        $t(
+                          'customers.company_set_prices_restricted_buyers_title',
+                          { count: restrictedBuyerCount },
+                          restrictedBuyerCount,
+                        )
+                      }}
+                    </template>
+                    <template #description>
+                      {{
+                        $t(
+                          'customers.company_set_prices_restricted_buyers_description',
+                        )
+                      }}
+                    </template>
+                  </Feedback>
+                  <ContentSwitch
+                    v-if="erpPriceList"
+                    :checked="erpPriceList.active"
+                    locked
+                    :label="$t('customers.use_company_set_prices')"
+                    :description="
+                      $t('customers.company_set_prices_erp_description')
+                    "
+                    :disabled-tooltip="$t('pricing.managed_externally')"
+                  >
+                    <div class="border-t pt-4">
+                      <TableView
+                        :mode="TableMode.Simple"
+                        entity-key="product"
+                        :columns="companyPriceColumns"
+                        :data="companyPriceProducts"
+                        :loading="companyPricesLoading"
+                        :error="!!companyPricesError"
+                        :on-retry="refreshCompanyPrices"
+                        :empty-text="
+                          $t('no_entity', { entityKey: 'company_set_price' }, 2)
+                        "
+                        :empty-description="
+                          $t(
+                            'empty_description',
+                            { entityKey: 'company_set_price' },
+                            2,
+                          )
+                        "
+                        :page-size="20"
+                        :pinned-state="getPinnedState"
+                        :show-search="true"
+                      />
+                    </div>
+                  </ContentSwitch>
+                  <ContentSwitch
+                    v-else
+                    v-model:checked="companyPriceListEnabled"
+                    :label="$t('customers.use_company_set_prices')"
+                    :description="
+                      $t('customers.company_set_prices_studio_description')
+                    "
+                  >
+                    <div class="border-t pt-4">
+                      <Item class="p-0">
+                        <ItemContent v-if="studioPriceListProductCount > 0">
+                          <ItemTitle>
+                            {{
+                              $t(
+                                'customers.company_set_prices_product_count',
+                                { count: studioPriceListProductCount },
+                                studioPriceListProductCount,
+                              )
+                            }}
+                          </ItemTitle>
+                          <ItemDescription v-if="studioPriceListSummaryCounts">
+                            {{
+                              $t('customers.company_set_prices_counts', {
+                                manual: studioPriceListSummaryCounts.manual,
+                                volume: studioPriceListSummaryCounts.volume,
+                              })
+                            }}
+                          </ItemDescription>
+                        </ItemContent>
+                        <ItemContent v-else>
+                          <ItemTitle>
+                            {{
+                              $t('no_entity_yet', { entityKey: 'product' }, 2)
+                            }}
+                          </ItemTitle>
+                          <ItemDescription>
+                            {{
+                              $t(
+                                'customers.company_set_prices_empty_description',
+                              )
+                            }}
+                          </ItemDescription>
+                        </ItemContent>
+                        <ItemActions>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            @click="openCompanyPriceEditor"
+                          >
+                            <LucideSquarePen class="size-3.5" />
+                            {{
+                              studioPriceListProductCount > 0
+                                ? $t('customers.manage_company_prices')
+                                : $t('add_entity', { entityKey: 'product' }, 2)
+                            }}
+                          </Button>
+                        </ItemActions>
+                      </Item>
+                    </div>
+                  </ContentSwitch>
+                </div>
+              </ContentEditCard>
+            </div>
+            <div
+              v-if="companyPriceEditorOpened"
+              v-show="managingCompanyPrices"
+              class="flex flex-col gap-4"
+            >
+              <Button
+                variant="link"
+                class="gap-1.5 self-start no-underline"
+                @click="managingCompanyPrices = false"
+              >
+                <LucideArrowLeft class="size-4" />
+                {{ $t('customers.back_to_pricing') }}
+              </Button>
+              <CompanyPriceListEditor
+                ref="companyPriceEditor"
+                v-model:content="companyPriceContent"
+                v-model:dirty="companyPriceContentDirty"
+                :price-list="companyPriceList"
+                :seed="companyPriceListSeed"
+              />
+            </div>
           </ContentEditMainContent>
         </KeepAlive>
         <KeepAlive>

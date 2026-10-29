@@ -714,6 +714,8 @@
     "company_set_prices_product_count": "{count} product with company set prices | {count} products with company set prices",
     "company_set_prices_counts": "{manual} set manually · {volume} with volume pricing",
     "company_set_prices_empty_description": "Select the products this company should get its own prices for.",
+    "manage_company_prices": "Manage company prices",
+    "back_to_pricing": "Back to pricing",
     "company_set_prices_external_title": "This company is linked to an external system",
     "company_set_prices_external_description": "If that system manages this company's prices, its next sync can turn off company set prices and remove them.",
     "company_set_prices_restricted_buyers_title": "{count} buyer doesn't get company set prices | {count} buyers don't get company set prices",

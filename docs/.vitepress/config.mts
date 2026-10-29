@@ -920,6 +920,10 @@ export default defineConfig({
                 text: 'CompanyBuyerPanel',
                 link: '/components/company/CompanyBuyerPanel.md',
               },
+              {
+                text: 'CompanyPriceListEditor',
+                link: '/components/company/CompanyPriceListEditor.md',
+              },
             ],
           },
           {

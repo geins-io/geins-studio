@@ -58,13 +58,15 @@ interface UsePriceListEditorOptions {
   draft: Ref<ProductPriceListUpdate>;
   readOnly?: MaybeRefOrGetter<boolean>;
   onSynced?: () => void;
+  listPriceTitle?: string;
 }
 ```
 
-- **`priceListId`**: the list's `_id`. Previews, volume-pricing previews and the read-only rows need it.
+- **`priceListId`**: the list's `_id`. Without one (a list not created yet), previews post the draft to `POST product/pricelist/preview` and the volume pricing panel works out prices locally from the product row (`rulesProduct`).
 - **`draft`**: the list being edited. The editor reads `channel`, `currency` and `exVat`, and writes `rules`, `productSelectionQuery` and `products`. Always read through the ref — the host may replace the object.
 - **`readOnly`**: an ERP-managed list. Its saved rows load read-only (query, not preview), the grid has read-only columns, the volume pricing panel opens view-only, and every control is disabled.
 - **`onSynced`**: called after a preview rebuilt the saved rows (`updateProducts`) — the host's moment to capture its clean baseline.
+- **`listPriceTitle`**: title of the grid's list price column and the volume pricing panel's header; defaults to `pricing.price_list_price`. The company editor passes `pricing.company_price`.
 
 ## Returns
 
@@ -101,4 +103,4 @@ Everything `PriceListEditor` binds: the selection (`productSelection`, `productS
 ## Notes
 
 - `editedProducts` is the single source of the manual rows: cell edits, the volume pricing panel and "Apply and overwrite" (via `usePriceListRules`) all write it, and a deep `flush: 'sync'` watcher copies it into `draft.products`, so the draft is current before the next preview reads it.
-- Consumers: `app/pages/pricing/price-lists/[id].vue`.
+- Consumers: `app/pages/pricing/price-lists/[id].vue`, [`CompanyPriceListEditor`](/components/company/CompanyPriceListEditor).

@@ -11,7 +11,7 @@ import type { ColumnDef, Row } from '@tanstack/vue-table';
 import type { MaybeRefOrGetter } from 'vue';
 
 export interface UsePriceListEditorOptions {
-  /** The edited list's `_id`; previews and volume-pricing calls need it. */
+  /** The edited list's `_id`; without one (a list not created yet) previews work out a new list. */
   priceListId: MaybeRefOrGetter<string | undefined>;
   /**
    * The list being edited. The editor reads its `channel`, `currency` and
@@ -22,12 +22,15 @@ export interface UsePriceListEditorOptions {
   readOnly?: MaybeRefOrGetter<boolean>;
   /** Called after a preview rebuilt the saved rows — the host's clean baseline. */
   onSynced?: () => void;
+  /** Title of the grid's list price column; defaults to the price list price. */
+  listPriceTitle?: string;
 }
 
 export interface UsePriceListEditorReturnType {
   // State
   readOnly: ComputedRef<boolean>;
   priceListId: ComputedRef<string>;
+  listPriceTitle: string;
   currency: ComputedRef<string | undefined>;
   vatDescription: ComputedRef<string>;
   productSelection: Ref<SelectorSelectionQueryBase>;
@@ -74,6 +77,8 @@ export interface UsePriceListEditorReturnType {
   rulesPanelOpen: Ref<boolean>;
   rulesProductId: Ref<string>;
   rulesProductName: Ref<string>;
+  /** The row whose price breaks the panel edits; its base for local prices without an id. */
+  rulesProduct: ComputedRef<PriceListProductList | undefined>;
   handleSaveRules: (rules: PriceListRule[]) => void;
 
   // Prompts
@@ -107,8 +112,10 @@ export function usePriceListEditor({
   draft,
   readOnly,
   onSynced,
+  listPriceTitle,
 }: UsePriceListEditorOptions): UsePriceListEditorReturnType {
   const { t } = useI18n();
+  const priceColumnTitle = listPriceTitle ?? t('pricing.price_list_price');
   const { productApi } = useGeinsRepository();
   const productsStore = useProductsStore();
 
@@ -177,7 +184,7 @@ export function usePriceListEditor({
       columns.value = setupReadOnlyPriceListColumns(
         selectedProducts.value,
         vatDescription.value,
-        t('pricing.price_list_price'),
+        priceColumnTitle,
         ({ id }) => {
           volumePricingProduct.value = selectedProducts.value.find(
             (product) => product._id === id,
@@ -213,6 +220,7 @@ export function usePriceListEditor({
       (value: string | number, row: Row<PriceListProductList>) => {
         cellEditCallback(value, row, 'discountPercent');
       },
+      priceColumnTitle,
     );
   };
 
@@ -332,9 +340,12 @@ export function usePriceListEditor({
     updateEntityRules,
     previewPriceList,
   });
+  const rulesProduct = computed(() =>
+    selectedProducts.value.find((p) => p._id === rulesProductId.value),
+  );
 
   const handleApplyBaseRule = () => {
-    if (priceListBaseRuleInput.value === undefined || !id.value) return;
+    if (priceListBaseRuleInput.value === undefined) return;
     const percentage = priceListBaseRuleInput.value;
     const mode = priceListBaseRuleMode.value;
     applyBaseRule(percentage, mode);
@@ -342,7 +353,7 @@ export function usePriceListEditor({
   };
 
   const handleApplyBaseRuleAndOverwrite = () => {
-    if (priceListBaseRuleInput.value === undefined || !id.value) return;
+    if (priceListBaseRuleInput.value === undefined) return;
     const percentage = priceListBaseRuleInput.value;
     const mode = priceListBaseRuleMode.value;
     applyBaseRuleAndOverwrite(percentage, mode);
@@ -436,6 +447,7 @@ export function usePriceListEditor({
   return {
     readOnly: isReadOnly,
     priceListId: id,
+    listPriceTitle: priceColumnTitle,
     currency,
     vatDescription,
     productSelection,
@@ -477,6 +489,7 @@ export function usePriceListEditor({
     rulesPanelOpen,
     rulesProductId,
     rulesProductName,
+    rulesProduct,
     handleSaveRules,
 
     overwriteBaseRulePromptVisible,

@@ -51,6 +51,8 @@ Branch on `accountSpecific` — never null-check `wholesaleAccountId`. `isOwnAcc
 - **Activate / deactivate** (list exists, switch changed) — `PATCH product/pricelist/{id}` with `{ active }` only. Off keeps the list and its prices.
 - **None** — the switch matches the list, or the list is read-only (`PATCH` on it answers `422`).
 
+The content comes from the Pricing tab's [`CompanyPriceListEditor`](../components/company/CompanyPriceListEditor.md) (`v-model:content`, `v-model:dirty`), and counts only while the switch is on. Create and update ask for `fields: ['rules', 'selectionquery']`; once the list saves, the page stores the response as the company list and calls the editor's `afterSave(saved)` (new rule `_id`s, a rebuilt baseline) before the company update, so a failed company update doesn't re-send the list. A switch-only save leaves the editor's in-memory edits alone.
+
 **Price list content PATCH rules** — from the product API swagger (`PATCH /product/pricelist/{priceListId}`). The PATCH is partial: a property left out or `null` is kept, so a content field Studio leaves `undefined` stays as saved.
 
 - **`productSelectionQuery`** replaces the saved query entirely. Products that no longer match are removed from the list; matched products without a `products` entry are added at `staggeredCount: 1` in auto. Send the whole query.
@@ -100,7 +102,7 @@ The pricing domain has the most composables (7), each with a focused responsibil
 | `usePriceListPreview`       | Preview endpoint calls and result handling                                |
 | `usePrice`                  | Price/currency formatting and conversion utilities                        |
 
-`usePriceListEditor` composes the rest: `usePriceListProducts` manages the data, `usePriceListProductsTable` renders it, `usePriceListRules`/`usePriceListVolumePricing` handle the rules UI, and `usePriceListPreview` coordinates live calculations. It takes its list as input (an id and a draft it reads channel, currency and VAT from and writes rules, selection and products to), and `<PriceListEditor :editor>` renders it, so any page can host a list's editor.
+`usePriceListEditor` composes the rest (hosts: the price list page and the company page's `CompanyPriceListEditor`): `usePriceListProducts` manages the data, `usePriceListProductsTable` renders it, `usePriceListRules`/`usePriceListVolumePricing` handle the rules UI, and `usePriceListPreview` coordinates live calculations. It takes its list as input (an id and a draft it reads channel, currency and VAT from and writes rules, selection and products to), and `<PriceListEditor :editor>` renders it, so any page can host a list's editor.
 
 The price list page (`[id].vue`) creates the editor in its own setup — the tab is lazily mounted, and the editor's first preview sets the page's clean baseline — seeds it from `parseEntityData`, loads it in `onMounted`, and calls `afterSave()` after `updateEntity`. Dirty state there stays with `useEntityEdit`'s snapshot; a host without one can use the editor's `content` / `isDirty`.
 
