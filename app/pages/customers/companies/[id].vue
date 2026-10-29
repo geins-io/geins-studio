@@ -269,10 +269,7 @@ const {
     );
     // Runs on every reload (e.g. after the buyer panel closes); merging keeps
     // unsaved switch changes and drafts.
-    const removed = mergeCompanyPriceLists(ownAccountPriceLists.value);
-    if (removed.includes(companyPriceEditorKey.value ?? '')) {
-      managingCompanyPrices.value = false;
-    }
+    mergeCompanyPriceLists(ownAccountPriceLists.value);
 
     billingAddress.value = {
       ...company.addresses?.find(
@@ -685,6 +682,11 @@ const companyPriceEditorEntry = computed(() =>
     (entry) => entry.key === companyPriceEditorKey.value,
   ),
 );
+// A list that's gone (a removed draft, or one an ERP import took over) closes
+// its sub view, or the tab would show neither the cards nor an editor.
+watch(companyPriceEditorEntry, (entry) => {
+  if (!entry) managingCompanyPrices.value = false;
+});
 
 const {
   data: companyPriceRows,

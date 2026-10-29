@@ -57,7 +57,7 @@ The **saved** company. Its name, external id and channel count name new lists (`
 onSaved?: (entry, saved: ProductPriceList, action: CompanyPriceListSaveAction) => Promise<void> | void;
 ```
 
-Runs after each list saves, before the next one. Use it to re-seed that list's editor (`afterSave`) and refresh its counts. A throw counts as a failed save.
+Runs after each list saves, before the next one. Use it to re-seed that list's editor (`afterSave`) and refresh its counts. The list is saved by then, so a throw is logged and the save goes on.
 
 ## Returns
 

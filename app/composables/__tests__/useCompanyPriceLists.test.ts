@@ -260,4 +260,15 @@ describe('save', () => {
     expect(update.mock.calls.map(([id]) => id)).toEqual(['b', 'c']);
     expect(hasChanges.value).toBe(false);
   });
+
+  it('keeps saving when a follow-up after a saved list fails', async () => {
+    const { entries, merge, save, hasChanges, onSaved } = setup();
+    merge([list('a'), list('b')]);
+    entries.value.forEach((entry) => (entry.active = false));
+    onSaved.mockRejectedValueOnce(new Error('re-seed failed'));
+
+    expect(await save()).toBe(true);
+    expect(update.mock.calls.map(([id]) => id)).toEqual(['a', 'b']);
+    expect(hasChanges.value).toBe(false);
+  });
 });
