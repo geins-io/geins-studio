@@ -170,7 +170,13 @@ export function useCompanyPriceLists({
           SAVE_OPTIONS,
         );
     Object.assign(entry, serverFields(saved), { contentDirty: false });
-    await onSaved?.(entry, saved, action);
+    // The list is saved either way, so a failing follow-up (an editor re-seed,
+    // a counts refresh) mustn't stop the rest of the save.
+    try {
+      await onSaved?.(entry, saved, action);
+    } catch (error) {
+      geinsLogError('error after saving company price list:', error);
+    }
   };
 
   /**
