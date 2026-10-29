@@ -96,25 +96,87 @@ export function getPriceListSummaryCounts(
   return { manual, volume };
 }
 
-/** Name of a company list Studio creates, e.g. "Sonora Lab AB SEK". */
+/**
+ * Name of a company list Studio creates, e.g. "Sonora Lab AB SEK", or
+ * "Sonora Lab AB Sweden SEK" with the `channelName` of a multi-channel company.
+ */
 export function companyPriceListName(
   companyName: string,
   currency: string,
+  channelName?: string,
 ): string {
-  return `${companyName.trim()} ${currency}`;
+  return [companyName.trim(), channelName?.trim(), currency]
+    .filter(Boolean)
+    .join(' ');
 }
 
 /**
- * Identifier of a company list Studio creates, e.g. "10234-SEK". A list's
+ * Identifier of a company list Studio creates, e.g. "10234-SEK", or
+ * "10234-1-SEK" with the `channel` id of a multi-channel company. A list's
  * `identifier` is for external references, so it only exists when the company
  * has an `externalId`.
  */
 export function companyPriceListIdentifier(
   externalId: string | undefined,
   currency: string,
+  channel?: string,
 ): string | undefined {
   const id = externalId?.trim();
-  return id ? `${id}-${currency}` : undefined;
+  return id ? [id, channel, currency].filter(Boolean).join('-') : undefined;
+}
+
+type PriceListSlot = Pick<ProductPriceList, 'channel' | 'currency'>;
+
+export interface FreeCompanyPriceListSlot {
+  channel: string;
+  currencies: string[];
+}
+
+/**
+ * The channel and currency slots where the company can still get a list of its
+ * own: an account owns at most one per slot. `taken` holds its saved lists (ERP
+ * and Studio-managed) and unsaved drafts. Channels with no free currency are
+ * left out; currencies keep `getCurrencies`' order.
+ */
+export function getFreeCompanyPriceListSlots(
+  channels: string[],
+  getCurrencies: (channel: string) => string[],
+  taken: PriceListSlot[],
+): FreeCompanyPriceListSlot[] {
+  return channels
+    .map((channel) => ({
+      channel,
+      currencies: getCurrencies(channel).filter(
+        (currency) =>
+          !taken.some(
+            (slot) =>
+              String(slot.channel) === String(channel) &&
+              slot.currency === currency,
+          ),
+      ),
+    }))
+    .filter((slot) => slot.currencies.length > 0);
+}
+
+interface CompanyPriceListEntryState {
+  /** The server copy; a draft has none yet. */
+  saved?: Pick<ProductPriceList, 'active'>;
+  active: boolean;
+  readOnly: boolean;
+  contentDirty: boolean;
+}
+
+/**
+ * Whether "Save company" has something to save for one of the company's lists:
+ * it's an unsaved draft, its switch differs from the saved list, or its content
+ * was edited. A read-only (ERP) list never saves.
+ */
+export function isCompanyPriceListEntryDirty(
+  entry: CompanyPriceListEntryState,
+): boolean {
+  if (entry.readOnly) return false;
+  if (!entry.saved) return true;
+  return entry.active !== entry.saved.active || entry.contentDirty;
 }
 
 const PRICE_FIELDS: PriceListRuleField[] = [
@@ -184,7 +246,15 @@ export interface CompanyPriceListCreateOptions {
   companyName: string;
   externalId?: string;
   channel: string;
+  /**
+   * Set when the company has more than one channel: the name then includes it
+   * and the identifier the channel id, or two lists in one currency would clash
+   * (`409` on the identifier).
+   */
+  channelName?: string;
   currency: string;
+  /** Defaults to `true`; lists are inactive by default on the API. */
+  active?: boolean;
   content?: PriceListContent;
 }
 
@@ -194,16 +264,22 @@ export function companyPriceListCreateBody({
   companyName,
   externalId,
   channel,
+  channelName,
   currency,
+  active = true,
   content,
 }: CompanyPriceListCreateOptions): ProductPriceListCreate {
   return {
-    name: companyPriceListName(companyName, currency),
-    identifier: companyPriceListIdentifier(externalId, currency),
+    name: companyPriceListName(companyName, currency, channelName),
+    identifier: companyPriceListIdentifier(
+      externalId,
+      currency,
+      channelName ? channel : undefined,
+    ),
     channel,
     currency,
     wholesaleAccountId: companyId,
-    active: true,
+    active,
     exVat: true,
     // Only the selection's products, never ones created later; `forced` has no
     // effect on an account list.
