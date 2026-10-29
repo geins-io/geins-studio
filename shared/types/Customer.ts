@@ -158,3 +158,14 @@ export interface CompanyPriceListEntry {
   content?: PriceListContent;
   contentDirty: boolean;
 }
+
+/** A row of the company's price list table: one `CompanyPriceListEntry`. */
+export interface CompanyPriceListRow {
+  key: string;
+  /** The channel's name. */
+  channel: string;
+  currency: string;
+  productCount: number;
+  active: boolean;
+  readOnly: boolean;
+}
