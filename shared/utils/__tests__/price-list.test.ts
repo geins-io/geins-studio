@@ -7,7 +7,9 @@ import {
   companyPriceListName,
   companyPriceListUpdateBody,
   getCompanyPriceListSaveAction,
+  getFreeCompanyPriceListSlots,
   getPriceListSummaryCounts,
+  isCompanyPriceListEntryDirty,
   isOwnAccountPriceList,
   pickAccountPriceList,
 } from '../price-list';
@@ -199,6 +201,21 @@ describe('companyPriceListCreateBody', () => {
     });
   });
 
+  it('includes the channel in the name and identifier when given its name', () => {
+    const body = companyPriceListCreateBody({
+      ...company,
+      channelName: 'Sweden',
+    });
+    expect(body.name).toBe('Sonora Lab AB Sweden SEK');
+    expect(body.identifier).toBe('10234-1-SEK');
+  });
+
+  it('creates an inactive list when asked', () => {
+    expect(
+      companyPriceListCreateBody({ ...company, active: false }).active,
+    ).toBe(false);
+  });
+
   it('adds rules without ids, the whole selection and only priced rows', () => {
     const body = companyPriceListCreateBody({ ...company, content });
     expect(body.rules).toStrictEqual([
@@ -285,6 +302,12 @@ describe('companyPriceListName', () => {
       'Sonora Lab AB SEK',
     );
   });
+
+  it('puts the channel name before the currency', () => {
+    expect(companyPriceListName('Sonora Lab AB', 'SEK', 'Sweden')).toBe(
+      'Sonora Lab AB Sweden SEK',
+    );
+  });
 });
 
 describe('companyPriceListIdentifier', () => {
@@ -292,10 +315,111 @@ describe('companyPriceListIdentifier', () => {
     expect(companyPriceListIdentifier('10234', 'SEK')).toBe('10234-SEK');
   });
 
+  it('puts the channel id before the currency', () => {
+    expect(companyPriceListIdentifier('10234', 'SEK', '2')).toBe('10234-2-SEK');
+  });
+
   it('is left out without an external id', () => {
     expect(companyPriceListIdentifier(undefined, 'SEK')).toBeUndefined();
     expect(companyPriceListIdentifier('', 'SEK')).toBeUndefined();
-    expect(companyPriceListIdentifier('  ', 'SEK')).toBeUndefined();
+    expect(companyPriceListIdentifier('  ', 'SEK', '2')).toBeUndefined();
+  });
+});
+
+describe('getFreeCompanyPriceListSlots', () => {
+  const currencies: Record<string, string[]> = {
+    '1': ['SEK', 'EUR'],
+    '2': ['NOK'],
+    '3': [],
+  };
+  const getCurrencies = (channel: string) => currencies[channel] ?? [];
+
+  it('offers every currency of every channel without lists', () => {
+    expect(getFreeCompanyPriceListSlots(['1', '2'], getCurrencies, [])).toEqual(
+      [
+        { channel: '1', currencies: ['SEK', 'EUR'] },
+        { channel: '2', currencies: ['NOK'] },
+      ],
+    );
+  });
+
+  it('counts saved lists and drafts as taken', () => {
+    const erpList = { _id: 'erp', channel: '1', currency: 'SEK' };
+    const draft = { channel: '2', currency: 'NOK' };
+    expect(
+      getFreeCompanyPriceListSlots(['1', '2'], getCurrencies, [erpList, draft]),
+    ).toEqual([{ channel: '1', currencies: ['EUR'] }]);
+  });
+
+  it('leaves out channels with nothing free, and channels without currencies', () => {
+    expect(
+      getFreeCompanyPriceListSlots(['1', '3'], getCurrencies, [
+        { channel: '1', currency: 'SEK' },
+        { channel: '1', currency: 'EUR' },
+      ]),
+    ).toEqual([]);
+  });
+
+  it('ignores lists in channels the company is not in', () => {
+    expect(
+      getFreeCompanyPriceListSlots(['2'], getCurrencies, [
+        { channel: '1', currency: 'NOK' },
+      ]),
+    ).toEqual([{ channel: '2', currencies: ['NOK'] }]);
+  });
+});
+
+describe('isCompanyPriceListEntryDirty', () => {
+  const clean = {
+    saved: { active: true },
+    active: true,
+    readOnly: false,
+    contentDirty: false,
+  };
+
+  it('is clean when the entry matches its saved list', () => {
+    expect(isCompanyPriceListEntryDirty(clean)).toBe(false);
+  });
+
+  it('is dirty for a draft, active or not', () => {
+    expect(isCompanyPriceListEntryDirty({ ...clean, saved: undefined })).toBe(
+      true,
+    );
+    expect(
+      isCompanyPriceListEntryDirty({
+        ...clean,
+        saved: undefined,
+        active: false,
+      }),
+    ).toBe(true);
+  });
+
+  it('is dirty when the switch differs from the saved list', () => {
+    expect(isCompanyPriceListEntryDirty({ ...clean, active: false })).toBe(
+      true,
+    );
+  });
+
+  it('is dirty when the content was edited, even while inactive', () => {
+    expect(
+      isCompanyPriceListEntryDirty({
+        ...clean,
+        saved: { active: false },
+        active: false,
+        contentDirty: true,
+      }),
+    ).toBe(true);
+  });
+
+  it('is never dirty for a read-only list', () => {
+    expect(
+      isCompanyPriceListEntryDirty({
+        ...clean,
+        readOnly: true,
+        active: false,
+        contentDirty: true,
+      }),
+    ).toBe(false);
   });
 });
 
