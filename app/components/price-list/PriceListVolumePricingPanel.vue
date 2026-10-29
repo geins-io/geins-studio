@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { useDebounceFn } from '@vueuse/core';
+import {
+  calculatePriceListPrices,
+  type PriceListPrices,
+} from '#shared/utils/price-list-preview';
 import { useToast } from '@/components/ui/toast/use-toast';
 
 const props = withDefaults(
@@ -7,12 +11,13 @@ const props = withDefaults(
     rules: PriceListRule[];
     productId: string;
     productName: string;
-    priceListId: string;
+    /** Saved list to preview prices on; without it, prices are worked out locally from `product`. */
+    priceListId?: string;
     currency?: string;
     vatDescription?: string;
     /** View-only: the product's price breaks, no inputs, Close-only footer. */
     readonly?: boolean;
-    /** Read-only header values (price, list price, margin) for the product. */
+    /** Read-only header values (price, list price, margin) for the product, and the base for local prices. */
     product?: PriceListProductList;
     /** Label for the product's list price in the read-only header. */
     listPriceTitle?: string;
@@ -79,12 +84,44 @@ const handleUpdate = useDebounceFn((rules: PriceListRule[]) => {
   editableRules.value = rules;
 }, 800);
 
+const setRulePrices = (index: number, prices: PriceListPrices) => {
+  // Create a new array to ensure reactivity
+  const updatedRules = [...editableRules.value];
+  updatedRules[index] = {
+    ...updatedRules[index],
+    margin: prices.margin,
+    discountPercent: prices.discountPercent,
+    price: prices.price,
+  };
+  editableRules.value = updatedRules;
+};
+
+const productBase = computed(() => ({
+  price: Number(props.product?.listPrice?.price) || undefined,
+  margin: props.product?.margin,
+  regularPrice: Number(props.product?.regularPrice?.price) || undefined,
+}));
+
 const handleUpdateRule = useDebounceFn(
   async (payload: { index: number; rule: PriceListRule }) => {
+    const valueType = payload.rule.lastFieldChanged || 'price';
+    const value = payload.rule[valueType];
     try {
       rulesLoading.value = true;
-      const valueType = payload.rule.lastFieldChanged || 'price';
-      const value = payload.rule[valueType];
+      // previewprice only works on a saved list.
+      if (!props.priceListId) {
+        if (value !== undefined && !isNaN(Number(value))) {
+          setRulePrices(
+            payload.index,
+            calculatePriceListPrices(
+              valueType,
+              Number(value),
+              productBase.value,
+            ),
+          );
+        }
+        return;
+      }
       const previewProduct = {
         productId: props.productId,
         ...(valueType === 'price' && { price: value }),
@@ -96,16 +133,7 @@ const handleUpdateRule = useDebounceFn(
       const previewPrice = await productApi.priceList
         .id(props.priceListId)
         .previewPrice(previewProduct, { suppressErrorToast: true });
-
-      // Create a new array to ensure reactivity
-      const updatedRules = [...editableRules.value];
-      updatedRules[payload.index] = {
-        ...updatedRules[payload.index],
-        margin: previewPrice.margin,
-        discountPercent: previewPrice.discountPercent,
-        price: previewPrice.price,
-      };
-      editableRules.value = updatedRules;
+      setRulePrices(payload.index, previewPrice);
     } catch (error) {
       geinsLogError('error fetching preview price', error);
       toast({
@@ -314,9 +342,11 @@ const handleRemove = async (rule: PriceListRule) => {
           type="negative"
           class="mt-10"
         >
-          <template #title>Check your price breaks and try again</template>
+          <template #title>
+            {{ $t('pricing.price_breaks_invalid_title') }}
+          </template>
           <template #description>
-            Quantity must be more than 1 and at least one value must be present
+            {{ $t('pricing.price_breaks_invalid_description') }}
           </template>
         </Feedback>
       </SheetBody>

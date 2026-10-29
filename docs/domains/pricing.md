@@ -20,7 +20,8 @@ The Pricing domain manages price lists — named collections of product prices s
 **Preview** — Two preview endpoints:
 
 - `POST /product/pricelist/{id}/preview` — Preview the entire price list with proposed changes
-- `POST /product/pricelist/{id}/previewprice` — Preview a single product's calculated price
+- `POST /product/pricelist/preview` — Preview a list that isn't saved yet (same `{ priceList, batchQuery }` body). Echoes `wholesaleAccountId` without checking the account or its free slot; create does both. Never send back the `new_`-prefixed ids a preview returns
+- `POST /product/pricelist/{id}/previewprice` — Preview a single product's calculated price. Only for products in a saved list, and ignores rules; a new list works the values out locally (`calculatePriceListPrices`)
 
 **Query** — `POST /product/pricelist/{id}/query` returns a saved list's rows read-only (needs only read access). `productApi.priceList.id(id).query(batchQuery, options)` with `batchQueryNoPagination` and `fields: ['products', 'productinfo']` returns the same rows as preview; feed them to `transformProductsForList`. Used where nothing is previewed (the company Company set prices grid).
 
@@ -43,11 +44,25 @@ Branch on `accountSpecific` — never null-check `wholesaleAccountId`. `isOwnAcc
 - **Account updates** keep the account's own lists even when `priceLists` leaves them out, so the company page sends connected (shared) ids only. **Buyer updates** keep nothing back: a list left out of a buyer's `priceLists` is removed from that buyer, account lists included. An account list assigned to a buyer has no pricing effect (see restricted buyers below), but Studio still keeps such assignments on save — the company page's `buyerPriceListOptions` feeds them to the buyer panel — so it never drops data silently.
 - **Renamed fields** — earlier builds sent `customerId`/`customerSpecific` on price lists; both are gone. Use `wholesaleAccountId`/`accountSpecific`.
 
-**Studio-managed company lists** — a company without an ERP list turns its company set prices on and off with one switch on the company Pricing tab. The switch maps to the list's `active` and saves with "Save company": `handleUpdateCompany` saves the list first, then the company (`fields: ['all']`, whose reload brings the list back). `getCompanyPriceListSaveAction(list, enabled)` (`#shared/utils/price-list`) picks the call:
+**Studio-managed company lists** — a company without an ERP list turns its company set prices on and off with one switch on the company Pricing tab. The switch maps to the list's `active` and saves with "Save company": `handleUpdateCompany` saves the list first, then the company (`fields: ['all']`, whose reload brings the list back). `getCompanyPriceListSaveAction(list, enabled, contentDirty)` (`#shared/utils/price-list`) picks the call, and `companyPriceListCreateBody` / `companyPriceListUpdateBody` build its body from explicit fields, never a GET body:
 
-- **Create** (on, no list yet) — `POST product/pricelist` with `wholesaleAccountId`, `active: true`, the company's default channel (`channels[0]`) and that channel's default currency, `exVat: true`, and `autoAddProducts: false` so the list starts empty. `name` is `{company name} {currency}` (`companyPriceListName`); `identifier` is `{externalId}-{currency}` (`companyPriceListIdentifier`) and left out when the company has no `externalId`. A taken channel/currency slot or identifier answers `409`.
+- **Create** (on, no list yet) — `POST product/pricelist` with `wholesaleAccountId`, `active: true`, the company's default channel (`channels[0]`) and that channel's default currency, `exVat: true`, and `autoAddProducts: false` so the list starts empty. `name` is `{company name} {currency}` (`companyPriceListName`); `identifier` is `{externalId}-{currency}` (`companyPriceListIdentifier`) and left out when the company has no `externalId`. A taken channel/currency slot or identifier answers `409`. With edited content (`PriceListContent`: `rules`, `productSelectionQuery`, `products`), the body adds the rules without `_id`, the whole selection, and only the rows that carry a price.
+- **Update** (list exists, content edited) — `PATCH product/pricelist/{id}` with `rules`, `productSelectionQuery` and `products` under the PATCH rules below, plus `active` when the switch changed too.
 - **Activate / deactivate** (list exists, switch changed) — `PATCH product/pricelist/{id}` with `{ active }` only. Off keeps the list and its prices.
 - **None** — the switch matches the list, or the list is read-only (`PATCH` on it answers `422`).
+
+**Price list content PATCH rules** — from the product API swagger (`PATCH /product/pricelist/{priceListId}`). The PATCH is partial: a property left out or `null` is kept, so a content field Studio leaves `undefined` stays as saved.
+
+- **`productSelectionQuery`** replaces the saved query entirely. Products that no longer match are removed from the list; matched products without a `products` entry are added at `staggeredCount: 1` in auto. Send the whole query.
+- **`rules`** replace the saved rules, and a rule left out is deleted, so send them all, saved ones with their `_id`. New rules apply to products in auto. The request rule has `quantity`, `margin` and `discountPercent` only, no `price`.
+- **`products`** is an upsert, not a replace: a row is matched by `_id` or by `productId` + `staggeredCount` (Studio uses the pair), and a product left out keeps its saved values. So send every manual row Studio changed:
+  - a bare `{ productId, staggeredCount }` with no price field resets the row to auto;
+  - `delete: true` removes a volume break, and only works for `staggeredCount > 1`; a product leaves the list only by falling out of the selection;
+  - only the price field of the row's mode is set: `price` (fixed), `margin` or `discountPercent`. A GET row carries all three, so its `priceMode` picks one;
+  - a row can't add a product the selection doesn't match.
+- **`autoAddProducts`** "automatically add[s] any new products" to a category or brand list. Products the selection matches are added on save anyway, so a company list created with `autoAddProducts: false` still gets them, but not products created later.
+
+Not stated in the swagger, to confirm with the backend: that `rules: []` deletes every rule; which products "with an explicit rule" revert to auto when rules change (those on a deleted rule, or all of them); and that a `POST` with a selection adds the matched products the way `PATCH` does, with `autoAddProducts: false`.
 
 If the list call fails, the save stops before the company update, so everything stays unsaved for a retry (the global API error toast shows why). The switch counts as an unsaved change through `useEntityEdit`'s `externalChanges` until the saved list matches it.
 
@@ -73,18 +88,21 @@ Quotations rank one step differently: a list assigned to the buyer comes first, 
 
 ## Composable Architecture
 
-The pricing domain has the most composables (6), each with a focused responsibility:
+The pricing domain has the most composables (7), each with a focused responsibility:
 
-| Composable                  | Purpose                                                          |
-| --------------------------- | ---------------------------------------------------------------- |
-| `usePriceListProducts`      | Product selection and CRUD within a price list                   |
-| `usePriceListProductsTable` | Column definitions and table interactions for the products table |
-| `usePriceListRules`         | Global volume pricing rule management                            |
-| `usePriceListVolumePricing` | Per-product volume pricing panel interactions                    |
-| `usePriceListPreview`       | Preview endpoint calls and result handling                       |
-| `usePrice`                  | Price/currency formatting and conversion utilities               |
+| Composable                  | Purpose                                                                   |
+| --------------------------- | ------------------------------------------------------------------------- |
+| `usePriceListEditor`        | The "Products & pricing" editor of one list, wiring the composables below |
+| `usePriceListProducts`      | Product selection and CRUD within a price list                            |
+| `usePriceListProductsTable` | Column definitions and table interactions for the products table          |
+| `usePriceListRules`         | Global volume pricing rule management                                     |
+| `usePriceListVolumePricing` | Per-product volume pricing panel interactions                             |
+| `usePriceListPreview`       | Preview endpoint calls and result handling                                |
+| `usePrice`                  | Price/currency formatting and conversion utilities                        |
 
-These compose together on the `[id].vue` edit page. `usePriceListProducts` manages the data, `usePriceListProductsTable` renders it, `usePriceListRules`/`usePriceListVolumePricing` handle the rules UI, and `usePriceListPreview` coordinates live calculations.
+`usePriceListEditor` composes the rest: `usePriceListProducts` manages the data, `usePriceListProductsTable` renders it, `usePriceListRules`/`usePriceListVolumePricing` handle the rules UI, and `usePriceListPreview` coordinates live calculations. It takes its list as input (an id and a draft it reads channel, currency and VAT from and writes rules, selection and products to), and `<PriceListEditor :editor>` renders it, so any page can host a list's editor.
+
+The price list page (`[id].vue`) creates the editor in its own setup — the tab is lazily mounted, and the editor's first preview sets the page's clean baseline — seeds it from `parseEntityData`, loads it in `onMounted`, and calls `afterSave()` after `updateEntity`. Dirty state there stays with `useEntityEdit`'s snapshot; a host without one can use the editor's `content` / `isDirty`.
 
 ## Contracts (Cross-Domain Usage)
 
@@ -102,14 +120,14 @@ These compose together on the `[id].vue` edit page. `usePriceListProducts` manag
 
 ## Key Files
 
-| Layer       | Path                                                                                                                                                       |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Types       | `shared/types/Product.ts` (price list types colocated with product types)                                                                                  |
-| Utils       | `shared/utils/price-list.ts` (`isOwnAccountPriceList`)                                                                                                     |
-| Repository  | `app/utils/repositories/product.ts` (`.priceList` sub-repo)                                                                                                |
-| Composables | `usePriceListProducts.ts`, `usePriceListProductsTable.ts`, `usePriceListRules.ts`, `usePriceListVolumePricing.ts`, `usePriceListPreview.ts`, `usePrice.ts` |
-| Components  | `app/components/price-list/`                                                                                                                               |
-| Pages       | `app/pages/pricing/price-lists/index.vue`, `[id].vue`                                                                                                      |
+| Layer       | Path                                                                                                                                                                                |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Types       | `shared/types/Product.ts` (price list types colocated with product types)                                                                                                           |
+| Utils       | `shared/utils/price-list.ts` (`isOwnAccountPriceList`)                                                                                                                              |
+| Repository  | `app/utils/repositories/product.ts` (`.priceList` sub-repo)                                                                                                                         |
+| Composables | `usePriceListEditor.ts`, `usePriceListProducts.ts`, `usePriceListProductsTable.ts`, `usePriceListRules.ts`, `usePriceListVolumePricing.ts`, `usePriceListPreview.ts`, `usePrice.ts` |
+| Components  | `app/components/price-list/`                                                                                                                                                        |
+| Pages       | `app/pages/pricing/price-lists/index.vue`, `[id].vue`                                                                                                                               |
 
 ## Decision Log
 

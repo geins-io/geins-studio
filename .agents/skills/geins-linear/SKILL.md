@@ -19,7 +19,7 @@ The single runbook for how we work with Linear issues, projects, and the code th
 
 ## Status lifecycle
 
-`Todo` → **In Progress** (before writing code) → **Ready for QA testing** (after merge). QA moves it to `Done` — we do **not** set `Done` ourselves. Cancelled/blocked work: leave a comment saying why.
+`Todo` → **In Progress** (before writing code) → **Ready for QA testing** (after merge) → `Done` when the work ships in a release (`geins-release` §9). Released = Done; QA doesn't move issues by hand. Never set `Done` straight from a merge into `next`. Cancelled/blocked work: leave a comment saying why.
 
 ## 1. Start / prep an issue
 

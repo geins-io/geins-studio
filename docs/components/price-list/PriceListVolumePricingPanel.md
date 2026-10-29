@@ -8,6 +8,7 @@
   - **Global** (`disabled`) — rules inherited from the price list, read-only
   - **Product** — editable rules for this product
 - Live price-preview calls: every per-row change debounces a call to `productApi.priceList.id(...).previewPrice(...)` and writes the calculated `margin`, `discountPercent`, `price` back into the row
+- **New list** (no `priceListId`): `previewprice` only works on a saved list, so the row's other two values are worked out locally with `calculatePriceListPrices` (`#shared/utils/price-list-preview`) from `product`. The cost comes from the product's previewed price and margin, so the list's currency and VAT basis are already applied. Without `product`, only the value typed stays; the list's next preview fills in the rest
 - Save flow: validates each rule (quantity > 1, at least one numeric value) and converts to `PriceListProduct[]` via [`usePriceListProducts`](/composables/usePriceListProducts) — surfaces a [`Feedback`](/components/Feedback) banner when invalid
 - Cancel discards local changes; Save commits via the `save` event
 - Two-way `v-model:open` and `v-model:priceListProducts` so the parent's selected-products state stays in sync
@@ -90,10 +91,10 @@ Used in the sheet description.
 ### `priceListId`
 
 ```ts
-priceListId: string;
+priceListId?: string
 ```
 
-Used to scope the preview-price API call.
+Used to scope the preview-price API call. Leave it out for a list that isn't saved yet, and pass `product` so the prices can be worked out locally.
 
 ### `currency`
 
@@ -125,7 +126,7 @@ View-only mode: the product's price breaks (all of `rules`, including global one
 product?: PriceListProductList
 ```
 
-Read-only mode only: supplies the header values (`regularPrice`, `listPrice`, `margin`).
+Read-only mode: supplies the header values (`regularPrice`, `listPrice`, `margin`). Editable mode without `priceListId`: the base (`listPrice`, `margin`, `regularPrice`) for working out prices locally.
 
 ### `listPriceTitle`
 
@@ -186,3 +187,4 @@ The `SheetTrigger` content (typically a button).
 - [`ContentCardHeader`](/components/content/ContentCardHeader), [`Feedback`](/components/Feedback)
 - [`usePriceListProducts`](/composables/usePriceListProducts) — `getPriceListProduct`, `getNewPriceListProducts`
 - [`useGeinsRepository`](/composables/useGeinsRepository) — `productApi.priceList.previewPrice`
+- `calculatePriceListPrices` from `#shared/utils/price-list-preview` — local prices without `priceListId`
