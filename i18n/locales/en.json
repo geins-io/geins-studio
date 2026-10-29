@@ -1119,7 +1119,7 @@
     "schema_apply_orphans_heading": "Settings not in schema",
     "reset_schema": "Reset to default",
     "reset_schema_confirm_title": "Reset to default",
-    "reset_schema_confirm_description": "This will reset the storefront settings to the system default. Any custom JSON schema modifications will also be lost. Continue?",
+    "reset_schema_confirm_description": "This resets the storefront schema and all storefront settings to the system default and saves them right away. Custom values such as logo, favicon and colors are lost, along with any changes to the JSON schema. Continue?",
     "reset_schema_success": "Storefront settings successfully reset to default",
     "reset_schema_error": "Failed to reset storefront settings",
     "default_market": "Default market",
