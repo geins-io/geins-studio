@@ -182,6 +182,10 @@ export default defineConfig({
                 text: 'useCustomerCompanies',
                 link: '/composables/useCustomerCompanies.md',
               },
+              {
+                text: 'useCompanyPriceLists',
+                link: '/composables/useCompanyPriceLists.md',
+              },
             ],
           },
           {
