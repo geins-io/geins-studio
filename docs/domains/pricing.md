@@ -23,7 +23,9 @@ The Pricing domain manages price lists — named collections of product prices s
 - `POST /product/pricelist/preview` — Preview a list that isn't saved yet (same `{ priceList, batchQuery }` body). Echoes `wholesaleAccountId` without checking the account or its free slot; create does both. Never send back the `new_`-prefixed ids a preview returns
 - `POST /product/pricelist/{id}/previewprice` — Preview a single product's calculated price. Only for products in a saved list, and ignores rules; a new list works the values out locally (`calculatePriceListPrices`)
 
-**Query** — `POST /product/pricelist/{id}/query` returns a saved list's rows read-only (needs only read access). `productApi.priceList.id(id).query(batchQuery, options)` with `batchQueryNoPagination` and `fields: ['products', 'productinfo']` returns the same rows as preview; feed them to `transformProductsForList`. Used where nothing is previewed (the company Company set prices grid).
+**Query** — `POST /product/pricelist/{id}/query` returns a saved list's rows read-only (needs only read access). `productApi.priceList.id(id).query(batchQuery, options)` with `batchQueryNoPagination` and `fields: ['products', 'productinfo']` returns the list's **stored** rows; feed them to `transformProductsForList`. Used where nothing is previewed (the company Company set prices grid, the read-only price list editor). It never resolves the selection query.
+
+**Retired ERP lists** — an ERP import retires a list by setting `active: false` and deleting its rows on purpose, so `query` correctly returns none. Treat an inactive read-only list as retired: show no rows, and never preview or otherwise resolve its selection. Lists retired before a backend fix still carry a stale `productSelectionQuery` and `productCount` from before they were retired, so don't trust either on an inactive read-only list. An inactive list with rows (QA list 21) got them from a save through the product API, not from the import.
 
 **Copy** — `POST /product/pricelist/{id}/copy` creates a duplicate price list. Accessed via `productApi.priceList.id(id).copy()`. A copy is always a shared list.
 
