@@ -168,4 +168,6 @@ export interface CompanyPriceListRow {
   productCount: number;
   active: boolean;
   readOnly: boolean;
+  /** Not saved yet: "Save company" creates it. */
+  draft: boolean;
 }

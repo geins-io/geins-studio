@@ -15,7 +15,11 @@ import {
   type CompanyPriceListRow,
 } from '#shared/types';
 import { ENTITIES, NEW_ENTITY_URL_SEGMENT } from '#shared/utils/entities';
-import { isOwnAccountPriceList } from '#shared/utils/price-list';
+import {
+  getFreeCompanyPriceListSlots,
+  isOwnAccountPriceList,
+} from '#shared/utils/price-list';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { Row } from '@tanstack/vue-table';
@@ -162,6 +166,8 @@ const {
   entries: companyPriceLists,
   hasChanges: companyPriceListHasChanges,
   merge: mergeCompanyPriceLists,
+  addDraft: addCompanyPriceListDraft,
+  removeDraft: removeCompanyPriceListDraft,
   seedFor: companyPriceListSeed,
   save: saveCompanyPriceLists,
 } = useCompanyPriceLists({
@@ -618,6 +624,7 @@ const companyPriceListRows = computed<CompanyPriceListRow[]>(() =>
     productCount: entry.productCount,
     active: entry.active,
     readOnly: entry.readOnly,
+    draft: !entry.saved,
   })),
 );
 
@@ -659,22 +666,71 @@ const companyPriceListColumns = computed(() => {
     cell: ({ table, row }) =>
       h(
         'div',
-        { class: cn(getCompanyPriceListCellStyle(table), 'justify-end') },
-        h(
-          Button,
-          {
-            variant: 'secondary',
-            size: 'sm',
-            onClick: () => openCompanyPriceList(row.original.key),
-          },
-          () =>
-            row.original.readOnly
-              ? t('customers.view_prices')
-              : t('customers.manage_prices'),
-        ),
+        {
+          class: cn(getCompanyPriceListCellStyle(table), 'justify-end gap-2'),
+        },
+        [
+          row.original.draft &&
+            h(Badge, { variant: 'warning-light' }, () => t('not_saved')),
+          h(
+            Button,
+            {
+              variant: 'secondary',
+              size: 'sm',
+              onClick: () => openCompanyPriceList(row.original.key),
+            },
+            () =>
+              row.original.readOnly
+                ? t('customers.view_prices')
+                : t('customers.manage_prices'),
+          ),
+          row.original.draft &&
+            h(
+              Button,
+              {
+                variant: 'ghost',
+                size: 'sm',
+                onClick: () =>
+                  requestRemoveCompanyPriceListDraft(row.original.key),
+              },
+              () => t('remove'),
+            ),
+        ],
       ),
   });
 });
+
+// "Add company price list" offers the company's free slots in its saved
+// channels; Continue adds a draft that "Save company" creates.
+const addCompanyPriceListOpen = ref(false);
+const companyPriceListSlots = computed(() =>
+  getFreeCompanyPriceListSlots(
+    entityData.value.channels ?? [],
+    (channel) => accountStore.getCurrenciesByChannelId(channel),
+    companyPriceLists.value,
+  ),
+);
+const addCompanyPriceList = (
+  slot: Pick<CompanyPriceListEntry, 'channel' | 'currency'>,
+) => {
+  openCompanyPriceList(addCompanyPriceListDraft(slot));
+};
+
+// Removing a draft is local; one with edited prices asks first, since they'd be lost.
+const removingCompanyPriceListKey = ref<string>();
+const removeCompanyPriceListDialogOpen = ref(false);
+const requestRemoveCompanyPriceListDraft = (key: string) => {
+  const entry = companyPriceLists.value.find((e) => e.key === key);
+  if (!entry?.contentDirty) return removeCompanyPriceListDraft(key);
+  removingCompanyPriceListKey.value = key;
+  removeCompanyPriceListDialogOpen.value = true;
+};
+const confirmRemoveCompanyPriceListDraft = () => {
+  if (removingCompanyPriceListKey.value) {
+    removeCompanyPriceListDraft(removingCompanyPriceListKey.value);
+  }
+  removeCompanyPriceListDialogOpen.value = false;
+};
 
 // Sub views: an opened list's editor stays mounted (hidden behind the table or
 // another list), so its edits survive going back. Keyed by the entry key, never
@@ -1094,6 +1150,30 @@ if (!createMode.value) {
     :loading="loading"
     @confirm="confirmLeave"
   />
+  <CompanyPriceListAddDialog
+    v-model:open="addCompanyPriceListOpen"
+    :slots="companyPriceListSlots"
+    :external-id="entityData.externalId"
+    @add="addCompanyPriceList"
+  />
+  <AlertDialog v-model:open="removeCompanyPriceListDialogOpen">
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>
+          {{ $t('remove_entity', { entityKey: 'company_price_list' }) }}
+        </AlertDialogTitle>
+        <AlertDialogDescription>
+          {{ $t('customers.remove_company_price_list_description') }}
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel>{{ $t('cancel') }}</AlertDialogCancel>
+        <Button @click="confirmRemoveCompanyPriceListDraft">
+          {{ $t('remove') }}
+        </Button>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
   <DialogDelete
     v-model:open="deleteDialogOpen"
     :entity-key="entityKey"
@@ -1519,6 +1599,31 @@ if (!createMode.value) {
                 :title="$t('company_set_price', 2)"
                 :description="$t('customers.company_set_prices_description')"
               >
+                <template #header-action>
+                  <TooltipProvider :delay-duration="100">
+                    <Tooltip :disabled="companyPriceListSlots.length > 0">
+                      <TooltipTrigger as-child>
+                        <span :tabindex="companyPriceListSlots.length ? -1 : 0">
+                          <ButtonIcon
+                            icon="new"
+                            variant="secondary"
+                            :disabled="!companyPriceListSlots.length"
+                            @click="addCompanyPriceListOpen = true"
+                          >
+                            {{
+                              $t('add_entity', {
+                                entityKey: 'company_price_list',
+                              })
+                            }}
+                          </ButtonIcon>
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {{ $t('customers.company_price_list_no_free_slots') }}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </template>
                 <div class="space-y-4">
                   <Feedback v-if="showExternalSystemWarning" type="warning">
                     <template #title>
@@ -1557,7 +1662,36 @@ if (!createMode.value) {
                     :pinned-state="
                       viewport.isGreaterThan('xs') ? null : undefined
                     "
-                  />
+                  >
+                    <template #empty-actions>
+                      <TooltipProvider :delay-duration="100">
+                        <Tooltip :disabled="companyPriceListSlots.length > 0">
+                          <TooltipTrigger as-child>
+                            <span
+                              :tabindex="companyPriceListSlots.length ? -1 : 0"
+                            >
+                              <ButtonIcon
+                                icon="new"
+                                :disabled="!companyPriceListSlots.length"
+                                @click="addCompanyPriceListOpen = true"
+                              >
+                                {{
+                                  $t('add_entity', {
+                                    entityKey: 'company_price_list',
+                                  })
+                                }}
+                              </ButtonIcon>
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {{
+                              $t('customers.company_price_list_no_free_slots')
+                            }}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </template>
+                  </TableView>
                 </div>
               </ContentEditCard>
             </div>

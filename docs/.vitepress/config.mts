@@ -928,6 +928,10 @@ export default defineConfig({
                 text: 'CompanyPriceListEditor',
                 link: '/components/company/CompanyPriceListEditor.md',
               },
+              {
+                text: 'CompanyPriceListAddDialog',
+                link: '/components/company/CompanyPriceListAddDialog.md',
+              },
             ],
           },
           {
