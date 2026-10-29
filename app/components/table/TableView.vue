@@ -149,6 +149,10 @@ const searchInput: Ref<string> = serverMode ? searchModel : ref('');
 const expanded = ref<ExpandedState>({});
 
 const { getSkeletonColumns, getSkeletonData } = useSkeleton();
+// Built once: TanStack queues a page index reset whenever `data` is a new array,
+// and the reset re-renders the table, so a fresh skeleton per read never settles.
+const skeletonData = getSkeletonData<TData>();
+const skeletonColumns = getSkeletonColumns<TData>(skeletonData);
 
 const tableMaximized = useState<boolean>('table-maximized', () => false);
 const advancedMode = computed(() => props.mode === TableMode.Advanced);
@@ -391,10 +395,10 @@ const columnPinningState = computed(() => {
 const table = useVueTable({
   getRowId: (row: TData) => String(row[props.idColumn as keyof TData]),
   get data() {
-    return showSkeleton.value ? getSkeletonData<TData>() : props.data;
+    return showSkeleton.value ? skeletonData : props.data;
   },
   get columns() {
-    return showSkeleton.value ? getSkeletonColumns<TData>() : props.columns;
+    return showSkeleton.value ? skeletonColumns : props.columns;
   },
   get rowCount() {
     return serverMode ? props.rowCount : undefined;
