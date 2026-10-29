@@ -1753,6 +1753,7 @@ if (!createMode.value) {
                 ref="companyPriceEditor"
                 v-model:content="companyPriceEditorEntry.content"
                 v-model:dirty="companyPriceEditorEntry.contentDirty"
+                :list-key="companyPriceEditorEntry.key"
                 :price-list="companyPriceEditorEntry.saved"
                 :seed="companyPriceListSeed(companyPriceEditorEntry)"
               />
