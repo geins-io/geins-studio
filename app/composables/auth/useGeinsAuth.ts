@@ -147,6 +147,11 @@ export const useGeinsAuth = (): UseGeinsAuthReturnType => {
   // already rotated the token, the server sees it isn't due and won't refresh
   // again with the old refresh token.
   const lockOptions = { lockName: REFRESH_LOCK_NAME, locks: navigator.locks };
+  if (!sharedRefresh && !navigator.locks) {
+    useGeinsLog('composables/useGeinsAuth.ts').geinsLogWarn(
+      'Web Locks unavailable: token refresh is single-flight per tab only',
+    );
+  }
   sharedRefresh ??= createSingleFlight(async () => {
     const previousToken = accessToken.value;
     const next = (await auth.getSession()) as Session;

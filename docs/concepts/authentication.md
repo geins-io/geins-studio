@@ -58,15 +58,19 @@ A refresh is triggered:
 
 A request that still fails with a `401` is retried once; the interceptor re-runs and picks up the refreshed token.
 
+nuxt-auth's own session refetches (`sessionRefresh.enableOnWindowFocus` / `enablePeriodically` in `nuxt.config.ts`) stay off: they would read the session outside the lock. The only unlocked read left is nuxt-auth's session fetch on page load.
+
 ### When a refresh fails
 
 The `jwt` and `session` callbacks never throw: next-auth 4 clears the session cookie whenever one of them does, so a throw is a logout. A failed refresh is recorded on the token instead, and reaches the client as `session.error` (`sessionError` in `useGeinsAuth`):
 
-| Refresh result                              | Token                    | `session.error`       | Effect                                                           |
-| ------------------------------------------- | ------------------------ | --------------------- | ---------------------------------------------------------------- |
-| Success                                     | New tokens, same account | —                     | Error cleared                                                    |
-| `401` / `403`                               | Tokens dropped           | `RefreshTokenInvalid` | `isAuthenticated: false`; the client decides to log out          |
-| `5xx`, `404`, `429`, network error, timeout | Kept as is               | `RefreshFailed`       | User stays logged in; the next session fetch retries the refresh |
+| Refresh result                                     | Token                    | `session.error`       | Effect                                                           |
+| -------------------------------------------------- | ------------------------ | --------------------- | ---------------------------------------------------------------- |
+| Success                                            | New tokens, same account | —                     | Error cleared                                                    |
+| `401`                                              | Tokens dropped           | `RefreshTokenInvalid` | `isAuthenticated: false`; the client decides to log out          |
+| `403`, `5xx`, `404`, `429`, network error, timeout | Kept as is               | `RefreshFailed`       | User stays logged in; the next session fetch retries the refresh |
+
+A `403` counts as transient: a WAF or gateway in front of Geins can answer one, and that says nothing about the refresh token.
 
 Calls to the Geins auth endpoints time out after 10 seconds, so a hung refresh becomes a retryable `RefreshFailed` instead of running into the function timeout.
 
