@@ -49,14 +49,22 @@ export interface AuthResponse extends AuthTokens {
   accounts?: AuthAccounts[];
 }
 
+/**
+ * Why the last token refresh didn't go through. `RefreshTokenInvalid`: Geins
+ * rejected the refresh token (401/403), so the session is over unless another
+ * tab rotated it meanwhile. `RefreshFailed`: transient (5xx, network, timeout);
+ * the token is kept and the next session fetch retries.
+ */
+export type AuthSessionError = 'RefreshTokenInvalid' | 'RefreshFailed';
+
 export interface Session extends AuthTokens {
   isAuthenticated?: boolean;
   tokenExpires?: number;
   refreshedAt?: number;
-  user?: User;
   mfaActive?: boolean;
   mfaMethod?: string;
   expires?: string;
+  error?: AuthSessionError;
 }
 
 export interface LoginCredentials {

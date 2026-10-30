@@ -1,14 +1,20 @@
 # `useUserStore`
 
-The `useUserStore` Pinia store provides centralized user data management and computed properties for displaying user information throughout the application. It builds on top of the `useGeinsAuth` composable to access session data and transforms it into user-friendly formats.
+The `useUserStore` Pinia store provides centralized user data management and computed properties for displaying user information throughout the application. The auth session carries tokens only, so the store loads the signed-in user (with their accounts) from `user/me` through `$geinsApi`.
 
 ## Features
 
-- **User data access** from the current session
+- **User data** loaded from `user/me` (with accounts)
 - **User initials computation** with intelligent fallback logic
 - **Formatted user name** concatenation
 - **Email access** with fallback handling
-- **Reactive updates** when session changes
+- **Accounts** sorted by name, plus the current account's name
+
+## Loading
+
+- `geins-global.ts` awaits `init()` at boot when the user is authenticated (pages read `user` synchronously, e.g. per-user cookies), calls it again on login, and calls `reset()` on logout.
+- The login page calls `init()` before showing account selection, since that happens before an account key is set.
+- Concurrent `init()` calls share one request. A failed load is logged and leaves `user` as it was.
 
 ## Usage
 
@@ -25,11 +31,11 @@ const { user, userInitials, userName, userEmail } = storeToRefs(userStore);
 
 ### `user`
 
-A `ref` that contains the current user object from the session.
+A `ref` that contains the signed-in user.
 
-- **Type**: `Ref<User | null | undefined>`
-- **Source**: Derived from `session.value?.user` via `useGeinsAuth`
-- **Updates**: Automatically when session changes
+- **Type**: `Ref<User | undefined>`
+- **Source**: `userApi.me.get({ fields: ['accounts'] })`, loaded by `init()`
+- **Updates**: On `init()`, `updateUser()` (merged, e.g. after a profile edit) and `reset()`
 
 ### `userInitials`
 
@@ -57,6 +63,32 @@ A `computed` property that returns the user's email address.
 
 - **Type**: `ComputedRef<string>`
 - **Fallback**: "N/A" if email is not available
+
+## Methods
+
+### `init`
+
+```ts
+init(): Promise<void>
+```
+
+Loads the signed-in user from `user/me` with accounts. Concurrent calls share one request.
+
+### `reset`
+
+```ts
+reset(): void
+```
+
+Clears the user (on logout).
+
+### `updateUser`
+
+```ts
+updateUser(newUser: User): void
+```
+
+Merges `newUser` into the loaded user, keeping fields the update response omits (such as accounts).
 
 ## Example
 
@@ -94,10 +126,18 @@ const displayUserInfo = () => {
 function useUserStore(): UserStoreReturnType;
 
 interface UserStoreReturnType {
-  user: Ref<User | null | undefined>;
+  user: Ref<User | undefined>;
   userInitials: ComputedRef<string>;
   userName: ComputedRef<string>;
   userEmail: ComputedRef<string>;
+  userAccounts: ComputedRef<AuthAccounts[]>;
+  currentAccountName: ComputedRef<string>;
+  hasMultipleAccounts: ComputedRef<boolean>;
+  init: () => Promise<void>;
+  reset: () => void;
+  updateUser: (newUser: User) => void;
+  hasAnyRole: (roles: string[]) => boolean;
+  hasAnyPermission: (permissions: string[]) => boolean;
 }
 ```
 
@@ -106,4 +146,5 @@ interface UserStoreReturnType {
 This store depends on:
 
 1. **Pinia**: For store management
-2. **useGeinsAuth**: To access session data and user information
+2. **useGeinsRepository**: `userApi.me.get` to load the user
+3. **useGeinsAuth**: The session's `accountKey`, for `currentAccountName`

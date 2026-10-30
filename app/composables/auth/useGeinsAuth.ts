@@ -1,5 +1,6 @@
 import { jwtDecode, type JwtPayload } from 'jwt-decode';
 import type {
+  AuthSessionError,
   AuthTokens,
   LoginCredentials,
   Session,
@@ -10,6 +11,7 @@ interface UseGeinsAuthReturnType {
   session: Ref<Session | null | undefined>;
   accessToken: ComputedRef<string | undefined>;
   isAuthenticated: ComputedRef<boolean>;
+  sessionError: ComputedRef<AuthSessionError | undefined>;
   isRefreshing: Ref<boolean>;
   authStateDiffers: ComputedRef<boolean>;
   accountKey: ComputedRef<string | undefined>;
@@ -37,6 +39,7 @@ interface UseGeinsAuthReturnType {
  * @property {Ref} session - Current authentication session data
  * @property {ComputedRef<string>} accessToken - Current access token
  * @property {ComputedRef<boolean>} isAuthenticated - Whether user is authenticated
+ * @property {ComputedRef<AuthSessionError>} sessionError - Why the last token refresh failed, if it did
  * @property {Ref<boolean>} isRefreshing - Whether token refresh is in progress
  * @property {ComputedRef<boolean>} authStateDiffers - Whether auth state has inconsistencies
  * @property {ComputedRef<string>} accountKey - Current account key
@@ -67,6 +70,7 @@ export const useGeinsAuth = (): UseGeinsAuthReturnType => {
     );
   });
   const accessToken = computed(() => session.value?.accessToken);
+  const sessionError = computed(() => session.value?.error);
   const authStateDiffers = computed(
     () =>
       auth.status.value === 'authenticated' && !session.value?.isAuthenticated,
@@ -110,14 +114,11 @@ export const useGeinsAuth = (): UseGeinsAuthReturnType => {
   };
 
   const setSession = async (session: Session): Promise<SignInResponse> => {
-    // Exclude user from the session to prevent it from being stored in JWT
-    const { user, ...sessionWithoutUser } = session;
-    const sessionObjectsStringified =
-      stringifySessionObjects(sessionWithoutUser);
+    const sessionObjectsStringified = stringifySessionObjects(session);
 
     return await auth.signIn('credentials', {
       redirect: false,
-      ...sessionWithoutUser,
+      ...session,
       ...sessionObjectsStringified,
     });
   };
@@ -184,6 +185,7 @@ export const useGeinsAuth = (): UseGeinsAuthReturnType => {
     session,
     accessToken,
     isAuthenticated,
+    sessionError,
     isRefreshing,
     authStateDiffers,
     accountKey,

@@ -14,6 +14,8 @@ const { toast } = useToast();
 const { t } = useI18n();
 const { login, verify, setAccount, preLogin, session, isAuthenticated } =
   useGeinsAuth();
+const userStore = useUserStore();
+const { user } = storeToRefs(userStore);
 const router = useRouter();
 const route = useRoute();
 
@@ -39,7 +41,8 @@ const handleInitialState = async () => {
     return;
   }
 
-  if (session.value?.user?.basicAccounts && !session.value?.accountKey) {
+  if (session.value?.isAuthenticated && !session.value?.accountKey) {
+    await userStore.init();
     mode.value = 'account';
     return;
   }
@@ -57,11 +60,12 @@ const redirectToHome = async () => {
     return;
   }
 
+  await userStore.init();
   const redirect = route.query.redirect as string;
   await router.push(redirect || '/');
 
   await nextTick();
-  const firstName = session.value?.user?.firstName || '';
+  const firstName = user.value?.firstName || '';
 
   toast({
     title: t('feedback_welcome_back', { name: firstName }),
@@ -81,6 +85,7 @@ const handlePostAuth = async () => {
   }
 
   if (!session.value?.accountKey) {
+    await userStore.init();
     mode.value = 'account';
     loading.value = false;
     return;
@@ -179,7 +184,7 @@ const handleSetMode = (formMode: AuthFormMode) => {
     :loading="loading"
     :show-invalid="showInvalid"
     :mfa-method="mfaMethod"
-    :accounts="session?.user?.basicAccounts"
+    :accounts="user?.basicAccounts"
     @login="handleLogin"
     @verify="handleVerify"
     @set-account="handleSetAccount"
