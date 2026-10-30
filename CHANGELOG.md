@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.6.2 - 2026-10-30
+
+### 🐛 Bug Fixes
+
+- Security — server logs no longer include request payloads or authentication tokens ([#NNN](https://github.com/geins-io/geins-studio/pull/NNN))
+
+### ❤️ Contributors
+
+- Olivia Axelsson ([@olivia-geins](https://github.com/olivia-geins))
+
 ## v0.6.1 - 2026-10-23
 
 ### 🐛 Bug Fixes

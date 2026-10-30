@@ -14,17 +14,12 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
     sessionsAreEqual,
     logout,
   } = useGeinsAuth();
-  const { geinsLog } = useGeinsLog('plugins/auth-state.ts');
   const { data: broadcastData, post: broadcastPost } = useBroadcastChannel<
     AuthBroadcastData,
     AuthBroadcastData
   >({
     name: 'geins-auth',
   });
-
-  if (session.value) {
-    geinsLog('current auth session:', session.value);
-  }
 
   // Debounced function to broadcast changes
   const broadcastChange = useDebounceFn(() => {
