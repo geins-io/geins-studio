@@ -8,6 +8,7 @@ import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
 import type { ProductPriceListApiOptions } from '#shared/types';
 import { ENTITIES, entityEditUrl } from '#shared/utils/entities';
+import { priceListForceOptions } from '#shared/utils/price-list';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { AcceptableValue } from 'reka-ui';
 
@@ -102,8 +103,15 @@ const stepValidationMap: Record<number, string> = {
 // Currency selection
 const selectableCurrencies = ref(currentCurrencies.value.map((i) => i._id));
 
-// An ERP import maintains read-only lists: PATCH and DELETE answer 422.
-const readOnly = ref(false);
+// An ERP import maintains read-only lists: PATCH and DELETE answer 422 without `force`.
+const savedReadOnly = ref(false);
+// "Edit anyway" unlocks a read-only list until the page reloads.
+const forceEdit = ref(false);
+const forceEditDialogOpen = ref(false);
+const readOnly = computed(() => savedReadOnly.value && !forceEdit.value);
+const forceOptions = computed(() =>
+  priceListForceOptions({ readOnly: savedReadOnly.value }),
+);
 // Owning company of an account list
 const ownerAccountId = ref<string>();
 
@@ -180,7 +188,7 @@ const {
   }),
   parseEntityData: (entity) => {
     entityLiveStatus.value = entity.active;
-    readOnly.value = entity.readOnly;
+    savedReadOnly.value = entity.readOnly;
     ownerAccountId.value = entity.accountSpecific
       ? entity.wholesaleAccountId
       : undefined;
@@ -309,6 +317,7 @@ const handleSave = async () => {
       undefined,
       {
         fields: ['rules', 'selectionquery'],
+        ...forceOptions.value,
       },
       !editor.hasProductSelection.value,
     );
@@ -365,8 +374,24 @@ const handleChannelChange = async (value: AcceptableValue) => {
 // =====================================================================================
 // Intent: Delete confirmation dialog wired to useDeleteDialog composable.
 // Redirects to the list page after successful deletion.
+// deleteEntity can't send `force`, which a read-only list needs.
+const deletePriceList = async (): Promise<boolean> => {
+  if (!savedReadOnly.value) return await deleteEntity();
+  try {
+    await productApi.priceList.id(entityId.value).delete(forceOptions.value);
+    toast({
+      title: t('entity_deleted', { entityKey }),
+      variant: 'positive',
+    });
+    return true;
+  } catch {
+    // Error toast shown globally by $geinsApi; just signal failure here.
+    return false;
+  }
+};
+
 const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
-  useDeleteDialog(deleteEntity, entityListUrl);
+  useDeleteDialog(deletePriceList, entityListUrl);
 
 // =====================================================================================
 // SUMMARY DATA
@@ -508,7 +533,16 @@ if (!createMode.value) {
     v-model:open="deleteDialogOpen"
     :entity-key="entityKey"
     :loading="deleting"
+    :description="
+      savedReadOnly
+        ? $t('pricing.price_list_read_only_delete_description')
+        : undefined
+    "
     @confirm="confirmDelete"
+  />
+  <PriceListForceEditDialog
+    v-model:open="forceEditDialogOpen"
+    @confirm="forceEdit = true"
   />
 
   <ContentEditWrap>
@@ -544,7 +578,7 @@ if (!createMode.value) {
                 </button>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem :disabled="readOnly" @click="openDeleteDialog">
+              <DropdownMenuItem @click="openDeleteDialog">
                 <LucideTrash class="mr-2 size-4" />
                 <span>{{ $t('delete_entity', { entityKey }) }}</span>
               </DropdownMenuItem>
@@ -778,8 +812,16 @@ if (!createMode.value) {
             v-bind="summaryProps"
             :disabled="readOnly"
           >
-            <template v-if="readOnly" #before-active-switch>
-              <Item variant="outline">
+            <template v-if="savedReadOnly" #before-active-switch>
+              <Feedback v-if="forceEdit" type="warning">
+                <template #title>
+                  {{ $t('pricing.price_list_force_editing_title') }}
+                </template>
+                <template #description>
+                  {{ $t('pricing.price_list_force_editing_description') }}
+                </template>
+              </Feedback>
+              <Item v-else variant="outline">
                 <ItemMedia variant="icon">
                   <LucideLock class="text-muted-foreground" />
                 </ItemMedia>
@@ -791,6 +833,17 @@ if (!createMode.value) {
                     {{ $t('pricing.managed_externally') }}
                   </ItemDescription>
                 </ItemContent>
+                <!-- A retired (inactive) ERP list's selection is stale, so it never goes editable. -->
+                <ItemFooter v-if="entityLiveStatus">
+                  <ButtonIcon
+                    icon="SquarePen"
+                    variant="secondary"
+                    size="sm"
+                    @click="forceEditDialogOpen = true"
+                  >
+                    {{ $t('edit_anyway') }}
+                  </ButtonIcon>
+                </ItemFooter>
               </Item>
             </template>
           </ContentEditSummary>

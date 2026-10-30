@@ -424,7 +424,9 @@ export function usePriceListEditor({
     seededListId = id.value;
   };
 
+  let loaded = false;
   const load = async () => {
+    loaded = true;
     if (isReadOnly.value) {
       productsStore.init();
       await loadReadOnlyRows();
@@ -436,6 +438,14 @@ export function usePriceListEditor({
     productsStore.init();
     selectionWatched = true;
   };
+
+  // An override ("Edit anyway") unlocks a loaded read-only list: load it again
+  // as editable. A list without a selection keeps its saved rows, now editable.
+  watch(isReadOnly, async (isLocked, wasLocked) => {
+    if (!loaded || isLocked || !wasLocked) return;
+    setupColumns();
+    await load();
+  });
 
   // Rebuilds the saved rows (and the baseline, via `onSynced`) from the saved list.
   const afterSave = async () => {

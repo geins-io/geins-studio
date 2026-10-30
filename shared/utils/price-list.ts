@@ -5,9 +5,20 @@ import type {
   PriceListRule,
   PriceListRuleField,
   ProductPriceList,
+  ProductPriceListApiOptions,
   ProductPriceListCreate,
   ProductPriceListUpdate,
 } from '#shared/types';
+
+/**
+ * The `force` option a write to `priceList` needs: `PATCH` and `DELETE` on a
+ * read-only (ERP) list answer 422 without it. Spread into the call's options.
+ */
+export function priceListForceOptions(
+  priceList: Pick<ProductPriceList, 'readOnly'>,
+): Pick<ProductPriceListApiOptions, 'force'> {
+  return priceList.readOnly ? { force: 'true' } : {};
+}
 
 type PriceListOwnership = Pick<
   ProductPriceList,

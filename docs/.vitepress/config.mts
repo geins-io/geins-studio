@@ -966,6 +966,10 @@ export default defineConfig({
                 text: 'PriceListPriceModeCell',
                 link: '/components/price-list/PriceListPriceModeCell.md',
               },
+              {
+                text: 'PriceListForceEditDialog',
+                link: '/components/price-list/PriceListForceEditDialog.md',
+              },
             ],
           },
           {

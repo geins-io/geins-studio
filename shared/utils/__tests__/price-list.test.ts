@@ -13,7 +13,20 @@ import {
   isCompanyPriceListEntryDirty,
   isOwnAccountPriceList,
   priceListDraftRules,
+  priceListForceOptions,
 } from '../price-list';
+
+describe('priceListForceOptions', () => {
+  it('forces a write to a read-only list', () => {
+    expect(priceListForceOptions({ readOnly: true })).toEqual({
+      force: 'true',
+    });
+  });
+
+  it('sends no force for an editable list', () => {
+    expect(priceListForceOptions({ readOnly: false })).toEqual({});
+  });
+});
 
 describe('isOwnAccountPriceList', () => {
   it('is true for an account list owned by the account', () => {

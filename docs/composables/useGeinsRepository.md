@@ -182,6 +182,8 @@ function delete(id: string): Promise<void>;
 `productApi.priceList.id(priceListId)`
 
 ```ts
+// Takes query options, unlike `priceList.delete(id)`: a read-only list needs `{ force: 'true' }`.
+function delete(options?: ProductPriceListApiOptions): Promise<void>;
 function copy(options?: ProductPriceListApiOptions): Promise<ProductPriceList>;
 function preview(
   price list: ProductPriceListUpdate,
