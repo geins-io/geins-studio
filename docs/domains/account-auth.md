@@ -16,9 +16,9 @@ The Account & Auth domain handles everything related to identity and merchant co
 1. **Middleware** (`auth.global.ts`) — Route guard redirecting unauthenticated users to `/auth/login`
 2. **Server handler** (`server/api/auth/[...].ts`) — NextAuth.js with `CredentialsProvider`, JWT handling. Its `jwt`/`session` callbacks never throw (next-auth 4 wipes the cookie on a throw); a failed refresh becomes `session.error` (`RefreshTokenInvalid` on 401/403, else `RefreshFailed` with the token kept). Decisions live in `shared/utils/auth-session.ts`
 3. **Server utility** (`server/utils/auth.ts`) — Direct API calls to Geins auth endpoints (login, refresh, verify); throws `AuthApiError` (HTTP status, or `0` for network/timeout)
-4. **Plugin** (`geins-api.ts`) — `$geinsApi` fetch instance with auto token refresh via WeakMap-cached promises
+4. **Plugin** (`geins-api.ts`) — `$geinsApi` fetch instance; refreshes a due token before each request through `useGeinsAuth().refresh` (one refresh in flight per tab, one at a time across tabs via the Web Lock `geins-auth-refresh`)
 5. **Composable** (`useGeinsAuth`) — Client-side auth state: `session`, `isAuthenticated`, `login()`, `logout()`
-6. **Plugin** (`auth-state.ts`) — Cross-tab sync via `BroadcastChannel('geins-auth')`
+6. **Plugin** (`auth-state.ts`) — Cross-tab sync via `BroadcastChannel('geins-auth')`; proactive refresh (every 60s and when a tab becomes visible); the deliberate logout, after one re-check of a `RefreshTokenInvalid` session
 
 **Multi-account support** — Users can belong to multiple merchant accounts (`AuthAccounts[]`). After login, if `accounts.length > 1`, the user selects an account. The selected `accountKey` is passed to all subsequent API calls.
 

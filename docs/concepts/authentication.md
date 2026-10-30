@@ -43,9 +43,20 @@ Read the full documentation of the `useGeinsAuth` composable here: [useGeinsAuth
 
 ## Refresh Flow
 
-A refresh check can be triggered manually by the `refresh` method in `useGeinsAuth.ts`. This will not force a refresh but only refresh the token if it's expired or it is soon to be expired, where "soon" by default means within 5 minutes.
+The token is refreshed server-side. When `GET /api/auth/session` arrives with an access token that is expired or expires within 5 minutes, the `jwt` callback calls the Geins `auth/refresh` endpoint and stores the new tokens in the session cookie. On the client, the `refresh` method in `useGeinsAuth.ts` triggers this by re-reading the session; it doesn't force a refresh.
 
-This check of the token is done automatically on page load and on every request towards the Geins API, and if the token is expired or soon to be expired, the token is refreshed before the request is sent.
+`refresh` is single-flight, and locked across tabs (`createSingleFlight` in `shared/utils/single-flight.ts`):
+
+- **One per tab** — every caller (the `$geinsApi` request interceptor, the proactive check, the invalid-session re-check) shares the call in flight.
+- **One at a time across tabs** — it runs under the Web Lock `geins-auth-refresh` (`navigator.locks`; without it, only the per-tab guarantee holds). Tabs share the session cookie, so a tab that waited on the lock reads the token the first tab just rotated, and the server doesn't refresh again with the old refresh token.
+
+A refresh is triggered:
+
+1. Before each `$geinsApi` request, when the access token is expired or expires within 5 minutes.
+2. Every 60 seconds while authenticated (`auth-state.ts`, via `usePollWhile`), with the same check, so an idle tab refreshes before the token expires.
+3. When a tab becomes visible again, since timers don't run while a laptop sleeps.
+
+A request that still fails with a `401` is retried once; the interceptor re-runs and picks up the refreshed token.
 
 ### When a refresh fails
 
@@ -58,3 +69,5 @@ The `jwt` and `session` callbacks never throw: next-auth 4 clears the session co
 | `5xx`, `404`, `429`, network error, timeout | Kept as is               | `RefreshFailed`       | User stays logged in; the next session fetch retries the refresh |
 
 Calls to the Geins auth endpoints time out after 10 seconds, so a hung refresh becomes a retryable `RefreshFailed` instead of running into the function timeout.
+
+On `RefreshTokenInvalid`, `auth-state.ts` waits 1.5 seconds and re-reads the session once, under the lock: another tab or server instance may have just rotated the token, and its cookie wins. Only if the session is still invalid does the tab log out.

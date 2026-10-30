@@ -154,7 +154,7 @@ if (!createMode.value) {
 Use the shared primitives instead of hand-rolling `setInterval` / `Date.now()` loops in a page or component:
 
 - **`useLiveClock(active, intervalMs?)`** → `{ now }`. Reactive `now` ref that ticks only while `active` (boolean / getter) is true. Auto-stops on unmount. Use for live duration cells.
-- **`usePollWhile(active, fn, intervalMs)`** — run `fn` on an interval while `active` is true. Swallows tick errors via `useGeinsLog`. Use to poll `refresh()` on a running entity detail page, or to pull new rows into a list page.
+- **`usePollWhile(active, fn, intervalMs)`** — run `fn` on an interval while `active` is true. Swallows tick errors via `useGeinsLog`. Stops when the calling scope is disposed, so it also works in a plugin. Use to poll `refresh()` on a running entity detail page, or to pull new rows into a list page.
 - **`useExecutionStatus()`** → `{ resolveStatusIcon }`. Single source of truth for orchestrator execution status → Lucide icon + color class. Case-insensitive; returns a fallback alert icon for unknown values.
 - **`formatTimestamp(iso)`** / **`formatDuration(ms)`** from `#shared/utils/time` — fixed-format log timestamps (`YYYY-MM-DD HH:mm:ss.SSS`) and compact durations (`123ms` / `12.34s` / `1m 23s`). Use these for any execution/log/console UI. `useDate()` is still the right choice for locale-aware absolute dates elsewhere.
 
