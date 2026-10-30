@@ -5,6 +5,7 @@
 // Intent: Explicit imports for types, schemas, and components not auto-imported by Nuxt.
 // Only add imports here that Nuxt auto-import does not cover (e.g. zod, shared types, specific components).
 import { toTypedSchema } from '@vee-validate/zod';
+import { createReusableTemplate } from '@vueuse/core';
 import * as z from 'zod';
 import {
   DataItemDisplayType,
@@ -20,10 +21,20 @@ import {
   isOwnAccountPriceList,
 } from '#shared/utils/price-list';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, type ButtonVariants } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast/use-toast';
-import type { Row } from '@tanstack/vue-table';
-import { LucideUser, LucidePackage } from '#components';
+import type { ColumnDef, Table } from '@tanstack/vue-table';
+import {
+  ButtonIcon,
+  LucideLock,
+  LucidePackage,
+  LucideUser,
+  TableCellSwitch,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '#components';
 
 // =====================================================================================
 // COMPOSABLES & STORES
@@ -636,28 +647,80 @@ const setCompanyPriceListActive = (key: string, active: boolean) => {
 const {
   getColumns: getCompanyPriceListColumns,
   extendColumns: extendCompanyPriceListColumns,
+  getBasicHeaderStyle: getCompanyPriceListHeaderStyle,
   getBasicCellStyle: getCompanyPriceListCellStyle,
 } = useColumns<CompanyPriceListRow>();
 
-// `active` would infer a status badge, so it's typed as a switch explicitly.
+// Channel and currency share a cell, and an ERP list's switch gets a lock, so
+// both are built here rather than by getColumns. Their headers match getColumns'
+// unsortable one, which pads tighter than the basic header style.
+const companyPriceListHeader =
+  (title: string) =>
+  ({ table }: { table: Table<CompanyPriceListRow> }) =>
+    h(
+      'div',
+      { class: cn(getCompanyPriceListHeaderStyle(table), 'px-3 sm:px-3') },
+      title,
+    );
+
 const companyPriceListColumns = computed(() => {
-  const columns = getCompanyPriceListColumns(companyPriceListRows.value, {
-    includeColumns: ['channel', 'currency', 'productCount', 'active'],
-    columnTypes: { active: 'switch' },
-    columnTitles: {
-      channel: t('channel'),
-      currency: t('currency'),
-      productCount: t('product', 2),
-      active: t('active'),
-    },
-    columnCellProps: {
-      active: {
-        onChange: (row: Row<CompanyPriceListRow>) => (value: boolean) =>
-          setCompanyPriceListActive(row.original.key, value),
-        disabled: (row: Row<CompanyPriceListRow>) => row.original.readOnly,
-      },
-    },
-    sortable: false,
+  const channelColumn: ColumnDef<CompanyPriceListRow> = {
+    id: 'channel',
+    header: companyPriceListHeader(t('channel_and_currency')),
+    cell: ({ table, row }) =>
+      h(
+        'div',
+        { class: getCompanyPriceListCellStyle(table) },
+        h('div', { class: 'min-w-0 truncate leading-tight' }, [
+          h('span', row.original.channel),
+          h(
+            'span',
+            { class: 'text-muted-foreground' },
+            ` · ${row.original.currency}`,
+          ),
+          row.original.readOnly &&
+            !row.original.active &&
+            h(
+              'span',
+              { class: 'text-muted-foreground mt-0.5 block text-[11px]' },
+              t('customers.inactive_in_external_system'),
+            ),
+        ]),
+      ),
+  };
+  const columns = [
+    channelColumn,
+    ...getCompanyPriceListColumns(companyPriceListRows.value, {
+      includeColumns: ['productCount'],
+      columnTitles: { productCount: t('product', 2) },
+      sortable: false,
+    }),
+  ];
+  extendCompanyPriceListColumns(columns, {
+    id: 'active',
+    header: companyPriceListHeader(t('active')),
+    cell: ({ table, row }) =>
+      h('div', { class: cn(getCompanyPriceListCellStyle(table), 'gap-3') }, [
+        h(TableCellSwitch, {
+          value: row.original.active,
+          disabled: row.original.readOnly,
+          onChange: (value: boolean) =>
+            setCompanyPriceListActive(row.original.key, value),
+        }),
+        row.original.readOnly &&
+          h(TooltipProvider, { delayDuration: 100 }, () =>
+            h(Tooltip, null, () => [
+              h(TooltipTrigger, { asChild: true }, () =>
+                h(
+                  'span',
+                  { tabindex: 0, class: 'inline-flex' },
+                  h(LucideLock, { class: 'text-muted-foreground size-4' }),
+                ),
+              ),
+              h(TooltipContent, null, () => t('pricing.managed_externally')),
+            ]),
+          ),
+      ]),
   });
   return extendCompanyPriceListColumns(columns, {
     id: 'actions',
@@ -673,8 +736,9 @@ const companyPriceListColumns = computed(() => {
           row.original.draft &&
             h(Badge, { variant: 'warning-light' }, () => t('not_saved')),
           h(
-            Button,
+            ButtonIcon,
             {
+              icon: row.original.readOnly ? 'Eye' : 'SquarePen',
               variant: 'secondary',
               size: 'sm',
               onClick: () => openCompanyPriceList(row.original.key),
@@ -703,6 +767,9 @@ const companyPriceListColumns = computed(() => {
 // "Add company price list" offers the company's free slots in its saved
 // channels; Continue adds a draft that "Save company" creates.
 const addCompanyPriceListOpen = ref(false);
+// The card header and the table's empty state show the same button.
+const [DefineAddCompanyPriceList, ReuseAddCompanyPriceList] =
+  createReusableTemplate<{ variant?: ButtonVariants['variant'] }>();
 const companyPriceListSlots = computed(() =>
   getFreeCompanyPriceListSlots(
     entityData.value.channels ?? [],
@@ -737,6 +804,13 @@ const confirmRemoveCompanyPriceListDraft = () => {
 // the `_id`, so a draft's editor isn't remounted once "Save company" creates it.
 const openedCompanyPriceListKeys = ref<string[]>([]);
 const activeCompanyPriceListKey = ref<string>();
+// A sub view's "Back to pricing" link (h-9 + gap-4) pushes its first card down,
+// so the summary toggle moves with it.
+const companyPriceListSubViewToggleClass = computed(() =>
+  currentTab.value === 2 && activeCompanyPriceListKey.value
+    ? '@2xl:top-17'
+    : undefined,
+);
 const openedCompanyPriceLists = computed(() =>
   companyPriceLists.value.filter((entry) =>
     openedCompanyPriceListKeys.value.includes(entry.key),
@@ -1230,7 +1304,10 @@ if (!createMode.value) {
       </ContentHeader>
     </template>
     <form @submit.prevent>
-      <ContentEditMain :show-sidebar="showSidebar">
+      <ContentEditMain
+        :show-sidebar="showSidebar"
+        :sidebar-toggle-class="companyPriceListSubViewToggleClass"
+      >
         <KeepAlive>
           <ContentEditMainContent
             v-if="currentTab === 0"
@@ -1594,35 +1671,38 @@ if (!createMode.value) {
                   />
                 </div>
               </ContentEditCard>
+              <DefineAddCompanyPriceList v-slot="{ variant }">
+                <TooltipProvider :delay-duration="100">
+                  <Tooltip :disabled="companyPriceListSlots.length > 0">
+                    <TooltipTrigger as-child>
+                      <span :tabindex="companyPriceListSlots.length ? -1 : 0">
+                        <ButtonIcon
+                          icon="new"
+                          :variant="variant"
+                          :disabled="!companyPriceListSlots.length"
+                          @click="addCompanyPriceListOpen = true"
+                        >
+                          {{
+                            $t('add_entity', {
+                              entityKey: 'company_price_list',
+                            })
+                          }}
+                        </ButtonIcon>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {{ $t('customers.company_price_list_no_free_slots') }}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </DefineAddCompanyPriceList>
               <ContentEditCard
                 :create-mode="createMode"
                 :title="$t('company_set_price', 2)"
                 :description="$t('customers.company_set_prices_description')"
               >
                 <template #header-action>
-                  <TooltipProvider :delay-duration="100">
-                    <Tooltip :disabled="companyPriceListSlots.length > 0">
-                      <TooltipTrigger as-child>
-                        <span :tabindex="companyPriceListSlots.length ? -1 : 0">
-                          <ButtonIcon
-                            icon="new"
-                            variant="secondary"
-                            :disabled="!companyPriceListSlots.length"
-                            @click="addCompanyPriceListOpen = true"
-                          >
-                            {{
-                              $t('add_entity', {
-                                entityKey: 'company_price_list',
-                              })
-                            }}
-                          </ButtonIcon>
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {{ $t('customers.company_price_list_no_free_slots') }}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <ReuseAddCompanyPriceList variant="secondary" />
                 </template>
                 <div class="space-y-4">
                   <Feedback v-if="showExternalSystemWarning" type="warning">
@@ -1664,32 +1744,7 @@ if (!createMode.value) {
                     "
                   >
                     <template #empty-actions>
-                      <TooltipProvider :delay-duration="100">
-                        <Tooltip :disabled="companyPriceListSlots.length > 0">
-                          <TooltipTrigger as-child>
-                            <span
-                              :tabindex="companyPriceListSlots.length ? -1 : 0"
-                            >
-                              <ButtonIcon
-                                icon="new"
-                                :disabled="!companyPriceListSlots.length"
-                                @click="addCompanyPriceListOpen = true"
-                              >
-                                {{
-                                  $t('add_entity', {
-                                    entityKey: 'company_price_list',
-                                  })
-                                }}
-                              </ButtonIcon>
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            {{
-                              $t('customers.company_price_list_no_free_slots')
-                            }}
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <ReuseAddCompanyPriceList />
                     </template>
                   </TableView>
                 </div>
@@ -1716,6 +1771,7 @@ if (!createMode.value) {
                 :list-key="entry.key"
                 :price-list="entry.saved"
                 :seed="companyPriceListSeed(entry)"
+                :active="entry.active"
               />
             </div>
           </ContentEditMainContent>

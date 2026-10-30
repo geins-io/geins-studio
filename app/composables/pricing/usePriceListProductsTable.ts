@@ -50,7 +50,7 @@ interface UsePriceListProductsTableReturnType {
  * price list products, including editable pricing fields, volume pricing, and actions.
  *
  * @returns {UsePriceListProductsTableReturnType} - An object containing table setup utilities
- * @property {function} setupPriceListColumns - Creates complete column configuration for price list products
+ * @property {function} setupPriceListColumns - Creates complete column configuration for price list products, with the list price highlighted
  * @property {function} setupReadOnlyPriceListColumns - Read-only columns (no inputs, price mode or actions) with the list price highlighted
  * @property {function} addVolumePricingColumn - Adds volume pricing column to existing columns
  * @property {ComputedRef} getPinnedState - Computed pinned state based on layout space
@@ -66,6 +66,14 @@ export const usePriceListProductsTable =
       addActionsColumn,
       extendColumns,
     } = useColumns<PriceListProductList>();
+
+    // The list price is what a list sets, so both grids tint it to draw the eye.
+    const highlightListPrice = (
+      column: ColumnDef<PriceListProductList>,
+    ): ColumnDef<PriceListProductList> =>
+      column.id === 'listPrice' && column.meta
+        ? { ...column, meta: { ...column.meta, highlight: true } }
+        : column;
 
     const setupPriceListColumns = (
       selectedProducts: PriceListProductList[],
@@ -110,7 +118,9 @@ export const usePriceListProductsTable =
         },
       };
 
-      let columns = getColumns(selectedProducts, columnOptions);
+      let columns = getColumns(selectedProducts, columnOptions).map(
+        highlightListPrice,
+      );
       columns = addVolumePricingColumn(
         columns,
         onEditVolumePricing,
@@ -146,13 +156,12 @@ export const usePriceListProductsTable =
         excludeColumns: ['volumePricing', 'priceMode'],
       }).map((column) =>
         // Same width as the editable list price, so its longer title fits.
-        column.id === 'listPrice' && column.meta
+        column.id === 'listPrice'
           ? {
-              ...column,
+              ...highlightListPrice(column),
               size: 180,
               minSize: 180,
               maxSize: 180,
-              meta: { ...column.meta, highlight: true },
             }
           : column,
       );

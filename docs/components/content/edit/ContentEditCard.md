@@ -139,7 +139,7 @@ Emitted when the user clicks Next (create mode).
 
 ### default
 
-The card body in regular mode (and as a fallback when `create` slot is not provided in create mode).
+The card body in regular mode (and as a fallback when `create` slot is not provided in create mode). Outside create mode, a card without it (or with it left out via `<template v-if="…" #default>`) renders only its header, with no empty padded body.
 
 ### `create`
 

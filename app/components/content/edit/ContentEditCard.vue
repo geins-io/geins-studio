@@ -98,7 +98,8 @@ const hasCreateView = computed(() => !!slots.create);
           />
         </div>
       </CollapsibleTrigger>
-      <CollapsibleContent>
+      <!-- Without content the card is just its header, with no empty padded body. -->
+      <CollapsibleContent v-if="createMode || $slots.default || $slots.create">
         <div
           :class="
             cn(
