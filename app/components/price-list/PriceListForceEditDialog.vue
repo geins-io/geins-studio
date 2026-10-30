@@ -9,7 +9,7 @@ const open = defineModel('open', {
   type: Boolean,
   default: false,
 });
-const _emit = defineEmits(['confirm']);
+const emit = defineEmits<{ confirm: [] }>();
 </script>
 
 <template>
@@ -29,7 +29,7 @@ const _emit = defineEmits(['confirm']);
         <AlertDialogCancel>
           {{ $t('cancel') }}
         </AlertDialogCancel>
-        <AlertDialogAction @click="$emit('confirm')">
+        <AlertDialogAction @click="emit('confirm')">
           {{ $t('edit_anyway') }}
         </AlertDialogAction>
       </AlertDialogFooter>
