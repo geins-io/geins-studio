@@ -4,7 +4,7 @@
 
 ### 🐛 Bug Fixes
 
-- Security — server logs no longer include request payloads or authentication tokens ([#NNN](https://github.com/geins-io/geins-studio/pull/NNN))
+- Security — server logs no longer include request payloads or authentication tokens ([#480](https://github.com/geins-io/geins-studio/pull/480))
 
 ### ❤️ Contributors
 
