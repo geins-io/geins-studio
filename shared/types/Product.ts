@@ -278,6 +278,8 @@ export type ProductPriceListFieldsFilter =
 export interface ProductPriceListApiOptions extends ApiOptions<ProductPriceListFieldsFilter> {
   pageSize?: string;
   defaultLocale?: string;
+  /** Lets `PATCH`/`DELETE` change a read-only list, which answers `422` without it. */
+  force?: 'true';
 }
 
 export interface PriceListProduct {

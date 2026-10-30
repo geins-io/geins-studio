@@ -163,6 +163,21 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       id: (priceListId: string) => {
         const priceListIdEndpoint = `${priceListEndpoint}/${priceListId}`;
         return {
+          /** Delete that takes query options; a read-only list needs `force`. */
+          async delete(
+            options?: ProductPriceListApiOptions,
+            fetchOptions?: RepoFetchOptions,
+          ): Promise<void> {
+            await fetch<null>(priceListIdEndpoint, {
+              method: 'DELETE',
+              query: buildQueryObject(options),
+              errorContext: {
+                action: 'deleting',
+                entity: ENTITIES.price_list.key,
+              },
+              ...fetchOptions,
+            });
+          },
           async copy(
             options?: ProductPriceListApiOptions,
           ): Promise<ProductPriceList> {

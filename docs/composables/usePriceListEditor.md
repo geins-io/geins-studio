@@ -81,7 +81,7 @@ seedVersion: Ref<number>;
 ```
 
 - **`seed(list)`**: copies the saved selection and rules into the editor — rule modes, global rules (with internal ids) and the product selection. Bumps `seedVersion` on the first seed and when the list id changes; re-seeding the same list after a save doesn't.
-- **`load()`**: a read-only list loads its saved rows; otherwise a list with a selection previews with `updateProducts` (→ `onSynced`). Then the selection watcher turns on, so later selection changes preview.
+- **`load()`**: a read-only list loads its saved rows; otherwise a list with a selection previews with `updateProducts` (→ `onSynced`). Then the selection watcher turns on, so later selection changes preview. When `readOnly` turns off after `load()` (an "Edit anyway" override), the editor loads again as editable: editable columns, and a preview when the list has a selection. A list without one keeps its saved rows, now editable.
 - **`afterSave()`**: previews the saved list again with `updateProducts`, rebuilding the saved rows and the baseline.
 - **`saving`**: set it while the host saves. The save re-seeds the selection, and the selection watcher ignores changes while it's `true`.
 - **`seedVersion`**: the `Selector` reads its selection and currency once, so `PriceListEditor` keys it on this.
