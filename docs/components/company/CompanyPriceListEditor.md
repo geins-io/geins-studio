@@ -9,6 +9,7 @@ It's the per-list unit: a page that offers several company lists (one per channe
 - **A header card for the list:** a `ContentEditCard` titled with its name, with channel · currency as the description and an Active/Inactive `StatusBadge` (from `active`). Its body holds the manual and volume price counts (`fields: ['counts']`, left out while the API has none or the read fails); with nothing to show (a draft), the card is just its header. A draft takes its name, channel and currency from `seed`.
 - **Read-only lists.** For a `readOnly` (ERP) list, `usePriceListEditor` runs read-only: the saved rows load through `query`, `PriceListEditor` shows only the searchable grid (no rules, no selection) and the volume pricing panel is view only. The header card adds the lock ("Managed externally…"), and the inactive notice when the list is inactive.
 - **Its own draft and editor.** A new list starts from `seed`, the create body without content; an existing one loads its rules and selection on mount (`fields: ['rules', 'selectionquery']`), since `CustomerPriceList` leaves them out.
+- **A draft started from another list.** A draft that mounts with dirty `content` (from `useCompanyPriceLists`' `addDraft` with a source) opens with it: its rules and selection seed the editor and its manual rows go into the first preview. That content is all new, so `dirty` stays `true` until `afterSave`, edited or not.
 - **New lists preview too.** Without an id, the preview posts the draft to `POST product/pricelist/preview`, and volume pricing works out prices locally.
 - **The grid says "Company price"** (`pricing.company_price`) and uses the list's currency.
 - **`v-model:content` and `v-model:dirty`.** The host reads the edited `PriceListContent` for its save body and counts `dirty` as an unsaved change. Dirty compares against a baseline captured after the first preview (via `usePanelDirty`), so loading never reads as an edit.
@@ -110,7 +111,7 @@ The edited `rules`, `productSelectionQuery` and `products`, for `companyPriceLis
 dirty: boolean;
 ```
 
-`true` once the content differs from the last baseline: on load, or after `afterSave`.
+`true` once the content differs from the last baseline: on load, or after `afterSave`. A draft started from another list is `true` from the start, until `afterSave`.
 
 ## Exposed
 

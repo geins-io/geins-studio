@@ -5,16 +5,24 @@
 ## Usage
 
 ```ts
-const { entries, hasChanges, merge, addDraft, removeDraft, seedFor, save } =
-  useCompanyPriceLists({
-    companyId: () => entityId.value,
-    company: () => entityData.value,
-    onSaved: async (entry, saved, action) => {
-      if (action === 'create' || action === 'update') {
-        await editorFor(entry.key)?.afterSave(saved);
-      }
-    },
-  });
+const {
+  entries,
+  hasChanges,
+  merge,
+  addDraft,
+  loadSource,
+  removeDraft,
+  seedFor,
+  save,
+} = useCompanyPriceLists({
+  companyId: () => entityId.value,
+  company: () => entityData.value,
+  onSaved: async (entry, saved, action) => {
+    if (action === 'create' || action === 'update') {
+      await editorFor(entry.key)?.afterSave(saved);
+    }
+  },
+});
 
 // useEntityEdit({ …, externalChanges: hasChanges })
 // parseEntityData: merge(ownAccountPriceLists)
@@ -88,20 +96,32 @@ Takes in the company's own lists on every load and reload — `parseEntityData` 
 ### `addDraft` / `removeDraft`
 
 ```ts
-addDraft: (slot: { channel: string; currency: string }, active?: boolean) => string;
+addDraft: (
+  slot: { channel: string; currency: string },
+  start?: { active?: boolean; content?: PriceListContent; exVat?: boolean },
+) => string;
 removeDraft: (key: string) => void;
 ```
 
-Add an unsaved list for a free slot (`getFreeCompanyPriceListSlots`) and return its key; `active` defaults to `true`. `removeDraft` drops a draft and leaves saved lists alone.
+Add an unsaved list for a free slot (`getFreeCompanyPriceListSlots`) and return its key; `active` defaults to `true`. With `content` (a list it starts from, from `loadSource`), the draft holds that content with `contentDirty: true`, so its editor opens with it and "Save company" creates the list with it; `exVat` is kept on the entry for the create body and the editor's seed. `removeDraft` drops a draft and leaves saved lists alone.
+
+### `loadSource`
+
+```ts
+loadSource: (sourceId: string) =>
+  Promise<{ content: PriceListContent; exVat: boolean }>;
+```
+
+The start of a draft based on another list, for `addDraft`. It reads the source's rules and selection (`GET product/pricelist/{id}?fields=rules,selectionquery`) and all its rows (`POST product/pricelist/{id}/query`, `fields: ['products']`, like a read-only editor), and turns them into content with `companyPriceListContentFromSource`: rules without ids, the selection, and the manual rows only. Neither read shows a toast, so it throws for the caller to show an inline error.
 
 ### `seedFor`
 
 ```ts
-seedFor: (slot: { channel: string; currency: string }) =>
+seedFor: (slot: { channel: string; currency: string; exVat?: boolean }) =>
   ProductPriceListCreate;
 ```
 
-The create body of a new list in that slot, without content — the editor's `seed`, which a new list previews from.
+The create body of a new list in that slot, without content — the editor's `seed`, which a new list previews from. Pass the entry, so a draft started from another list previews with that list's `exVat`.
 
 ### `save`
 

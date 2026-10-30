@@ -10,14 +10,17 @@ import type {
   ProductPriceListUpdate,
 } from '#shared/types';
 
-const { create, update, get } = vi.hoisted(() => ({
+const { create, update, get, query } = vi.hoisted(() => ({
   create: vi.fn(),
   update: vi.fn(),
   get: vi.fn(),
+  query: vi.fn(),
 }));
 
 mockNuxtImport('useGeinsRepository', () => () => ({
-  productApi: { priceList: { create, update, get } },
+  productApi: {
+    priceList: { create, update, get, id: () => ({ query }) },
+  },
 }));
 mockNuxtImport('useAccountStore', () => () => ({
   getChannelNameById: (id: string) => (id === '2' ? 'Norway' : 'Sweden'),
@@ -129,7 +132,7 @@ describe('drafts', () => {
   it('counts a draft as a change until it is removed', () => {
     const { entries, merge, addDraft, removeDraft, hasChanges } = setup();
     merge([list('a')]);
-    const key = addDraft({ channel: '1', currency: 'EUR' }, false);
+    const key = addDraft({ channel: '1', currency: 'EUR' }, { active: false });
     expect(key).toMatch(/^draft-/);
     expect(entries.value[1]).toMatchObject({ active: false, readOnly: false });
     expect(hasChanges.value).toBe(true);
@@ -137,6 +140,72 @@ describe('drafts', () => {
     removeDraft('a');
     expect(entries.value.map((e) => e.key)).toEqual(['a']);
     expect(hasChanges.value).toBe(false);
+  });
+
+  it('starts a draft from content, which counts as edited', () => {
+    const { entries, addDraft } = setup();
+    addDraft({ channel: '1', currency: 'SEK' }, { content, exVat: false });
+    expect(entries.value[0]).toMatchObject({
+      active: true,
+      content,
+      contentDirty: true,
+      exVat: false,
+    });
+  });
+
+  it('creates a draft started from content with that content and exVat', async () => {
+    const { addDraft, save } = setup();
+    addDraft({ channel: '1', currency: 'SEK' }, { content, exVat: false });
+
+    expect(await save()).toBe(true);
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        exVat: false,
+        rules: [{ quantity: 1, margin: 20 }],
+      }),
+      expect.anything(),
+    );
+  });
+});
+
+describe('loadSource', () => {
+  it("reads the source's rules, selection and rows into draft content", async () => {
+    const { loadSource } = setup();
+    get.mockResolvedValueOnce({
+      ...list('shared-1', { accountSpecific: false, exVat: false }),
+      rules: [{ _id: 'r1', quantity: 1, discountPercent: 10 }],
+    });
+    query.mockResolvedValueOnce({
+      items: [
+        { productId: '100', staggeredCount: 1, priceMode: 'fixed', price: 80 },
+        { productId: '101', staggeredCount: 1, priceMode: 'rule', price: 90 },
+      ],
+    });
+
+    expect(await loadSource('shared-1')).toEqual({
+      content: {
+        rules: [{ quantity: 1, discountPercent: 10 }],
+        products: [{ productId: '100', staggeredCount: 1, price: 80 }],
+      },
+      exVat: false,
+    });
+    expect(get).toHaveBeenCalledWith(
+      'shared-1',
+      { fields: ['rules', 'selectionquery'] },
+      { suppressErrorToast: true },
+    );
+    expect(query).toHaveBeenCalledWith(
+      expect.anything(),
+      { fields: ['products'] },
+      { suppressErrorToast: true },
+    );
+  });
+
+  it('throws when the source fails to load', async () => {
+    const { loadSource } = setup();
+    get.mockRejectedValueOnce(new Error('404'));
+    query.mockResolvedValueOnce({ items: [] });
+    await expect(loadSource('gone')).rejects.toThrow('404');
   });
 });
 
@@ -170,7 +239,7 @@ describe('save', () => {
 
   it('creates a draft with its active state and keeps its key', async () => {
     const { entries, addDraft, save, hasChanges, onSaved } = setup(['1', '2']);
-    const key = addDraft({ channel: '2', currency: 'NOK' }, false);
+    const key = addDraft({ channel: '2', currency: 'NOK' }, { active: false });
     entries.value[0]!.content = content;
 
     expect(await save()).toBe(true);

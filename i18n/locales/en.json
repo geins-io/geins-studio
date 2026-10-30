@@ -718,6 +718,8 @@
     "view_prices": "View prices",
     "add_company_price_list_description": "Choose the channel and currency. You set the prices in the next step.",
     "company_price_list_no_free_slots": "This company already has a price list in every channel and currency.",
+    "start_from": "Start from",
+    "empty_list": "Empty list",
     "remove_company_price_list_description": "The prices you set for this list aren't saved yet and will be lost.",
     "company_set_prices_external_title": "This company is linked to an external system",
     "company_set_prices_external_description": "If that system manages this company's prices, its next sync can turn off company set prices and remove them.",
