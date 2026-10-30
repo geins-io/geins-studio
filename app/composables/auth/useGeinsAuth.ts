@@ -6,13 +6,19 @@ import type {
   Session,
   SignInResponse,
 } from '#shared/types';
+import { createSingleFlight } from '#shared/utils/single-flight';
+
+const REFRESH_LOCK_NAME = 'geins-auth-refresh';
+
+// Module-level, so every useGeinsAuth() caller shares it: one session refresh
+// in flight per tab, and one at a time across tabs.
+let sharedRefresh: (() => Promise<Session>) | undefined;
 
 interface UseGeinsAuthReturnType {
   session: Ref<Session | null | undefined>;
   accessToken: ComputedRef<string | undefined>;
   isAuthenticated: ComputedRef<boolean>;
   sessionError: ComputedRef<AuthSessionError | undefined>;
-  isRefreshing: Ref<boolean>;
   authStateDiffers: ComputedRef<boolean>;
   accountKey: ComputedRef<string | undefined>;
   preLogin: () => Promise<void>;
@@ -23,7 +29,6 @@ interface UseGeinsAuthReturnType {
   sessionsAreEqual: (session1: Session, session2: Session) => boolean;
   logout: () => Promise<void>;
   refresh: () => Promise<Session>;
-  setIsRefreshing: (value: boolean) => void;
   parseToken: (token?: string | null) => JwtPayload | null;
   isExpired: (token?: string | null) => boolean;
   expiresSoon: (token?: string | null, threshold?: number) => boolean;
@@ -40,7 +45,6 @@ interface UseGeinsAuthReturnType {
  * @property {ComputedRef<string>} accessToken - Current access token
  * @property {ComputedRef<boolean>} isAuthenticated - Whether user is authenticated
  * @property {ComputedRef<AuthSessionError>} sessionError - Why the last token refresh failed, if it did
- * @property {Ref<boolean>} isRefreshing - Whether token refresh is in progress
  * @property {ComputedRef<boolean>} authStateDiffers - Whether auth state has inconsistencies
  * @property {ComputedRef<string>} accountKey - Current account key
  * @property {function} preLogin - Performs pre-login API pings
@@ -50,16 +54,13 @@ interface UseGeinsAuthReturnType {
  * @property {function} setSession - Updates the session data
  * @property {function} sessionsAreEqual - Compares two session objects
  * @property {function} logout - Logs out the user
- * @property {function} refresh - Refreshes the authentication session
- * @property {function} setIsRefreshing - Sets the refreshing state
+ * @property {function} refresh - Re-reads the session (the server refreshes the token if due); single-flight per tab, locked across tabs
  * @property {function} parseToken - Parses JWT token payload
  * @property {function} isExpired - Checks if token is expired
  * @property {function} expiresSoon - Checks if token expires soon
  */
 export const useGeinsAuth = (): UseGeinsAuthReturnType => {
   const auth = useAuth();
-  // TODO: remove isrefreshing flow and replace with auth state loading
-  const isRefreshing = ref(false);
 
   const session = toRef(auth.data);
   const isAuthenticated = computed<boolean>(() => {
@@ -148,13 +149,14 @@ export const useGeinsAuth = (): UseGeinsAuthReturnType => {
     await auth.signOut({ callbackUrl: '/auth/logout' });
   };
 
-  const refresh = async (): Promise<Session> => {
-    return (await auth.refresh()) as Session;
-  };
-
-  const setIsRefreshing = (value: boolean) => {
-    isRefreshing.value = value;
-  };
+  // After taking the lock, `getSession` reads the shared cookie: if another tab
+  // already rotated the token, the server sees it isn't due and won't refresh
+  // again with the old refresh token.
+  sharedRefresh ??= createSingleFlight(
+    async () => (await auth.getSession()) as Session,
+    { lockName: REFRESH_LOCK_NAME, locks: navigator.locks },
+  );
+  const refresh = sharedRefresh;
 
   const parseToken = (token?: string | null) => {
     token = token || accessToken.value;
@@ -186,7 +188,6 @@ export const useGeinsAuth = (): UseGeinsAuthReturnType => {
     accessToken,
     isAuthenticated,
     sessionError,
-    isRefreshing,
     authStateDiffers,
     accountKey,
     preLogin,
@@ -197,7 +198,6 @@ export const useGeinsAuth = (): UseGeinsAuthReturnType => {
     sessionsAreEqual,
     logout,
     refresh,
-    setIsRefreshing,
     parseToken,
     isExpired,
     expiresSoon,

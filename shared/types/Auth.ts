@@ -81,7 +81,6 @@ export interface AuthAccounts {
 
 export interface AuthBroadcastData {
   session?: Session | null;
-  isRefreshing?: boolean;
 }
 
 /**

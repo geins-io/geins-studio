@@ -24,7 +24,6 @@ const {
   accessToken,
   isAuthenticated,
   sessionError,
-  isRefreshing,
   authStateDiffers,
   accountKey,
   preLogin,
@@ -35,7 +34,6 @@ const {
   sessionsAreEqual,
   logout,
   refresh,
-  setIsRefreshing,
   parseToken,
   isExpired,
   expiresSoon,
@@ -59,10 +57,6 @@ A `computed` reference that returns `true` if the user is authenticated.
 ### `sessionError`
 
 A `computed` reference to `session.error`: why the last token refresh failed, if it did. `'RefreshTokenInvalid'` means Geins rejected the refresh token (the session is `isAuthenticated: false`); `'RefreshFailed'` means a transient failure (5xx, network, timeout) — the session is kept and the next session fetch retries. See [When a refresh fails](/concepts/authentication#when-a-refresh-fails).
-
-### `isRefreshing`
-
-A `ref` that indicates whether a token refresh is in progress.
 
 ### `authStateDiffers`
 
@@ -163,20 +157,9 @@ Logs out the user and clears the session.
 refresh(): Promise<Session>
 ```
 
-Refreshes the session and retrieves a new access token.
+Re-reads the session from the server, which refreshes the access token if it is expired or expires within 5 minutes. Concurrent calls in a tab share one request, and calls across tabs run one at a time under the Web Lock `geins-auth-refresh` — so after one tab rotates the token, the others read it from the shared cookie instead of refreshing again. See [Refresh Flow](/concepts/authentication#refresh-flow).
 
 - **Returns:** A promise that resolves to the updated session
-
-### `setIsRefreshing`
-
-```ts
-setIsRefreshing(value: boolean): void
-```
-
-Sets the `isRefreshing` state.
-
-- **Parameters:**
-  - `value`: A boolean indicating the refresh state
 
 ### `parseToken`
 
@@ -272,7 +255,6 @@ interface UseGeinsAuthReturnType {
   accessToken: ComputedRef<string | undefined>;
   isAuthenticated: ComputedRef<boolean>;
   sessionError: ComputedRef<AuthSessionError | undefined>;
-  isRefreshing: Ref<boolean>;
   authStateDiffers: ComputedRef<boolean>;
   accountKey: ComputedRef<string | undefined>;
   preLogin: () => Promise<void>;
@@ -283,7 +265,6 @@ interface UseGeinsAuthReturnType {
   sessionsAreEqual: (session1: Session, session2: Session) => boolean;
   logout: () => Promise<void>;
   refresh: () => Promise<Session>;
-  setIsRefreshing: (value: boolean) => void;
   parseToken: (token?: string | null) => any | null;
   isExpired: (token?: string | null) => boolean;
   expiresSoon: (token?: string | null, threshold?: number) => boolean;

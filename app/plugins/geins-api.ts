@@ -1,4 +1,4 @@
-import type { GeinsApiError, GeinsApiFetch, Session } from '#shared/types';
+import type { GeinsApiError, GeinsApiFetch } from '#shared/types';
 import { resolveAppId } from '#shared/utils/app';
 import { tunnelIfMatch } from '#shared/utils/proxy-headers';
 /**
@@ -12,8 +12,9 @@ import { tunnelIfMatch } from '#shared/utils/proxy-headers';
  *
  * @remarks
  * The plugin uses the `useGeinsAuth` composable to manage authentication state and token refresh.
- * It intercepts API requests to check token expiration and refresh the token if necessary.
- * If a request fails with a 401 status, it attempts to refresh the token and retry the request.
+ * It intercepts API requests to check token expiration and refresh the token if necessary, through
+ * `useGeinsAuth().refresh` (one refresh in flight per tab, one at a time across tabs).
+ * A request that fails with a 401 is retried once; `onRequest` re-runs and picks up the refreshed token.
  */
 
 export default defineNuxtPlugin(() => {
@@ -24,54 +25,12 @@ export default defineNuxtPlugin(() => {
   // route-type resolution over the "excessive stack depth" limit (see the
   // GeinsApiFetch note below).
   const { showGlobalErrorToast } = useApiErrorToast();
-  const {
-    accessToken,
-    isRefreshing,
-    accountKey,
-    refresh,
-    setIsRefreshing,
-    isExpired,
-    expiresSoon,
-  } = useGeinsAuth();
+  const { accessToken, accountKey, refresh, isExpired, expiresSoon } =
+    useGeinsAuth();
   const appId = resolveAppId(
     useRuntimeConfig().public.appId as string,
     window.location.hostname,
   );
-
-  // Create a WeakMap to store refresh promises per user session
-  // This prevents shared state between different users
-  const refreshPromises = new WeakMap<object, Promise<Session>>();
-
-  /**
-   * Refreshes the authentication token.
-   *
-   * This function checks if there is an ongoing token refresh process. If not, it initiates a new token refresh process.
-   * It sets the `isRefreshing` state to true, attempts to refresh the token, and handles any errors by logging out the user.
-   * Once the refresh process is complete, it resets the `isRefreshing` state and clears the `refreshPromise`.
-   *
-   * @returns {Promise<Session>} A promise that resolves to the new session.
-   * @throws Will throw an error if the token refresh fails.
-   */
-  const refreshAuthToken = async (): Promise<Session> => {
-    // Use the session object as a key to ensure per-user refresh promises
-    const sessionKey = { id: accessToken.value || 'anonymous' };
-
-    let currentRefreshPromise = refreshPromises.get(sessionKey);
-    if (!currentRefreshPromise) {
-      currentRefreshPromise = (async () => {
-        setIsRefreshing(true);
-        try {
-          const newSession = await refresh();
-          return newSession;
-        } finally {
-          setIsRefreshing(false);
-          refreshPromises.delete(sessionKey); // Clear the refresh promise after completion
-        }
-      })();
-      refreshPromises.set(sessionKey, currentRefreshPromise);
-    }
-    return currentRefreshPromise;
-  };
 
   /**
    * The `$fetch` instance for the Geins API.
@@ -101,18 +60,8 @@ export default defineNuxtPlugin(() => {
       // reach Vercel's edge, which would answer it with its own 412.
       tunnelIfMatch(options.headers);
       try {
-        // Check token expiration
         if (isExpired() || expiresSoon()) {
-          if (!isRefreshing.value) {
-            await refreshAuthToken();
-          } else {
-            // Wait for the ongoing refresh to complete
-            const sessionKey = { id: accessToken.value || 'anonymous' };
-            const currentRefreshPromise = refreshPromises.get(sessionKey);
-            if (currentRefreshPromise) {
-              await currentRefreshPromise;
-            }
-          }
+          await refresh();
         }
         // Set the content type header
         if (
