@@ -716,6 +716,8 @@
     "view_prices": "Visa priser",
     "add_company_price_list_description": "Välj kanal och valuta. Du anger priserna i nästa steg.",
     "company_price_list_no_free_slots": "Företaget har redan en prislista i varje kanal och valuta.",
+    "start_from": "Utgå från",
+    "empty_list": "Tom lista",
     "remove_company_price_list_description": "Priserna du har angett för den här listan är inte sparade än och går förlorade.",
     "company_set_prices_external_title": "Företaget är kopplat till ett externt system",
     "company_set_prices_external_description": "Om det systemet hanterar företagets priser kan nästa synk stänga av företagspriserna och ta bort dem.",

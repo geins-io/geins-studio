@@ -1,7 +1,8 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest';
-import type { PriceListContent } from '#shared/types';
+import type { PriceListContent, PriceListProduct } from '#shared/types';
 import {
+  companyPriceListContentFromSource,
   companyPriceListCreateBody,
   companyPriceListIdentifier,
   companyPriceListName,
@@ -11,6 +12,7 @@ import {
   getPriceListSummaryCounts,
   isCompanyPriceListEntryDirty,
   isOwnAccountPriceList,
+  priceListDraftRules,
   priceListForceOptions,
 } from '../price-list';
 
@@ -192,6 +194,12 @@ describe('companyPriceListCreateBody', () => {
     expect(
       companyPriceListCreateBody({ ...company, active: false }).active,
     ).toBe(false);
+  });
+
+  it('keeps the exVat it is given', () => {
+    expect(companyPriceListCreateBody({ ...company, exVat: false }).exVat).toBe(
+      false,
+    );
   });
 
   it('adds rules without ids, the whole selection and only priced rows', () => {
@@ -430,5 +438,115 @@ describe('getPriceListSummaryCounts', () => {
     expect(getPriceListSummaryCounts(undefined)).toBeUndefined();
     expect(getPriceListSummaryCounts(null)).toBeUndefined();
     expect(getPriceListSummaryCounts({})).toBeUndefined();
+  });
+});
+
+describe('priceListDraftRules', () => {
+  const rules = [
+    { _id: 'r1', quantity: 1, margin: 20, discountPercent: 0, global: true },
+    { _id: 'r2', quantity: 10, discountPercent: 5, applied: true },
+  ];
+
+  it('keeps the quantity, the set percentage and the id', () => {
+    expect(priceListDraftRules(rules)).toStrictEqual([
+      { _id: 'r1', quantity: 1, margin: 20 },
+      { _id: 'r2', quantity: 10, discountPercent: 5 },
+    ]);
+  });
+
+  it('leaves the ids out for a new list', () => {
+    expect(priceListDraftRules(rules, false)).toStrictEqual([
+      { quantity: 1, margin: 20 },
+      { quantity: 10, discountPercent: 5 },
+    ]);
+  });
+
+  it('has no rules for a list without any', () => {
+    expect(priceListDraftRules(undefined)).toEqual([]);
+  });
+});
+
+describe('companyPriceListContentFromSource', () => {
+  const source = {
+    _id: 'shared-1',
+    rules: [
+      { _id: 'r1', quantity: 1, discountPercent: 10, global: true },
+      { _id: 'r2', quantity: 10, discountPercent: 15 },
+    ],
+    productSelectionQuery: selection,
+  };
+  // GET rows carry all three price fields; the mode says which one is set.
+  const row = (
+    productId: string,
+    priceMode: PriceListProduct['priceMode'],
+    staggeredCount = 1,
+  ): PriceListProduct => ({
+    _id: `row-${productId}-${staggeredCount}`,
+    productId,
+    staggeredCount,
+    priceMode,
+    price: 80,
+    margin: 25,
+    discountPercent: 10,
+    ruleId: 'r1',
+    name: 'Chair',
+  });
+
+  it('takes the rules without ids and the whole selection', () => {
+    const content = companyPriceListContentFromSource(source);
+    expect(content.rules).toStrictEqual([
+      { quantity: 1, discountPercent: 10 },
+      { quantity: 10, discountPercent: 15 },
+    ]);
+    expect(content.productSelectionQuery).toEqual(selection);
+    expect(content.products).toEqual([]);
+  });
+
+  it('keeps manual rows, volume breaks included, with only their price', () => {
+    const content = companyPriceListContentFromSource(source, [
+      row('100', 'fixed'),
+      row('101', 'margin'),
+      row('102', 'discount'),
+      row('102', 'fixed', 10),
+    ]);
+    expect(content.products).toStrictEqual([
+      { productId: '100', staggeredCount: 1, price: 80 },
+      { productId: '101', staggeredCount: 1, margin: 25 },
+      { productId: '102', staggeredCount: 1, discountPercent: 10 },
+      { productId: '102', staggeredCount: 10, price: 80 },
+    ]);
+  });
+
+  it('leaves out rule, auto and unpriced rows', () => {
+    const content = companyPriceListContentFromSource(source, [
+      row('100', 'rule'),
+      row('101', 'auto'),
+      row('102', 'autoRule'),
+      row('103', 'autoFixed'),
+      row('104', undefined),
+      { productId: '105', staggeredCount: 1, priceMode: 'fixed' },
+    ]);
+    expect(content.products).toEqual([]);
+  });
+
+  it('leaves out a selection the source has none of', () => {
+    const content = companyPriceListContentFromSource({ rules: [] });
+    expect(content).not.toHaveProperty('productSelectionQuery');
+    expect(content.rules).toEqual([]);
+  });
+
+  it('builds a create body with no ids anywhere', () => {
+    const body = companyPriceListCreateBody({
+      companyId: 'acc-1',
+      companyName: 'Sonora Lab AB',
+      channel: '1',
+      currency: 'SEK',
+      content: companyPriceListContentFromSource(source, [
+        row('100', 'margin'),
+        row('100', 'margin', 5),
+      ]),
+    });
+    expect(JSON.stringify(body)).not.toMatch(/"_id"|internalId|ruleId/);
+    expect(body.products).toHaveLength(2);
   });
 });

@@ -35,18 +35,21 @@ const listId = ref(props.priceList?._id);
 const toDraft = (list: ProductPriceList): ProductPriceListUpdate => ({
   ...list,
   products: [],
-  rules: (list.rules ?? []).map((rule) => ({
-    _id: rule._id,
-    quantity: rule.quantity,
-    ...(rule.margin && { margin: rule.margin }),
-    ...(rule.discountPercent && { discountPercent: rule.discountPercent }),
-  })),
+  rules: priceListDraftRules(list.rules),
 });
+
+// A draft with edited content (one started from another list) opens with it.
+// Read before the content watch below hands the model the editor's own.
+const startContent =
+  !props.priceList && dirty.value ? content.value : undefined;
+// Its content is all new, so it stays dirty until "Save company" creates it.
+const unsavedStart = ref(!!startContent);
 
 const draft = ref<ProductPriceListUpdate>({
   ...props.seed,
-  rules: [],
-  products: [],
+  rules: startContent?.rules ?? [],
+  productSelectionQuery: startContent?.productSelectionQuery,
+  products: startContent?.products ?? [],
 });
 
 const readOnly = computed(() => !!props.priceList?.readOnly);
@@ -66,7 +69,7 @@ watch(
   { immediate: true },
 );
 watch(
-  editor.isDirty,
+  () => unsavedStart.value || editor.isDirty.value,
   (value) => {
     dirty.value = value;
   },
@@ -131,6 +134,8 @@ const load = async () => {
   if (savedList.value) {
     draft.value = toDraft(savedList.value);
     editor.seed(savedList.value);
+  } else if (startContent) {
+    editor.seed(startContent);
   }
   ready.value = true;
   await editor.load();
@@ -143,6 +148,7 @@ onMounted(load);
 const afterSave = async (saved: ProductPriceList) => {
   // The re-seed replaces the selection; `saving` keeps it from previewing again.
   editor.saving.value = true;
+  unsavedStart.value = false;
   try {
     listId.value = saved._id;
     draft.value = toDraft(saved);
