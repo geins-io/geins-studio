@@ -1,10 +1,12 @@
 import { defineStore } from 'pinia';
 
 /**
- * User store — derives current user info from the auth session.
+ * User store — the signed-in user, loaded from `user/me` (with accounts).
  *
- * Provides computed display properties: initials (for avatars), full name,
- * email, and role/permission accessors. Reactive to session changes.
+ * The auth session carries tokens only; `init()` loads the user through
+ * `$geinsApi` (at boot by the `geins-global` plugin, and on the login page for
+ * account selection). Provides computed display properties: initials (for
+ * avatars), full name, email, accounts, and role/permission accessors.
  *
  * @example
  * ```ts
@@ -14,7 +16,33 @@ import { defineStore } from 'pinia';
  */
 export const useUserStore = defineStore('user', () => {
   const { session } = useGeinsAuth();
-  const user = ref(session.value?.user);
+  const { userApi } = useGeinsRepository();
+  const { geinsLogWarn } = useGeinsLog('stores/user.ts');
+  const user = ref<User>();
+  let pendingInit: Promise<void> | null = null;
+
+  /**
+   * Loads the signed-in user. Concurrent calls share one request; a failure
+   * is logged and leaves `user` as it was.
+   */
+  async function init(): Promise<void> {
+    pendingInit ??= userApi.me
+      .get({ fields: ['accounts'] })
+      .then((data) => {
+        user.value = data;
+      })
+      .catch((error) => {
+        geinsLogWarn('error fetching user:', error);
+      })
+      .finally(() => {
+        pendingInit = null;
+      });
+    return pendingInit;
+  }
+
+  function reset(): void {
+    user.value = undefined;
+  }
 
   const userInitials = computed(() => {
     if (!user.value) {
@@ -52,8 +80,9 @@ export const useUserStore = defineStore('user', () => {
     return user.value?._id || 'N/A';
   });
 
+  // Merge: a profile update response may omit fields we loaded (accounts).
   const updateUser = (newUser: User) => {
-    user.value = newUser;
+    user.value = { ...user.value, ...newUser };
   };
 
   const userAccounts = computed(() => {
@@ -104,6 +133,8 @@ export const useUserStore = defineStore('user', () => {
     userAccounts,
     currentAccountName,
     hasMultipleAccounts,
+    init,
+    reset,
     updateUser,
     hasAnyRole,
     hasAnyPermission,

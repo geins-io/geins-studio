@@ -14,8 +14,8 @@ The Account & Auth domain handles everything related to identity and merchant co
 **Multi-layered auth flow** — Authentication involves 6 layers working in sequence:
 
 1. **Middleware** (`auth.global.ts`) — Route guard redirecting unauthenticated users to `/auth/login`
-2. **Server handler** (`server/api/auth/[...].ts`) — NextAuth.js with `CredentialsProvider`, JWT handling
-3. **Server utility** (`server/utils/auth.ts`) — Direct API calls to Geins auth endpoints (login, refresh, verify)
+2. **Server handler** (`server/api/auth/[...].ts`) — NextAuth.js with `CredentialsProvider`, JWT handling. Its `jwt`/`session` callbacks never throw (next-auth 4 wipes the cookie on a throw); a failed refresh becomes `session.error` (`RefreshTokenInvalid` on 401/403, else `RefreshFailed` with the token kept). Decisions live in `shared/utils/auth-session.ts`
+3. **Server utility** (`server/utils/auth.ts`) — Direct API calls to Geins auth endpoints (login, refresh, verify); throws `AuthApiError` (HTTP status, or `0` for network/timeout)
 4. **Plugin** (`geins-api.ts`) — `$geinsApi` fetch instance with auto token refresh via WeakMap-cached promises
 5. **Composable** (`useGeinsAuth`) — Client-side auth state: `session`, `isAuthenticated`, `login()`, `logout()`
 6. **Plugin** (`auth-state.ts`) — Cross-tab sync via `BroadcastChannel('geins-auth')`
@@ -26,7 +26,7 @@ The Account & Auth domain handles everything related to identity and merchant co
 
 **Account store** — `useAccountStore` caches merchant-level data (channels, currencies, languages) and persists user preferences (`currentChannelId`, `currentCurrency`, `currentLanguage`) in cookies. Initialized by the `geins-global.ts` plugin on session start. On logout the plugin resets it and the products store. It ignores the brief `loading` status during a token refresh, so a refresh never counts as a logout.
 
-**User store** — `useUserStore` derives display properties from the session (`userInitials`, `userName`, `userEmail`) and provides role/permission checks (`hasAnyRole`, `hasAnyPermission` — currently TODO stubs).
+**User store** — `useUserStore` loads the signed-in user from `user/me` (with accounts) through `$geinsApi` — the session carries tokens only. `geins-global.ts` awaits `init()` at boot and resets it on logout; the login page loads it for account selection. It derives display properties (`userInitials`, `userName`, `userEmail`, `userAccounts`) and provides role/permission checks (`hasAnyRole`, `hasAnyPermission` — currently TODO stubs).
 
 ## API Shape
 
@@ -83,3 +83,6 @@ Each layer has a single responsibility (route guard → server handler → serve
 
 **2025-03-01: Cookie-persisted account preferences**
 `currentChannelId`, `currentCurrency`, and `currentLanguage` are stored in cookies so they survive page reloads and new tabs without requiring an API call.
+
+**2026-10-30: Session holds tokens only; user loaded client-side**
+The `session` callback used to call `user/me` on every `/api/auth/session` (the user was never stored in the token) and threw on failure, which wiped the cookie. Now the callbacks are pure and never throw, and `useUserStore` loads the user via `$geinsApi`. Keeps the JWT cookie small (staff users have long account lists) and the name fresh after a profile edit.

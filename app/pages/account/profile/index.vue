@@ -15,10 +15,9 @@ import { createPasswordChangeSchema } from '@/utils/password-validation';
 const scope = 'pages/account/profile/index.vue';
 const { t } = useI18n();
 const { toast } = useToast();
-const { geinsLogWarn, geinsLogError } = useGeinsLog(scope);
+const { geinsLogError } = useGeinsLog(scope);
 const userStore = useUserStore();
 const { userInitials } = storeToRefs(userStore);
-const { session, setSession } = useGeinsAuth();
 
 // =====================================================================================
 // API & REPOSITORY SETUP
@@ -261,16 +260,7 @@ const handleSave = async () => {
     true,
   );
   emptyPasswords();
-  const newSession = {
-    ...session.value,
-    user: entityData.value,
-  };
-  try {
-    await setSession(newSession);
-    userStore.updateUser(entityData.value);
-  } catch (error) {
-    geinsLogWarn('error updating session:', error);
-  }
+  userStore.updateUser(entityData.value);
 };
 
 // =====================================================================================

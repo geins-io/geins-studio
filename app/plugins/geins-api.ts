@@ -25,7 +25,6 @@ export default defineNuxtPlugin(() => {
   // GeinsApiFetch note below).
   const { showGlobalErrorToast } = useApiErrorToast();
   const {
-    isAuthenticated,
     accessToken,
     isRefreshing,
     accountKey,
@@ -122,8 +121,10 @@ export default defineNuxtPlugin(() => {
         ) {
           options.headers.set('content-type', 'application/json');
         }
-        // Add the token to the request
-        if (isAuthenticated.value && accessToken.value) {
+        // Add the token to the request. Not gated on `isAuthenticated`: the
+        // login page loads the user (for account selection) before an account
+        // is picked.
+        if (accessToken.value) {
           options.headers.set('x-access-token', `${accessToken.value}`);
         }
         // Add the account key to the request

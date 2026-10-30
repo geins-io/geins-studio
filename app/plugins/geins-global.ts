@@ -1,15 +1,18 @@
 export default defineNuxtPlugin(async (_nuxtApp) => {
   const accountStore = useAccountStore();
   const productsStore = useProductsStore();
+  const userStore = useUserStore();
   const { isAuthenticated } = useGeinsAuth();
   const { status } = useAuth();
 
   // Prevent execution on the server
   if (import.meta.server) return;
 
-  // If user is authenticated, initialize the account store
+  // If user is authenticated, initialize the stores. The user is awaited:
+  // pages read it synchronously (e.g. per-user cookies).
   if (isAuthenticated.value) {
     accountStore.init();
+    await userStore.init();
     return;
   }
 
@@ -27,9 +30,11 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
       settled = value;
       if (value) {
         accountStore.init();
+        userStore.init();
       } else {
         accountStore.reset();
         productsStore.reset();
+        userStore.reset();
       }
     },
     { immediate: false }, // Avoid triggering the watcher immediately

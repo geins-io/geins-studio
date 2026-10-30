@@ -23,6 +23,7 @@ const {
   session,
   accessToken,
   isAuthenticated,
+  sessionError,
   isRefreshing,
   authStateDiffers,
   accountKey,
@@ -54,6 +55,10 @@ A `computed` reference to the access token from the session.
 ### `isAuthenticated`
 
 A `computed` reference that returns `true` if the user is authenticated.
+
+### `sessionError`
+
+A `computed` reference to `session.error`: why the last token refresh failed, if it did. `'RefreshTokenInvalid'` means Geins rejected the refresh token (the session is `isAuthenticated: false`); `'RefreshFailed'` means a transient failure (5xx, network, timeout) — the session is kept and the next session fetch retries. See [When a refresh fails](/concepts/authentication#when-a-refresh-fails).
 
 ### `isRefreshing`
 
@@ -266,6 +271,7 @@ interface UseGeinsAuthReturnType {
   session: ComputedRef<Session | null>;
   accessToken: ComputedRef<string | undefined>;
   isAuthenticated: ComputedRef<boolean>;
+  sessionError: ComputedRef<AuthSessionError | undefined>;
   isRefreshing: Ref<boolean>;
   authStateDiffers: ComputedRef<boolean>;
   accountKey: ComputedRef<string | undefined>;
@@ -297,14 +303,16 @@ interface AuthResponse extends AuthTokens {
   accounts?: AuthAccounts[];
 }
 
+type AuthSessionError = 'RefreshTokenInvalid' | 'RefreshFailed';
+
 interface Session extends AuthTokens {
   isAuthenticated?: boolean;
   tokenExpires?: number;
   refreshedAt?: number;
-  user?: User;
   mfaActive?: boolean;
   mfaMethod?: string;
   expires?: string;
+  error?: AuthSessionError;
 }
 
 interface LoginCredentials {

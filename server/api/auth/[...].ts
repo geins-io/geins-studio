@@ -1,5 +1,10 @@
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { LoginCredentials, AuthResponse, AuthTokens } from '#shared/types';
+import {
+  sessionFromToken,
+  tokenAfterRefresh,
+  tokenAfterRefreshError,
+} from '#shared/utils/auth-session';
 import { NuxtAuthHandler } from '#auth';
 
 const geinsAuth = auth();
@@ -14,85 +19,39 @@ export default NuxtAuthHandler({
   },
   debug: config.public.debug,
   callbacks: {
+    // Neither callback may throw: next-auth 4 clears the session cookie on any
+    // throw here, which turned a Geins hiccup into a logout.
     jwt: async ({ token, user, trigger }) => {
       if (trigger === 'signIn' && user) {
-        // If this is a sign in, set the token to include the user object,
-        // where our session data is stored when returned from the API
-        token = {
-          ...user,
-        };
-      } else if (
-        trigger === undefined &&
-        user === undefined &&
-        geinsAuth.shouldRefresh(token)
-      ) {
-        // If the token should be refreshed, try to do so
-        try {
-          const newTokens = await geinsAuth.refresh(token.refreshToken);
-          if (newTokens) {
-            // If refresh is successful, update the token with the new session data
-            const tokenData = geinsAuth.getSessionFromResponse(newTokens);
-            // Set the new token data but keep accountKey as is
-            token = {
-              ...tokenData,
-              accountKey: token.accountKey,
-            };
-            geinsLog('jwt ::: token refreshed, expires:', token.tokenExpires);
-            return token;
-          }
-        } catch (error) {
-          if (!error || typeof error !== 'object' || !('status' in error)) {
-            throw error;
-          }
-          // If the refresh fails, check the error status and handle accordingly
-          if (error.status === 401 || error.status === 403) {
-            // This will force logout in session callback
-            token = {
-              isAuthenticated: false,
-            };
-            geinsLog('jwt ::: refresh rejected, signing out');
-            return token;
-          } else {
-            // TODO: Decide what to do here
-          }
-        }
+        // Our session data comes back from `authorize` as the user object
+        return { ...user };
       }
-      return token;
+      if (
+        trigger !== undefined ||
+        user !== undefined ||
+        !geinsAuth.shouldRefresh(token)
+      ) {
+        return token;
+      }
+      // Returned as spreads: `JWT` has an index signature the `Session`
+      // interface lacks.
+      try {
+        const response = await geinsAuth.refresh(token.refreshToken);
+        const refreshed = tokenAfterRefresh(token, response);
+        geinsLog('jwt ::: token refreshed, expires:', refreshed.tokenExpires);
+        return { ...refreshed };
+      } catch (error) {
+        const next = tokenAfterRefreshError(token, error);
+        geinsLogWarn(
+          `jwt ::: refresh failed (${next.error}):`,
+          error instanceof Error ? error.message : error,
+        );
+        return { ...next };
+      }
     },
 
-    session: async ({ session, token }) => {
-      if (token.accessToken) {
-        // If we have an access token, update the session
-        session = {
-          ...session,
-          ...geinsAuth.getAuthenticatedSession(token),
-        };
-        // If we don't have a user object yet, fetch it
-        if (
-          !session.user?.email &&
-          !geinsAuth.isExpired(session.tokenExpires)
-        ) {
-          try {
-            const user = await geinsAuth.getUser(token.accessToken);
-            session.user = user;
-          } catch (error) {
-            geinsLogWarn('error fetching user:', error);
-            throw { status: 401, message: 'AUTH_ERROR' };
-          }
-        }
-      } else if (token.mfaActive) {
-        // If MFA is active, set the session to reflect this
-        session = {
-          ...session,
-          ...token,
-        };
-      } else {
-        // Throw error to force log out
-        geinsLogWarn('user unauthorized, logging out');
-        throw { status: 401, message: 'AUTH_ERROR' };
-      }
-      return session;
-    },
+    session: async ({ session, token }) =>
+      sessionFromToken(token, session.expires),
   },
   providers: [
     // @ts-expect-error You need to use .default here for it to work during SSR. May be fixed via Vite at some point

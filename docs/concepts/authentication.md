@@ -9,6 +9,7 @@ The files you will find in the `server` directory that are handling authenticati
 
 - `server/api/auth/[...].ts` - The catch-all for auth requests containing the [NuxtAuthHandler](https://auth.sidebase.io/guide/authjs/nuxt-auth-handler)
 - `server/utils/auth.ts` - A utility file with all Geins-specific authentication logic
+- `shared/utils/auth-session.ts` - Pure session decisions used by the `NuxtAuthHandler` callbacks: the token after a refresh succeeds or fails, and the session built from a token
 
 ## Application Files
 
@@ -16,7 +17,7 @@ The files you will find in the `app` directory that are handling authentication 
 
 - `app/middleware/auth.global.ts` - A global middleware that protects all routes from being accessed by unauthenticated users, and redirects them to the login page
 - `app/composables/useGeinsAuth.ts` - A composable that sits on top of the `useAuth` composable from NuxtAuth and adds Geins-specific functionality
-- `app/stores/user.ts` - A Pinia store that holds the user data and computed properties related to the user
+- `app/stores/user.ts` - A Pinia store that loads the signed-in user from `user/me` and exposes computed properties related to the user
 - `app/plugins/auth-state.ts` - A plugin that watches the auth state and makes sure the NuxtAuth and Geins auth states are in sync, and logs out the user if one of them is not authenticated
 
 ::: tip
@@ -34,10 +35,10 @@ Read the full documentation of the `useGeinsAuth` composable here: [useGeinsAuth
 5. Upon successfully receiving a login token, the user is redirected to the MFA page, where they enter their MFA code.
 6. On submitting, the login token and MFA code is sent with the `verify` method in `useGeinsAuth.ts`, which calls the `signIn` method from NuxtAuth again but this time with the code and the login token.
 7. In the `authorize` method of the `NuxtAuthHandler` The `verify` method from server utility `auth.ts` validates the MFA code and login token, and returns an authentication response containing access and refresh tokens.
-8. If the authentication response contains multiple accounts and no account is pre-selected, the user is presented with an account selection interface where they must choose which account to use.
+8. If the authentication response contains multiple accounts and no account is pre-selected, the login page loads the user (with their accounts) into `useUserStore` and presents an account selection interface where they must choose which account to use.
 9. The selected account key is set using the `setAccount` method in `useGeinsAuth.ts`, which updates the session with the chosen account key.
 10. In the NuxtAuth `jwt` callback, the access and refresh tokens are stored in the NuxtAuth JWT together with expiration time, which is shorter than the NuxtAuth expiration time.
-11. In the NuxtAuth `session` callback, the user data is fetched from the Geins API and stored to the session together with the access token.
+11. The NuxtAuth `session` callback builds the session from the JWT alone — no API call, and it never throws. The session carries tokens only: the user's name, email and accounts live in `useUserStore`, which loads them from `user/me` through `$geinsApi` (awaited at boot by `geins-global.ts`, and on the login page).
 12. The user is now authenticated and can access the application.
 
 ## Refresh Flow
@@ -45,3 +46,15 @@ Read the full documentation of the `useGeinsAuth` composable here: [useGeinsAuth
 A refresh check can be triggered manually by the `refresh` method in `useGeinsAuth.ts`. This will not force a refresh but only refresh the token if it's expired or it is soon to be expired, where "soon" by default means within 5 minutes.
 
 This check of the token is done automatically on page load and on every request towards the Geins API, and if the token is expired or soon to be expired, the token is refreshed before the request is sent.
+
+### When a refresh fails
+
+The `jwt` and `session` callbacks never throw: next-auth 4 clears the session cookie whenever one of them does, so a throw is a logout. A failed refresh is recorded on the token instead, and reaches the client as `session.error` (`sessionError` in `useGeinsAuth`):
+
+| Refresh result                              | Token                    | `session.error`       | Effect                                                           |
+| ------------------------------------------- | ------------------------ | --------------------- | ---------------------------------------------------------------- |
+| Success                                     | New tokens, same account | —                     | Error cleared                                                    |
+| `401` / `403`                               | Tokens dropped           | `RefreshTokenInvalid` | `isAuthenticated: false`; the client decides to log out          |
+| `5xx`, `404`, `429`, network error, timeout | Kept as is               | `RefreshFailed`       | User stays logged in; the next session fetch retries the refresh |
+
+Calls to the Geins auth endpoints time out after 10 seconds, so a hung refresh becomes a retryable `RefreshFailed` instead of running into the function timeout.
