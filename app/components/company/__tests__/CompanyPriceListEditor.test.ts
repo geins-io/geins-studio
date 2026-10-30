@@ -93,9 +93,13 @@ beforeEach(() => {
   useAccountStore().$patch({ channels: [{ _id: '1', name: 'Sweden' }] });
 });
 
-async function mountEditor(listKey: string, priceList?: ProductPriceList) {
+async function mountEditor(
+  listKey: string,
+  priceList?: ProductPriceList,
+  active?: boolean,
+) {
   const editor = await mountSuspended(CompanyPriceListEditor, {
-    props: { listKey, priceList, seed },
+    props: { listKey, priceList, seed, active },
     global: { stubs },
   });
   mounted.push(editor);
@@ -137,6 +141,23 @@ describe('CompanyPriceListEditor — header', () => {
     respond();
     const editor = await mountEditor('22', listOf({ _id: '22' }));
     expect(has(editor, 'price-list-counts')).toBe(false);
+  });
+
+  it('badges the list active from the list itself by default', async () => {
+    respond();
+    const editor = await mountEditor('23', listOf({ _id: '23' }));
+    expect(editor.find('[data-test="price-list-active"]').text()).toBe(
+      'active',
+    );
+  });
+
+  it('badges the unsaved active state the host passes', async () => {
+    respond();
+    const editor = await mountEditor('24', listOf({ _id: '24' }), false);
+    expect(editor.find('[data-test="price-list-active"]').text()).toBe(
+      'inactive',
+    );
+    expect(has(editor, 'price-list-inactive')).toBe(false);
   });
 
   it('refreshes the counts after a draft is first saved', async () => {

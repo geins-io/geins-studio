@@ -49,6 +49,14 @@ When `true`, the sidebar is always visible (desktop layout). When `false` and a 
 
 - **Default:** `true`
 
+### `sidebarToggleClass`
+
+```ts
+sidebarToggleClass?: string
+```
+
+Extra classes merged (`cn`) onto the floating summary toggle. It sits `@2xl:top-4`, beside the first card; pass e.g. `@2xl:top-17` when the main column starts with something above that card (the company Pricing tab's sub view has a "Back to pricing" link there).
+
 ## Slots
 
 ### default

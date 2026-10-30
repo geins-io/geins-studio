@@ -6,8 +6,8 @@ It's the per-list unit: a page that offers several company lists (one per channe
 
 ## Features
 
-- **A header for the list:** its name, channel · currency, and the manual and volume price counts (`fields: ['counts']`, left out while the API has none or the read fails). A draft takes its name, channel and currency from `seed`.
-- **Read-only lists.** For a `readOnly` (ERP) list, `usePriceListEditor` runs read-only: the saved rows load through `query`, the controls are disabled and the volume pricing panel is view only. The header adds the lock ("Managed externally…"), and the inactive notice when the list is inactive.
+- **A header card for the list:** a `ContentEditCard` titled with its name, with channel · currency as the description and an Active/Inactive `StatusBadge` (from `active`). Its body holds the manual and volume price counts (`fields: ['counts']`, left out while the API has none or the read fails); with nothing to show (a draft), the card is just its header. A draft takes its name, channel and currency from `seed`.
+- **Read-only lists.** For a `readOnly` (ERP) list, `usePriceListEditor` runs read-only: the saved rows load through `query`, `PriceListEditor` shows only the searchable grid (no rules, no selection) and the volume pricing panel is view only. The header card adds the lock ("Managed externally…"), and the inactive notice when the list is inactive.
 - **Its own draft and editor.** A new list starts from `seed`, the create body without content; an existing one loads its rules and selection on mount (`fields: ['rules', 'selectionquery']`), since `CustomerPriceList` leaves them out.
 - **New lists preview too.** Without an id, the preview posts the draft to `POST product/pricelist/preview`, and volume pricing works out prices locally.
 - **The grid says "Company price"** (`pricing.company_price`) and uses the list's currency.
@@ -55,6 +55,7 @@ const save = async () => {
     :list-key="priceList._id"
     :price-list="priceList"
     :seed="seed"
+    :active="active"
   />
 </template>
 ```
@@ -75,7 +76,7 @@ The list's entry key: its `_id`, or a draft's key that stays the same after "Sav
 priceList?: CustomerPriceList;
 ```
 
-The company's own list. It's missing until "Save company" creates it. Its id is read once, on mount; after a save, `afterSave` carries the new id. Its `readOnly` flag switches the editor to read-only, and its name, channel, currency and `active` feed the header.
+The company's own list. It's missing until "Save company" creates it. Its id is read once, on mount; after a save, `afterSave` carries the new id. Its `readOnly` flag switches the editor to read-only, and its name, channel and currency feed the header.
 
 ### `seed`
 
@@ -84,6 +85,14 @@ seed: ProductPriceListCreate;
 ```
 
 The create body of a new list, from `companyPriceListCreateBody` without `content`. It gives a new list's draft its channel, currency and VAT setting for previews.
+
+### `active`
+
+```ts
+active?: boolean;
+```
+
+The list's current `active`, which may not be saved yet (the company page's table switch). It drives the header badge and, for a read-only list, the inactive notice. Defaults to the list's (or the seed's) `active`.
 
 ## Models
 

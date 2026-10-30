@@ -190,7 +190,22 @@ const {
     @save="handleSaveRules"
   />
 
-  <div class="flex flex-col gap-8">
+  <!-- An ERP list only has imported rows, so rules and a selection add nothing. -->
+  <ContentCard v-if="readOnly">
+    <TableView
+      :columns="columns"
+      :data="selectedProducts"
+      entity-key="product"
+      :mode="TableMode.Simple"
+      :page-size="15"
+      :pinned-state="pinnedState"
+      :show-search="true"
+      :loading="readOnlyRowsLoading"
+      :error="!!readOnlyRowsError"
+      :on-retry="loadReadOnlyRows"
+    />
+  </ContentCard>
+  <div v-else class="flex flex-col gap-8">
     <ContentCard>
       <ContentCardHeader
         :title="$t('pricing.price_list_global_rules_title')"
@@ -220,7 +235,6 @@ const {
               v-model:mode="priceListBaseRuleMode"
               :title="$t('pricing.price_list_base_rule')"
               mode-id="priceListBaseRuleMode"
-              :disabled="readOnly"
             >
               <Label class="w-full">
                 {{ $t(priceListBaseRuleMode) }}
@@ -230,20 +244,14 @@ const {
                 class="w-full sm:w-48"
                 size="md"
                 :loading="baseRuleLoading"
-                :disabled="readOnly"
               >
                 <template #valueDescriptor>%</template>
               </Input>
-              <Button
-                variant="outline"
-                :disabled="readOnly"
-                @click="handleApplyBaseRule"
-              >
+              <Button variant="outline" @click="handleApplyBaseRule">
                 {{ $t('apply') }}
               </Button>
               <Button
                 variant="outline"
-                :disabled="readOnly"
                 @click="handleApplyBaseRuleAndOverwrite"
               >
                 {{ $t('pricing.price_list_apply_overwrite') }}
@@ -253,7 +261,6 @@ const {
                   v-if="baseRule && baseRuleText && !baseRuleLoading"
                   class="mt-2"
                   :label="baseRuleText"
-                  :removable="!readOnly"
                   @remove="removeBaseRulePromptVisible = true"
                 />
               </template>
@@ -264,13 +271,11 @@ const {
               v-model:mode="priceListRulesMode"
               :title="$t('pricing.price_list_volume_pricing')"
               mode-id="priceListRulesMode"
-              :disabled="readOnly"
             >
               <PriceListRules
                 v-model:loading="volumePricingLoading"
                 :rules="quantityLevelRules"
                 :mode="priceListRulesMode"
-                :disabled="readOnly"
                 @apply="applyRule"
                 @apply-overwrite="applyAndOverwriteRule"
                 @remove="removeRule"
@@ -295,7 +300,6 @@ const {
         :selection-strategy="SelectorSelectionStrategy.None"
         :currency="currency"
         :fetch-entities-externally="true"
-        :disabled="readOnly"
       >
         <template #list="{ selectorEntityKey }">
           <ContentHeading>
@@ -313,9 +317,6 @@ const {
             :page-size="15"
             :pinned-state="pinnedState"
             :show-search="true"
-            :loading="readOnlyRowsLoading"
-            :error="readOnly && !!readOnlyRowsError"
-            :on-retry="loadReadOnlyRows"
           />
         </template>
       </Selector>

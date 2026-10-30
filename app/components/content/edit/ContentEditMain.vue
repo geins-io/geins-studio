@@ -2,6 +2,8 @@
 const props = withDefaults(
   defineProps<{
     showSidebar?: boolean;
+    /** Extra classes for the floating summary toggle, e.g. to line it up with a card that starts lower. */
+    sidebarToggleClass?: string;
   }>(),
   {
     showSidebar: true,
@@ -50,7 +52,12 @@ const handleToggleSidebar = () => {
         <TooltipTrigger as-child>
           <button
             type="button"
-            class="bg-card flex-center fixed top-1/4 right-0 z-50 h-8 w-7 rounded-l-lg border border-r-0 @2xl:absolute @2xl:top-4 @2xl:right-0 @2xl:translate-x-full @2xl:rounded-l-none @2xl:rounded-r-lg @2xl:border-r-1 @2xl:border-l-0"
+            :class="
+              cn(
+                'bg-card flex-center fixed top-1/4 right-0 z-50 h-8 w-7 rounded-l-lg border border-r-0 @2xl:absolute @2xl:top-4 @2xl:right-0 @2xl:translate-x-full @2xl:rounded-l-none @2xl:rounded-r-lg @2xl:border-r-1 @2xl:border-l-0',
+                sidebarToggleClass,
+              )
+            "
             @click="handleToggleSidebar"
           >
             <LucideList class="text-muted-foreground size-10 p-1" />

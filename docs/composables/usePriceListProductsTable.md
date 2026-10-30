@@ -81,7 +81,7 @@ Creates a complete column configuration for price list products with all necessa
   - `listPriceTitle`: Title of the editable list price column, suffixed with `vatDescription`. Defaults to "Price list price"; the company editor passes `t('pricing.company_price')`
 
 - **Returns**: Complete array of column definitions
-- **Features**: Editable columns, actions, volume pricing, price modes
+- **Features**: Editable columns, actions, volume pricing, price modes. The editable list price column is highlighted (`meta.highlight`), as in the read-only grid
 
 ### `setupReadOnlyPriceListColumns`
 

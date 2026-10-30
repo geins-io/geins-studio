@@ -396,7 +396,7 @@ Renders rows where `row.original.active === false` at 50% opacity. Cells with `m
 
 ### Column highlight (`meta.highlight`)
 
-Not a prop: a column whose `columnDef.meta.highlight` is `true` is tinted from header to last row to draw the eye. Its cells get `bg-background font-semibold`. Its header gets `.table-view__header--highlight` (`main.css`: `bg-background` plus bold header text). The header rule is plain CSS because `.table-view__header` is too, and a utility can't override it — e.g. the company price in `setupReadOnlyPriceListColumns`. Set it on the column definition; never style `ui/table/` primitives for this.
+Not a prop: a column whose `columnDef.meta.highlight` is `true` is tinted from header to last row to draw the eye. Its cells get `bg-background font-semibold`. Its header gets `.table-view__header--highlight` (`main.css`: `bg-background` plus bold header text). The header rule is plain CSS because `.table-view__header` is too, and a utility can't override it — e.g. the list (or company) price in `setupPriceListColumns` and `setupReadOnlyPriceListColumns`. Set it on the column definition; never style `ui/table/` primitives for this.
 
 ## Models
 

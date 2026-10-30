@@ -13,6 +13,8 @@ const props = defineProps<{
   priceList?: CustomerPriceList;
   /** Create body of a new list (no content), which a new list previews from. */
   seed: ProductPriceListCreate;
+  /** The list's current `active`, which may not be saved yet; defaults to the list's. */
+  active?: boolean;
 }>();
 
 const content = defineModel<PriceListContent>('content');
@@ -91,9 +93,8 @@ const headerMeta = computed(() => {
     .filter(Boolean)
     .join(' · ');
 });
-const showInactiveNotice = computed(
-  () => readOnly.value && !props.priceList?.active,
-);
+const active = computed(() => props.active ?? !!headerList.value.active);
+const showInactiveNotice = computed(() => readOnly.value && !active.value);
 
 // A background read: on failure the header just leaves the counts out.
 const {
@@ -155,52 +156,52 @@ defineExpose({ afterSave, refreshCounts });
 
 <template>
   <div class="flex flex-col gap-6">
-    <div class="flex flex-col gap-4">
-      <div>
-        <ContentCardHeader
-          :title="headerList.name ?? ''"
-          :description="headerMeta"
-          heading-level="h2"
-        />
-        <p
-          v-if="summaryCounts"
-          class="text-muted-foreground mt-1 text-xs sm:text-sm"
-          data-test="price-list-counts"
-        >
-          {{
-            $t('customers.company_set_prices_counts', {
-              manual: summaryCounts.manual,
-              volume: summaryCounts.volume,
-            })
-          }}
-        </p>
-      </div>
-      <Item v-if="readOnly" variant="outline" data-test="price-list-lock">
-        <ItemMedia variant="icon">
-          <LucideLock class="text-muted-foreground" />
-        </ItemMedia>
-        <ItemContent>
-          <ItemTitle>
-            {{ $t('pricing.price_list_read_only_title') }}
-          </ItemTitle>
-          <ItemDescription>
-            {{ $t('pricing.managed_externally') }}
-          </ItemDescription>
-        </ItemContent>
-      </Item>
-      <Feedback
-        v-if="showInactiveNotice"
-        type="info"
-        data-test="price-list-inactive"
-      >
-        <template #title>
-          {{ $t('customers.company_set_prices_erp_inactive_title') }}
-        </template>
-        <template #description>
-          {{ $t('customers.company_set_prices_erp_inactive_description') }}
-        </template>
-      </Feedback>
-    </div>
+    <ContentEditCard :title="headerList.name ?? ''" :description="headerMeta">
+      <template #header-action>
+        <StatusBadge :status="active" data-test="price-list-active" />
+      </template>
+      <template v-if="summaryCounts || readOnly" #default>
+        <div class="flex flex-col gap-4">
+          <p
+            v-if="summaryCounts"
+            class="text-muted-foreground text-xs sm:text-sm"
+            data-test="price-list-counts"
+          >
+            {{
+              $t('customers.company_set_prices_counts', {
+                manual: summaryCounts.manual,
+                volume: summaryCounts.volume,
+              })
+            }}
+          </p>
+          <Item v-if="readOnly" variant="outline" data-test="price-list-lock">
+            <ItemMedia variant="icon">
+              <LucideLock class="text-muted-foreground" />
+            </ItemMedia>
+            <ItemContent>
+              <ItemTitle>
+                {{ $t('pricing.price_list_read_only_title') }}
+              </ItemTitle>
+              <ItemDescription>
+                {{ $t('pricing.managed_externally') }}
+              </ItemDescription>
+            </ItemContent>
+          </Item>
+          <Feedback
+            v-if="showInactiveNotice"
+            type="info"
+            data-test="price-list-inactive"
+          >
+            <template #title>
+              {{ $t('customers.company_set_prices_erp_inactive_title') }}
+            </template>
+            <template #description>
+              {{ $t('customers.company_set_prices_erp_inactive_description') }}
+            </template>
+          </Feedback>
+        </div>
+      </template>
+    </ContentEditCard>
     <Card v-if="loadError">
       <CardContent class="p-0">
         <Empty>
