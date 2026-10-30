@@ -79,15 +79,20 @@ export interface AuthAccounts {
   roles: string[];
 }
 
-export interface AuthBroadcastData {
-  session?: Session | null;
-}
+/**
+ * Cross-tab auth signal on the `geins-auth` BroadcastChannel. Signals only —
+ * never tokens or sessions: tabs share the session cookie, so a receiver
+ * re-reads its own session and decides for itself.
+ */
+export type AuthBroadcastMessage =
+  | { type: 'session-changed' }
+  | { type: 'signed-out' };
 
 /**
  * Response from auth sign-in operations.
  *
  * Represents the result of calling signIn through @sidebase/nuxt-auth.
- * Used as the return type for login, verify, setAccount, and setSession
+ * Used as the return type for login, verify, and setAccount
  * in the useGeinsAuth composable.
  */
 export interface SignInResponse {

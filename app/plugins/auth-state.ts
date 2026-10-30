@@ -1,10 +1,4 @@
-import {
-  promiseTimeout,
-  useBroadcastChannel,
-  useDebounceFn,
-  useEventListener,
-} from '@vueuse/core';
-import type { Session, AuthBroadcastData } from '#shared/types';
+import { promiseTimeout, useEventListener } from '@vueuse/core';
 
 const REFRESH_CHECK_INTERVAL_MS = 60_000;
 // Long enough for another tab's (or lambda's) token rotation to land in the
@@ -12,70 +6,51 @@ const REFRESH_CHECK_INTERVAL_MS = 60_000;
 const INVALID_RECHECK_DELAY_MS = 1_500;
 
 export default defineNuxtPlugin(async (_nuxtApp) => {
-  const { meta: routeMeta } = useRoute();
+  const router = useRouter();
   const { geinsLogWarn } = useGeinsLog('plugins/auth-state.ts');
   const {
     authStateDiffers,
     session,
     sessionError,
     isAuthenticated,
-    accessToken,
+    accountKey,
+    authSignal,
     refresh,
+    syncSession,
     isExpired,
     expiresSoon,
-    setSession,
-    sessionsAreEqual,
     logout,
   } = useGeinsAuth();
-  const { data: broadcastData, post: broadcastPost } = useBroadcastChannel<
-    AuthBroadcastData,
-    AuthBroadcastData
-  >({
-    name: 'geins-auth',
-  });
 
-  // Debounced function to broadcast changes
-  const broadcastChange = useDebounceFn(() => {
-    broadcastPost({
-      session: toRaw(session.value),
-    });
-  }, 500);
-
-  // Watch for changes to isAuthenticated and accessToken
-  watch([isAuthenticated, accessToken], async (newValues, oldValues) => {
-    if (newValues.some((newVal, index) => newVal !== oldValues[index])) {
-      broadcastChange();
-      if (newValues[0] === true && routeMeta.layout === 'auth') {
-        await navigateTo('/');
+  // Another tab's login, account switch, refresh or logout. Each tab re-reads
+  // its own session (the cookie is shared) and acts on what it finds, so one
+  // tab's failed fetch can never log out the others.
+  watch(authSignal, async (signal) => {
+    if (!signal) {
+      return;
+    }
+    const previousAccountKey = accountKey.value;
+    try {
+      await syncSession();
+    } catch (error) {
+      geinsLogWarn(`syncing the session after ${signal.type} failed:`, error);
+      return;
+    }
+    const onAuthPage = router.currentRoute.value.path.startsWith('/auth');
+    if (!isAuthenticated.value) {
+      if (signal.type === 'signed-out' && !onAuthPage) {
+        await navigateTo('/auth/login', { external: true });
       }
+      return;
+    }
+    if (onAuthPage) {
+      await navigateTo('/');
+    } else if (previousAccountKey && accountKey.value !== previousAccountKey) {
+      // Full reload: this tab's stores and open page hold the previous
+      // account's data.
+      await navigateTo('/', { external: true });
     }
   });
-
-  // Watch for changes to broadcastData
-  watch(
-    broadcastData,
-    async () => {
-      let broadcastedSession: Session = {};
-      let currentSession: Session = {};
-      if (broadcastData.value.session) {
-        broadcastedSession = toRaw(broadcastData.value.session);
-      }
-      if (session.value) {
-        currentSession = toRaw(session.value);
-      }
-      if (!sessionsAreEqual(broadcastedSession, currentSession)) {
-        if (
-          broadcastedSession?.isAuthenticated === false ||
-          Object.keys(broadcastedSession).length === 0
-        ) {
-          await logout();
-          return;
-        }
-        setSession(broadcastedSession);
-      }
-    },
-    { deep: true },
-  );
 
   // Watch for changes in the auth state to set the cookie that is used for the app skeleton state
   watch(

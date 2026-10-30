@@ -18,7 +18,7 @@ The files you will find in the `app` directory that are handling authentication 
 - `app/middleware/auth.global.ts` - A global middleware that protects all routes from being accessed by unauthenticated users, and redirects them to the login page
 - `app/composables/useGeinsAuth.ts` - A composable that sits on top of the `useAuth` composable from NuxtAuth and adds Geins-specific functionality
 - `app/stores/user.ts` - A Pinia store that loads the signed-in user from `user/me` and exposes computed properties related to the user
-- `app/plugins/auth-state.ts` - A plugin that watches the auth state and makes sure the NuxtAuth and Geins auth states are in sync, and logs out the user if one of them is not authenticated
+- `app/plugins/auth-state.ts` - A plugin that keeps tabs in sync (see [Cross-tab sync](#cross-tab-sync)), refreshes the token proactively, and makes the deliberate decision to log out when the session has no usable token
 
 ::: tip
 
@@ -71,3 +71,14 @@ The `jwt` and `session` callbacks never throw: next-auth 4 clears the session co
 Calls to the Geins auth endpoints time out after 10 seconds, so a hung refresh becomes a retryable `RefreshFailed` instead of running into the function timeout.
 
 On `RefreshTokenInvalid`, `auth-state.ts` waits 1.5 seconds and re-reads the session once, under the lock: another tab or server instance may have just rotated the token, and its cookie wins. Only if the session is still invalid does the tab log out.
+
+## Cross-tab sync
+
+All tabs share the session cookie, so tabs only send each other signals on the `geins-auth` BroadcastChannel — never tokens or sessions (`AuthBroadcastMessage` in `shared/types/Auth.ts`):
+
+| Signal            | Sent by                                                                                                       | Receiving tab                                                                                             |
+| ----------------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `session-changed` | `login`, `verify`, `setAccount` (when they leave the tab authenticated), and `refresh` when the token changed | Re-reads its session (`syncSession`). On an auth page it goes home; if the account changed it reloads `/` |
+| `signed-out`      | The auth middleware on `/auth/logout`, where every logout lands after the cookie was cleared                  | Re-reads its session and, if it is no longer authenticated, goes to the login page                        |
+
+A receiving tab never re-signals, and only a deliberate logout sends `signed-out` — a tab whose own session fetch fails or comes back unauthenticated decides for itself and tells no one.

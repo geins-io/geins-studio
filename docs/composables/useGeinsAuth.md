@@ -26,14 +26,15 @@ const {
   sessionError,
   authStateDiffers,
   accountKey,
+  authSignal,
+  broadcastAuthSignal,
   preLogin,
   login,
   verify,
   setAccount,
-  setSession,
-  sessionsAreEqual,
   logout,
   refresh,
+  syncSession,
   parseToken,
   isExpired,
   expiresSoon,
@@ -65,6 +66,18 @@ A `computed` reference that returns `true` if the auth state indicates the user 
 ### `accountKey`
 
 A `computed` reference to the current account key from the session.
+
+### `authSignal`
+
+A `computed` reference to the last auth signal received from another tab on the `geins-auth` BroadcastChannel: `{ type: 'session-changed' }` or `{ type: 'signed-out' }`. The `auth-state.ts` plugin reacts to it. Tabs share the session cookie, so signals never carry tokens or sessions — a receiving tab re-reads its own session with `syncSession`.
+
+### `broadcastAuthSignal`
+
+```ts
+broadcastAuthSignal(message: AuthBroadcastMessage): void
+```
+
+Posts an auth signal to the other tabs (a tab never receives its own). `login`, `verify`, `setAccount` and `refresh` post `session-changed` themselves when they leave the tab authenticated with a new session; the auth middleware posts `signed-out` on `/auth/logout`, where every logout lands after the cookie was cleared.
 
 ### `preLogin`
 
@@ -106,40 +119,11 @@ Verifies the user's tokens for MFA authentication.
 setAccount(accountKey: string): Promise<any>
 ```
 
-Sets the account context for the current session.
+Sets the account context for the current session, then signals the other tabs (`session-changed`).
 
 - **Parameters:**
   - `accountKey`: The account key to set for the session
 - **Returns:** A promise that resolves to the updated session
-
-### `setSession`
-
-```ts
-setSession(session: Session): Promise<any>
-```
-
-Updates the current session with new session data.
-
-::: info NOTE
-This method automatically excludes `user` before updating to not store it in the JWT token.
-:::
-
-- **Parameters:**
-  - `session`: The complete session object to set
-- **Returns:** A promise that resolves to the updated session
-
-### `sessionsAreEqual`
-
-```ts
-sessionsAreEqual(session1: Session, session2: Session): boolean
-```
-
-Compares two session objects for equality, excluding `expires` and `accounts` properties.
-
-- **Parameters:**
-  - `session1`: First session to compare
-  - `session2`: Second session to compare
-- **Returns:** `true` if sessions are equal, otherwise `false`
 
 ### `logout`
 
@@ -147,7 +131,7 @@ Compares two session objects for equality, excluding `expires` and `accounts` pr
 logout(): Promise<void>
 ```
 
-Logs out the user and clears the session.
+Logs out the user and clears the session. It lands on `/auth/logout`, where the auth middleware signals the other tabs (`signed-out`) to go to the login page.
 
 - **Returns:** A promise that resolves when the logout process is complete
 
@@ -158,6 +142,18 @@ refresh(): Promise<Session>
 ```
 
 Re-reads the session from the server, which refreshes the access token if it is expired or expires within 5 minutes. Concurrent calls in a tab share one request, and calls across tabs run one at a time under the Web Lock `geins-auth-refresh` — so after one tab rotates the token, the others read it from the shared cookie instead of refreshing again. See [Refresh Flow](/concepts/authentication#refresh-flow).
+
+- **Returns:** A promise that resolves to the updated session
+
+When the access token changed, `refresh` signals the other tabs (`session-changed`).
+
+### `syncSession`
+
+```ts
+syncSession(): Promise<Session>
+```
+
+Re-reads the session like `refresh` (same lock), but never signals the other tabs. Used by signal receivers, so a change doesn't echo back to every tab.
 
 - **Returns:** A promise that resolves to the updated session
 
@@ -257,14 +253,15 @@ interface UseGeinsAuthReturnType {
   sessionError: ComputedRef<AuthSessionError | undefined>;
   authStateDiffers: ComputedRef<boolean>;
   accountKey: ComputedRef<string | undefined>;
+  authSignal: ComputedRef<AuthBroadcastMessage | undefined>;
+  broadcastAuthSignal: (message: AuthBroadcastMessage) => void;
   preLogin: () => Promise<void>;
   login: (credentials: LoginCredentials) => Promise<any>;
   verify: (tokens: AuthTokens) => Promise<any>;
   setAccount: (accountKey: string) => Promise<any>;
-  setSession: (session: Session) => Promise<any>;
-  sessionsAreEqual: (session1: Session, session2: Session) => boolean;
   logout: () => Promise<void>;
   refresh: () => Promise<Session>;
+  syncSession: () => Promise<Session>;
   parseToken: (token?: string | null) => any | null;
   isExpired: (token?: string | null) => boolean;
   expiresSoon: (token?: string | null, threshold?: number) => boolean;
@@ -285,6 +282,10 @@ interface AuthResponse extends AuthTokens {
 }
 
 type AuthSessionError = 'RefreshTokenInvalid' | 'RefreshFailed';
+
+type AuthBroadcastMessage =
+  | { type: 'session-changed' }
+  | { type: 'signed-out' };
 
 interface Session extends AuthTokens {
   isAuthenticated?: boolean;

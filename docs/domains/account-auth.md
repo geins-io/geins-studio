@@ -18,7 +18,7 @@ The Account & Auth domain handles everything related to identity and merchant co
 3. **Server utility** (`server/utils/auth.ts`) — Direct API calls to Geins auth endpoints (login, refresh, verify); throws `AuthApiError` (HTTP status, or `0` for network/timeout)
 4. **Plugin** (`geins-api.ts`) — `$geinsApi` fetch instance; refreshes a due token before each request through `useGeinsAuth().refresh` (one refresh in flight per tab, one at a time across tabs via the Web Lock `geins-auth-refresh`)
 5. **Composable** (`useGeinsAuth`) — Client-side auth state: `session`, `isAuthenticated`, `login()`, `logout()`
-6. **Plugin** (`auth-state.ts`) — Cross-tab sync via `BroadcastChannel('geins-auth')`; proactive refresh (every 60s and when a tab becomes visible); the deliberate logout, after one re-check of a `RefreshTokenInvalid` session
+6. **Plugin** (`auth-state.ts`) — Cross-tab sync via `BroadcastChannel('geins-auth')`, carrying signals only (`session-changed`, `signed-out`) — never tokens; each tab re-reads its own session from the shared cookie. Also the proactive refresh (every 60s and when a tab becomes visible), and the deliberate logout, after one re-check of a `RefreshTokenInvalid` session
 
 **Multi-account support** — Users can belong to multiple merchant accounts (`AuthAccounts[]`). After login, if `accounts.length > 1`, the user selects an account. The selected `accountKey` is passed to all subsequent API calls.
 
@@ -83,6 +83,9 @@ Each layer has a single responsibility (route guard → server handler → serve
 
 **2025-03-01: Cookie-persisted account preferences**
 `currentChannelId`, `currentCurrency`, and `currentLanguage` are stored in cookies so they survive page reloads and new tabs without requiring an API call.
+
+**2026-10-30: Cross-tab signals, not sessions**
+Tabs used to broadcast the whole session (access and refresh tokens) and receivers re-signed in with it through `authorize`; an empty or unauthenticated broadcast logged out every tab, so one tab's transient failure logged out all of them. Tabs share the session cookie, so they now send `session-changed` / `signed-out` and each re-reads its own session.
 
 **2026-10-30: Session holds tokens only; user loaded client-side**
 The `session` callback used to call `user/me` on every `/api/auth/session` (the user was never stored in the token) and threw on failure, which wiped the cookie. Now the callbacks are pure and never throw, and `useUserStore` loads the user via `$geinsApi`. Keeps the JWT cookie small (staff users have long account lists) and the name fresh after a profile edit.
