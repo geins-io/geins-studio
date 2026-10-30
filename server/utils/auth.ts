@@ -115,7 +115,7 @@ export const auth = () => {
   const refresh = async (
     refreshToken?: string,
   ): Promise<AuthResponse | undefined> => {
-    geinsLog('refreshing token:', refreshToken);
+    geinsLog('refreshing token');
     if (!refreshToken) {
       return undefined;
     }
