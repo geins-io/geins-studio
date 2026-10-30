@@ -37,8 +37,11 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # outputs.version (the deployed tag) is the highest-priority tag. raw tags
+          # default to 200, so without this the deploy ships the mutable :main tag,
+          # Azure sees no config change and the staging slot never pulls the new image.
           tags: |
-            type=sha,prefix=
+            type=sha,prefix=,priority=300
             type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
             type=raw,value=latest
 
