@@ -26,6 +26,8 @@ export default NuxtAuthHandler({
         // Our session data comes back from `authorize` as the user object
         return { ...user };
       }
+      // Only a plain session read refreshes: a sign-in has just minted fresh
+      // tokens, and `update` isn't used.
       if (
         trigger !== undefined ||
         user !== undefined ||

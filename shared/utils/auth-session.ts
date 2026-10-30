@@ -55,17 +55,19 @@ export const tokenAfterRefresh = (
  * session cookie when the jwt callback throws, which logged users out on any
  * Geins hiccup.
  *
- * - 401/403: Geins rejected the refresh token. Drop the tokens and flag
+ * - 401: Geins rejected the refresh token. Drop the tokens and flag
  *   `RefreshTokenInvalid`; the client re-checks once, then logs out.
- * - Anything else (5xx, 404, 429, network, timeout): keep the token, flag
- *   `RefreshFailed`, and let the next session fetch retry.
+ * - Anything else (403, 5xx, 404, 429, network, timeout): keep the token, flag
+ *   `RefreshFailed`, and let the next session fetch retry. A 403 is kept: a
+ *   WAF or gateway in front of Geins can answer one, and that's no verdict
+ *   on the token — dropping it would be an irreversible logout.
  */
 export const tokenAfterRefreshError = <T extends Session>(
   token: T,
   error: unknown,
 ): Session => {
   const status = getErrorStatus(error);
-  if (status === 401 || status === 403) {
+  if (status === 401) {
     return { isAuthenticated: false, error: 'RefreshTokenInvalid' };
   }
   return { ...token, error: 'RefreshFailed' };

@@ -46,7 +46,7 @@ describe('tokenAfterRefreshError', () => {
     expect(next.error).toBe('RefreshFailed');
   });
 
-  it.each([404, 429])('keeps the session on a %i', (status) => {
+  it.each([403, 404, 429])('keeps the session on a %i', (status) => {
     const next = tokenAfterRefreshError(
       authenticatedToken,
       new AuthApiError(status, 'Nope'),
@@ -63,20 +63,17 @@ describe('tokenAfterRefreshError', () => {
     expect(next.isAuthenticated).toBe(true);
   });
 
-  it.each([401, 403])(
-    'marks the refresh token invalid and drops the tokens on a %i',
-    (status) => {
-      const next = tokenAfterRefreshError(
-        authenticatedToken,
-        new AuthApiError(status, 'Unauthorized'),
-      );
+  it('marks the refresh token invalid and drops the tokens on a 401', () => {
+    const next = tokenAfterRefreshError(
+      authenticatedToken,
+      new AuthApiError(401, 'Unauthorized'),
+    );
 
-      expect(next).toEqual({
-        isAuthenticated: false,
-        error: 'RefreshTokenInvalid',
-      });
-    },
-  );
+    expect(next).toEqual({
+      isAuthenticated: false,
+      error: 'RefreshTokenInvalid',
+    });
+  });
 });
 
 describe('tokenAfterRefresh', () => {
@@ -104,6 +101,21 @@ describe('tokenAfterRefresh', () => {
     });
 
     expect(next.refreshToken).toBe('refresh-1');
+  });
+
+  it('turns a malformed access token into a retryable failure', () => {
+    let thrown: unknown;
+    try {
+      tokenAfterRefresh(authenticatedToken, { accessToken: 'not-a-jwt' });
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown).toBeDefined();
+    expect(tokenAfterRefreshError(authenticatedToken, thrown)).toEqual({
+      ...authenticatedToken,
+      error: 'RefreshFailed',
+    });
   });
 
   it('throws a retryable error when no access token comes back', () => {

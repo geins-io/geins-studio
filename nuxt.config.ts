@@ -165,8 +165,12 @@ export default defineNuxtConfig({
     provider: {
       type: 'authjs',
     },
+    // nuxt-auth's own refetches would read the session outside the
+    // `geins-auth-refresh` lock; auth-state.ts refreshes on focus and on a
+    // timer through the locked path instead.
     sessionRefresh: {
       enableOnWindowFocus: false,
+      enablePeriodically: false,
     },
   },
 
