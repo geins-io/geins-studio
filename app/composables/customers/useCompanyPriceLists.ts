@@ -151,9 +151,11 @@ export function useCompanyPriceLists({
    */
   const loadSource = async (sourceId: string) => {
     const [source, rows] = await Promise.all([
-      productApi.priceList.get(sourceId, {
-        fields: ['rules', 'selectionquery'],
-      }),
+      productApi.priceList.get(
+        sourceId,
+        { fields: ['rules', 'selectionquery'] },
+        { suppressErrorToast: true },
+      ),
       productApi.priceList
         .id(sourceId)
         .query(

@@ -189,9 +189,11 @@ describe('loadSource', () => {
       },
       exVat: false,
     });
-    expect(get).toHaveBeenCalledWith('shared-1', {
-      fields: ['rules', 'selectionquery'],
-    });
+    expect(get).toHaveBeenCalledWith(
+      'shared-1',
+      { fields: ['rules', 'selectionquery'] },
+      { suppressErrorToast: true },
+    );
     expect(query).toHaveBeenCalledWith(
       expect.anything(),
       { fields: ['products'] },

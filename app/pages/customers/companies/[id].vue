@@ -771,7 +771,12 @@ const companyPriceListColumns = computed(() => {
 const addCompanyPriceListOpen = ref(false);
 const addCompanyPriceListLoading = ref(false);
 const addCompanyPriceListError = ref(false);
+// Bumped by each Continue and each open or close, so a source that loads after
+// a cancel (or a newer Continue) is dropped.
+let addCompanyPriceListRequest = 0;
 watch(addCompanyPriceListOpen, () => {
+  addCompanyPriceListRequest++;
+  addCompanyPriceListLoading.value = false;
   addCompanyPriceListError.value = false;
 });
 // The card header and the table's empty state show the same button.
@@ -788,21 +793,22 @@ const addCompanyPriceList = async (
   slot: Pick<CompanyPriceListEntry, 'channel' | 'currency'>,
   sourceId?: string,
 ) => {
+  const request = ++addCompanyPriceListRequest;
+  const current = () => request === addCompanyPriceListRequest;
   addCompanyPriceListError.value = false;
   addCompanyPriceListLoading.value = !!sourceId;
   try {
     const start = sourceId
       ? await loadCompanyPriceListSource(sourceId)
       : undefined;
-    // Cancelled while the source loaded.
-    if (!addCompanyPriceListOpen.value) return;
+    if (!current()) return;
     addCompanyPriceListOpen.value = false;
     openCompanyPriceList(addCompanyPriceListDraft(slot, start));
   } catch (error) {
     geinsLogError('error loading the price list to start from:', error);
-    addCompanyPriceListError.value = true;
+    if (current()) addCompanyPriceListError.value = true;
   } finally {
-    addCompanyPriceListLoading.value = false;
+    if (current()) addCompanyPriceListLoading.value = false;
   }
 };
 

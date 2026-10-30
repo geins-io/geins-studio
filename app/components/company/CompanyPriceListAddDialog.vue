@@ -43,6 +43,7 @@ const currencies = computed(
     props.slots.find((slot) => slot.channel === channel.value)?.currencies ??
     [],
 );
+// Channels compare as strings, like the free slots (`getFreeCompanyPriceListSlots`).
 const sourceOptions = computed(() =>
   props.sources.filter(
     (list) =>
