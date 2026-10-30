@@ -37,7 +37,7 @@ export default NuxtAuthHandler({
               ...tokenData,
               accountKey: token.accountKey,
             };
-            geinsLog('jwt returned ::: refresh:', token);
+            geinsLog('jwt ::: token refreshed, expires:', token.tokenExpires);
             return token;
           }
         } catch (error) {
@@ -50,14 +50,13 @@ export default NuxtAuthHandler({
             token = {
               isAuthenticated: false,
             };
-            geinsLog('jwt returned ::: refresh fail:', token);
+            geinsLog('jwt ::: refresh rejected, signing out');
             return token;
           } else {
             // TODO: Decide what to do here
           }
         }
       }
-      geinsLog('jwt returned:', token);
       return token;
     },
 
@@ -92,7 +91,6 @@ export default NuxtAuthHandler({
         geinsLogWarn('user unauthorized, logging out');
         throw { status: 401, message: 'AUTH_ERROR' };
       }
-      geinsLog('session returned:', session);
       return session;
     },
   },
