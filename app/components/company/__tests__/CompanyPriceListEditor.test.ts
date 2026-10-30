@@ -98,8 +98,14 @@ async function mountEditor(
   priceList?: ProductPriceList,
   active?: boolean,
 ) {
+  // Leave `active` out entirely when not given: an absent prop is what callers send.
   const editor = await mountSuspended(CompanyPriceListEditor, {
-    props: { listKey, priceList, seed, active },
+    props: {
+      listKey,
+      priceList,
+      seed,
+      ...(active !== undefined && { active }),
+    },
     global: { stubs },
   });
   mounted.push(editor);

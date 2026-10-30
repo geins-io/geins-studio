@@ -23,7 +23,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button, type ButtonVariants } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast/use-toast';
-import type { ColumnDef } from '@tanstack/vue-table';
+import type { ColumnDef, Table } from '@tanstack/vue-table';
 import {
   ButtonIcon,
   LucideLock,
@@ -652,16 +652,21 @@ const {
 } = useColumns<CompanyPriceListRow>();
 
 // Channel and currency share a cell, and an ERP list's switch gets a lock, so
-// both are built here rather than by getColumns.
+// both are built here rather than by getColumns. Their headers match getColumns'
+// unsortable one, which pads tighter than the basic header style.
+const companyPriceListHeader =
+  (title: string) =>
+  ({ table }: { table: Table<CompanyPriceListRow> }) =>
+    h(
+      'div',
+      { class: cn(getCompanyPriceListHeaderStyle(table), 'px-3 sm:px-3') },
+      title,
+    );
+
 const companyPriceListColumns = computed(() => {
   const channelColumn: ColumnDef<CompanyPriceListRow> = {
     id: 'channel',
-    header: ({ table }) =>
-      h(
-        'div',
-        { class: cn(getCompanyPriceListHeaderStyle(table), 'px-3 sm:px-3') },
-        t('channel_and_currency'),
-      ),
+    header: companyPriceListHeader(t('channel_and_currency')),
     cell: ({ table, row }) =>
       h(
         'div',
@@ -693,12 +698,7 @@ const companyPriceListColumns = computed(() => {
   ];
   extendCompanyPriceListColumns(columns, {
     id: 'active',
-    header: ({ table }) =>
-      h(
-        'div',
-        { class: cn(getCompanyPriceListHeaderStyle(table), 'px-3 sm:px-3') },
-        t('active'),
-      ),
+    header: companyPriceListHeader(t('active')),
     cell: ({ table, row }) =>
       h('div', { class: cn(getCompanyPriceListCellStyle(table), 'gap-3') }, [
         h(TableCellSwitch, {

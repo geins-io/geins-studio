@@ -6,16 +6,20 @@ import type {
   ProductPriceListUpdate,
 } from '#shared/types';
 
-const props = defineProps<{
-  /** The list's entry key: its `_id`, or a draft's key that outlives its create. */
-  listKey: string;
-  /** The company's own list; missing until "Save company" creates it. */
-  priceList?: CustomerPriceList;
-  /** Create body of a new list (no content), which a new list previews from. */
-  seed: ProductPriceListCreate;
-  /** The list's current `active`, which may not be saved yet; defaults to the list's. */
-  active?: boolean;
-}>();
+// `active: undefined` keeps Vue from casting an absent boolean prop to `false`.
+const props = withDefaults(
+  defineProps<{
+    /** The list's entry key: its `_id`, or a draft's key that outlives its create. */
+    listKey: string;
+    /** The company's own list; missing until "Save company" creates it. */
+    priceList?: CustomerPriceList;
+    /** Create body of a new list (no content), which a new list previews from. */
+    seed: ProductPriceListCreate;
+    /** The list's current `active`, which may not be saved yet; defaults to the list's. */
+    active?: boolean;
+  }>(),
+  { active: undefined },
+);
 
 const content = defineModel<PriceListContent>('content');
 const dirty = defineModel<boolean>('dirty', { default: false });
