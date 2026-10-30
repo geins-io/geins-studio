@@ -157,6 +157,8 @@ export interface CompanyPriceListEntry {
   /** The editor's content and dirty state (`v-model`). */
   content?: PriceListContent;
   contentDirty: boolean;
+  /** A draft started from another list keeps that list's; a new list is ex VAT. */
+  exVat?: boolean;
 }
 
 /** A row of the company's price list table: one `CompanyPriceListEntry`. */

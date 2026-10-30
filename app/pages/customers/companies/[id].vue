@@ -178,6 +178,7 @@ const {
   hasChanges: companyPriceListHasChanges,
   merge: mergeCompanyPriceLists,
   addDraft: addCompanyPriceListDraft,
+  loadSource: loadCompanyPriceListSource,
   removeDraft: removeCompanyPriceListDraft,
   seedFor: companyPriceListSeed,
   save: saveCompanyPriceLists,
@@ -765,8 +766,14 @@ const companyPriceListColumns = computed(() => {
 });
 
 // "Add company price list" offers the company's free slots in its saved
-// channels; Continue adds a draft that "Save company" creates.
+// channels, and a shared list to start from; Continue adds a draft that "Save
+// company" creates.
 const addCompanyPriceListOpen = ref(false);
+const addCompanyPriceListLoading = ref(false);
+const addCompanyPriceListError = ref(false);
+watch(addCompanyPriceListOpen, () => {
+  addCompanyPriceListError.value = false;
+});
 // The card header and the table's empty state show the same button.
 const [DefineAddCompanyPriceList, ReuseAddCompanyPriceList] =
   createReusableTemplate<{ variant?: ButtonVariants['variant'] }>();
@@ -777,10 +784,26 @@ const companyPriceListSlots = computed(() =>
     companyPriceLists.value,
   ),
 );
-const addCompanyPriceList = (
+const addCompanyPriceList = async (
   slot: Pick<CompanyPriceListEntry, 'channel' | 'currency'>,
+  sourceId?: string,
 ) => {
-  openCompanyPriceList(addCompanyPriceListDraft(slot));
+  addCompanyPriceListError.value = false;
+  addCompanyPriceListLoading.value = !!sourceId;
+  try {
+    const start = sourceId
+      ? await loadCompanyPriceListSource(sourceId)
+      : undefined;
+    // Cancelled while the source loaded.
+    if (!addCompanyPriceListOpen.value) return;
+    addCompanyPriceListOpen.value = false;
+    openCompanyPriceList(addCompanyPriceListDraft(slot, start));
+  } catch (error) {
+    geinsLogError('error loading the price list to start from:', error);
+    addCompanyPriceListError.value = true;
+  } finally {
+    addCompanyPriceListLoading.value = false;
+  }
 };
 
 // Removing a draft is local; one with edited prices asks first, since they'd be lost.
@@ -1227,7 +1250,10 @@ if (!createMode.value) {
   <CompanyPriceListAddDialog
     v-model:open="addCompanyPriceListOpen"
     :slots="companyPriceListSlots"
+    :sources="allPriceLists"
     :external-id="entityData.externalId"
+    :loading="addCompanyPriceListLoading"
+    :error="addCompanyPriceListError"
     @add="addCompanyPriceList"
   />
   <AlertDialog v-model:open="removeCompanyPriceListDialogOpen">

@@ -4,6 +4,7 @@ import { flushPromises } from '@vue/test-utils';
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { computed, ref, toValue } from 'vue';
 import type {
+  PriceListContent,
   ProductPriceList,
   ProductPriceListApiOptions,
   ProductPriceListCreate,
@@ -14,6 +15,7 @@ import { useAccountStore } from '@/stores/account';
 const mocks = vi.hoisted(() => ({
   get: vi.fn(),
   editorOptions: undefined as UsePriceListEditorOptions | undefined,
+  seed: vi.fn(),
 }));
 
 mockNuxtImport('useGeinsRepository', () => () => ({
@@ -27,7 +29,7 @@ mockNuxtImport(
       content: computed(() => ({})),
       isDirty: computed(() => false),
       saving: ref(false),
-      seed: vi.fn(),
+      seed: mocks.seed,
       load: vi.fn(),
       afterSave: vi.fn(),
       captureBaseline: vi.fn(),
@@ -86,6 +88,7 @@ afterEach(() => {
   mounted.forEach((m) => m.unmount());
   mounted = [];
   mocks.get.mockReset();
+  mocks.seed.mockReset();
   mocks.editorOptions = undefined;
 });
 
@@ -208,5 +211,50 @@ describe('CompanyPriceListEditor — read-only lists', () => {
       listOf({ _id: '42', readOnly: true, active: false }),
     );
     expect(has(editor, 'price-list-inactive')).toBe(true);
+  });
+});
+
+describe('CompanyPriceListEditor — a draft started from another list', () => {
+  const content: PriceListContent = {
+    rules: [{ quantity: 1, discountPercent: 10 }],
+    productSelectionQuery: { include: [], exclude: [] },
+    products: [{ productId: '100', staggeredCount: 1, price: 80 }],
+  };
+
+  it('opens with its content and stays dirty until it saves', async () => {
+    respond();
+    const editor = await mountSuspended(CompanyPriceListEditor, {
+      props: { listKey: 'draft-c', seed, content, dirty: true },
+      global: { stubs },
+    });
+    mounted.push(editor);
+    await flushPromises();
+
+    expect(mocks.editorOptions?.draft.value).toMatchObject({
+      name: 'Acme AB SEK',
+      ...content,
+    });
+    expect(mocks.seed).toHaveBeenCalledWith(content);
+    // The host's `dirty: true` is never reset by the load.
+    expect(editor.emitted('update:dirty')).toBeUndefined();
+
+    await editor.vm.afterSave(listOf({ _id: '30' }));
+    await flushPromises();
+    expect(editor.emitted('update:dirty')?.at(-1)).toEqual([false]);
+  });
+
+  it('starts an untouched draft empty', async () => {
+    respond();
+    await mountSuspended(CompanyPriceListEditor, {
+      props: { listKey: 'draft-d', seed, content, dirty: false },
+      global: { stubs },
+    }).then((editor) => mounted.push(editor));
+    await flushPromises();
+
+    expect(mocks.editorOptions?.draft.value).toMatchObject({
+      rules: [],
+      products: [],
+    });
+    expect(mocks.seed).not.toHaveBeenCalled();
   });
 });

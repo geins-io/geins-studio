@@ -2,11 +2,13 @@ import type {
   CompanyPriceListEntry,
   CustomerCompanyBase,
   CustomerPriceList,
+  PriceListContent,
   ProductPriceList,
   ProductPriceListApiOptions,
   ProductPriceListCreate,
 } from '#shared/types';
 import {
+  companyPriceListContentFromSource,
   companyPriceListCreateBody,
   companyPriceListUpdateBody,
   getCompanyPriceListSaveAction,
@@ -17,6 +19,11 @@ import {
 export type CompanyPriceListSlot = Pick<
   CompanyPriceListEntry,
   'channel' | 'currency'
+>;
+
+/** What a draft starts with: its switch, and the content of a list it starts from. */
+export type CompanyPriceListDraftStart = Partial<
+  Pick<CompanyPriceListEntry, 'active' | 'content' | 'exVat'>
 >;
 
 export interface UseCompanyPriceListsOptions {
@@ -40,9 +47,17 @@ export interface UseCompanyPriceListsReturnType {
 
   // Methods
   merge: (lists: CustomerPriceList[]) => string[];
-  addDraft: (slot: CompanyPriceListSlot, active?: boolean) => string;
+  addDraft: (
+    slot: CompanyPriceListSlot,
+    start?: CompanyPriceListDraftStart,
+  ) => string;
+  loadSource: (
+    sourceId: string,
+  ) => Promise<{ content: PriceListContent; exVat: boolean }>;
   removeDraft: (key: string) => void;
-  seedFor: (slot: CompanyPriceListSlot) => ProductPriceListCreate;
+  seedFor: (
+    slot: CompanyPriceListSlot & Pick<CompanyPriceListEntry, 'exVat'>,
+  ) => ProductPriceListCreate;
   save: () => Promise<boolean>;
 }
 
@@ -70,6 +85,7 @@ export function useCompanyPriceLists({
   onSaved,
 }: UseCompanyPriceListsOptions): UseCompanyPriceListsReturnType {
   const { productApi } = useGeinsRepository();
+  const { batchQueryNoPagination } = useBatchQuery();
   const accountStore = useAccountStore();
   const { geinsLogError } = useGeinsLog(
     'composables/customers/useCompanyPriceLists',
@@ -108,9 +124,10 @@ export function useCompanyPriceLists({
     return removed;
   };
 
+  /** Adds an unsaved draft; with `content` (a list it starts from) that content creates it. */
   const addDraft = (
     { channel, currency }: CompanyPriceListSlot,
-    active = true,
+    { active = true, content, exVat }: CompanyPriceListDraftStart = {},
   ): string => {
     const key = `draft-${generateInternalId()}`;
     entries.value.push({
@@ -120,16 +137,46 @@ export function useCompanyPriceLists({
       active,
       readOnly: false,
       productCount: 0,
-      contentDirty: false,
+      content,
+      contentDirty: !!content,
+      ...(exVat !== undefined && { exVat }),
     });
     return key;
+  };
+
+  /**
+   * The start of a draft based on the list `sourceId`: its rules, selection and
+   * manual rows (`companyPriceListContentFromSource`) and its `exVat`. Throws
+   * when either read fails; neither shows a toast, so the caller shows why.
+   */
+  const loadSource = async (sourceId: string) => {
+    const [source, rows] = await Promise.all([
+      productApi.priceList.get(sourceId, {
+        fields: ['rules', 'selectionquery'],
+      }),
+      productApi.priceList
+        .id(sourceId)
+        .query(
+          batchQueryNoPagination.value,
+          { fields: ['products'] },
+          { suppressErrorToast: true },
+        ),
+    ]);
+    return {
+      content: companyPriceListContentFromSource(source, rows.items ?? []),
+      exVat: source.exVat,
+    };
   };
 
   const removeDraft = (key: string) => {
     entries.value = entries.value.filter((e) => e.saved || e.key !== key);
   };
 
-  const createOptions = ({ channel, currency }: CompanyPriceListSlot) => {
+  const createOptions = ({
+    channel,
+    currency,
+    exVat,
+  }: CompanyPriceListSlot & Pick<CompanyPriceListEntry, 'exVat'>) => {
     const { name, externalId, channels = [] } = toValue(company);
     return {
       companyId: toValue(companyId),
@@ -142,10 +189,11 @@ export function useCompanyPriceLists({
           ? accountStore.getChannelNameById(channel)
           : undefined,
       currency,
+      exVat,
     };
   };
 
-  const seedFor = (slot: CompanyPriceListSlot) =>
+  const seedFor: UseCompanyPriceListsReturnType['seedFor'] = (slot) =>
     companyPriceListCreateBody(createOptions(slot));
 
   const saveEntry = async (entry: CompanyPriceListEntry) => {
@@ -202,6 +250,7 @@ export function useCompanyPriceLists({
     hasChanges,
     merge,
     addDraft,
+    loadSource,
     removeDraft,
     seedFor,
     save,

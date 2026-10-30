@@ -206,6 +206,45 @@ function priceListProductBody(row: PriceListProduct): PriceListProduct {
 const hasPrice = (row: PriceListProduct) =>
   PRICE_FIELDS.some((f) => row[f] !== undefined);
 
+/**
+ * A GET list's rules as an editor holds them: `quantity` and the set `margin`
+ * or `discountPercent`, without read-only fields. A new list takes them
+ * without `_id` (`keepId: false`).
+ */
+export function priceListDraftRules(
+  rules: PriceListRule[] = [],
+  keepId = true,
+): PriceListRule[] {
+  return rules.map((rule) => ({
+    ...(keepId && { _id: rule._id }),
+    quantity: rule.quantity,
+    ...(rule.margin && { margin: rule.margin }),
+    ...(rule.discountPercent && { discountPercent: rule.discountPercent }),
+  }));
+}
+
+/**
+ * Content for a company list started from `source`: its rules without ids, its
+ * selection, and its manual rows (fixed, margin or discount, volume breaks
+ * included) with only their mode's price. Rule and auto rows are left out,
+ * since the new list works them out again.
+ */
+export function companyPriceListContentFromSource(
+  source: Pick<ProductPriceList, 'rules' | 'productSelectionQuery'>,
+  rows: PriceListProduct[] = [],
+): PriceListContent {
+  return {
+    rules: priceListDraftRules(source.rules, false),
+    ...(source.productSelectionQuery && {
+      productSelectionQuery: source.productSelectionQuery,
+    }),
+    products: rows
+      .filter((row) => row.priceMode && PRICE_FIELD_BY_MODE[row.priceMode])
+      .map(priceListProductBody)
+      .filter(hasPrice),
+  };
+}
+
 function priceListContentBody(
   { rules, productSelectionQuery, products }: PriceListContent,
   create: boolean,
@@ -235,6 +274,8 @@ export interface CompanyPriceListCreateOptions {
   currency: string;
   /** Defaults to `true`; lists are inactive by default on the API. */
   active?: boolean;
+  /** Defaults to `true`; a list started from another list takes that list's. */
+  exVat?: boolean;
   content?: PriceListContent;
 }
 
@@ -247,6 +288,7 @@ export function companyPriceListCreateBody({
   channelName,
   currency,
   active = true,
+  exVat = true,
   content,
 }: CompanyPriceListCreateOptions): ProductPriceListCreate {
   return {
@@ -260,7 +302,7 @@ export function companyPriceListCreateBody({
     currency,
     wholesaleAccountId: companyId,
     active,
-    exVat: true,
+    exVat,
     // Only the selection's products, never ones created later; `forced` has no
     // effect on an account list.
     autoAddProducts: false,
