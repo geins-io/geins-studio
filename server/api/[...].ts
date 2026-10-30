@@ -68,7 +68,7 @@ async function triggerChannelRefresh(
  */
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
-  const { geinsLog, geinsLogInfo, geinsLogError } = log('server/api/[...].ts');
+  const { geinsLog, geinsLogError } = log('server/api/[...].ts');
 
   // Proxy-side correlation id — present in every log line for this request even
   // when the call never reaches the backend (so there is no backend traceId).
@@ -149,10 +149,6 @@ export default defineEventHandler(async (event) => {
   let body;
   if (['POST', 'PUT', 'PATCH'].includes(event.method)) {
     body = await readBody(event);
-    geinsLogInfo(
-      `${event.method} ${fetchUrl} body:`,
-      JSON.stringify(body, null, 2),
-    );
   }
 
   const startedAt = Date.now();
