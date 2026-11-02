@@ -46,13 +46,14 @@ describe('tokenAfterRefreshError', () => {
     expect(next.error).toBe('RefreshFailed');
   });
 
-  it.each([403, 404, 429])('keeps the session on a %i', (status) => {
+  it.each([0, 408, 429])('keeps the session on a %i', (status) => {
     const next = tokenAfterRefreshError(
       authenticatedToken,
-      new AuthApiError(status, 'Nope'),
+      new AuthApiError(status, 'Try again'),
     );
 
     expect(next.error).toBe('RefreshFailed');
+    expect(next.isAuthenticated).toBe(true);
     expect(next.refreshToken).toBe('refresh-1');
   });
 
@@ -63,13 +64,33 @@ describe('tokenAfterRefreshError', () => {
     expect(next.isAuthenticated).toBe(true);
   });
 
-  it('marks the refresh token invalid and drops the tokens on a 401', () => {
+  it.each([400, 401, 403, 404])(
+    'marks the refresh token invalid and drops the tokens on a %i',
+    (status) => {
+      const next = tokenAfterRefreshError(
+        authenticatedToken,
+        new AuthApiError(status, 'Rejected'),
+      );
+
+      expect(next).toEqual({
+        isAuthenticated: false,
+        error: 'RefreshTokenInvalid',
+      });
+      expect(next).not.toHaveProperty('refreshToken');
+    },
+  );
+
+  // Regression: keeping the token on this 403 left a session that looked
+  // signed in, 401'd every API call and retried the refresh forever.
+  it('signs out when an expired refresh token is answered with 403', () => {
     const next = tokenAfterRefreshError(
       authenticatedToken,
-      new AuthApiError(401, 'Unauthorized'),
+      new AuthApiError(403, 'Insufficient permissions'),
     );
 
-    expect(next).toEqual({
+    expect(next.error).toBe('RefreshTokenInvalid');
+    expect(sessionFromToken(next, EXPIRES)).toEqual({
+      expires: EXPIRES,
       isAuthenticated: false,
       error: 'RefreshTokenInvalid',
     });
