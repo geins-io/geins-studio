@@ -145,7 +145,7 @@ All API calls flow through typed repository factories → `$geinsApi` → Nitro 
 
 Access via `useGeinsRepository()`: `orderApi.quotation`, `customerApi.company`, `productApi`, `accountApi`.
 
-Factory chain: `entityGetRepo` → `entityListRepo` → `entityBaseRepo` → `entityRepo` (full CRUD). Nitro proxy (`server/api/[...].ts`) is a transparent passthrough — adds auth headers, no response transformation.
+Factory chain: `entityGetRepo` → `entityListRepo` → `entityBaseRepo` → `entityRepo` (full CRUD). Nitro proxy (`server/api/[...].ts`) adds auth headers and forwards only allowlisted request headers (`UPSTREAM_HEADERS` in [proxy-headers.ts](shared/utils/proxy-headers.ts)) — a new header the backend needs goes on that list or it never arrives; the session cookie never leaves the proxy. No response transformation.
 
 ### Repository rules
 
