@@ -140,7 +140,7 @@ export function useEntityEdit<
   const route = useRoute();
   const router = useRouter();
   const { toast } = useToast();
-  const { hasReducedSpace } = useLayout();
+  const { hasReducedSpace } = useAppLayout();
 
   // Core state — all URLs derive from the registry entry the page passes in
   // (single source); never from the route folder.

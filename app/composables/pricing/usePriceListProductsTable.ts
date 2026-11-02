@@ -58,7 +58,7 @@ interface UsePriceListProductsTableReturnType {
 export const usePriceListProductsTable =
   (): UsePriceListProductsTableReturnType => {
     const { t } = useI18n();
-    const { hasReducedSpace } = useLayout();
+    const { hasReducedSpace } = useAppLayout();
     const {
       getBasicCellStyle,
       getBasicHeaderStyle,

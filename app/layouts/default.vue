@@ -1,6 +1,6 @@
 <script setup lang="ts">
 usePageTitle();
-const { currentSidebarWidth, sidebarOpen } = useLayout();
+const { currentSidebarWidth, sidebarOpen } = useAppLayout();
 const route = useRoute();
 
 const mainWidthStyle = computed(() => {

@@ -782,7 +782,7 @@ const handleValidate = async () => {
 // Only show the summary sidebar on the General tab (like company/price-list pattern).
 // On smaller viewports (hasReducedSpace) or other tabs, the sidebar collapses into
 // a floating toggle icon via ContentEditMain.
-const { hasReducedSpace } = useLayout();
+const { hasReducedSpace } = useAppLayout();
 const showSidebar = computed(
   () =>
     !hasReducedSpace.value &&
