@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { LoginCredentials, AuthFormMode } from '#shared/types';
+import { safeRedirect } from '#shared/utils/login-redirect';
 import { useToast } from '@/components/ui/toast/use-toast';
 
 definePageMeta({
@@ -12,8 +13,7 @@ definePageMeta({
 
 const { toast } = useToast();
 const { t } = useI18n();
-const { login, verify, setAccount, preLogin, session, isAuthenticated } =
-  useGeinsAuth();
+const { login, verify, setAccount, session, isAuthenticated } = useGeinsAuth();
 const userStore = useUserStore();
 const { user } = storeToRefs(userStore);
 const router = useRouter();
@@ -28,7 +28,6 @@ const mode = ref<AuthFormMode>('login');
 
 // Initialize auth state
 onMounted(async () => {
-  await preLogin();
   await handleInitialState();
 });
 
@@ -61,8 +60,7 @@ const redirectToHome = async () => {
   }
 
   await userStore.init();
-  const redirect = route.query.redirect as string;
-  await router.push(redirect || '/');
+  await router.push(safeRedirect(route.query.redirect));
 
   await nextTick();
   const firstName = user.value?.firstName || '';

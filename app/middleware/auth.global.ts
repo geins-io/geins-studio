@@ -1,3 +1,5 @@
+import { loginUrl } from '#shared/utils/login-redirect';
+
 export default defineNuxtRouteMiddleware(async (to) => {
   const { isAuthenticated, broadcastAuthSignal } = useGeinsAuth();
 
@@ -13,9 +15,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return;
   }
 
-  const redirect = to.path === '/' ? '' : `?redirect=${to.fullPath}`;
-
-  return navigateTo(`/auth/login${redirect}`, {
+  return navigateTo(loginUrl(to.fullPath), {
     external: true,
   });
 });
