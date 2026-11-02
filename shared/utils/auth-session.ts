@@ -50,24 +50,31 @@ export const tokenAfterRefresh = (
   };
 };
 
+// 4xx statuses that mean "try again later", not "this token is dead".
+const RETRYABLE_CLIENT_STATUSES = new Set([408, 429]);
+
+const isRefreshRejected = (status: number | undefined): boolean =>
+  status !== undefined &&
+  status >= 400 &&
+  status < 500 &&
+  !RETRYABLE_CLIENT_STATUSES.has(status);
+
 /**
  * The token to keep after a failed refresh. Never throws: next-auth 4 wipes the
  * session cookie when the jwt callback throws, which logged users out on any
  * Geins hiccup.
  *
- * - 401: Geins rejected the refresh token. Drop the tokens and flag
- *   `RefreshTokenInvalid`; the client re-checks once, then logs out.
- * - Anything else (403, 5xx, 404, 429, network, timeout): keep the token, flag
- *   `RefreshFailed`, and let the next session fetch retry. A 403 is kept: a
- *   WAF or gateway in front of Geins can answer one, and that's no verdict
- *   on the token — dropping it would be an irreversible logout.
+ * - Any 4xx but 408 and 429: Geins rejected the refresh token. Drop the tokens
+ *   and flag `RefreshTokenInvalid`; the client re-checks once, then logs out.
+ *   Geins answers an expired refresh token with 403, not 401.
+ * - Anything else (5xx, 408, 429, network, timeout): keep the token, flag
+ *   `RefreshFailed`, and let the next session fetch retry.
  */
 export const tokenAfterRefreshError = <T extends Session>(
   token: T,
   error: unknown,
 ): Session => {
-  const status = getErrorStatus(error);
-  if (status === 401) {
+  if (isRefreshRejected(getErrorStatus(error))) {
     return { isAuthenticated: false, error: 'RefreshTokenInvalid' };
   }
   return { ...token, error: 'RefreshFailed' };

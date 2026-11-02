@@ -57,7 +57,7 @@ A `computed` reference that returns `true` if the user is authenticated.
 
 ### `sessionError`
 
-A `computed` reference to `session.error`: why the last token refresh failed, if it did. `'RefreshTokenInvalid'` means Geins rejected the refresh token (the session is `isAuthenticated: false`); `'RefreshFailed'` means a transient failure (5xx, network, timeout) — the session is kept and the next session fetch retries. See [When a refresh fails](/concepts/authentication#when-a-refresh-fails).
+A `computed` reference to `session.error`: why the last token refresh failed, if it did. `'RefreshTokenInvalid'` means Geins rejected the refresh token with a `4xx` other than `408`/`429` (an expired one gets a `403`), and the session is `isAuthenticated: false`; `'RefreshFailed'` means a transient failure (5xx, 408, 429, network, timeout) — the session is kept and the next session fetch retries. See [When a refresh fails](/concepts/authentication#when-a-refresh-fails).
 
 ### `authStateDiffers`
 

@@ -14,7 +14,7 @@ The Account & Auth domain handles everything related to identity and merchant co
 **Multi-layered auth flow** — Authentication involves 6 layers working in sequence:
 
 1. **Middleware** (`auth.global.ts`) — Route guard redirecting unauthenticated users to `/auth/login`
-2. **Server handler** (`server/api/auth/[...].ts`) — NextAuth.js with `CredentialsProvider`, JWT handling. Its `jwt`/`session` callbacks never throw (next-auth 4 wipes the cookie on a throw); a failed refresh becomes `session.error` (`RefreshTokenInvalid` on 401, else `RefreshFailed` with the token kept — a 403 may come from a WAF, not Geins). Decisions live in `shared/utils/auth-session.ts`
+2. **Server handler** (`server/api/auth/[...].ts`) — NextAuth.js with `CredentialsProvider`, JWT handling. Its `jwt`/`session` callbacks never throw (next-auth 4 wipes the cookie on a throw); a failed refresh becomes `session.error` (`RefreshTokenInvalid` with the tokens dropped on any 4xx but 408/429 — Geins answers an expired refresh token with 403; `RefreshFailed` with the token kept on 5xx, 408, 429, network errors and timeouts). Decisions live in `shared/utils/auth-session.ts`
 3. **Server utility** (`server/utils/auth.ts`) — Direct API calls to Geins auth endpoints (login, refresh, verify); throws `AuthApiError` (HTTP status, or `0` for network/timeout)
 4. **Plugin** (`geins-api.ts`) — `$geinsApi` fetch instance; refreshes a due token before each request through `useGeinsAuth().refresh` (one refresh in flight per tab, one at a time across tabs via the Web Lock `geins-auth-refresh`)
 5. **Composable** (`useGeinsAuth`) — Client-side auth state: `session`, `isAuthenticated`, `login()`, `logout()`

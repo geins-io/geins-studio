@@ -51,9 +51,10 @@ export interface AuthResponse extends AuthTokens {
 
 /**
  * Why the last token refresh didn't go through. `RefreshTokenInvalid`: Geins
- * rejected the refresh token (401), so the session is over unless another
- * tab rotated it meanwhile. `RefreshFailed`: transient (5xx, network, timeout);
- * the token is kept and the next session fetch retries.
+ * rejected the refresh token (any 4xx but 408/429; an expired one gets a 403),
+ * so the session is over unless another tab rotated it meanwhile.
+ * `RefreshFailed`: transient (5xx, 408, 429, network, timeout); the token is
+ * kept and the next session fetch retries.
  */
 export type AuthSessionError = 'RefreshTokenInvalid' | 'RefreshFailed';
 
