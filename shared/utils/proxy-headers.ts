@@ -38,6 +38,7 @@ export const UPSTREAM_HEADERS = [
   'accept',
   'accept-language',
   'content-type',
+  'idempotency-key',
   'if-match',
   'x-account-key',
   'x-app',

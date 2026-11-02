@@ -69,7 +69,7 @@ async function pipeUpstream(
   headers: Record<string, string>,
 ) {
   const raw = PAYLOAD_METHODS.has(event.method)
-    ? await readRawBody(event, false).catch(() => undefined)
+    ? await readRawBody(event, false)
     : undefined;
   // fetch's `BodyInit` doesn't take Node's `Buffer<ArrayBufferLike>`.
   const body = raw && new Uint8Array(raw);
