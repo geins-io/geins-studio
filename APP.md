@@ -41,7 +41,7 @@ The default layout reads `route.meta.pageType` and applies `overflow-hidden` whe
 `app/middleware/auth.global.ts` — runs on every navigation.
 
 - `/auth/*` routes: authenticated users are redirected to `/`; `logout` broadcasts a sign-out event via `BroadcastChannel('geins-auth')`.
-- All other routes: unauthenticated users are redirected to `/auth/login?redirect={path}`.
+- All other routes: unauthenticated users are redirected to `/auth/login?redirect={path}`, with the full path encoded (`loginUrl`). The login page goes back there only through `safeRedirect`, which falls back to `/` for anything but an in-app path (`shared/utils/login-redirect.ts`).
 - Test environments (`process.env.VITEST`) skip the guard entirely.
 
 ---

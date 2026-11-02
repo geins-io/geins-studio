@@ -28,7 +28,6 @@ const {
   accountKey,
   authSignal,
   broadcastAuthSignal,
-  preLogin,
   login,
   verify,
   setAccount,
@@ -78,16 +77,6 @@ broadcastAuthSignal(message: AuthBroadcastMessage): void
 ```
 
 Posts an auth signal to the other tabs (a tab never receives its own). `login`, `verify`, `setAccount` and `refresh` post `session-changed` themselves when they leave the tab authenticated with a new session; the auth middleware posts `signed-out` on `/auth/logout`, where every logout lands after the cookie was cleared.
-
-### `preLogin`
-
-```ts
-preLogin(): Promise<void>
-```
-
-Prepares the authentication environment by pinging auth and account endpoints.
-
-- **Returns**: Promise that resolves when pre-login setup is complete
 
 ### `login`
 
@@ -255,7 +244,6 @@ interface UseGeinsAuthReturnType {
   accountKey: ComputedRef<string | undefined>;
   authSignal: ComputedRef<AuthBroadcastMessage | undefined>;
   broadcastAuthSignal: (message: AuthBroadcastMessage) => void;
-  preLogin: () => Promise<void>;
   login: (credentials: LoginCredentials) => Promise<any>;
   verify: (tokens: AuthTokens) => Promise<any>;
   setAccount: (accountKey: string) => Promise<any>;
