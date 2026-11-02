@@ -10,6 +10,7 @@ The files you will find in the `server` directory that are handling authenticati
 - `server/api/auth/[...].ts` - The catch-all for auth requests containing the [NuxtAuthHandler](https://auth.sidebase.io/guide/authjs/nuxt-auth-handler)
 - `server/utils/auth.ts` - A utility file with all Geins-specific authentication logic
 - `shared/utils/auth-session.ts` - Pure session decisions used by the `NuxtAuthHandler` callbacks: the token after a refresh succeeds or fails, and the session built from a token
+- `server/api/[...].ts` - The API proxy. It turns the `x-access-token` header into a Bearer `authorization` and forwards only allowlisted headers (`pickUpstreamHeaders` in `shared/utils/proxy-headers.ts`), so the session cookie, which holds the tokens, never reaches the Geins API
 
 ## Application Files
 

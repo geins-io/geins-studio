@@ -141,6 +141,8 @@ A `412 Precondition Failed` is treated like `401`: the plugin **skips the global
 
 The plugin sends `If-Match` to the proxy as `x-geins-if-match`, and the proxy restores it toward the backend (`shared/utils/proxy-headers.ts`). Vercel's edge would otherwise evaluate the header against the function's response and answer its own `412`, even after a successful write.
 
+The proxy forwards only the headers in `UPSTREAM_HEADERS` (same file) and builds `authorization` from `x-access-token`. Anything else, the session cookie included, stays at the proxy, so a new header the backend needs must be added to that list.
+
 ## Type Definitions
 
 Repositories use generic types to ensure type safety across all operations:
