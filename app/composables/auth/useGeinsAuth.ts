@@ -34,7 +34,6 @@ interface UseGeinsAuthReturnType {
   accountKey: ComputedRef<string | undefined>;
   authSignal: ComputedRef<AuthBroadcastMessage | undefined>;
   broadcastAuthSignal: (message: AuthBroadcastMessage) => void;
-  preLogin: () => Promise<void>;
   login: (credentials: LoginCredentials) => Promise<SignInResponse>;
   verify: (tokens: AuthTokens) => Promise<SignInResponse>;
   setAccount: (accountKey: string) => Promise<SignInResponse>;
@@ -61,7 +60,6 @@ interface UseGeinsAuthReturnType {
  * @property {ComputedRef<string>} accountKey - Current account key
  * @property {ComputedRef<AuthBroadcastMessage>} authSignal - The last auth signal from another tab
  * @property {function} broadcastAuthSignal - Posts an auth signal to the other tabs
- * @property {function} preLogin - Performs pre-login API pings
  * @property {function} login - Authenticates user with credentials
  * @property {function} verify - Verifies authentication tokens
  * @property {function} setAccount - Sets the active account
@@ -118,11 +116,6 @@ export const useGeinsAuth = (): UseGeinsAuthReturnType => {
       broadcastAuthSignal({ type: 'session-changed' });
     }
     return result;
-  };
-
-  const preLogin = async () => {
-    $fetch('/api/ping/auth');
-    $fetch('/api/ping/account');
   };
 
   const login = (credentials: LoginCredentials): Promise<SignInResponse> =>
@@ -203,7 +196,6 @@ export const useGeinsAuth = (): UseGeinsAuthReturnType => {
     accountKey,
     authSignal,
     broadcastAuthSignal,
-    preLogin,
     login,
     verify,
     setAccount,

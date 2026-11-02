@@ -16,8 +16,9 @@ The files you will find in the `server` directory that are handling authenticati
 
 The files you will find in the `app` directory that are handling authentication are:
 
-- `app/middleware/auth.global.ts` - A global middleware that protects all routes from being accessed by unauthenticated users, and redirects them to the login page
-- `app/composables/useGeinsAuth.ts` - A composable that sits on top of the `useAuth` composable from NuxtAuth and adds Geins-specific functionality
+- `app/middleware/auth.global.ts` - A global middleware that protects all routes from being accessed by unauthenticated users, and redirects them to the login page (see [Login redirect](#login-redirect))
+- `app/pages/auth/login.vue` - The login page. It runs the login, MFA and account steps, then goes to the page the user asked for
+- `app/composables/auth/useGeinsAuth.ts` - A composable that sits on top of the `useAuth` composable from NuxtAuth and adds Geins-specific functionality
 - `app/stores/user.ts` - A Pinia store that loads the signed-in user from `user/me` and exposes computed properties related to the user
 - `app/plugins/auth-state.ts` - A plugin that keeps tabs in sync (see [Cross-tab sync](#cross-tab-sync)), refreshes the token proactively, and makes the deliberate decision to log out when the session has no usable token
 
@@ -40,7 +41,13 @@ Read the full documentation of the `useGeinsAuth` composable here: [useGeinsAuth
 9. The selected account key is set using the `setAccount` method in `useGeinsAuth.ts`, which updates the session with the chosen account key.
 10. In the NuxtAuth `jwt` callback, the access and refresh tokens are stored in the NuxtAuth JWT together with expiration time, which is shorter than the NuxtAuth expiration time.
 11. The NuxtAuth `session` callback builds the session from the JWT alone — no API call, and it never throws. The session carries tokens only: the user's name, email and accounts live in `useUserStore`, which loads them from `user/me` through `$geinsApi` (awaited at boot by `geins-global.ts`, and on the login page).
-12. The user is now authenticated and can access the application.
+12. The user is now authenticated and lands on the page they asked for (see [Login redirect](#login-redirect)).
+
+## Login redirect
+
+The auth middleware sends an unauthenticated user to `/auth/login?redirect=…`, with the requested path in `redirect` (`loginUrl` in `shared/utils/login-redirect.ts`). The path is encoded whole, so its own query survives: `/orders/quotations?status=sent&page=2` comes back intact. From `/`, the link carries no `redirect`.
+
+After login, the login page goes to `safeRedirect(route.query.redirect)`. It keeps only a path with a single leading `/`, and falls back to `/` for anything else: `//host`, a scheme such as `https:` or `javascript:`, a backslash or whitespace anywhere (browsers read `/\host` and `/<tab>/host` as `//host`), an empty value, or a repeated `redirect` param. Vue Router refuses cross-origin pushes, but the check doesn't rely on it.
 
 ## Refresh Flow
 
