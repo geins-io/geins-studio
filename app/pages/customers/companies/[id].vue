@@ -862,6 +862,11 @@ watch(companyPriceLists, (entries) => {
     activeCompanyPriceListKey.value = undefined;
   }
 });
+// Leaving the Pricing tab closes its sub view, so coming back lands on the table.
+// The tab stays in KeepAlive, so the opened editors and their edits survive.
+watch(currentTab, (tab) => {
+  if (tab !== 2) activeCompanyPriceListKey.value = undefined;
+});
 
 interface CompanyPriceEditorHandle {
   afterSave: (saved: ProductPriceList) => Promise<void>;
