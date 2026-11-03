@@ -5,7 +5,7 @@ import {
   SIDEBAR_COOKIE_MAX_AGE,
 } from '@/components/ui/sidebar/utils';
 
-interface UseLayoutReturnType {
+interface UseAppLayoutReturnType {
   sidebarOpen: Ref<boolean>;
   currentSidebarWidth: ComputedRef<string | number>;
   hasLimitedSpace: ComputedRef<boolean>;
@@ -18,13 +18,13 @@ interface UseLayoutReturnType {
  * Handles sidebar visibility, width calculations, and responsive layout
  * adjustments based on viewport size and user preferences.
  *
- * @returns {UseLayoutReturnType} - An object containing layout state and computed properties
+ * @returns {UseAppLayoutReturnType} - An object containing layout state and computed properties
  * @property {Ref<boolean>} sidebarOpen - Whether the sidebar is open (persisted in cookie)
  * @property {ComputedRef<number>} currentSidebarWidth - Current sidebar width based on state and viewport
  * @property {ComputedRef<boolean>} hasLimitedSpace - Whether the layout has limited space
  * @property {ComputedRef<boolean>} hasReducedSpace - Whether the layout has reduced space
  */
-export const useLayout = (): UseLayoutReturnType => {
+export const useAppLayout = (): UseAppLayoutReturnType => {
   const viewport = useViewport();
 
   const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {

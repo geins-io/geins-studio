@@ -47,7 +47,7 @@
     "@nuxtjs/i18n": "^10.2.3",
     "@pinia/nuxt": "^0.11.1",
     "@sidebase/nuxt-auth": "1.2.0",
-    "@tailwindcss/vite": "^4.1.11",
+    "@tailwindcss/vite": "^4.3.3",
     "@tanstack/vue-table": "^8.21.3",
     "@vee-validate/zod": "^4.15.1",
     "@vercel/analytics": "^1.5.0",
@@ -67,7 +67,7 @@
     "flag-icons": "^7.5.0",
     "jwt-decode": "^4.0.0",
     "next-auth": "4.21.1",
-    "nuxt": "^4.4.8",
+    "nuxt": "^4.6.3",
     "nuxt-lucide-icons": "2.0.0",
     "nuxt-svgo": "^4.0.1",
     "nuxt-viewport": "2.3.1",
@@ -75,19 +75,19 @@
     "reka-ui": "^2.8.0",
     "shadcn-nuxt": "^2.4.3",
     "tailwind-merge": "^3.3.1",
-    "tailwindcss": "^4.1.11",
+    "tailwindcss": "^4.3.3",
     "tw-animate-css": "^1.3.5",
     "vee-validate": "^4.15.1",
-    "vue": "^3.4.29",
-    "vue-router": "^5.0.2",
+    "vue": "^3.5.44",
+    "vue-router": "^5.4.0",
     "vuedraggable": "^4.1.0",
     "zod": "^4.0.5"
   },
   "devDependencies": {
-    "@nuxt/devtools": "^3.1.1",
+    "@nuxt/devtools": "^3.4.4",
     "@nuxt/eslint-config": "1.15.1",
-    "@nuxt/test-utils": "^4.0.0",
-    "@vitest/coverage-v8": "^4.0.18",
+    "@nuxt/test-utils": "4.2.0",
+    "@vitest/coverage-v8": "^4.1.12",
     "@vue/test-utils": "^2.4.6",
     "eslint": "^10.0.0",
     "eslint-config-prettier": "^10.1.8",
@@ -100,12 +100,12 @@
     "prettier-plugin-vue": "^1.1.6",
     "typescript": "^5.4.5",
     "vitepress": "^1.2.3",
-    "vitest": "^4.0.18",
+    "vitest": "^4.1.12",
     "vue-tsc": "^3.2.4"
   },
   "packageManager": "pnpm@10.29.3",
   "engines": {
-    "node": ">=24"
+    "node": ">=24.15.0"
   },
   "lint-staged": {
     "*.{js,mjs,cjs,ts,vue}": [

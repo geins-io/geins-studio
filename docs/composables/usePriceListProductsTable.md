@@ -184,6 +184,6 @@ interface UsePriceListProductsTableReturnType {
 This composable depends on:
 
 1. **useColumns** for base column functionality
-2. **useLayout** for responsive behavior
+2. **useAppLayout** for responsive behavior
 3. **useI18n** for internationalization
 4. **TanStack Vue Table** for table types and functionality

@@ -1,6 +1,6 @@
-# `useLayout`
+# `useAppLayout`
 
-The `useLayout` composable manages layout state and responsive behavior throughout the application. It provides reactive properties for sidebar management, responsive breakpoints, and space calculations based on viewport size and user preferences.
+The `useAppLayout` composable manages layout state and responsive behavior throughout the application. It provides reactive properties for sidebar management, responsive breakpoints, and space calculations based on viewport size and user preferences.
 
 ## Features
 
@@ -14,7 +14,7 @@ The `useLayout` composable manages layout state and responsive behavior througho
 
 ```vue
 <script setup lang="ts">
-const { sidebarOpen, hasReducedSpace, currentSidebarWidth } = useLayout();
+const { sidebarOpen, hasReducedSpace, currentSidebarWidth } = useAppLayout();
 
 // Toggle sidebar
 const toggleSidebar = () => {
@@ -74,9 +74,9 @@ Use this for moderate layout adjustments like reducing column counts or compacti
 ## Type Definitions
 
 ```ts
-function useLayout(): UseLayoutReturnType;
+function useAppLayout(): UseAppLayoutReturnType;
 
-interface UseLayoutReturnType {
+interface UseAppLayoutReturnType {
   sidebarOpen: Ref<boolean>;
   currentSidebarWidth: ComputedRef<string | number>;
   hasLimitedSpace: ComputedRef<boolean>;

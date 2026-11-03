@@ -188,6 +188,10 @@ describe('MyComponent', () => {
 });
 ```
 
+::: warning `@nuxt/test-utils` is pinned to 4.2.0
+From 4.3.0, the `createI18n` instance that `test/vitest.setup.ts` installs for every mount comes from a different `vue-i18n` module instance than the components, so `<i18n-t>` throws `i18n[TranslateVNodeSymbol] is not a function` (caught by `AuthForm.test.ts`). Check that test before bumping it.
+:::
+
 ### Providing Context for Components
 
 Some components require context from parent providers (e.g., `useSidebar` needs `SidebarProvider`). Wrap the component in a stub provider:
