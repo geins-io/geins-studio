@@ -194,6 +194,9 @@ async function initBlockly() {
         scaleSpeed: 1.2,
       },
       sounds: false,
+      // Served from the blockly package (nuxt.config → nitro.publicAssets);
+      // Blockly's default is its demo site, which the CSP doesn't allow.
+      media: '/_blockly/',
       trashcan: true,
       move: {
         scrollbars: true,

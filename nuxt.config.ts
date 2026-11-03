@@ -6,6 +6,10 @@ import {
   getAuthBaseUrl,
   includeDevPages,
 } from './shared/utils/deployment';
+import {
+  SECURITY_HEADERS,
+  reportOnlyCspHeaders,
+} from './shared/utils/security-headers';
 
 const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
 
@@ -62,6 +66,15 @@ export default defineNuxtConfig({
     },
   },
 
+  // Production only: X-Frame-Options DENY would also block the Nuxt DevTools
+  // iframe in dev. Vercel writes these into its edge config, so static assets
+  // get them too. The report-only CSP is per document (server/plugins/csp.ts).
+  $production: {
+    routeRules: {
+      '/**': { headers: SECURITY_HEADERS },
+    },
+  },
+
   devtools: { enabled: true },
 
   experimental: {
@@ -98,6 +111,13 @@ export default defineNuxtConfig({
     dirs: ['composables', 'composables/**'],
   },
 
+  alias: {
+    // vuedraggable's dist is a webpack UMD whose global lookup calls
+    // `Function('return this')`: a CSP eval report on every page. The ESM
+    // source it also ships has none (types already point at src/).
+    vuedraggable: `${rootDir}node_modules/vuedraggable/src/vuedraggable.js`,
+  },
+
   css: ['~/assets/css/main.css', 'flag-icons/css/flag-icons.min.css'],
 
   vite: {
@@ -128,6 +148,27 @@ export default defineNuxtConfig({
   nitro: {
     watchOptions: {
       ignored: [isScratchPath],
+    },
+    // Blockly's sprites and cursors, at the installed version (BlocklyWorkspace).
+    publicAssets: [
+      { baseURL: '/_blockly', dir: `${rootDir}node_modules/blockly/media` },
+    ],
+    hooks: {
+      // Prerendered pages (/auth/*) are served as static files, which the
+      // runtime CSP plugin never sees. Hash their HTML here and attach the
+      // policy as a route rule: prerender runs before the Vercel config and
+      // the server bundle are written, so both pick it up.
+      async 'prerender:generate'(route, nitro) {
+        if (!route.contents || !route.fileName?.endsWith('.html')) return;
+        const rule = (nitro.options.routeRules[route.route] ??= {});
+        rule.headers = {
+          ...rule.headers,
+          ...(await reportOnlyCspHeaders(
+            route.contents,
+            process.env.VERCEL_ENV === 'preview',
+          )),
+        };
+      },
     },
     ...(process.env.NITRO_PRESET && { preset: process.env.NITRO_PRESET }),
   },
