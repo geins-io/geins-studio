@@ -53,6 +53,7 @@ export default defineConfig({
           { text: 'API Repositories', link: '/concepts/api-repositories' },
           { text: 'List queries', link: '/concepts/list-queries' },
           { text: 'Background jobs', link: '/concepts/background-jobs' },
+          { text: 'Security headers', link: '/concepts/security-headers' },
         ],
       },
       {
