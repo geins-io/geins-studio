@@ -668,9 +668,19 @@ const companyPriceListHeader =
       title,
     );
 
+// Fixed widths for every column but the channel, which takes the spare width.
+// Without a size a hand-built column gets TanStack's 150px, and a getColumns
+// one none, so the browser would hand the spare width to Products.
+const fixedCompanyPriceListColumnSize = (size: number) => ({
+  size,
+  minSize: size,
+  maxSize: size,
+});
+
 const companyPriceListColumns = computed(() => {
   const channelColumn: ColumnDef<CompanyPriceListRow> = {
     id: 'channel',
+    ...fixedCompanyPriceListColumnSize(0),
     header: companyPriceListHeader(t('channel_and_currency')),
     cell: ({ table, row }) =>
       h(
@@ -698,11 +708,13 @@ const companyPriceListColumns = computed(() => {
     ...getCompanyPriceListColumns(companyPriceListRows.value, {
       includeColumns: ['productCount'],
       columnTitles: { productCount: t('product', 2) },
+      columnSizes: { productCount: 120 },
       sortable: false,
     }),
   ];
   extendCompanyPriceListColumns(columns, {
     id: 'active',
+    ...fixedCompanyPriceListColumnSize(110),
     header: companyPriceListHeader(t('active')),
     cell: ({ table, row }) =>
       h('div', { class: cn(getCompanyPriceListCellStyle(table), 'gap-3') }, [
@@ -729,6 +741,9 @@ const companyPriceListColumns = computed(() => {
   });
   return extendCompanyPriceListColumns(columns, {
     id: 'actions',
+    // "Manage prices" and the X (~164px) plus the cell's padding; the prototype's
+    // 168px held "Manage prices" alone.
+    ...fixedCompanyPriceListColumnSize(200),
     enableHiding: false,
     enableSorting: false,
     cell: ({ table, row }) =>
