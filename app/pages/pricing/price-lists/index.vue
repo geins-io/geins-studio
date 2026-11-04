@@ -67,7 +67,14 @@ onMounted(() => {
       name: { entityKey: entityKey, idField: '_id' },
     },
     columnTitles: { active: t('status') },
-    excludeColumns: ['autoAddProducts', 'forced', 'identifier'],
+    // Account lists never reach this list, so these are always false and "".
+    excludeColumns: [
+      'autoAddProducts',
+      'forced',
+      'identifier',
+      'accountSpecific',
+      'wholesaleAccountId',
+    ],
   };
   // GET AND SET COLUMNS
   columns.value = getColumns(dataList.value, columnOptions);
