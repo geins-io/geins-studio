@@ -44,7 +44,7 @@ The Assets domain manages media files (images, SVGs, documents, PDFs, video, aud
 
 A wide slide-in panel that lets any entity **link** assets from the library (product images, attachments, …). It **links, never copies** — the library stays the single source of truth; the picker only hands back the chosen `Asset` objects and the consumer stores their ids. Confirming resolves the selection; cancel/close resolves `[]` and leaves the caller's model untouched.
 
-One panel instance lives app-wide ([`AssetPickerHost`](/components/asset/AssetPickerHost), mounted in `app.vue`); every caller drives that shared instance — never place a picker on a page directly.
+One panel instance lives app-wide ([`AssetPickerHost`](/components/asset/AssetPickerHost), mounted in the default layout, so only signed in); every caller drives that shared instance — never place a picker on a page directly.
 
 **Public API — two styles:**
 

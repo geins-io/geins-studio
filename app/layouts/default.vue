@@ -39,6 +39,8 @@ const contentClasses = computed(() => {
         <slot />
       </div>
       <NuxtAnnouncer />
+      <!-- Here, not in app.vue, so the signed-out auth layout never mounts it -->
+      <AssetPickerHost />
     </SidebarInset>
   </SidebarProvider>
 </template>
