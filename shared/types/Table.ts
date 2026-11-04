@@ -94,6 +94,8 @@ export interface ColumnOptions<T> {
   columnCellProps?: Partial<Record<StringKeyOf<T>, Record<string, unknown>>>;
   linkColumns?: Partial<Record<StringKeyOf<T>, LinkColumnConfig<T>>>;
   iconColumns?: Partial<Record<StringKeyOf<T>, IconColumnConfig<T>>>;
+  /** Fixed widths in px (`size`, `minSize` and `maxSize`); overrides the type's size. */
+  columnSizes?: Partial<Record<StringKeyOf<T>, number>>;
   maxTextLength?: number;
 }
 

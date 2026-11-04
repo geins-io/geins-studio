@@ -238,6 +238,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
       sortableColumns,
       maxTextLength = 60,
       columnCellProps,
+      columnSizes,
     } = options;
     let columns: ColumnDef<T>[] = [];
 
@@ -838,6 +839,15 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
             }
             return h('div', { class: getBasicCellStyle(table) }, text);
           };
+      }
+
+      const fixedSize = columnSizes?.[key];
+      if (fixedSize !== undefined) {
+        columnSize = {
+          size: fixedSize,
+          minSize: fixedSize,
+          maxSize: fixedSize,
+        };
       }
 
       columns.push({

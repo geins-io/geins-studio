@@ -150,6 +150,18 @@ Include only specific columns. When provided, only these columns will be display
 includeColumns: ['name', 'price', 'status'];
 ```
 
+### `columnSizes`
+
+Fixed column widths in px. Each sets the column's `size`, `minSize` and `maxSize`, overriding the width its type would give it. A `default` column otherwise has size `0`, which leaves its width to the browser's table layout, so it can take spare width meant for another column. Leave the column that should take the spare width out.
+
+**Example**
+
+```ts
+columnSizes: {
+  productCount: 120;
+}
+```
+
 ### `columnCellProps`
 
 Pass additional props to specific column cell components. Useful for configuring editable columns, tooltips, and other interactive elements.
@@ -480,6 +492,7 @@ interface ColumnOptions<T> {
   includeColumns?: StringKeyOf<T>[];
   columnCellProps?: Partial<Record<StringKeyOf<T>, Record<string, unknown>>>;
   linkColumns?: Partial<Record<StringKeyOf<T>, LinkColumnConfig<T>>>;
+  columnSizes?: Partial<Record<StringKeyOf<T>, number>>;
 }
 
 type ColumnTypes<T> = Partial<Record<StringKeyOf<T>, ColumnType>>;
