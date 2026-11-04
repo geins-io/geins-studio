@@ -32,7 +32,7 @@ const breadcrumbsStore = useBreadcrumbsStore();
 // =====================================================================================
 // Intent: Create typed API repository instances and extract reactive store refs.
 // Uses the repository factory pattern — see app/utils/repositories/ for implementation.
-const { productApi, customerApi } = useGeinsRepository();
+const { productApi } = useGeinsRepository();
 const { channels, currentCurrencies, currentChannelId, currentCurrency } =
   storeToRefs(accountStore);
 
@@ -104,8 +104,6 @@ const selectableCurrencies = ref(currentCurrencies.value.map((i) => i._id));
 
 // An ERP import maintains read-only lists: PATCH and DELETE answer 422.
 const readOnly = ref(false);
-// Owning company of an account list
-const ownerAccountId = ref<string>();
 
 // =====================================================================================
 // ENTITY EDIT COMPOSABLE
@@ -181,9 +179,6 @@ const {
   parseEntityData: (entity) => {
     entityLiveStatus.value = entity.active;
     readOnly.value = entity.readOnly;
-    ownerAccountId.value = entity.accountSpecific
-      ? entity.wholesaleAccountId
-      : undefined;
     breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
     editor.seed(entity);
     form.setValues({
@@ -245,20 +240,6 @@ const editor = usePriceListEditor({
   onSynced: setOriginalSavedData,
 });
 const saveInProgress = editor.saving;
-
-// =====================================================================================
-// OWNER COMPANY
-// =====================================================================================
-// Intent: An account list's owning company is fetched for the summary.
-
-const { data: ownerCompany } = useAsyncData(
-  `price-list-owner-${entityId.value}`,
-  async () =>
-    ownerAccountId.value
-      ? await customerApi.company.get(ownerAccountId.value)
-      : null,
-  { watch: [ownerAccountId], immediate: false },
-);
 
 // =====================================================================================
 // FORM VALUE WATCHERS
@@ -401,16 +382,6 @@ const summary = computed<DataItem[]>(() => {
       ? DataItemDisplayType.Copy
       : undefined,
   });
-
-  if (ownerAccountId.value) {
-    dataList.push({
-      label: t('owner'),
-      value: ownerCompany.value?.name || ownerAccountId.value,
-      displayType: DataItemDisplayType.Link,
-      href: entityEditUrl('company', ownerAccountId.value),
-      target: '_blank',
-    });
-  }
 
   if (entityData.value?.channel) {
     const channelId = entityData.value.channel;
