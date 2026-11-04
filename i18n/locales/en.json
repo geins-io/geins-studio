@@ -722,7 +722,7 @@
     "empty_list": "Empty list",
     "remove_company_price_list_description": "The prices you set for this list aren't saved yet and will be lost.",
     "company_set_prices_external_title": "This company is linked to an external system",
-    "company_set_prices_external_description": "If that system manages this company's prices, its next sync can turn off company set prices and remove them.",
+    "company_set_prices_erp_sync_description": "Company set prices are synced one way, from the external system. To change them, make the changes in the external system.",
     "company_set_prices_restricted_buyers_title": "{count} buyer doesn't get company set prices | {count} buyers don't get company set prices",
     "company_set_prices_restricted_buyers_description": "Buyers restricted to their assigned price lists only get prices from those lists.",
     "orders_description": "Orders placed by buyers connected to this company.",

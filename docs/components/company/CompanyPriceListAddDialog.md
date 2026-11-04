@@ -8,7 +8,7 @@
 - **Currency follows the channel.** Each open preselects the first free slot; picking another channel keeps the currency if it's free there and otherwise takes that channel's first free one.
 - **Start from.** Below channel and currency, "Start from" offers "Empty list" (the default) and the `sources` in the chosen slot (same channel and currency). Changing the channel or currency, or opening the dialog again, resets it to "Empty list". The dialog doesn't fetch: the page passes the shared lists it already loads (`GET product/pricelist/list`, which never returns account lists).
 - **Loading and errors.** The host loads the chosen source on Continue: with `loading`, Continue shows a spinner and the fields are disabled; with `error`, an inline error shows and the dialog stays open (the source's reads show no toast).
-- **External-system warning.** With an `externalId`, the company's next import may take over a Studio-created list, so the dialog shows the same warning as the card (never blocking).
+- **Not for ERP companies.** An ERP-controlled company (`isErpControlledCompany`: a saved `externalId`) gets no "Add company price list" button, so the dialog never opens for it.
 - **Continue** is disabled until both a channel and a currency are picked.
 
 ## Usage
@@ -51,7 +51,6 @@ const add = async (
     v-model:open="open"
     :slots="slots"
     :sources="allPriceLists"
-    :external-id="company.externalId"
     :loading="loading"
     :error="error"
     @add="add"
@@ -100,14 +99,6 @@ error?: boolean;
 ```
 
 The chosen source failed to load: shows an inline error above the buttons.
-
-### `externalId`
-
-```ts
-externalId?: string;
-```
-
-The company's external id; when set (not blank), the external-system warning shows.
 
 ## Events
 
