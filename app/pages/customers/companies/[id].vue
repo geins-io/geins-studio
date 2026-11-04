@@ -18,6 +18,7 @@ import {
 import { ENTITIES, NEW_ENTITY_URL_SEGMENT } from '#shared/utils/entities';
 import {
   getFreeCompanyPriceListSlots,
+  isErpControlledCompany,
   isOwnAccountPriceList,
 } from '#shared/utils/price-list';
 import { Badge } from '@/components/ui/badge';
@@ -879,13 +880,9 @@ const setCompanyPriceEditor = (key: string) => (el: unknown) => {
   else companyPriceEditors.delete(key);
 };
 
-// No flag says an account's prices come from an external system, so an
-// `externalId` is the hint: an import for the same channel and currency takes
-// over a Studio-created list. Warn only, while Studio manages a list.
-const showExternalSystemWarning = computed(
-  () =>
-    !!entityData.value.externalId?.trim() &&
-    companyPriceLists.value.some((entry) => !entry.readOnly),
+// The saved company, so typing an `externalId` doesn't flip the card mid-edit.
+const erpControlledCompany = computed(() =>
+  isErpControlledCompany(entityData.value),
 );
 // Buyers restricted to their own lists never get the company's lists.
 const restrictedBuyerCount = computed(
@@ -1262,7 +1259,6 @@ if (!createMode.value) {
     v-model:open="addCompanyPriceListOpen"
     :slots="companyPriceListSlots"
     :sources="allPriceLists"
-    :external-id="entityData.externalId"
     :loading="addCompanyPriceListLoading"
     :error="addCompanyPriceListError"
     @add="addCompanyPriceList"
@@ -1738,17 +1734,17 @@ if (!createMode.value) {
                 :title="$t('company_set_price', 2)"
                 :description="$t('customers.company_set_prices_description')"
               >
-                <template #header-action>
+                <template v-if="!erpControlledCompany" #header-action>
                   <ReuseAddCompanyPriceList variant="secondary" />
                 </template>
                 <div class="space-y-4">
-                  <Feedback v-if="showExternalSystemWarning" type="warning">
+                  <Feedback v-if="erpControlledCompany" type="info">
                     <template #title>
                       {{ $t('customers.company_set_prices_external_title') }}
                     </template>
                     <template #description>
                       {{
-                        $t('customers.company_set_prices_external_description')
+                        $t('customers.company_set_prices_erp_sync_description')
                       }}
                     </template>
                   </Feedback>
@@ -1780,7 +1776,7 @@ if (!createMode.value) {
                       viewport.isGreaterThan('xs') ? null : undefined
                     "
                   >
-                    <template #empty-actions>
+                    <template v-if="!erpControlledCompany" #empty-actions>
                       <ReuseAddCompanyPriceList />
                     </template>
                   </TableView>

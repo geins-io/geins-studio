@@ -1,4 +1,5 @@
 import type {
+  CustomerCompanyBase,
   PriceListContent,
   PriceListPriceMode,
   PriceListProduct,
@@ -26,6 +27,17 @@ export function isOwnAccountPriceList(
   return (
     priceList.accountSpecific && priceList.wholesaleAccountId === accountId
   );
+}
+
+/**
+ * Whether an ERP controls the company's prices: it has an `externalId`. Nothing
+ * syncs prices from Studio back to the ERP, so Studio adds no company lists to
+ * these companies. Pass the saved company, not the form's values.
+ */
+export function isErpControlledCompany(
+  company: Partial<Pick<CustomerCompanyBase, 'externalId'>> | undefined,
+): boolean {
+  return !!company?.externalId?.trim();
 }
 
 export type CompanyPriceListSaveAction =

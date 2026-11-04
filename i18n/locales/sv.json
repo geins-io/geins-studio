@@ -719,7 +719,7 @@
     "empty_list": "Tom lista",
     "remove_company_price_list_description": "Priserna du har angett för den här listan är inte sparade än och går förlorade.",
     "company_set_prices_external_title": "Företaget är kopplat till ett externt system",
-    "company_set_prices_external_description": "Om det systemet hanterar företagets priser kan nästa synk stänga av företagspriserna och ta bort dem.",
+    "company_set_prices_erp_sync_description": "Företagspriserna synkas åt ett håll, från det externa systemet. Gör ändringarna i det externa systemet för att ändra dem.",
     "company_set_prices_restricted_buyers_title": "{count} köpare får inte företagspriser | {count} köpare får inte företagspriser",
     "company_set_prices_restricted_buyers_description": "Köpare som är begränsade till sina tilldelade prislistor får bara priser från dem.",
     "orders_description": "Ordrar gjorda av köpare kopplade till detta företag.",

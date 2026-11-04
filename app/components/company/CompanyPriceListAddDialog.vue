@@ -9,8 +9,6 @@ const props = withDefaults(
     slots: FreeCompanyPriceListSlot[];
     /** Shared lists to start from; those in the chosen slot are offered. */
     sources?: CustomerPriceList[];
-    /** The company's external id; when set, the dialog warns about external systems. */
-    externalId?: string;
     /** The chosen source is loading: Continue shows a spinner. */
     loading?: boolean;
     /** The chosen source failed to load. */
@@ -95,14 +93,6 @@ const confirmAdd = () => {
           {{ t('customers.add_company_price_list_description') }}
         </DialogDescription>
       </DialogHeader>
-      <Feedback v-if="externalId?.trim()" type="warning">
-        <template #title>
-          {{ t('customers.company_set_prices_external_title') }}
-        </template>
-        <template #description>
-          {{ t('customers.company_set_prices_external_description') }}
-        </template>
-      </Feedback>
       <div class="grid gap-4 sm:grid-cols-2">
         <div class="space-y-2">
           <Label>{{ t('channel') }}</Label>

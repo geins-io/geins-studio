@@ -11,9 +11,26 @@ import {
   getFreeCompanyPriceListSlots,
   getPriceListSummaryCounts,
   isCompanyPriceListEntryDirty,
+  isErpControlledCompany,
   isOwnAccountPriceList,
   priceListDraftRules,
 } from '../price-list';
+
+describe('isErpControlledCompany', () => {
+  it('is true with an external id', () => {
+    expect(isErpControlledCompany({ externalId: '10234' })).toBe(true);
+  });
+
+  it('is false with an empty or blank external id', () => {
+    expect(isErpControlledCompany({ externalId: '' })).toBe(false);
+    expect(isErpControlledCompany({ externalId: '  ' })).toBe(false);
+  });
+
+  it('is false without an external id', () => {
+    expect(isErpControlledCompany({})).toBe(false);
+    expect(isErpControlledCompany(undefined)).toBe(false);
+  });
+});
 
 describe('isOwnAccountPriceList', () => {
   it('is true for an account list owned by the account', () => {
