@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import type { ColumnOptions, StringKeyOf } from '#shared/types';
+import type { ColumnOptions, StringKeyOf, TableRowAction } from '#shared/types';
 import { ENTITIES, entityNewUrl, entityEditUrl } from '#shared/utils/entities';
-import { priceListForceOptions } from '#shared/utils/price-list';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 
@@ -90,7 +89,10 @@ onMounted(() => {
           geinsLogError('copyPriceList :::', getErrorMessage(err));
         }
       },
-      onDelete: async (item: Entity) => await openDeleteDialog(item),
+      onDelete: async (item: Entity) => await openDeleteDialog(item._id),
+      // An ERP import maintains read-only lists: DELETE on them answers 422.
+      disabledActions: (item: Entity): TableRowAction[] =>
+        item.readOnly ? ['delete'] : [],
     },
     'actions',
     ['edit', 'copy', 'delete'],
@@ -105,14 +107,14 @@ visibilityState.value = getVisibilityState(hiddenColumns);
 
 const { toast } = useToast();
 const deletePriceList = async (
-  item?: Entity,
+  id?: string,
   entityKey?: string,
 ): Promise<boolean> => {
   try {
-    if (!item) {
-      throw new Error('Price list is required for deletion');
+    if (!id) {
+      throw new Error('ID is required for deletion');
     }
-    await productApi.priceList.id(item._id).delete(priceListForceOptions(item));
+    await productApi.priceList.delete(id);
     toast({
       title: t('entity_deleted', { entityKey }),
       variant: 'positive',
@@ -126,15 +128,15 @@ const deletePriceList = async (
 
 const deleteDialogOpen = ref(false);
 const deleting = ref(false);
-const deleteItem = ref<Entity>();
-const openDeleteDialog = async (item?: Entity) => {
+const deleteId = ref<string | undefined>();
+const openDeleteDialog = async (id?: string) => {
   await nextTick();
-  deleteItem.value = item;
+  deleteId.value = id;
   deleteDialogOpen.value = true;
 };
 const confirmDelete = async () => {
   deleting.value = true;
-  const success = await deletePriceList(deleteItem.value, entityKey);
+  const success = await deletePriceList(deleteId.value, entityKey);
   if (success) {
     refresh();
   }
@@ -148,11 +150,6 @@ const confirmDelete = async () => {
     v-model:open="deleteDialogOpen"
     :entity-key="entityKey"
     :loading="deleting"
-    :description="
-      deleteItem?.readOnly
-        ? $t('pricing.price_list_read_only_delete_description')
-        : undefined
-    "
     @confirm="confirmDelete"
   />
   <ContentHeader :title="$t(entityKey, 2)">
