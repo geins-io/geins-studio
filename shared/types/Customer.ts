@@ -159,6 +159,8 @@ export interface CompanyPriceListEntry {
   contentDirty: boolean;
   /** A draft started from another list keeps that list's; a new list is ex VAT. */
   exVat?: boolean;
+  /** A saved list the user deleted: hidden, and "Save company" deletes it. */
+  markedForDeletion?: boolean;
 }
 
 /** A row of the company's price list table: one `CompanyPriceListEntry`. */

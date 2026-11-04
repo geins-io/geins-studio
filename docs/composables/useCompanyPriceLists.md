@@ -7,11 +7,13 @@
 ```ts
 const {
   entries,
+  visibleEntries,
   hasChanges,
   merge,
   addDraft,
   loadSource,
   removeDraft,
+  markForDeletion,
   seedFor,
   save,
 } = useCompanyPriceLists({
@@ -77,13 +79,21 @@ entries: Ref<CompanyPriceListEntry[]>;
 
 Saved lists in the order the company returns them, then drafts. An entry's `key` is the list `_id`, or `draft-…` for a draft; it stays the same after "Save company" creates the draft, so its editor isn't remounted. `content` and `contentDirty` are bound from the editor with `v-model`.
 
+### `visibleEntries`
+
+```ts
+visibleEntries: ComputedRef<CompanyPriceListEntry[]>;
+```
+
+`entries` without those marked for deletion. The table rows, the free slots (`getFreeCompanyPriceListSlots`) and the opened sub views read it, so a marked list is hidden, frees its channel and currency, and its sub view closes.
+
 ### `hasChanges`
 
 ```ts
 hasChanges: ComputedRef<boolean>;
 ```
 
-Any entry dirty by `isCompanyPriceListEntryDirty`: a draft, an `active` that differs from the saved list, or edited content (even while the list is inactive). Read-only (ERP) lists never are. Pass it to `useEntityEdit` as `externalChanges`.
+Any entry dirty by `isCompanyPriceListEntryDirty`: a draft, a list marked for deletion, an `active` that differs from the saved list, or edited content (even while the list is inactive). Read-only (ERP) lists never are. Pass it to `useEntityEdit` as `externalChanges`.
 
 ### `merge`
 
@@ -91,7 +101,7 @@ Any entry dirty by `isCompanyPriceListEntryDirty`: a draft, an `active` that dif
 merge: (lists: CustomerPriceList[]) => string[];
 ```
 
-Takes in the company's own lists on every load and reload — `parseEntityData` runs again whenever the company reloads, e.g. after the buyer panel closes. Entries are matched by `_id` and get the server fields; an unsaved switch change, edited content and drafts survive. Returns the keys of entries whose list is gone (e.g. taken over by an ERP import, which gives it a new id), so the page can close their sub view.
+Takes in the company's own lists on every load and reload — `parseEntityData` runs again whenever the company reloads, e.g. after the buyer panel closes. Entries are matched by `_id` and get the server fields; an unsaved switch change, edited content, a deletion mark and drafts survive. Only a new `useCompanyPriceLists` (a page load, or leaving without saving) starts clean. Returns the keys of entries whose list is gone (e.g. taken over by an ERP import, which gives it a new id), so the page can close their sub view.
 
 ### `addDraft` / `removeDraft`
 
@@ -104,6 +114,14 @@ removeDraft: (key: string) => void;
 ```
 
 Add an unsaved list for a free slot (`getFreeCompanyPriceListSlots`) and return its key; `active` defaults to `true`. With `content` (a list it starts from, from `loadSource`), the draft holds that content with `contentDirty: true`, so its editor opens with it and "Save company" creates the list with it; `exVat` is kept on the entry for the create body and the editor's seed. `removeDraft` drops a draft and leaves saved lists alone.
+
+### `markForDeletion`
+
+```ts
+markForDeletion: (key: string) => void;
+```
+
+Marks a saved, Studio-managed list (`markedForDeletion: true`) so it drops out of `visibleEntries` until "Save company" deletes it. Drafts and read-only (ERP) lists are left alone: remove a draft with `removeDraft`.
 
 ### `loadSource`
 
@@ -129,9 +147,9 @@ The create body of a new list in that slot, without content — the editor's `se
 save: () => Promise<boolean>;
 ```
 
-Saves the dirty entries one at a time, in table order. Each uses `getCompanyPriceListSaveAction(entry.saved, entry.active, entry.contentDirty)`; a draft always creates, with its own `active`. Create and update ask for `fields: ['rules', 'selectionquery']`, and an update that returns nothing is read back. After each success the response is written into the entry (`saved`, server fields, `contentDirty: false`), then `onSaved` runs.
+First deletes the lists marked for deletion (`DELETE product/pricelist/{id}`) and drops their entries; deleting first frees a slot a new draft may take, whose create would otherwise answer `409`. Then saves the dirty entries one at a time, in table order. Each uses `getCompanyPriceListSaveAction(entry.saved, entry.active, entry.contentDirty)`; a draft always creates, with its own `active`. Create and update ask for `fields: ['rules', 'selectionquery']`, and an update that returns nothing is read back. After each success the response is written into the entry (`saved`, server fields, `contentDirty: false`), then `onSaved` runs.
 
-On the first failure it stops and returns `false` — the global API error toast says why, so the page calls nothing else (no company update). The lists saved before it are clean, so a retry only re-sends the rest.
+On the first failure it stops and returns `false` — the global API error toast says why, so the page calls nothing else (no company update). The lists deleted or saved before it are clean, so a retry only re-sends the rest.
 
 ## Notes
 

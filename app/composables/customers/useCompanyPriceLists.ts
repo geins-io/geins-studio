@@ -43,6 +43,8 @@ export interface UseCompanyPriceListsOptions {
 export interface UseCompanyPriceListsReturnType {
   // State
   entries: Ref<CompanyPriceListEntry[]>;
+  /** The entries the table shows: all but those marked for deletion. */
+  visibleEntries: ComputedRef<CompanyPriceListEntry[]>;
   hasChanges: ComputedRef<boolean>;
 
   // Methods
@@ -55,6 +57,7 @@ export interface UseCompanyPriceListsReturnType {
     sourceId: string,
   ) => Promise<{ content: PriceListContent; exVat: boolean }>;
   removeDraft: (key: string) => void;
+  markForDeletion: (key: string) => void;
   seedFor: (
     slot: CompanyPriceListSlot & Pick<CompanyPriceListEntry, 'exVat'>,
   ) => ProductPriceListCreate;
@@ -92,13 +95,17 @@ export function useCompanyPriceLists({
   );
 
   const entries = ref<CompanyPriceListEntry[]>([]);
+  const visibleEntries = computed(() =>
+    entries.value.filter((entry) => !entry.markedForDeletion),
+  );
   const hasChanges = computed(() =>
     entries.value.some(isCompanyPriceListEntryDirty),
   );
 
   /**
    * Takes in the company's own lists after a load or reload. Entries keep their
-   * unsaved switch change and content; drafts stay. Returns the keys of entries
+   * unsaved switch change, content and deletion mark; drafts stay. Only a new
+   * `useCompanyPriceLists` (a page load) starts clean. Returns the keys of entries
    * whose list is gone (e.g. taken over by an ERP import), so their sub view
    * can close.
    */
@@ -174,6 +181,12 @@ export function useCompanyPriceLists({
     entries.value = entries.value.filter((e) => e.saved || e.key !== key);
   };
 
+  /** Hides a saved list until "Save company" deletes it. A draft is removed instead. */
+  const markForDeletion = (key: string) => {
+    const entry = entries.value.find((e) => e.key === key);
+    if (entry?.saved && !entry.readOnly) entry.markedForDeletion = true;
+  };
+
   const createOptions = ({
     channel,
     currency,
@@ -230,11 +243,23 @@ export function useCompanyPriceLists({
   };
 
   /**
-   * Saves the dirty lists one at a time, in table order. Stops at the first
-   * failure (the global API error toast says why); the lists saved before it
-   * are clean, so a retry only re-sends the rest.
+   * Deletes the marked lists, then saves the dirty ones one at a time, in table
+   * order. Deleting first frees a slot that a new draft may take (a create
+   * would answer 409). Stops at the first failure (the global API error toast
+   * says why); what was saved before it is clean, so a retry only re-sends the
+   * rest.
    */
   const save = async (): Promise<boolean> => {
+    for (const entry of entries.value.filter((e) => e.markedForDeletion)) {
+      if (!entry.saved || entry.readOnly) continue;
+      try {
+        await productApi.priceList.delete(entry.saved._id);
+      } catch (error) {
+        geinsLogError('error deleting company price list:', error);
+        return false;
+      }
+      entries.value = entries.value.filter((e) => e !== entry);
+    }
     for (const entry of entries.value) {
       if (!isCompanyPriceListEntryDirty(entry)) continue;
       try {
@@ -249,11 +274,13 @@ export function useCompanyPriceLists({
 
   return {
     entries,
+    visibleEntries,
     hasChanges,
     merge,
     addDraft,
     loadSource,
     removeDraft,
+    markForDeletion,
     seedFor,
     save,
   };
