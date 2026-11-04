@@ -10,16 +10,23 @@ import type {
   ProductPriceListUpdate,
 } from '#shared/types';
 
-const { create, update, get, query } = vi.hoisted(() => ({
+const { create, update, get, query, remove } = vi.hoisted(() => ({
   create: vi.fn(),
   update: vi.fn(),
   get: vi.fn(),
   query: vi.fn(),
+  remove: vi.fn(),
 }));
 
 mockNuxtImport('useGeinsRepository', () => () => ({
   productApi: {
-    priceList: { create, update, get, id: () => ({ query }) },
+    priceList: {
+      create,
+      update,
+      get,
+      delete: remove,
+      id: () => ({ query }),
+    },
   },
 }));
 mockNuxtImport('useAccountStore', () => () => ({
@@ -27,6 +34,7 @@ mockNuxtImport('useAccountStore', () => () => ({
 }));
 mockNuxtImport('useGeinsLog', () => () => ({ geinsLogError: vi.fn() }));
 
+import { getFreeCompanyPriceListSlots } from '#shared/utils/price-list';
 import { useCompanyPriceLists } from '../customers/useCompanyPriceLists';
 
 const list = (
@@ -64,6 +72,7 @@ function setup(channels = ['1']) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  remove.mockResolvedValue(undefined);
   update.mockImplementation((id: string, body: ProductPriceListUpdate) =>
     Promise.resolve(list(id, { active: body.active ?? true })),
   );
@@ -165,6 +174,81 @@ describe('drafts', () => {
       }),
       expect.anything(),
     );
+  });
+});
+
+describe('markForDeletion', () => {
+  it('hides a saved list and counts as a change', () => {
+    const { entries, visibleEntries, merge, markForDeletion, hasChanges } =
+      setup();
+    merge([list('a'), list('b', { currency: 'EUR' })]);
+    markForDeletion('a');
+    expect(visibleEntries.value.map((e) => e.key)).toEqual(['b']);
+    expect(entries.value.map((e) => e.key)).toEqual(['a', 'b']);
+    expect(hasChanges.value).toBe(true);
+  });
+
+  it('leaves drafts and read-only lists alone', () => {
+    const { visibleEntries, merge, addDraft, markForDeletion, hasChanges } =
+      setup();
+    merge([list('erp', { readOnly: true })]);
+    const key = addDraft({ channel: '1', currency: 'EUR' });
+    markForDeletion('erp');
+    markForDeletion(key);
+    expect(visibleEntries.value.map((e) => e.key)).toEqual(['erp', key]);
+    expect(hasChanges.value).toBe(true);
+  });
+
+  it('frees the slot of a marked list', () => {
+    const { visibleEntries, merge, markForDeletion } = setup();
+    merge([list('a')]);
+    const slots = () =>
+      getFreeCompanyPriceListSlots(['1'], () => ['SEK'], visibleEntries.value);
+    expect(slots()).toEqual([]);
+    markForDeletion('a');
+    expect(slots()).toEqual([{ channel: '1', currencies: ['SEK'] }]);
+  });
+
+  it('keeps the mark through a reload; a new load brings the list back', () => {
+    const first = setup();
+    first.merge([list('a')]);
+    first.markForDeletion('a');
+    first.merge([list('a', { productCount: 5 })]);
+    expect(first.visibleEntries.value).toEqual([]);
+
+    const second = setup();
+    second.merge([list('a')]);
+    expect(second.visibleEntries.value.map((e) => e.key)).toEqual(['a']);
+    expect(second.hasChanges.value).toBe(false);
+  });
+
+  it('deletes a marked list before it creates, so the freed slot can be taken', async () => {
+    const { entries, merge, markForDeletion, addDraft, save, hasChanges } =
+      setup();
+    merge([list('a')]);
+    markForDeletion('a');
+    addDraft({ channel: '1', currency: 'SEK' });
+
+    expect(await save()).toBe(true);
+    expect(remove).toHaveBeenCalledWith('a');
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(remove.mock.invocationCallOrder[0]).toBeLessThan(
+      create.mock.invocationCallOrder[0]!,
+    );
+    expect(entries.value.map((e) => e.saved?._id)).toEqual(['new-1']);
+    expect(hasChanges.value).toBe(false);
+  });
+
+  it('stops before any create when a delete fails, keeping the mark', async () => {
+    const { visibleEntries, merge, markForDeletion, addDraft, save } = setup();
+    merge([list('a')]);
+    markForDeletion('a');
+    const key = addDraft({ channel: '1', currency: 'SEK' });
+    remove.mockRejectedValueOnce(new Error('500'));
+
+    expect(await save()).toBe(false);
+    expect(create).not.toHaveBeenCalled();
+    expect(visibleEntries.value.map((e) => e.key)).toEqual([key]);
   });
 });
 

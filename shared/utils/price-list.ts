@@ -156,18 +156,19 @@ interface CompanyPriceListEntryState {
   active: boolean;
   readOnly: boolean;
   contentDirty: boolean;
+  markedForDeletion?: boolean;
 }
 
 /**
  * Whether "Save company" has something to save for one of the company's lists:
- * it's an unsaved draft, its switch differs from the saved list, or its content
- * was edited. A read-only (ERP) list never saves.
+ * it's an unsaved draft, it's marked for deletion, its switch differs from the
+ * saved list, or its content was edited. A read-only (ERP) list never saves.
  */
 export function isCompanyPriceListEntryDirty(
   entry: CompanyPriceListEntryState,
 ): boolean {
   if (entry.readOnly) return false;
-  if (!entry.saved) return true;
+  if (!entry.saved || entry.markedForDeletion) return true;
   return entry.active !== entry.saved.active || entry.contentDirty;
 }
 

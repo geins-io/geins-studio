@@ -21,8 +21,8 @@ import {
   isErpControlledCompany,
   isOwnAccountPriceList,
 } from '#shared/utils/price-list';
-import { Badge } from '@/components/ui/badge';
 import { Button, type ButtonVariants } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, Table } from '@tanstack/vue-table';
 import {
@@ -30,6 +30,7 @@ import {
   LucideLock,
   LucidePackage,
   LucideUser,
+  LucideX,
   TableCellSwitch,
   Tooltip,
   TooltipContent,
@@ -176,11 +177,13 @@ const createDisabled = ref(true);
 // COMPANY SET PRICES). The getters and the hook run only after setup.
 const {
   entries: companyPriceLists,
+  visibleEntries: visibleCompanyPriceLists,
   hasChanges: companyPriceListHasChanges,
   merge: mergeCompanyPriceLists,
   addDraft: addCompanyPriceListDraft,
   loadSource: loadCompanyPriceListSource,
   removeDraft: removeCompanyPriceListDraft,
+  markForDeletion: markCompanyPriceListForDeletion,
   seedFor: companyPriceListSeed,
   save: saveCompanyPriceLists,
 } = useCompanyPriceLists({
@@ -630,7 +633,7 @@ const buyerPriceListOptions = computed<CustomerPriceList[]>(() => {
 // for an ERP import's (`readOnly`). "Save company" saves them (saveCompanyPriceLists).
 
 const companyPriceListRows = computed<CompanyPriceListRow[]>(() =>
-  companyPriceLists.value.map((entry) => ({
+  visibleCompanyPriceLists.value.map((entry) => ({
     key: entry.key,
     channel: accountStore.getChannelNameById(entry.channel),
     currency: entry.currency,
@@ -731,37 +734,52 @@ const companyPriceListColumns = computed(() => {
     cell: ({ table, row }) =>
       h(
         'div',
-        {
-          class: cn(getCompanyPriceListCellStyle(table), 'justify-end gap-2'),
-        },
-        [
-          row.original.draft &&
-            h(Badge, { variant: 'warning-light' }, () => t('not_saved')),
-          h(
-            ButtonIcon,
-            {
-              icon: row.original.readOnly ? 'Eye' : 'SquarePen',
-              variant: 'secondary',
-              size: 'sm',
-              onClick: () => openCompanyPriceList(row.original.key),
-            },
-            () =>
-              row.original.readOnly
-                ? t('customers.view_prices')
-                : t('customers.manage_prices'),
-          ),
-          row.original.draft &&
-            h(
-              Button,
+        { class: cn(getCompanyPriceListCellStyle(table), 'justify-end') },
+        row.original.readOnly
+          ? h(
+              ButtonIcon,
               {
-                variant: 'ghost',
+                icon: 'Eye',
+                variant: 'secondary',
                 size: 'sm',
-                onClick: () =>
-                  requestRemoveCompanyPriceListDraft(row.original.key),
+                onClick: () => openCompanyPriceList(row.original.key),
               },
-              () => t('remove'),
-            ),
-        ],
+              () => t('customers.view_prices'),
+            )
+          : h(ButtonGroup, null, () => [
+              h(
+                ButtonIcon,
+                {
+                  icon: 'SquarePen',
+                  variant: 'secondary',
+                  size: 'sm',
+                  onClick: () => openCompanyPriceList(row.original.key),
+                },
+                () => t('customers.manage_prices'),
+              ),
+              h(TooltipProvider, { delayDuration: 100 }, () =>
+                h(Tooltip, null, () => [
+                  h(TooltipTrigger, { asChild: true }, () =>
+                    h(
+                      Button,
+                      {
+                        variant: 'secondary',
+                        size: 'sm',
+                        class: 'w-8 px-0',
+                        'aria-label': deleteCompanyPriceListLabel.value,
+                        onClick: () => deleteCompanyPriceList(row.original),
+                      },
+                      () => h(LucideX, { class: 'size-3.5' }),
+                    ),
+                  ),
+                  h(
+                    TooltipContent,
+                    null,
+                    () => deleteCompanyPriceListLabel.value,
+                  ),
+                ]),
+              ),
+            ]),
       ),
   });
 });
@@ -787,7 +805,7 @@ const companyPriceListSlots = computed(() =>
   getFreeCompanyPriceListSlots(
     entityData.value.channels ?? [],
     (channel) => accountStore.getCurrenciesByChannelId(channel),
-    companyPriceLists.value,
+    visibleCompanyPriceLists.value,
   ),
 );
 const addCompanyPriceList = async (
@@ -828,6 +846,15 @@ const confirmRemoveCompanyPriceListDraft = () => {
   }
   removeCompanyPriceListDialogOpen.value = false;
 };
+// The row's X: a draft goes now; a saved list is hidden until "Save company"
+// deletes it, so leaving without saving brings it back.
+const deleteCompanyPriceListLabel = computed(() =>
+  t('delete_entity', { entityKey: 'company_price_list' }),
+);
+const deleteCompanyPriceList = (row: CompanyPriceListRow) => {
+  if (row.draft) requestRemoveCompanyPriceListDraft(row.key);
+  else markCompanyPriceListForDeletion(row.key);
+};
 
 // Sub views: an opened list's editor stays mounted (hidden behind the table or
 // another list), so its edits survive going back. Keyed by the entry key, never
@@ -842,7 +869,7 @@ const companyPriceListSubViewToggleClass = computed(() =>
     : undefined,
 );
 const openedCompanyPriceLists = computed(() =>
-  companyPriceLists.value.filter((entry) =>
+  visibleCompanyPriceLists.value.filter((entry) =>
     openedCompanyPriceListKeys.value.includes(entry.key),
   ),
 );
@@ -852,9 +879,10 @@ const openCompanyPriceList = (key: string) => {
   }
   activeCompanyPriceListKey.value = key;
 };
-// A list that's gone (a removed draft, or one an ERP import took over) drops
-// its sub view, or the tab would show neither the table nor an editor.
-watch(companyPriceLists, (entries) => {
+// A list that's gone (a removed draft, one marked for deletion, or one an ERP
+// import took over) drops its sub view, or the tab would show neither the table
+// nor an editor.
+watch(visibleCompanyPriceLists, (entries) => {
   const keys = entries.map((entry) => entry.key);
   openedCompanyPriceListKeys.value = openedCompanyPriceListKeys.value.filter(
     (key) => keys.includes(key),
@@ -892,7 +920,7 @@ const restrictedBuyerCount = computed(
 const showRestrictedBuyersNote = computed(
   () =>
     restrictedBuyerCount.value > 0 &&
-    companyPriceLists.value.some((entry) => entry.active),
+    visibleCompanyPriceLists.value.some((entry) => entry.active),
 );
 
 // =====================================================================================

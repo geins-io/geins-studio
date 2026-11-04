@@ -307,7 +307,6 @@
   "selector_panel_description": "Gör ditt urval",
   "selector_browse_description": "Snabblägg till, eller klicka på \"Bläddra\" för att göra ett urval",
   "unsaved_changes": "Osparade ändringar",
-  "not_saved": "Inte sparad",
   "toggle_active_state": "Växla aktivt tillstånd",
   "dialog": {
     "unsaved_changes_title": "Du har osparade ändringar!",

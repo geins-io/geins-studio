@@ -390,6 +390,12 @@ describe('isCompanyPriceListEntryDirty', () => {
     );
   });
 
+  it('is dirty when marked for deletion', () => {
+    expect(
+      isCompanyPriceListEntryDirty({ ...clean, markedForDeletion: true }),
+    ).toBe(true);
+  });
+
   it('is dirty when the content was edited, even while inactive', () => {
     expect(
       isCompanyPriceListEntryDirty({
