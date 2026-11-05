@@ -56,15 +56,23 @@ pnpm lint:check && pnpm typecheck && pnpm test:changed
 - Still run `pnpm build` locally when the change touches i18n messages or template syntax — only `build` catches bad message/literal-brace syntax, and a local catch beats a red CI round trip.
 - **Verification when the UI is login-walled:** verify at the data layer (curl / the composable's data) or ask the user to check in their browser (HMR). After repo/composable changes, do a real app-boot smoke — auto-import failures crash at runtime, not in curl/typecheck.
 
+## 3a. Review (before presenting)
+
+Once preflight is green, run the **`reviewer` subagent** ([.claude/agents/reviewer.md](../../../.claude/agents/reviewer.md)) on the change. It's the default for every change; skip it only for trivial ones (an i18n value tweak, a one-liner, config) and say so.
+
+- **Brief it with the issue only** — id, title, acceptance criteria — and the diff base (`origin/next`). Never pass your plan, reasoning or "I think X is fine": a fresh read only helps if it isn't anchored on yours.
+- **Triage every finding yourself** — fix, or skip with a one-line reason (out of scope → follow-up issue per §5; wrong → say why). After fixes, re-run §3 preflight. Don't re-run the reviewer unless a fix changed behaviour substantially.
+- A `blocker` never reaches the user unfixed unless you're asking them about it.
+
 ## 4. Present → approve → merge
 
-1. **Present** a diff-shaped summary: what changed + file paths, verification results, any follow-ups filed. Ask in the same message whether this one gets a **Claude PR review** (step 3). The user decides; offer it for bigger changes (new composables/components, data-flow or API changes, many files) and don't push it on small fixes.
+1. **Present** a diff-shaped summary: what changed + file paths, verification results, the §3a review triage as a short table (finding → decision → why) — or "reviewer: ship, no findings" / "review skipped: trivial" — and any follow-ups filed. A `@claude review` on the PR (step 3) is extra and only on request.
 2. On explicit approval:
    - `git add -A`; commit with a Conventional Commit (`feat(scope): …` / `fix(scope): …`), body explains the *why* when non-obvious, end with the `Co-Authored-By` trailer.
    - `git push -u origin {branch}`.
-   - `gh pr create --base next` — body: what/why, a **Verification** section (lint/typecheck/build/tests + manual), and the Claude Code footer.
-   - No review requested → straight to merge (step 4).
-3. **Claude PR review** (only when the user asked for it):
+   - `gh pr create --base next` — body: what/why, a **Verification** section (lint/typecheck/build/tests + manual), a **Review** section (the §3a triage table, so the team sees it on the PR), and the Claude Code footer.
+   - No `@claude review` asked for → straight to merge (step 4).
+3. **`@claude review` on GitHub** (only when the user asks — a team-visible second opinion on top of §3a):
    - `gh pr comment {n} --body "@claude review"` — this triggers `.github/workflows/claude.yml`, which answers as a PR comment.
    - Don't poll or sleep-loop for it. Tell the user it's requested; when they say it's done (or on their next message), read it with `gh pr view {n} --comments`.
    - **Triage every finding yourself** — implement, or skip with a one-line reason (out of scope → follow-up issue per §5; wrong/nitpick → say why). Present the triage as a short table (finding → decision → why) before pushing fixes.
@@ -83,9 +91,9 @@ pnpm lint:check && pnpm typecheck && pnpm test:changed
 Sibling issues under one `Context group:` marker are built on **one branch** and reviewed + merged as **one PR**, so the review sees the whole feature and CI, preview and QA run once.
 
 1. Build the issues back-to-back in blocked-by order (§1 per issue: In Progress + assignee as you start it).
-2. **Per issue:** run §3 preflight, present that issue's diff, and on approval **commit locally** — one Conventional Commit per issue with its id (`feat(scope): … (STU-123)`). **Don't push yet.**
-3. **After the last issue:** push once, then `gh pr create --base next` with a group title. The body lists each issue + its commit and ends with `Part of STU-a, STU-b, STU-c` — the branch name only links the first issue, and the non-closing `Part of` leaves statuses to us (step 6).
-4. **Offer the Claude PR review by default** — a whole-feature review is the point of grouping. Triage as in §4 step 3; name fix commits `fix(scope): review feedback (STU-a, STU-b)`.
+2. **Per issue:** run §3 preflight, present that issue's diff, and on approval **commit locally** — one Conventional Commit per issue with its id (`feat(scope): … (STU-123)`). **Don't push yet.** Per-issue §3a review is optional here — step 3 covers the whole branch.
+3. **After the last issue, before pushing:** run the §3a reviewer on the whole branch (base `origin/next`, all the group's issues in the brief) — a whole-feature review is the point of grouping. Triage as in §3a; name fix commits `fix(scope): review feedback (STU-a, STU-b)`.
+4. Push once, then `gh pr create --base next` with a group title. The body lists each issue + its commit, the review triage, and ends with `Part of STU-a, STU-b, STU-c` — the branch name only links the first issue, and the non-closing `Part of` leaves statuses to us (step 6). `@claude review` only on request (§4 step 3).
 5. Merge with `gh pr merge {n} --rebase --auto` — **rebase, not squash**, so `next` keeps one commit per issue (traceable, revertable on its own). Then §4 steps 4–6 for every issue in the group.
 6. **Size cap:** ~3–4 issues or ~1,500 changed lines. Past that the review gets shallow — split the group at a natural seam into two branches and PR the first while building the second.
 
@@ -125,6 +133,6 @@ When the user asks what can run in parallel (separate worktrees / spawned task c
 
 
 - `build issue STU-52` / `prep issue STU-*` → pull issue → readiness checks → `implementation-plan` → update the issue with the ready plan.
-- `merge issue` → run §3 preflight, then §4 (present → on approval → PR → optional `@claude review` + triage → `--squash --auto` → once merged, Ready for QA → suggest next issue).
-- `merge group` → §4a (push the per-issue commits → one PR → `@claude review` + triage → `--rebase --auto` → once merged, every issue Ready for QA).
+- `merge issue` → §3 preflight → §3a reviewer + triage → §4 (present → on approval → PR → `@claude review` only if asked → `--squash --auto` → once merged, Ready for QA → suggest next issue).
+- `merge group` → §4a (whole-branch reviewer + triage → push the per-issue commits → one PR → `--rebase --auto` → once merged, every issue Ready for QA).
 - `what can run in parallel?` → §7 (conflict check → one chip per unit → cleanup after merge).
