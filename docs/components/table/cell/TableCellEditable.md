@@ -9,6 +9,7 @@
 - Custom unit suffix via `valueDescriptor` (e.g. `'kg'`, `'mm'`)
 - `Enter` blurs the input — common spreadsheet shortcut to commit
 - Emits `change` on every edit, `blur` only when the value actually differs from initial
+- Opt-in `disabled` (static or per row), with a `disabledTooltip` saying why
 
 ## Usage
 
@@ -80,6 +81,32 @@ placeholder?: string
 
 Placeholder text.
 
+### `disabled`
+
+```ts
+disabled?: boolean | ((row: Row<T>) => boolean)
+```
+
+Disables the input. Pass a function to decide per row — it's read inside the cell, so set it once in `columnCellProps` and each row works out its own state. Off by default.
+
+### `disabledTooltip`
+
+```ts
+disabledTooltip?: string
+```
+
+Tooltip on a disabled input, saying why. A disabled `<input>` fires no pointer events, so a wrapping `span` is the trigger. Only rendered while the input is disabled.
+
+```ts
+columnCellProps: {
+  discount: {
+    onBlur: onDiscountBlur,
+    disabled: (row) => !Number(row.original.regularPrice?.price),
+    disabledTooltip: t('pricing.price_list_discount_needs_price'),
+  },
+}
+```
+
 ## Events
 
 ### `change`
@@ -100,5 +127,6 @@ Emitted on blur, **only** when the value differs from the initial. Use this to c
 
 ## Dependencies
 
-- shadcn-vue `Input`, `Label`
+- shadcn-vue `Input`, `Label`, `Tooltip`
+- VueUse `createReusableTemplate` (one `Input` for the plain and tooltip-wrapped cases)
 - [TanStack Table](https://tanstack.com/table/latest/docs/introduction) for the `table`/`row`/`column` types

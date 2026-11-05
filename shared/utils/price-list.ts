@@ -3,8 +3,10 @@ import type {
   PriceListContent,
   PriceListPriceMode,
   PriceListProduct,
+  PriceListProductList,
   PriceListRule,
   PriceListRuleField,
+  PriceListRuleMode,
   ProductPriceList,
   ProductPriceListCreate,
   ProductPriceListUpdate,
@@ -339,4 +341,58 @@ export function companyPriceListUpdateBody(
     ...(priceList.active !== enabled && { active: enabled }),
     ...(content && priceListContentBody(content, false)),
   };
+}
+
+type PriceListProductBases = Pick<
+  PriceListProductList,
+  'regularPrice' | 'purchasePrice'
+>;
+
+/** The rule field each "Calculate by" mode sets. */
+export const PRICE_LIST_RULE_MODE_FIELD: Record<
+  PriceListRuleMode,
+  PriceListRuleField
+> = {
+  discount: 'discountPercent',
+  margin: 'margin',
+};
+
+/**
+ * The fields a product's list price can't be set by: a discount works from
+ * its price and a margin from its purchase price. A base of 0 counts as
+ * missing, as it would give a 0 list price.
+ */
+export function getUnavailablePriceListFields(
+  product: PriceListProductBases,
+): PriceListRuleField[] {
+  const fields: PriceListRuleField[] = [];
+  if (!Number(product.regularPrice?.price)) fields.push('discountPercent');
+  if (!Number(product.purchasePrice?.price)) fields.push('margin');
+  return fields;
+}
+
+/** The "Calculate by" modes that no product in `products` can use; none for an empty list. */
+export function getUnavailablePriceListRuleModes(
+  products: PriceListProductBases[],
+): PriceListRuleMode[] {
+  if (!products.length) return [];
+  const unavailable = products.map(getUnavailablePriceListFields);
+  return (
+    Object.keys(PRICE_LIST_RULE_MODE_FIELD) as PriceListRuleMode[]
+  ).filter((mode) =>
+    unavailable.every((fields) =>
+      fields.includes(PRICE_LIST_RULE_MODE_FIELD[mode]),
+    ),
+  );
+}
+
+/** `mode`, or the other mode when only `mode` is unavailable. */
+export function resolvePriceListRuleMode(
+  mode: PriceListRuleMode,
+  unavailableModes: PriceListRuleMode[],
+): PriceListRuleMode {
+  const other: PriceListRuleMode = mode === 'discount' ? 'margin' : 'discount';
+  return unavailableModes.includes(mode) && !unavailableModes.includes(other)
+    ? other
+    : mode;
 }

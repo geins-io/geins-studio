@@ -13,6 +13,7 @@
 - `applied` is computed from "values match initial values" — the parent watches it to show the green check
 - Disabled state for global rules in `all` mode (read-only preview)
 - Per-row loading dot — shows a spinner on inputs that aren't the one the user just changed
+- Unavailable fields (`unavailableFields`) — disables margin / discount for a product without the base they work from, with a tooltip saying why
 - Apply button (current row) and Apply overwrite (also clears manual product overrides)
 - Remove button always present
 
@@ -85,6 +86,16 @@ disabled?: boolean
 View-only: disables every input and the Apply, Apply & overwrite and remove buttons, in any mode. Used for read-only price lists.
 
 - **Default:** `false`
+
+### `unavailableFields`
+
+```ts
+unavailableFields?: PriceListRuleField[]
+```
+
+Fields the product can't be priced by, from `getUnavailablePriceListFields` (`#shared/utils/price-list`): `'discountPercent'` without a price, `'margin'` without a purchase price. Their inputs are disabled, keep their value and show a tooltip saying why. The component never inspects the product itself.
+
+- **Default:** `[]`
 
 ## v-model
 

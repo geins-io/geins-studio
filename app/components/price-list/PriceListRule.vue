@@ -9,9 +9,12 @@ const props = withDefaults(
     global?: boolean;
     /** View-only: inputs and actions disabled. */
     disabled?: boolean;
+    /** Fields the product can't be priced by; their inputs are disabled, with the reason. */
+    unavailableFields?: PriceListRuleField[];
   }>(),
   {
     mode: 'margin',
+    unavailableFields: () => [],
   },
 );
 const quantity = defineModel<number | undefined>('quantity');
@@ -66,6 +69,12 @@ const tdClasses = 'text-xs text-left py-3 pr-2 @2xl:pr-5';
 const inputDisabled = computed(
   () => props.disabled || (props.global && props.mode === 'all'),
 );
+const marginUnavailable = computed(() =>
+  props.unavailableFields.includes('margin'),
+);
+const discountUnavailable = computed(() =>
+  props.unavailableFields.includes('discountPercent'),
+);
 
 const handleApply = (overwrite: boolean) => {
   emit(overwrite ? 'apply-overwrite' : 'apply');
@@ -85,30 +94,57 @@ const handleApply = (overwrite: boolean) => {
       />
     </td>
     <td v-if="mode === 'margin' || mode === 'all'" :class="tdClasses">
-      <Input
-        v-model.number="margin"
-        size="sm"
-        placeholder="0"
-        class="min-w-20"
-        :loading="loading && lastFieldChanged !== 'margin' && mode === 'all'"
-        :disabled="inputDisabled"
-      >
-        <template #valueDescriptor>%</template>
-      </Input>
+      <!-- A disabled input fires no pointer events, so the span is the trigger. -->
+      <TooltipProvider :delay-duration="100">
+        <Tooltip :disabled="!marginUnavailable">
+          <TooltipTrigger as-child>
+            <span class="block">
+              <Input
+                v-model.number="margin"
+                size="sm"
+                placeholder="0"
+                class="min-w-20"
+                :loading="
+                  loading && lastFieldChanged !== 'margin' && mode === 'all'
+                "
+                :disabled="inputDisabled || marginUnavailable"
+              >
+                <template #valueDescriptor>%</template>
+              </Input>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            {{ $t('pricing.price_list_margin_needs_purchase_price') }}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </td>
     <td v-if="mode === 'discount' || mode === 'all'" :class="tdClasses">
-      <Input
-        v-model.number="discount"
-        size="sm"
-        placeholder="0"
-        class="min-w-20"
-        :loading="
-          loading && lastFieldChanged !== 'discountPercent' && mode === 'all'
-        "
-        :disabled="inputDisabled"
-      >
-        <template #valueDescriptor>%</template>
-      </Input>
+      <TooltipProvider :delay-duration="100">
+        <Tooltip :disabled="!discountUnavailable">
+          <TooltipTrigger as-child>
+            <span class="block">
+              <Input
+                v-model.number="discount"
+                size="sm"
+                placeholder="0"
+                class="min-w-20"
+                :loading="
+                  loading &&
+                  lastFieldChanged !== 'discountPercent' &&
+                  mode === 'all'
+                "
+                :disabled="inputDisabled || discountUnavailable"
+              >
+                <template #valueDescriptor>%</template>
+              </Input>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            {{ $t('pricing.price_list_discount_needs_price') }}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </td>
     <td v-if="mode === 'all'" :class="tdClasses">
       <Input

@@ -15,6 +15,8 @@ The Pricing domain manages price lists — named collections of product prices s
 
 **Pricing modes** (`PriceListPriceMode`) — `fixed` (explicit price), `margin` (markup over purchase price), `discount` (percentage off regular price), `rule` (volume pricing), `auto` / `autoRule` / `autoFixed` (system-calculated). The mode controls which fields are editable in the products table.
 
+**Pricing bases** — A discount works from the product's price (`regularPrice`) and a margin from its purchase price (`purchasePrice`). Without its base (absent, `null` or `0`) a field can't set a list price, so the editor disables it: per product, the grid's discount / margin inputs and the same inputs in the volume pricing panel; for the whole list, the "Calculate by" option, only when no product has the base. A fixed list price needs neither. `getUnavailablePriceListFields` / `getUnavailablePriceListRuleModes` (`shared/utils/price-list.ts`) work this out.
+
 **Volume pricing rules** (`PriceListRule`) — Quantity-based pricing tiers. Each rule specifies a `quantity` threshold and a `margin`, `discountPercent`, or `price`. Rules can be global (applied to all products) or per-product. The `lastFieldChanged` tracks which field was most recently edited for UI calculation logic.
 
 **Preview** — Two preview endpoints:
@@ -132,7 +134,7 @@ The price list page (`[id].vue`) creates the editor in its own setup — the tab
 | Layer       | Path                                                                                                                                                                                |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Types       | `shared/types/Product.ts` (price list types colocated with product types)                                                                                                           |
-| Utils       | `shared/utils/price-list.ts` (`isOwnAccountPriceList`)                                                                                                                              |
+| Utils       | `shared/utils/price-list.ts` (`isOwnAccountPriceList`, `getUnavailablePriceListFields`)                                                                                             |
 | Repository  | `app/utils/repositories/product.ts` (`.priceList` sub-repo)                                                                                                                         |
 | Composables | `usePriceListEditor.ts`, `usePriceListProducts.ts`, `usePriceListProductsTable.ts`, `usePriceListRules.ts`, `usePriceListVolumePricing.ts`, `usePriceListPreview.ts`, `usePrice.ts` |
 | Components  | `app/components/price-list/`                                                                                                                                                        |

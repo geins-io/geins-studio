@@ -1,4 +1,4 @@
-import type { PriceListProductList } from '#shared/types';
+import type { PriceListProductList, PriceListRuleField } from '#shared/types';
 import type { ColumnDef, Row } from '@tanstack/vue-table';
 import {
   PriceListVolumePricingCell,
@@ -75,6 +75,11 @@ export const usePriceListProductsTable =
         ? { ...column, meta: { ...column.meta, highlight: true } }
         : column;
 
+    const isFieldUnavailable = (
+      row: Row<PriceListProductList>,
+      field: PriceListRuleField,
+    ) => getUnavailablePriceListFields(row.original).includes(field);
+
     const setupPriceListColumns = (
       selectedProducts: PriceListProductList[],
       vatDescription: string,
@@ -111,9 +116,17 @@ export const usePriceListProductsTable =
           },
           discount: {
             onBlur: onDiscountBlur,
+            disabled: (row: Row<PriceListProductList>) =>
+              isFieldUnavailable(row, 'discountPercent'),
+            disabledTooltip: t('pricing.price_list_discount_needs_price'),
           },
           margin: {
             onBlur: onMarginBlur,
+            disabled: (row: Row<PriceListProductList>) =>
+              isFieldUnavailable(row, 'margin'),
+            disabledTooltip: t(
+              'pricing.price_list_margin_needs_purchase_price',
+            ),
           },
         },
       };

@@ -96,6 +96,10 @@ const setRulePrices = (index: number, prices: PriceListPrices) => {
   editableRules.value = updatedRules;
 };
 
+const unavailableFields = computed(() =>
+  props.product ? getUnavailablePriceListFields(props.product) : [],
+);
+
 const productBase = computed(() => ({
   price: Number(props.product?.listPrice?.price) || undefined,
   margin: props.product?.margin,
@@ -330,6 +334,7 @@ const handleRemove = async (rule: PriceListRule) => {
           :show-loading="true"
           :rules="editableRules"
           :product-id="productId"
+          :unavailable-fields="unavailableFields"
           :vat-description="vatDescription"
           :currency="currency"
           @update-rule="handleUpdateRule"

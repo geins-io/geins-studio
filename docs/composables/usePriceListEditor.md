@@ -100,6 +100,8 @@ captureBaseline: () => void;
 
 Everything `PriceListEditor` binds: the selection (`productSelection`, `productSelector`), the grid (`columns`, `selectedProducts`, `pinnedState`, the read-only rows' loading/error/retry), the base rule input and its handlers, volume pricing rules and the per-product panel state, and the four confirmation prompts (rules mode change, overwrite base rule, overwrite volume pricing, remove base rule).
 
+`unavailableRuleModes` holds the "Calculate by" modes no product in the list can use (no price → `discount`, no purchase price → `margin`), for both [`PriceListRulesWrapper`](/components/price-list/PriceListRulesWrapper)s. When it rules out the current mode, the base rule and volume pricing modes switch to the other one — unless both are ruled out. Volume pricing keeps its mode while it has global price breaks, since switching prompts to remove them.
+
 ## Notes
 
 - `editedProducts` is the single source of the manual rows: cell edits, the volume pricing panel and "Apply and overwrite" (via `usePriceListRules`) all write it, and a deep `flush: 'sync'` watcher copies it into `draft.products`, so the draft is current before the next preview reads it.

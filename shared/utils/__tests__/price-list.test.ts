@@ -10,10 +10,13 @@ import {
   getCompanyPriceListSaveAction,
   getFreeCompanyPriceListSlots,
   getPriceListSummaryCounts,
+  getUnavailablePriceListFields,
+  getUnavailablePriceListRuleModes,
   isCompanyPriceListEntryDirty,
   isErpControlledCompany,
   isOwnAccountPriceList,
   priceListDraftRules,
+  resolvePriceListRuleMode,
 } from '../price-list';
 
 describe('isErpControlledCompany', () => {
@@ -558,5 +561,79 @@ describe('companyPriceListContentFromSource', () => {
     });
     expect(JSON.stringify(body)).not.toMatch(/"_id"|internalId|ruleId/);
     expect(body.products).toHaveLength(2);
+  });
+});
+
+const bases = (regularPrice?: string, purchasePrice?: string) => ({
+  regularPrice: { price: regularPrice, currency: 'SEK' },
+  purchasePrice: { price: purchasePrice, currency: 'SEK' },
+});
+
+describe('getUnavailablePriceListFields', () => {
+  it('is empty when the product has a price and a purchase price', () => {
+    expect(getUnavailablePriceListFields(bases('100', '60'))).toEqual([]);
+  });
+
+  it('rules out discount without a price and margin without a purchase price', () => {
+    expect(getUnavailablePriceListFields(bases(undefined, '60'))).toEqual([
+      'discountPercent',
+    ]);
+    expect(getUnavailablePriceListFields(bases('100', undefined))).toEqual([
+      'margin',
+    ]);
+    expect(getUnavailablePriceListFields(bases())).toEqual([
+      'discountPercent',
+      'margin',
+    ]);
+  });
+
+  it('counts a 0 or blank base as missing', () => {
+    expect(getUnavailablePriceListFields(bases('0', ''))).toEqual([
+      'discountPercent',
+      'margin',
+    ]);
+  });
+});
+
+describe('getUnavailablePriceListRuleModes', () => {
+  it('is empty for an empty list', () => {
+    expect(getUnavailablePriceListRuleModes([])).toEqual([]);
+  });
+
+  it('rules out a mode only when every product lacks its base', () => {
+    expect(
+      getUnavailablePriceListRuleModes([bases(undefined, '60'), bases('100')]),
+    ).toEqual([]);
+    expect(
+      getUnavailablePriceListRuleModes([
+        bases(undefined, '60'),
+        bases(undefined, '40'),
+      ]),
+    ).toEqual(['discount']);
+    expect(
+      getUnavailablePriceListRuleModes([bases('100'), bases('80', '0')]),
+    ).toEqual(['margin']);
+    expect(getUnavailablePriceListRuleModes([bases(), bases()])).toEqual([
+      'discount',
+      'margin',
+    ]);
+  });
+});
+
+describe('resolvePriceListRuleMode', () => {
+  it('keeps an available mode', () => {
+    expect(resolvePriceListRuleMode('discount', [])).toBe('discount');
+    expect(resolvePriceListRuleMode('discount', ['margin'])).toBe('discount');
+  });
+
+  it('switches to the other mode when only the current one is unavailable', () => {
+    expect(resolvePriceListRuleMode('discount', ['discount'])).toBe('margin');
+    expect(resolvePriceListRuleMode('margin', ['margin'])).toBe('discount');
+  });
+
+  it('keeps the mode when both are unavailable', () => {
+    expect(resolvePriceListRuleMode('margin', ['discount', 'margin'])).toBe(
+      'margin',
+    );
   });
 });

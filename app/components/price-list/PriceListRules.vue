@@ -6,6 +6,8 @@ const props = defineProps<{
   disabled?: boolean;
   vatDescription?: string;
   showLoading?: boolean;
+  /** Fields the product can't be priced by (see `getUnavailablePriceListFields`); disabled in every rule. */
+  unavailableFields?: PriceListRuleField[];
 }>();
 
 const emit = defineEmits<{
@@ -141,6 +143,7 @@ const thClasses = 'text-xs font-bold text-left py-2';
             :index="index"
             :global="rule.global"
             :disabled="disabled"
+            :unavailable-fields="unavailableFields"
             :currency="currency"
             :loading="loading && loadingIndex === index"
             :last-field-changed="rule.lastFieldChanged"
