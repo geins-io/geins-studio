@@ -9,7 +9,7 @@ Skills are project files at `.agents/skills/{name}/SKILL.md`. **To use one, READ
 - i18n: `geins-i18n-update` | API repos: `geins-api-repository`
 - UI components: `geins-ui-components` | Tables: `geins-table-patterns` | List pages: `geins-list-page`
 - Linear issue lifecycle: `geins-linear` | Linear project/milestone planning: `geins-linear-planning` | Implementation plan: `implementation-plan`
-- Learning loop: `geins-learning-loop` | Release (next → main): `geins-release`
+- Learning loop: `geins-learning-loop` | Release (next → main) + hotfix (from main): `geins-release`
 - Sync domain docs: `sync-domain` | Verify docs: `verify-docs`
 
 ## Token Efficiency Rules

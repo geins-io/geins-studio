@@ -19,7 +19,7 @@ The single runbook for how we work with Linear issues, projects, and the code th
 
 ## Status lifecycle
 
-`Todo` → **In Progress** (before writing code) → **Ready for QA testing** (after merge) → `Done` when the work ships in a release (`geins-release` §9). Released = Done; QA doesn't move issues by hand. Never set `Done` straight from a merge into `next`. Cancelled/blocked work: leave a comment saying why.
+`Todo` → **In Progress** (before writing code) → **Ready for QA testing** (after merge) → `Done` when the work ships in a release (`geins-release` §9). Released = Done; QA doesn't move issues by hand. Never set `Done` straight from a merge into `next`. A hotfix skips Ready for QA testing: QA happens on its preview, and it goes to `Done` once released (`geins-release` H8). Cancelled/blocked work: leave a comment saying why.
 
 ## 1. Start / prep an issue
 
