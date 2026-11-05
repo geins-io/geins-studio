@@ -1,6 +1,7 @@
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { LoginCredentials, AuthResponse, AuthTokens } from '#shared/types';
 import {
+  refreshWithRetry,
   sessionFromToken,
   tokenAfterRefresh,
   tokenAfterRefreshError,
@@ -38,7 +39,16 @@ export default NuxtAuthHandler({
       // Returned as spreads: `JWT` has an index signature the `Session`
       // interface lacks.
       try {
-        const response = await geinsAuth.refresh(token.refreshToken);
+        const response = await refreshWithRetry(
+          geinsAuth.refresh,
+          token.refreshToken,
+          {
+            onRetry: (status, attempt) =>
+              geinsLogWarn(
+                `jwt ::: refresh answered ${status}, retrying (attempt ${attempt})`,
+              ),
+          },
+        );
         const refreshed = tokenAfterRefresh(token, response);
         geinsLog('jwt ::: token refreshed, expires:', refreshed.tokenExpires);
         return { ...refreshed };

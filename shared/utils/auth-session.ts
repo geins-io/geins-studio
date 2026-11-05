@@ -66,7 +66,9 @@ const isRefreshRejected = (status: number | undefined): boolean =>
  *
  * - Any 4xx but 408 and 429: Geins rejected the refresh token. Drop the tokens
  *   and flag `RefreshTokenInvalid`; the client re-checks once, then logs out.
- *   Geins answers an expired refresh token with 403, not 401.
+ *   Geins answers an expired refresh token with 403, not 401. In the jwt
+ *   callback a 403 here is the second in a row: `refreshWithRetry` retries
+ *   the first, since Geins can't yet tell a blip from a dead token.
  * - Anything else (5xx, 408, 429, network, timeout): keep the token, flag
  *   `RefreshFailed`, and let the next session fetch retry.
  */
@@ -78,6 +80,57 @@ export const tokenAfterRefreshError = <T extends Session>(
     return { isAuthenticated: false, error: 'RefreshTokenInvalid' };
   }
   return { ...token, error: 'RefreshFailed' };
+};
+
+const REFRESH_RETRY_DELAY_MS = { min: 300, max: 800 };
+
+/**
+ * The pause before the refresh retry, jittered between 300 and 800 ms so
+ * instances that hit the same Geins blip don't retry in lockstep.
+ */
+export const refreshRetryDelay = (random: () => number = Math.random): number =>
+  REFRESH_RETRY_DELAY_MS.min +
+  Math.round(
+    random() * (REFRESH_RETRY_DELAY_MS.max - REFRESH_RETRY_DELAY_MS.min),
+  );
+
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+export interface RefreshRetryOptions {
+  /** Waits out the pause before the retry; tests pass one instead of timers. */
+  wait?: (ms: number) => Promise<void>;
+  /** Called before the retry with the status that caused it and the attempt. */
+  onRetry?: (status: number, attempt: number) => void;
+}
+
+/**
+ * Refreshes with `refreshToken`, and on a 403 refreshes once more with the
+ * same token after a short pause. Resolves with the response, or rejects with
+ * the last error for `tokenAfterRefreshError` to classify.
+ *
+ * Geins answers 403 both for a dead refresh token and when its own check of
+ * the token fails (SQL or Key Vault), with nothing to tell them apart, so one
+ * 403 may be a blip. A dead token stays dead, so the retry costs one request.
+ * Reusing the token is safe: Geins refuses it only once a refresh with it has
+ * finished. Nothing else is retried: other 4xx are final, and 5xx, network
+ * errors and timeouts already keep the session.
+ */
+export const refreshWithRetry = async (
+  refresh: (refreshToken?: string) => Promise<AuthResponse>,
+  refreshToken: string | undefined,
+  { wait = sleep, onRetry }: RefreshRetryOptions = {},
+): Promise<AuthResponse> => {
+  try {
+    return await refresh(refreshToken);
+  } catch (error) {
+    if (!(error instanceof AuthApiError) || error.status !== 403) {
+      throw error;
+    }
+    onRetry?.(error.status, 2);
+    await wait(refreshRetryDelay());
+    return refresh(refreshToken);
+  }
 };
 
 /**
