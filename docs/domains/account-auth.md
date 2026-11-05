@@ -76,7 +76,7 @@ The Account & Auth domain handles everything related to identity and merchant co
 ## Decision Log
 
 **2024-07-02: NextAuth.js for authentication**
-Server-side JWT handling keeps secrets off the client. The `CredentialsProvider` bridges to the Geins auth API while NextAuth manages token lifecycle and session serialization.
+`@sidebase/nuxt-auth` (authjs provider → next-auth, `CredentialsProvider`) bridges to the Geins auth API, chosen to leave room for GitHub/Google login. It did **not** keep secrets off the client: `/api/auth/session` returns both Geins tokens to browser JS, and the API proxy takes the access token from a request header. Superseded by the 2026-11-05 entry.
 
 **2024-07-03: Six-layer auth architecture**
 Each layer has a single responsibility (route guard → server handler → server utility → fetch plugin → composable → cross-tab sync). This separation makes each layer independently testable and replaceable.
@@ -89,3 +89,19 @@ Tabs used to broadcast the whole session (access and refresh tokens) and receive
 
 **2026-10-30: Session holds tokens only; user loaded client-side**
 The `session` callback used to call `user/me` on every `/api/auth/session` (the user was never stored in the token) and threw on failure, which wiped the cookie. Now the callbacks are pure and never throw, and `useUserStore` loads the user via `$geinsApi`. Keeps the JWT cookie small (staff users have long account lists) and the name fresh after a profile edit.
+
+**2026-11-05: Tokens stay server-side in a sealed, chunked session cookie**
+Decided in STU-475; rolling out in STU-493 and STU-494. `@sidebase/nuxt-auth` + `next-auth` give way to a session of our own, with no auth library. The Geins tokens live only in a session sealed with `iron-webcrypto`, keyed by Nuxt's `deriveSecret`, and split across httpOnly, `SameSite=Lax` cookies of under 4 KB each. The API proxy sets `authorization` and `x-account-key` from that session, and the session the browser reads holds no tokens. Why:
+
+- No sidebase release lifts its `next-auth ~4.21.1` pin, so the critical `next-auth`/`next` advisories can't be patched.
+- next-auth's `getToken` is read-only, so the proxy couldn't refresh.
+- The password → MFA → account login fits plain server routes better than a Credentials provider.
+- A non-admin's access token grows with every account (account keys, per-account roles and ACL claims), so one 4 KB cookie isn't enough. This rules out `nuxt-auth-utils`, which only offers a single-cookie session.
+
+What follows from it:
+
+- State-changing `/api` calls need a CSRF guard: a custom header plus a same-origin check.
+- Account switching goes through a server route that checks the key against the token's own account claims.
+- The proxy refreshes at most once per instance and never writes a failed refresh into the cookie.
+- At most 4 cookie chunks, to stay under Node's 16 KB request-header limit. A server-side session store is the next step if tokens outgrow that.
+- Logout only drops the cookie: Geins has no endpoint to revoke a refresh token yet.
