@@ -9,7 +9,6 @@ import type {
   ForgotPasswordFormValues,
   ResetPasswordFormValues,
 } from '#shared/types';
-import { createPasswordResetSchema } from '@/utils/password-validation';
 
 const props = withDefaults(
   defineProps<{

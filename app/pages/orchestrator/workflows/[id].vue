@@ -15,7 +15,6 @@ import type {
 } from '#shared/types';
 import { ENTITIES, entityListUrl } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
-import { sanitizeWorkflowNodes } from '@/composables/useWorkflowCanvas';
 import type { Component } from 'vue';
 
 definePageMeta({
