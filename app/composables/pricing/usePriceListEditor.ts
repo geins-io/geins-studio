@@ -56,6 +56,8 @@ export interface UsePriceListEditorReturnType {
 
   // Base rule
   priceListBaseRuleMode: Ref<PriceListRuleMode>;
+  /** "Calculate by" modes no product in the list can use (no price → discount, no purchase price → margin). */
+  unavailableRuleModes: ComputedRef<PriceListRuleMode[]>;
   priceListBaseRuleInput: Ref<number | undefined>;
   baseRule: ComputedRef<PriceListRule | undefined>;
   baseRuleMode: ComputedRef<'margin' | 'discount' | null>;
@@ -344,6 +346,23 @@ export function usePriceListEditor({
     selectedProducts.value.find((p) => p._id === rulesProductId.value),
   );
 
+  const unavailableRuleModes = computed(() =>
+    getUnavailablePriceListRuleModes(selectedProducts.value),
+  );
+  watch(unavailableRuleModes, (modes) => {
+    priceListBaseRuleMode.value = resolvePriceListRuleMode(
+      priceListBaseRuleMode.value,
+      modes,
+    );
+    // Switching away from saved price breaks prompts to remove them, so those keep their mode.
+    if (!quantityLevelRules.value.length) {
+      actualPriceListRulesMode.value = resolvePriceListRuleMode(
+        actualPriceListRulesMode.value,
+        modes,
+      );
+    }
+  });
+
   const handleApplyBaseRule = () => {
     if (priceListBaseRuleInput.value === undefined) return;
     const percentage = priceListBaseRuleInput.value;
@@ -469,6 +488,7 @@ export function usePriceListEditor({
     volumePricingProduct,
 
     priceListBaseRuleMode,
+    unavailableRuleModes,
     priceListBaseRuleInput,
     baseRule,
     baseRuleMode,

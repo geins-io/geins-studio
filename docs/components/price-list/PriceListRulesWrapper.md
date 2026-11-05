@@ -6,6 +6,7 @@
 
 - Title bar with [`ContentCardHeader`](/components/content/ContentCardHeader) and a "calculate by" `Select` (margin or discount)
 - Two-way `v-model:mode` for the calculation mode
+- `unavailableModes` disables a mode no product can use, with its reason under the options
 - Default slot for the rules table; `footer` slot for trailing content (e.g. apply-all button)
 - `v-auto-animate` on the footer for smooth height changes
 
@@ -61,6 +62,16 @@ disabled?: boolean
 Disables the mode `Select`. Slot content handles its own disabled state.
 
 - **Default:** `false`
+
+### `unavailableModes`
+
+```ts
+unavailableModes?: PriceListRuleMode[]
+```
+
+Modes no product in the list can use (`getUnavailablePriceListRuleModes`): `discount` when no product has a price, `margin` when none has a purchase price. Each is a disabled option, and its reason shows as helper text under the options — a disabled item takes no pointer events, so it can't hold a tooltip. The host keeps `mode` off a disabled option (`usePriceListEditor` switches to the other one).
+
+- **Default:** `[]`
 
 ## v-model
 

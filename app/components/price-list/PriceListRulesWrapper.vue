@@ -1,13 +1,30 @@
 <script setup lang="ts">
 import type { PriceListRuleMode } from '#shared/types';
 
-const _props = defineProps<{
-  title: string;
-  modeId: string;
-  disabled?: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    title: string;
+    modeId: string;
+    disabled?: boolean;
+    /** Modes no product in the list can use; disabled in the select, with the reason. */
+    unavailableModes?: PriceListRuleMode[];
+  }>(),
+  {
+    unavailableModes: () => [],
+  },
+);
 
 const mode = defineModel<PriceListRuleMode>('mode', { required: true });
+
+const { t } = useI18n();
+const modes: PriceListRuleMode[] = ['discount', 'margin'];
+const unavailableReasons = computed(() =>
+  props.unavailableModes.map((item) =>
+    item === 'discount'
+      ? t('pricing.price_list_no_product_price')
+      : t('pricing.price_list_no_product_purchase_price'),
+  ),
+);
 </script>
 
 <template>
@@ -35,12 +52,21 @@ const mode = defineModel<PriceListRuleMode>('mode', { required: true });
           </SelectTrigger>
           <SelectContent>
             <SelectItem
-              v-for="item in ['discount', 'margin']"
+              v-for="item in modes"
               :key="item"
               :value="item"
+              :disabled="unavailableModes.includes(item)"
             >
               {{ $t(item) }}
             </SelectItem>
+            <!-- A disabled item takes no pointer events, so its reason sits below the items. -->
+            <p
+              v-for="reason in unavailableReasons"
+              :key="reason"
+              class="text-muted-foreground max-w-56 px-2 py-1.5 text-xs whitespace-normal"
+            >
+              {{ reason }}
+            </p>
           </SelectContent>
         </Select>
       </div>

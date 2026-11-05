@@ -82,6 +82,7 @@ Creates a complete column configuration for price list products with all necessa
 
 - **Returns**: Complete array of column definitions
 - **Features**: Editable columns, actions, volume pricing, price modes. The editable list price column is highlighted (`meta.highlight`), as in the read-only grid
+- **Unavailable fields**: a row's discount input is disabled when the product has no price, and its margin input when it has no purchase price (`getUnavailablePriceListFields`, a `0` counts as missing), each with a tooltip saying why. A saved value stays visible. The list price stays editable
 
 ### `setupReadOnlyPriceListColumns`
 

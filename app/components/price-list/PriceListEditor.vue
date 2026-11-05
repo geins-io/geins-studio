@@ -29,6 +29,7 @@ const {
   volumePricingOpen,
   volumePricingProduct,
   priceListBaseRuleMode,
+  unavailableRuleModes,
   priceListBaseRuleInput,
   baseRule,
   baseRuleMode,
@@ -235,6 +236,7 @@ const {
               v-model:mode="priceListBaseRuleMode"
               :title="$t('pricing.price_list_base_rule')"
               mode-id="priceListBaseRuleMode"
+              :unavailable-modes="unavailableRuleModes"
             >
               <Label class="w-full">
                 {{ $t(priceListBaseRuleMode) }}
@@ -271,6 +273,7 @@ const {
               v-model:mode="priceListRulesMode"
               :title="$t('pricing.price_list_volume_pricing')"
               mode-id="priceListRulesMode"
+              :unavailable-modes="unavailableRuleModes"
             >
               <PriceListRules
                 v-model:loading="volumePricingLoading"

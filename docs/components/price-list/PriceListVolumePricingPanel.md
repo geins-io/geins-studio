@@ -9,6 +9,7 @@
   - **Product** — editable rules for this product
 - Live price-preview calls: every per-row change debounces a call to `productApi.priceList.id(...).previewPrice(...)` and writes the calculated `margin`, `discountPercent`, `price` back into the row
 - **New list** (no `priceListId`): `previewprice` only works on a saved list, so the row's other two values are worked out locally with `calculatePriceListPrices` (`#shared/utils/price-list-preview`) from `product`. The cost comes from the product's previewed price and margin, so the list's currency and VAT basis are already applied. Without `product`, only the value typed stays; the list's next preview fills in the rest
+- Product without a price / purchase price: its rules' discount / margin inputs are disabled with a tooltip (`unavailableFields` from `getUnavailablePriceListFields(product)`)
 - Save flow: validates each rule (quantity > 1, at least one numeric value) and converts to `PriceListProduct[]` via [`usePriceListProducts`](/composables/usePriceListProducts) — surfaces a [`Feedback`](/components/Feedback) banner when invalid
 - Cancel discards local changes; Save commits via the `save` event
 - Two-way `v-model:open` and `v-model:priceListProducts` so the parent's selected-products state stays in sync
@@ -126,7 +127,7 @@ View-only mode: the product's price breaks (all of `rules`, including global one
 product?: PriceListProductList
 ```
 
-Read-only mode: supplies the header values (`regularPrice`, `listPrice`, `margin`). Editable mode without `priceListId`: the base (`listPrice`, `margin`, `regularPrice`) for working out prices locally.
+Read-only mode: supplies the header values (`regularPrice`, `listPrice`, `margin`). Editable mode: which fields the product can't be priced by (no `regularPrice` → discount, no `purchasePrice` → margin), and without `priceListId` the base (`listPrice`, `margin`, `regularPrice`) for working out prices locally.
 
 ### `listPriceTitle`
 
