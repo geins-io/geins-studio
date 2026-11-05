@@ -5,6 +5,12 @@ import {
   PriceListPriceModeCell,
 } from '#components';
 
+/** What a preview is still working out, read by the cells so a change re-renders only them. */
+interface PriceListPendingCells {
+  isFieldPending: (productId: string, field: PriceListRuleField) => boolean;
+  isVolumePricingPending: (productId: string) => boolean;
+}
+
 interface UsePriceListProductsTableReturnType {
   setupPriceListColumns: (
     selectedProducts: PriceListProductList[],
@@ -24,6 +30,7 @@ interface UsePriceListProductsTableReturnType {
       row: Row<PriceListProductList>,
     ) => void,
     listPriceTitle?: string,
+    pending?: PriceListPendingCells,
   ) => ColumnDef<PriceListProductList>[];
   setupReadOnlyPriceListColumns: (
     products: PriceListProductList[],
@@ -36,6 +43,7 @@ interface UsePriceListProductsTableReturnType {
     onEdit: (payload: { id: string; name: string }) => void,
     vatDescription: string,
     readonly?: boolean,
+    isLoading?: (productId: string) => boolean,
   ) => ColumnDef<PriceListProductList>[];
   getPinnedState: ComputedRef<{
     left: never[];
@@ -98,7 +106,12 @@ export const usePriceListProductsTable =
         row: Row<PriceListProductList>,
       ) => void,
       listPriceTitle: string = t('pricing.price_list_price'),
+      pending?: PriceListPendingCells,
     ) => {
+      const isPending =
+        (field: PriceListRuleField) => (row: Row<PriceListProductList>) =>
+          !!pending?.isFieldPending(row.original._id, field);
+
       const columnOptions: ColumnOptions<PriceListProductList> = {
         columnTypes: {
           listPrice: 'editable-currency',
@@ -113,12 +126,14 @@ export const usePriceListProductsTable =
         columnCellProps: {
           listPrice: {
             onBlur: onPriceBlur,
+            loading: isPending('price'),
           },
           discount: {
             onBlur: onDiscountBlur,
             disabled: (row: Row<PriceListProductList>) =>
               isFieldUnavailable(row, 'discountPercent'),
             disabledTooltip: t('pricing.price_list_discount_needs_price'),
+            loading: isPending('discountPercent'),
           },
           margin: {
             onBlur: onMarginBlur,
@@ -127,6 +142,7 @@ export const usePriceListProductsTable =
             disabledTooltip: t(
               'pricing.price_list_margin_needs_purchase_price',
             ),
+            loading: isPending('margin'),
           },
         },
       };
@@ -138,6 +154,8 @@ export const usePriceListProductsTable =
         columns,
         onEditVolumePricing,
         vatDescription,
+        false,
+        pending?.isVolumePricingPending,
       );
       columns = addPriceModeColumn(columns);
       addActionsColumn(
@@ -191,6 +209,7 @@ export const usePriceListProductsTable =
       onEdit: (payload: { id: string; name: string }) => void,
       vatDescription: string,
       readonly = false,
+      isLoading?: (productId: string) => boolean,
     ): ColumnDef<PriceListProductList>[] => {
       const volumePricingColumn: ColumnDef<PriceListProductList> = {
         id: 'volumePricing',
@@ -208,6 +227,8 @@ export const usePriceListProductsTable =
             id: rowData._id,
             name: rowData.name,
             readonly,
+            // Read in the cell's own render, so a change re-renders only this cell.
+            loading: isLoading?.(rowData._id),
             onEdit,
           });
         },

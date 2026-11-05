@@ -14,6 +14,8 @@ const props = defineProps<{
   disabled?: boolean | ((row: Row<T>) => boolean);
   /** Tooltip on the disabled input, saying why. */
   disabledTooltip?: string;
+  /** Shows the input's loader; a function decides per row. */
+  loading?: boolean | ((row: Row<T>) => boolean);
 }>();
 let value: string | number = String(props.row.getValue(props.colKey));
 const valueDesc = ref(props.valueDescriptor);
@@ -30,6 +32,12 @@ const isDisabled = computed(() =>
   typeof props.disabled === 'function'
     ? props.disabled(props.row)
     : !!props.disabled,
+);
+
+const isLoading = computed(() =>
+  typeof props.loading === 'function'
+    ? props.loading(props.row)
+    : !!props.loading,
 );
 
 const [DefineInput, ReuseInput] = createReusableTemplate();
@@ -61,6 +69,7 @@ const handleBlur = () => {
         class="w-full min-w-[105px]"
         :placeholder="placeholder"
         :disabled="isDisabled"
+        :loading="isLoading"
         @blur="handleBlur"
         @keydown.enter.prevent="$event.target?.blur()"
       >

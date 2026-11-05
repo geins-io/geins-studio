@@ -10,6 +10,7 @@
 - `Enter` blurs the input — common spreadsheet shortcut to commit
 - Emits `change` on every edit, `blur` only when the value actually differs from initial
 - Opt-in `disabled` (static or per row), with a `disabledTooltip` saying why
+- Opt-in `loading` (static or per row): the input's loader while its value is worked out
 
 ## Usage
 
@@ -103,6 +104,23 @@ columnCellProps: {
     onBlur: onDiscountBlur,
     disabled: (row) => !Number(row.original.regularPrice?.price),
     disabledTooltip: t('pricing.price_list_discount_needs_price'),
+  },
+}
+```
+
+### `loading`
+
+```ts
+loading?: boolean | ((row: Row<T>) => boolean)
+```
+
+Shows the input's loader (`Input` `loading`). Like `disabled`, a function is read inside the cell, so the columns are built once and a change re-renders only the cells whose state changed. Off by default. The price list grid sets it while a preview works out a row's other price fields.
+
+```ts
+columnCellProps: {
+  margin: {
+    onBlur: onMarginBlur,
+    loading: (row) => isFieldPending(row.original._id, 'margin'),
   },
 }
 ```

@@ -78,14 +78,62 @@ export function usePriceListPreview({
   // METHODS
   // =====================================================================================
 
-  const previewPriceList = async (
+  interface PreviewCall {
+    feedbackMessage: string;
+    updateProducts: boolean;
+    showFeedback: boolean;
+  }
+  let running: Promise<void> | null = null;
+  let queued: { call: PreviewCall; done: Promise<void> } | null = null;
+
+  const previewPriceList = (
     feedbackMessage: string = t('price_list_preview_updated'),
     updateProducts: boolean = false,
     showFeedback: boolean = true,
-  ) => {
-    if (!entityDataUpdate.value.productSelectionQuery || updateInProgress.value)
-      return;
+  ): Promise<void> => {
+    if (!entityDataUpdate.value.productSelectionQuery) return Promise.resolve();
 
+    if (running) {
+      // The draft changed after the running preview sent it, so preview once
+      // more when it settles; calls meanwhile share that one run.
+      const call: PreviewCall = {
+        feedbackMessage,
+        updateProducts: updateProducts || !!queued?.call.updateProducts,
+        showFeedback,
+      };
+      if (queued) {
+        queued.call = call;
+        return queued.done;
+      }
+      const next: { call: PreviewCall; done: Promise<void> } = {
+        call,
+        done: running.then(() => {
+          queued = null;
+          const { call } = next;
+          return previewPriceList(
+            call.feedbackMessage,
+            call.updateProducts,
+            call.showFeedback,
+          );
+        }),
+      };
+      queued = next;
+      return next.done;
+    }
+
+    running = runPreview(feedbackMessage, updateProducts, showFeedback).finally(
+      () => {
+        running = null;
+      },
+    );
+    return running;
+  };
+
+  const runPreview = async (
+    feedbackMessage: string,
+    updateProducts: boolean,
+    showFeedback: boolean,
+  ) => {
     try {
       updateInProgress.value = true;
 

@@ -8,6 +8,7 @@
   - **Has rules:** count + tooltip with a quantity / margin / discount / price preview table; trailing pencil button
   - **No rules:** muted `0` + trailing plus button
 - Both buttons emit `edit` with `{ id, name }` so the parent can open the editor sheet pre-filtered to this product
+- `loading` shows a loader in place of the count while a price break applies to the list
 - `readonly` mode shows the count as a link that emits `edit` (open a read-only panel) when above 0, or a muted `0` with no link — no tooltip or edit/add button. Used by read-only price grids
 
 ## Usage
@@ -75,6 +76,14 @@ readonly?: boolean
 ```
 
 Shows the tier count only: a link emitting `edit` when above 0, a muted `0` otherwise. No tooltip or edit/add button. Set by `addVolumePricingColumn(..., readonly)`.
+
+### `loading`
+
+```ts
+loading?: boolean
+```
+
+Shows a loader in place of the tier count and the edit/add button, at the button's height so the row doesn't jump. Set by `addVolumePricingColumn(..., isLoading)` while a price break applies to the whole list.
 
 ## Events
 

@@ -225,6 +225,10 @@ export default defineConfig({
                 text: 'usePriceListEditor',
                 link: '/composables/usePriceListEditor.md',
               },
+              {
+                text: 'usePriceListPendingFields',
+                link: '/composables/usePriceListPendingFields.md',
+              },
               { text: 'useWholesale', link: '/composables/useWholesale.md' },
               {
                 text: 'useWholesaleOrders',

@@ -102,6 +102,16 @@ Everything `PriceListEditor` binds: the selection (`productSelection`, `productS
 
 `unavailableRuleModes` holds the "Calculate by" modes no product in the list can use (no price → `discount`, no purchase price → `margin`), for both [`PriceListRulesWrapper`](/components/price-list/PriceListRulesWrapper)s. When it rules out the current mode, the base rule and volume pricing modes switch to the other one — unless both are ruled out. Volume pricing keeps its mode while it has global price breaks, since switching prompts to remove them.
 
+### Pending fields
+
+The grid shows a loader in the fields a preview is still working out, through the `loading` getters `setupPriceListColumns` gets:
+
+- **Row edit**: committing a row's list price, discount or margin marks that row's other two fields until its preview settles, success or error ([`usePriceListPendingFields`](usePriceListPendingFields.md)). Rows are tracked apart, so a second row's edit doesn't clear the first.
+- **Base rule** (Apply, Apply and overwrite): while `baseRuleLoading` is on, every price field of the rows the rule reprices — those without their own price at quantity 1 (`getBaseRuleProductIds`) — shows a loader.
+- **Price break** (volume pricing Apply): while `volumePricingLoading` is on, every row's volume pricing cell shows one.
+
+The rule inputs keep their own loaders as well.
+
 ## Notes
 
 - `editedProducts` is the single source of the manual rows: cell edits, the volume pricing panel and "Apply and overwrite" (via `usePriceListRules`) all write it, and a deep `flush: 'sync'` watcher copies it into `draft.products`, so the draft is current before the next preview reads it.
