@@ -133,7 +133,7 @@ curl -s https://studio-prod-app.azurewebsites.net/ | grep -o '<meta name="app-ve
 curl -s https://studio-prod-app-staging.azurewebsites.net/ | grep -o '<meta name="app-version"[^>]*>'
 ```
 
-Both hosts must show the new version before moving on. Check both Azure slots too: after the swap the production slot shows `X.Y.Z+<MAIN_SHA>` and the staging slot the previous release. Anything else means the staging slot didn't pull the new image, so the swap made an older build live. If any check fails, stop and report it before creating the GitHub release.
+Both hosts must show the new version before moving on. Check both Azure slots too: after the swap the production slot shows `X.Y.Z+<MAIN_SHA>` and the staging slot the previous release. Anything else means the staging slot didn't pull the new image, so the swap made an older build live. If any check fails, stop and report it before creating the GitHub release. For a lagging geins.studio, check the Vercel side with `vercel ls geins-studio --prod` and `vercel inspect <deployment-url> --logs`.
 
 ## 6. GitHub release
 
