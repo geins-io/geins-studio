@@ -14,6 +14,7 @@ This composable is specifically designed to work alongside other price list mana
 - **Custom pricing preservation** during product updates
 - **Loading states and error handling** with user-friendly feedback
 - **Flexible feedback options** for different update scenarios
+- **Overlapping calls** run once more after the running preview, so an edit made meanwhile is never dropped
 
 ## Usage
 
@@ -117,7 +118,9 @@ previewPriceList(
 ): Promise<void>
 ```
 
-Generates a price list preview by fetching products based on the current selection query and rules. Does nothing without `entityDataUpdate.productSelectionQuery` or while a preview is already running.
+Generates a price list preview by fetching products based on the current selection query and rules. Does nothing without `entityDataUpdate.productSelectionQuery`.
+
+A call made while a preview runs (a second row edit, say) changed the draft after the running preview sent it, so it previews once more when that one settles. Every call made meanwhile shares that one run: the last call's `feedbackMessage` and `showFeedback` win, and `updateProducts` is kept if any of them asked for it. The promise settles once the preview that includes the call does, so it's safe to clear per-call state (loaders) on it. It never rejects: a failed preview shows its error toast and resolves.
 
 - **Endpoint**: `productApi.priceList.id(entityId).preview(...)` (`POST /product/pricelist/{id}/preview`) for a saved list, `productApi.priceList.preview(...)` (`POST /product/pricelist/preview`) when `entityId` is `null`. Both send `{ priceList: entityDataUpdate, batchQuery }`.
 - **Parameters**:

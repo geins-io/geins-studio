@@ -167,6 +167,8 @@ export function usePriceListEditor({
   const columns = shallowRef<ColumnDef<PriceListProductList>[]>([]);
   const pinnedState = computed(() => getPinnedState.value);
 
+  const pendingFields = usePriceListPendingFields();
+
   const cellEditCallback = (
     value: string | number,
     row: Row<PriceListProductList>,
@@ -176,9 +178,21 @@ export function usePriceListEditor({
       getPriceListProduct(row.original._id, Number(value), field),
       editedProducts.value,
     );
-    previewPriceList(
-      t('price_updated_for', { name: row.original.name, id: row.original._id }),
+    pendingFields.trackEdit(row.original._id, field, () =>
+      previewPriceList(
+        t('price_updated_for', {
+          name: row.original.name,
+          id: row.original._id,
+        }),
+      ),
     );
+  };
+
+  const pendingCells = {
+    isFieldPending: (productId: string, field: PriceListRuleField) =>
+      pendingFields.isFieldPending(productId, field) ||
+      !!baseRuleProductIds.value?.has(productId),
+    isVolumePricingPending: () => volumePricingLoading.value,
   };
 
   const setupColumns = () => {
@@ -223,6 +237,7 @@ export function usePriceListEditor({
         cellEditCallback(value, row, 'discountPercent');
       },
       priceColumnTitle,
+      pendingCells,
     );
   };
 
@@ -344,6 +359,15 @@ export function usePriceListEditor({
   });
   const rulesProduct = computed(() =>
     selectedProducts.value.find((p) => p._id === rulesProductId.value),
+  );
+
+  // While a base rule applies, the rows it reprices show all their price fields as pending.
+  const baseRuleProductIds = computed(() =>
+    baseRuleLoading.value
+      ? new Set(
+          getBaseRuleProductIds(selectedProducts.value, editedProducts.value),
+        )
+      : null,
   );
 
   const unavailableRuleModes = computed(() =>

@@ -7,9 +7,11 @@ import {
   companyPriceListIdentifier,
   companyPriceListName,
   companyPriceListUpdateBody,
+  getBaseRuleProductIds,
   getCompanyPriceListSaveAction,
   getFreeCompanyPriceListSlots,
   getPriceListSummaryCounts,
+  getRecalculatedPriceListFields,
   getUnavailablePriceListFields,
   getUnavailablePriceListRuleModes,
   isCompanyPriceListEntryDirty,
@@ -635,5 +637,46 @@ describe('resolvePriceListRuleMode', () => {
     expect(resolvePriceListRuleMode('margin', ['discount', 'margin'])).toBe(
       'margin',
     );
+  });
+});
+
+describe('getRecalculatedPriceListFields', () => {
+  it('is the other two price fields', () => {
+    expect(getRecalculatedPriceListFields('margin')).toEqual([
+      'price',
+      'discountPercent',
+    ]);
+    expect(getRecalculatedPriceListFields('discountPercent')).toEqual([
+      'price',
+      'margin',
+    ]);
+    expect(getRecalculatedPriceListFields('price')).toEqual([
+      'discountPercent',
+      'margin',
+    ]);
+  });
+});
+
+describe('getBaseRuleProductIds', () => {
+  const rows = [{ _id: 'p1' }, { _id: 'p2' }, { _id: 'p3' }];
+
+  it('is every row without edits', () => {
+    expect(getBaseRuleProductIds(rows, [])).toEqual(['p1', 'p2', 'p3']);
+  });
+
+  it('leaves out rows with their own price at quantity 1', () => {
+    const edited: PriceListProduct[] = [
+      { productId: 'p1', price: 90, staggeredCount: 1 },
+      { productId: 'p2', margin: 0, staggeredCount: 1 },
+    ];
+    expect(getBaseRuleProductIds(rows, edited)).toEqual(['p3']);
+  });
+
+  it('keeps rows with only price breaks, or reset to the rule', () => {
+    const edited: PriceListProduct[] = [
+      { productId: 'p1', discountPercent: 10, staggeredCount: 5 },
+      { productId: 'p2', staggeredCount: 1 },
+    ];
+    expect(getBaseRuleProductIds(rows, edited)).toEqual(['p1', 'p2', 'p3']);
   });
 });

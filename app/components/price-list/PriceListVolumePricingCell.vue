@@ -7,6 +7,8 @@ const _props = defineProps<{
   vatDescription: string;
   /** Show the tier count only, as a link that emits `edit` when above 0. */
   readonly?: boolean;
+  /** Shows a loader in place of the tier count. */
+  loading?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -27,8 +29,14 @@ const emit = defineEmits<{
       <span v-else class="text-muted-foreground tabular-nums">0</span>
     </div>
     <div v-else class="flex w-full items-center justify-center">
+      <!-- h-6 matches the edit button, so the row keeps its height. -->
+      <div v-if="loading" class="flex h-6 w-full items-center">
+        <LucideLoaderCircle
+          class="text-muted-foreground size-3.5 animate-spin"
+        />
+      </div>
       <div
-        v-if="volumePricing.length > 0"
+        v-else-if="volumePricing.length > 0"
         class="flex w-full items-center justify-between gap-2"
       >
         <ContentTextTooltip>

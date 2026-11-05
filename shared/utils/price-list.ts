@@ -396,3 +396,41 @@ export function resolvePriceListRuleMode(
     ? other
     : mode;
 }
+
+/** The three grid fields that set a product's list price. */
+export const PRICE_LIST_PRICE_FIELDS: PriceListRuleField[] = [
+  'price',
+  'discountPercent',
+  'margin',
+];
+
+/** The fields a preview works out again after `changed` is edited: the other two. */
+export function getRecalculatedPriceListFields(
+  changed: PriceListRuleField,
+): PriceListRuleField[] {
+  return PRICE_LIST_PRICE_FIELDS.filter((field) => field !== changed);
+}
+
+/**
+ * The products a base rule reprices: those without their own price (at
+ * quantity 1) in `editedProducts`.
+ */
+export function getBaseRuleProductIds(
+  products: Pick<PriceListProductList, '_id'>[],
+  editedProducts: PriceListProduct[],
+): string[] {
+  const ownPrice = new Set(
+    editedProducts
+      .filter(
+        (product) =>
+          product.staggeredCount === 1 &&
+          (product.price != null ||
+            product.margin != null ||
+            product.discountPercent != null),
+      )
+      .map((product) => product.productId),
+  );
+  return products
+    .map((product) => product._id)
+    .filter((id) => !ownPrice.has(id));
+}

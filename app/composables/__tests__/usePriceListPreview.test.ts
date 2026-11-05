@@ -121,4 +121,47 @@ describe('usePriceListPreview', () => {
       { _id: '42', productId: 'p2', price: 80, staggeredCount: 1 },
     ]);
   });
+
+  it('previews again once a running preview settles, for a call made meanwhile', async () => {
+    let settleFirst!: (value: ProductPriceList) => void;
+    newPreview.mockImplementationOnce(
+      () => new Promise((resolve) => (settleFirst = resolve)),
+    );
+    const { previewPriceList, updateInProgress } = setup(null, withSelection);
+
+    const first = previewPriceList('first');
+    const second = previewPriceList('second');
+    expect(newPreview).toHaveBeenCalledOnce();
+    expect(updateInProgress.value).toBe(true);
+
+    settleFirst(response);
+    await second;
+    await first;
+    expect(newPreview).toHaveBeenCalledTimes(2);
+    expect(toast).toHaveBeenLastCalledWith(
+      expect.objectContaining({ title: 'second' }),
+    );
+    expect(updateInProgress.value).toBe(false);
+  });
+
+  it('runs the calls made during a preview as one, keeping any product update', async () => {
+    let settleFirst!: (value: ProductPriceList) => void;
+    newPreview.mockImplementationOnce(
+      () => new Promise((resolve) => (settleFirst = resolve)),
+    );
+    const { previewPriceList, onUpdateProducts } = setup(null, withSelection);
+
+    const first = previewPriceList('first');
+    const updating = previewPriceList(undefined, true, false);
+    const last = previewPriceList('last');
+    expect(updating).toBe(last);
+
+    settleFirst(response);
+    await Promise.all([first, last]);
+    expect(newPreview).toHaveBeenCalledTimes(2);
+    expect(onUpdateProducts).toHaveBeenCalledOnce();
+    expect(toast).toHaveBeenLastCalledWith(
+      expect.objectContaining({ title: 'last' }),
+    );
+  });
 });

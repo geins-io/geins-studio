@@ -109,6 +109,7 @@ The pricing domain has the most composables (7), each with a focused responsibil
 | `usePriceListRules`         | Global volume pricing rule management                                     |
 | `usePriceListVolumePricing` | Per-product volume pricing panel interactions                             |
 | `usePriceListPreview`       | Preview endpoint calls and result handling                                |
+| `usePriceListPendingFields` | Which grid price fields a row edit's preview is still working out         |
 | `usePrice`                  | Price/currency formatting and conversion utilities                        |
 
 `usePriceListEditor` composes the rest (hosts: the price list page and the company page's `CompanyPriceListEditor`): `usePriceListProducts` manages the data, `usePriceListProductsTable` renders it, `usePriceListRules`/`usePriceListVolumePricing` handle the rules UI, and `usePriceListPreview` coordinates live calculations. It takes its list as input (an id and a draft it reads channel, currency and VAT from and writes rules, selection and products to), and `<PriceListEditor :editor>` renders it, so any page can host a list's editor.
@@ -131,14 +132,14 @@ The price list page (`[id].vue`) creates the editor in its own setup — the tab
 
 ## Key Files
 
-| Layer       | Path                                                                                                                                                                                |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Types       | `shared/types/Product.ts` (price list types colocated with product types)                                                                                                           |
-| Utils       | `shared/utils/price-list.ts` (`isOwnAccountPriceList`, `getUnavailablePriceListFields`)                                                                                             |
-| Repository  | `app/utils/repositories/product.ts` (`.priceList` sub-repo)                                                                                                                         |
-| Composables | `usePriceListEditor.ts`, `usePriceListProducts.ts`, `usePriceListProductsTable.ts`, `usePriceListRules.ts`, `usePriceListVolumePricing.ts`, `usePriceListPreview.ts`, `usePrice.ts` |
-| Components  | `app/components/price-list/`                                                                                                                                                        |
-| Pages       | `app/pages/pricing/price-lists/index.vue`, `[id].vue`                                                                                                                               |
+| Layer       | Path                                                                                                                                                                                                                |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Types       | `shared/types/Product.ts` (price list types colocated with product types)                                                                                                                                           |
+| Utils       | `shared/utils/price-list.ts` (`isOwnAccountPriceList`, `getUnavailablePriceListFields`)                                                                                                                             |
+| Repository  | `app/utils/repositories/product.ts` (`.priceList` sub-repo)                                                                                                                                                         |
+| Composables | `usePriceListEditor.ts`, `usePriceListProducts.ts`, `usePriceListProductsTable.ts`, `usePriceListRules.ts`, `usePriceListVolumePricing.ts`, `usePriceListPreview.ts`, `usePriceListPendingFields.ts`, `usePrice.ts` |
+| Components  | `app/components/price-list/`                                                                                                                                                                                        |
+| Pages       | `app/pages/pricing/price-lists/index.vue`, `[id].vue`                                                                                                                                                               |
 
 ## Decision Log
 
