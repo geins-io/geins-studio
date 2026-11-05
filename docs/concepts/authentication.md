@@ -9,7 +9,7 @@ The files you will find in the `server` directory that are handling authenticati
 
 - `server/api/auth/[...].ts` - The catch-all for auth requests containing the [NuxtAuthHandler](https://auth.sidebase.io/guide/authjs/nuxt-auth-handler)
 - `server/utils/auth.ts` - A utility file with all Geins-specific authentication logic
-- `shared/utils/auth-session.ts` - Pure session decisions used by the `NuxtAuthHandler` callbacks: the token after a refresh succeeds or fails, and the session built from a token
+- `shared/utils/auth-session.ts` - Pure session decisions used by the `NuxtAuthHandler` callbacks: the one retry of a refresh answered `403`, the token after a refresh succeeds or fails, and the session built from a token
 - `server/api/[...].ts` - The API proxy. It turns the `x-access-token` header into a Bearer `authorization` and forwards only allowlisted headers (`pickUpstreamHeaders` in `shared/utils/proxy-headers.ts`), so the session cookie, which holds the tokens, never reaches the Geins API
 
 ## Application Files
@@ -72,15 +72,17 @@ nuxt-auth's own session refetches (`sessionRefresh.enableOnWindowFocus` / `enabl
 
 The `jwt` and `session` callbacks never throw: next-auth 4 clears the session cookie whenever one of them does, so a throw is a logout. A failed refresh is recorded on the token instead, and reaches the client as `session.error` (`sessionError` in `useGeinsAuth`):
 
-| Refresh result                                    | Token                    | `session.error`       | Effect                                                           |
-| ------------------------------------------------- | ------------------------ | --------------------- | ---------------------------------------------------------------- |
-| Success                                           | New tokens, same account | —                     | Error cleared                                                    |
-| `401`, `403`, any other `4xx` but `408` and `429` | Tokens dropped           | `RefreshTokenInvalid` | `isAuthenticated: false`; the client decides to log out          |
-| `5xx`, `408`, `429`, network error, timeout       | Kept as is               | `RefreshFailed`       | User stays logged in; the next session fetch retries the refresh |
+| Refresh result                                                      | Token                    | `session.error`       | Effect                                                           |
+| ------------------------------------------------------------------- | ------------------------ | --------------------- | ---------------------------------------------------------------- |
+| Success, first try or after a `403`                                 | New tokens, same account | —                     | Error cleared                                                    |
+| `401`, `403` twice in a row, any other `4xx` but `408` and `429`    | Tokens dropped           | `RefreshTokenInvalid` | `isAuthenticated: false`; the client decides to log out          |
+| `5xx`, `408`, `429`, network error, timeout (also on the 403 retry) | Kept as is               | `RefreshFailed`       | User stays logged in; the next session fetch retries the refresh |
 
 Geins answers an expired refresh token with `403`, not `401`, so every `4xx` except "try again later" (`408`, `429`) ends the session. Keeping the token on one would leave a session that looks signed in while every API call fails with the expired access token, and the refresh is retried forever.
 
-Calls to the Geins auth endpoints time out after 10 seconds, so a hung refresh becomes a retryable `RefreshFailed` instead of running into the function timeout.
+A `403` is retried once first (`refreshWithRetry`). Geins also answers `403`, with the same body, when its own check of the token fails (a SQL or Key Vault error), and until the backend answers that with a `5xx` instead, Studio can't tell a short outage from a dead token. Without the retry, a blip logs out everyone who refreshes during it. The `jwt` callback waits a jittered 300–800 ms and refreshes again with the **same** refresh token. A dead token stays dead, so the retry costs one request. Reusing the token is safe: Geins refuses it only once a refresh with it has finished, and two refreshes with one token at the same moment both succeed. The retry's own result decides the row above. Nothing else is retried: other `4xx` are final, and `5xx`, network errors and timeouts already keep the session. The client can't do this retry itself, because the server has already dropped the refresh token by the time the client sees `RefreshTokenInvalid`.
+
+Calls to the Geins auth endpoints time out after 10 seconds, so a hung refresh becomes a retryable `RefreshFailed` instead of running into the function timeout. With the `403` retry, a refresh takes at most about 21 seconds: a `403` just inside the timeout, the 800 ms pause, and a retry that times out. A `403` normally comes back fast, so the usual cost of the retry is the pause.
 
 On `RefreshTokenInvalid`, `auth-state.ts` waits 1.5 seconds and re-reads the session once, under the lock: another tab or server instance may have just rotated the token, and its cookie wins. Only if the session is still invalid does the tab log out.
 
