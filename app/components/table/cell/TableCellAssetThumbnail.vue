@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { AssetType } from '#shared/types';
 import { assetPreviewUrl } from '#shared/utils/asset';
-import { cn } from '@/utils/index';
 
 /**
  * Table cell rendering an asset thumbnail — image/SVG assets render their file

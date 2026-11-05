@@ -26,13 +26,6 @@ import {
 import { ENTITIES } from '#shared/utils/entities';
 import defaultStorefrontSchema from '@/assets/schemas/storefront-settings-default.json';
 import { useToast } from '@/components/ui/toast/use-toast';
-import {
-  applySchemaChange,
-  deepMerge,
-  getDefaultSettings,
-  resetStorefrontToDefault,
-  resolveStorefrontSchema,
-} from '@/utils/storefront';
 
 // =====================================================================================
 // COMPOSABLES & STORES

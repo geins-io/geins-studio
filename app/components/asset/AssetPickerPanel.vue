@@ -8,7 +8,6 @@ import type {
 import { TableMode } from '#shared/types';
 import { assetListOptions } from '#shared/utils/asset';
 import { ENTITIES } from '#shared/utils/entities';
-import { cn } from '@/utils/index';
 import type { ColumnDef } from '@tanstack/vue-table';
 
 /**

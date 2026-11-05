@@ -22,7 +22,7 @@ Skills are project files at `.agents/skills/{name}/SKILL.md`. **To use one, READ
 
 - NEVER add `_id: string` or `_type: string` directly to any interface — use `ResponseEntity<Base>` or extend `EntityBase`. Applies to all response types including sub-entities and auxiliary types
 - NEVER `console.log` — use `useGeinsLog('scope')` | NEVER create shadcn-vue manually — use CLI
-- NEVER import auto-imported composables/utils/components | NEVER custom unsaved-changes tracking
+- NEVER import auto-imported composables/utils/components (ESLint blocks value imports from `@/utils`/`@/composables`; `import type` is fine) | NEVER custom unsaved-changes tracking
 - NEVER inline template literals for names — use `fullName()` | NEVER cast `entityDataUpdate` to response type
 - NEVER use `as unknown as` type casts — reshape data to fit the target type instead (e.g. `.map(x => x._id)` to get `string[]`)
 - NEVER spread `entityDataUpdate` in `prepareUpdateData` | NEVER modify `ui/table/` primitives for modes

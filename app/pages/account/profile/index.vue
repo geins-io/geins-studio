@@ -7,7 +7,6 @@ import * as z from 'zod';
 import { DataItemDisplayType } from '#shared/types';
 import { ENTITIES } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
-import { createPasswordChangeSchema } from '@/utils/password-validation';
 
 // =====================================================================================
 // COMPOSABLES & STORES
