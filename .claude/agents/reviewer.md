@@ -38,7 +38,7 @@ Return only this:
 
 **Verdict:** ship | fix first
 
-| # | Severity | File:line | Finding | Failure scenario | Suggested fix |
-| - | -------- | --------- | ------- | ---------------- | ------------- |
+| #   | Severity | File:line | Finding | Failure scenario | Suggested fix |
+| --- | -------- | --------- | ------- | ---------------- | ------------- |
 
 Severity: `blocker` (bug, hard-block violation, unmet criterion) · `should` (convention, missing test or docs) · `nit` (at most 3). An empty table with "ship" is a valid answer — never invent findings.
