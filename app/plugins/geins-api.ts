@@ -1,5 +1,6 @@
 import type { GeinsApiError, GeinsApiFetch } from '#shared/types';
 import { resolveAppId } from '#shared/utils/app';
+import { createUnauthorizedRecovery } from '#shared/utils/auth-recovery';
 import { tunnelIfMatch } from '#shared/utils/proxy-headers';
 /**
  * Nuxt plugin for handling Geins API requests.
@@ -14,19 +15,38 @@ import { tunnelIfMatch } from '#shared/utils/proxy-headers';
  * The plugin uses the `useGeinsAuth` composable to manage authentication state and token refresh.
  * It intercepts API requests to check token expiration and refresh the token if necessary, through
  * `useGeinsAuth().refresh` (one refresh in flight per tab, one at a time across tabs).
- * A request that fails with a 401 is retried once; `onRequest` re-runs and picks up the refreshed token.
+ * A 401 to a token the tab still holds forces a refresh (`useGeinsAuth().forceRefresh`) and
+ * retries the request once; `onRequest` re-runs and picks up the new token. A 401 to that retry
+ * logs out (`createUnauthorizedRecovery`).
  */
 
 export default defineNuxtPlugin(() => {
-  const { geinsLog, geinsLogError } = useGeinsLog('plugins/geins-api.ts');
+  const { geinsLog, geinsLogError, geinsLogWarn } = useGeinsLog(
+    'plugins/geins-api.ts',
+  );
   // The global error toast emitter lives in the useApiErrorToast composable.
   // Keeping NuxtApp/$i18n out of THIS file is deliberate: referencing them here
   // re-instantiates the provided $geinsApiFetchInstance type and tips Nitro's
   // route-type resolution over the "excessive stack depth" limit (see the
   // GeinsApiFetch note below).
   const { showGlobalErrorToast } = useApiErrorToast();
-  const { accessToken, accountKey, refresh, isExpired, expiresSoon } =
-    useGeinsAuth();
+  const {
+    accessToken,
+    accountKey,
+    isAuthenticated,
+    refresh,
+    forceRefresh,
+    logout,
+    isExpired,
+    expiresSoon,
+  } = useGeinsAuth();
+  const router = useRouter();
+  const recoverFromUnauthorized = createUnauthorizedRecovery({
+    forceRefresh,
+    logout,
+    onError: (error) =>
+      geinsLogWarn('recovering from a rejected token failed:', error),
+  });
   const appId = resolveAppId(
     useRuntimeConfig().public.appId as string,
     window.location.hostname,
@@ -184,6 +204,25 @@ export default defineNuxtPlugin(() => {
         } ::: `,
         geinsApiError,
       );
+
+      if (
+        response.status === 401 &&
+        (await recoverFromUnauthorized({
+          status: response.status,
+          sentToken: options.headers.get('x-access-token') ?? undefined,
+          currentToken: accessToken.value,
+          isAuthenticated: isAuthenticated.value,
+          onAuthPage: router.currentRoute.value.path.startsWith('/auth'),
+          retried: !!options.authRetried,
+        }))
+      ) {
+        // Returning without a throw hands the 401 to ofetch's retry (it's in
+        // `retryStatusCodes`), which re-runs `onRequest` with the new token.
+        options.retry = 1;
+        options.retryDelay = 0;
+        options.authRetried = true;
+        return;
+      }
 
       // Surface mutation failures globally. Reads (GET/HEAD) render page-level
       // error/empty states instead, and 401 is the silent token refresh/retry

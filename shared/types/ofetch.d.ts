@@ -25,5 +25,10 @@ declare module 'ofetch' {
      * `useApiErrorToast`) — so it cannot swallow a concurrent unrelated failure.
      */
     suppressErrorToast?: boolean;
+    /**
+     * Internal to `$geinsApi`: set on the one retry after a 401 forced a token
+     * refresh, so a 401 to the retry logs out instead of refreshing again.
+     */
+    authRetried?: boolean;
   }
 }

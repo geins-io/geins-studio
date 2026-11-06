@@ -15,6 +15,8 @@ The `useUserStore` Pinia store provides centralized user data management and com
 - `geins-global.ts` awaits `init()` at boot when the user is authenticated (pages read `user` synchronously, e.g. per-user cookies), calls it again on login, and calls `reset()` on logout.
 - The login page calls `init()` before showing account selection, since that happens before an account key is set.
 - Concurrent `init()` calls share one request. A failed load is logged and leaves `user` as it was.
+- A transient failure (no response, `408`, `429`, `5xx`) is retried in the background up to four times, after 1, 2, 5 and 10 seconds (`userLoadRetryDelay` in `shared/utils/auth-recovery.ts`); `init()` itself resolves after the first attempt, so boot never waits on the retries. It never signs the user out. A `401` is left to `$geinsApi`, which forces a token refresh and logs out if the API rejects the new token too (see [When the API rejects a token](/concepts/authentication#when-the-api-rejects-a-token)). `reset()` cancels a pending retry.
+- While `user` is unset, the sidebar shows a skeleton in its place ([`LayoutSidebarUser`](/components/layout/sidebar/LayoutSidebarUser)). No getter returns a placeholder such as "N/A".
 
 ## Usage
 
@@ -47,7 +49,7 @@ A `computed` property that generates user initials with intelligent fallback log
   2. If only `firstName` exists (≥2 chars): First two letters (e.g., "John" → "JO")
   3. If only `lastName` exists (≥2 chars): First two letters (e.g., "Doe" → "DO")
   4. Fallback to first two letters of email address
-  5. Final fallback: "N/A"
+  5. Otherwise, and while `user` is unset: an empty string
 
 ### `userName`
 
@@ -62,7 +64,7 @@ A `computed` property that returns the full name by concatenating first and last
 A `computed` property that returns the user's email address.
 
 - **Type**: `ComputedRef<string>`
-- **Fallback**: "N/A" if email is not available
+- **Fallback**: an empty string while `user` is unset
 
 ## Methods
 
@@ -72,7 +74,7 @@ A `computed` property that returns the user's email address.
 init(): Promise<void>
 ```
 
-Loads the signed-in user from `user/me` with accounts. Concurrent calls share one request.
+Loads the signed-in user from `user/me` with accounts. Concurrent calls share one request; a transient failure is retried in the background (see [Loading](#loading)).
 
 ### `reset`
 

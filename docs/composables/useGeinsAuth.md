@@ -33,6 +33,7 @@ const {
   setAccount,
   logout,
   refresh,
+  forceRefresh,
   syncSession,
   parseToken,
   isExpired,
@@ -135,6 +136,18 @@ Re-reads the session from the server, which refreshes the access token if it is 
 - **Returns:** A promise that resolves to the updated session
 
 When the access token changed, `refresh` signals the other tabs (`session-changed`).
+
+### `forceRefresh`
+
+```ts
+forceRefresh(rejectedToken: string | undefined): Promise<Session>
+```
+
+Refreshes the access token now, even though it hasn't expired, and resolves with the session after it. `rejectedToken` is the token the API answered `401` to; it's taken before the wait for the lock, so a token the tab adopted meanwhile isn't mistaken for it. `$geinsApi` calls it when the API answers `401` to the token this tab holds (see [When the API rejects a token](/concepts/authentication#when-the-api-rejects-a-token)). It posts `{ forceRefresh: true, rejectedToken }` to the session endpoint, which runs the `jwt` callback with `trigger: 'update'`, then re-reads the session so nuxt-auth's state holds it. The server refreshes only while the cookie still holds the rejected token, so a token another tab already rotated isn't revoked again.
+
+Single-flight like `refresh`: concurrent calls in a tab share one call (the first caller's `rejectedToken` counts), and calls across tabs run one at a time under the same Web Lock. A failed refresh comes back as `sessionError`, as with `refresh`. When the access token changed, it signals the other tabs (`session-changed`).
+
+- **Returns:** A promise that resolves to the updated session
 
 ### `syncSession`
 
@@ -249,6 +262,7 @@ interface UseGeinsAuthReturnType {
   setAccount: (accountKey: string) => Promise<any>;
   logout: () => Promise<void>;
   refresh: () => Promise<Session>;
+  forceRefresh: (rejectedToken: string | undefined) => Promise<Session>;
   syncSession: () => Promise<Session>;
   parseToken: (token?: string | null) => any | null;
   isExpired: (token?: string | null) => boolean;

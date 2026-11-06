@@ -81,6 +81,17 @@ export interface AuthAccounts {
 }
 
 /**
+ * Session update data that asks the server to refresh now, sent after the API
+ * answered 401 to a token that hasn't expired. `rejectedToken` is the access
+ * token the client holds; the server refreshes only while the cookie still
+ * holds it, so a token another tab already rotated isn't revoked again.
+ */
+export interface ForceRefreshRequest {
+  forceRefresh: true;
+  rejectedToken: string | undefined;
+}
+
+/**
  * Cross-tab auth signal on the `geins-auth` BroadcastChannel. Signals only —
  * never tokens or sessions: tabs share the session cookie, so a receiver
  * re-reads its own session and decides for itself.

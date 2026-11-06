@@ -6,6 +6,7 @@ import {
   refreshRetryDelay,
   refreshWithRetry,
   sessionFromToken,
+  shouldForceRefresh,
   tokenAfterRefresh,
   tokenAfterRefreshError,
 } from '../auth-session';
@@ -318,6 +319,43 @@ describe('tokenAfterRefresh', () => {
     expect(tokenAfterRefreshError(authenticatedToken, thrown).error).toBe(
       'RefreshFailed',
     );
+  });
+});
+
+describe('shouldForceRefresh', () => {
+  const forceRefresh = {
+    forceRefresh: true,
+    rejectedToken: authenticatedToken.accessToken,
+  };
+
+  it('forces a refresh of the rejected token', () => {
+    expect(shouldForceRefresh(authenticatedToken, forceRefresh)).toBe(true);
+  });
+
+  it("doesn't refresh a token another tab already rotated", () => {
+    expect(
+      shouldForceRefresh(authenticatedToken, {
+        ...forceRefresh,
+        rejectedToken: 'an-older-token',
+      }),
+    ).toBe(false);
+  });
+
+  it.each([
+    ['no update data', undefined],
+    ['other update data', { accountKey: 'account-2' }],
+    ['forceRefresh not true', { ...forceRefresh, forceRefresh: 'yes' }],
+  ])("doesn't refresh on %s", (_, update) => {
+    expect(shouldForceRefresh(authenticatedToken, update)).toBe(false);
+  });
+
+  it("doesn't refresh a session without tokens", () => {
+    expect(
+      shouldForceRefresh(
+        { isAuthenticated: false, error: 'RefreshTokenInvalid' },
+        { forceRefresh: true, rejectedToken: undefined },
+      ),
+    ).toBe(false);
   });
 });
 

@@ -3,6 +3,7 @@ import type { LoginCredentials, AuthResponse, AuthTokens } from '#shared/types';
 import {
   refreshWithRetry,
   sessionFromToken,
+  shouldForceRefresh,
   tokenAfterRefresh,
   tokenAfterRefreshError,
 } from '#shared/utils/auth-session';
@@ -22,19 +23,24 @@ export default NuxtAuthHandler({
   callbacks: {
     // Neither callback may throw: next-auth 4 clears the session cookie on any
     // throw here, which turned a Geins hiccup into a logout.
-    jwt: async ({ token, user, trigger }) => {
+    jwt: async ({ token, user, trigger, session }) => {
       if (trigger === 'signIn' && user) {
         // Our session data comes back from `authorize` as the user object
         return { ...user };
       }
-      // Only a plain session read refreshes: a sign-in has just minted fresh
-      // tokens, and `update` isn't used.
-      if (
-        trigger !== undefined ||
-        user !== undefined ||
-        !geinsAuth.shouldRefresh(token)
-      ) {
+      // A plain session read refreshes a token that is due; a sign-in has just
+      // minted fresh tokens. `update` is used only to force a refresh, after
+      // the API answered 401 to a token that hasn't expired.
+      const due =
+        trigger === undefined &&
+        user === undefined &&
+        geinsAuth.shouldRefresh(token);
+      const forced = trigger === 'update' && shouldForceRefresh(token, session);
+      if (!due && !forced) {
         return token;
+      }
+      if (forced) {
+        geinsLogWarn('jwt ::: the API rejected the token, forcing a refresh');
       }
       // Returned as spreads: `JWT` has an index signature the `Session`
       // interface lacks.
