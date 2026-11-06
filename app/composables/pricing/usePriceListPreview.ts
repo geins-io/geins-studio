@@ -109,6 +109,7 @@ export function usePriceListPreview({
         call,
         done: running.then(() => {
           queued = null;
+          running = null;
           const { call } = next;
           return previewPriceList(
             call.feedbackMessage,
@@ -123,7 +124,9 @@ export function usePriceListPreview({
 
     running = runPreview(feedbackMessage, updateProducts, showFeedback).finally(
       () => {
-        running = null;
+        // A queued call takes over in its own callback a tick later; until
+        // then, a new call joins it rather than starting a run of its own.
+        if (!queued) running = null;
       },
     );
     return running;

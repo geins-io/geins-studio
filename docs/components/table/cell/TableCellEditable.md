@@ -114,7 +114,7 @@ columnCellProps: {
 loading?: boolean | ((row: Row<T>) => boolean)
 ```
 
-Shows the input's loader (`Input` `loading`). Like `disabled`, a function is read inside the cell, so the columns are built once and a change re-renders only the cells whose state changed. Off by default. The price list grid sets it while a preview works out a row's other price fields.
+Shows the input's loader (`Input` `loading`). Like `disabled`, a function is read inside the cell, so turning the loader on or off needs no new columns and re-renders only the cells whose state changed. Off by default. The price list grid sets it while a preview works out a row's other price fields.
 
 ```ts
 columnCellProps: {
