@@ -8,6 +8,7 @@ const { session, setAccount, logout } = useGeinsAuth();
 const userStore = useUserStore();
 const { showErrorToast } = usePageError();
 const {
+  user,
   userName,
   userInitials,
   userEmail,
@@ -44,17 +45,27 @@ const setNewAccount = async (accountKey: string) => {
             size="lg"
             class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
           >
-            <Avatar class="mr-1 size-8 rounded-lg">
-              <AvatarFallback class="rounded-lg">
-                {{ userInitials }}
-              </AvatarFallback>
-            </Avatar>
-            <div class="grid flex-1 text-left text-sm leading-tight">
-              <span v-if="userName" class="truncate font-semibold">
-                {{ userName }}
-              </span>
-              <span class="truncate text-xs">{{ userEmail }}</span>
-            </div>
+            <template v-if="user">
+              <Avatar class="mr-1 size-8 rounded-lg">
+                <AvatarFallback class="rounded-lg">
+                  {{ userInitials }}
+                </AvatarFallback>
+              </Avatar>
+              <div class="grid flex-1 text-left text-sm leading-tight">
+                <span v-if="userName" class="truncate font-semibold">
+                  {{ userName }}
+                </span>
+                <span class="truncate text-xs">{{ userEmail }}</span>
+              </div>
+            </template>
+            <template v-else>
+              <!-- Loading, or retrying a failed load; the menu stays usable -->
+              <Skeleton class="mr-1 size-8 shrink-0 rounded-lg" />
+              <div class="grid flex-1 gap-1.5">
+                <Skeleton class="h-3.5 w-24 rounded-md" />
+                <Skeleton class="h-3 w-32 rounded-md" />
+              </div>
+            </template>
             <LucideEllipsisVertical class="ml-auto size-4" />
           </SidebarMenuButton>
         </DropdownMenuTrigger>
@@ -64,7 +75,7 @@ const setNewAccount = async (accountKey: string) => {
           align="end"
           :side-offset="4"
         >
-          <DropdownMenuLabel class="p-0 font-normal">
+          <DropdownMenuLabel v-if="user" class="p-0 font-normal">
             <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
               <Avatar class="mr-1 size-8 rounded-lg">
                 <AvatarFallback class="rounded-lg border">
@@ -104,7 +115,7 @@ const setNewAccount = async (accountKey: string) => {
             </DropdownMenuPortal>
           </DropdownMenuSub>
 
-          <DropdownMenuSeparator />
+          <DropdownMenuSeparator v-if="user" />
           <DropdownMenuGroup>
             <DropdownMenuItem as-child>
               <NuxtLink :to="`/account/profile`">
