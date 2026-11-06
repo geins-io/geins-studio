@@ -69,7 +69,7 @@ Disables the mode `Select`. Slot content handles its own disabled state.
 unavailableModes?: PriceListRuleMode[]
 ```
 
-Modes no product in the list can use (`getUnavailablePriceListRuleModes`): `discount` when no product has a price, `margin` when none has a purchase price. Each is a disabled option, and its reason shows as helper text under the options — a disabled item takes no pointer events, so it can't hold a tooltip. The host keeps `mode` off a disabled option (`usePriceListEditor` switches to the other one).
+Modes no product in the list can use (`getUnavailablePriceListRuleModes`): `discount` when no product has a price, `margin` when none has a purchase price. Each is a disabled option, and its reason shows as helper text under the options — a disabled item takes no pointer events, so it can't hold a tooltip. The option points at its reason with `aria-describedby` (`{modeId}-{mode}-reason`), so screen readers read it too. The host keeps `mode` off a disabled option (`usePriceListEditor` switches to the other one).
 
 - **Default:** `[]`
 

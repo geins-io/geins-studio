@@ -18,12 +18,15 @@ const mode = defineModel<PriceListRuleMode>('mode', { required: true });
 
 const { t } = useI18n();
 const modes: PriceListRuleMode[] = ['discount', 'margin'];
+const reasonId = (item: PriceListRuleMode) => `${props.modeId}-${item}-reason`;
 const unavailableReasons = computed(() =>
-  props.unavailableModes.map((item) =>
-    item === 'discount'
-      ? t('pricing.price_list_no_product_price')
-      : t('pricing.price_list_no_product_purchase_price'),
-  ),
+  props.unavailableModes.map((item) => ({
+    id: reasonId(item),
+    text:
+      item === 'discount'
+        ? t('pricing.price_list_no_product_price')
+        : t('pricing.price_list_no_product_purchase_price'),
+  })),
 );
 </script>
 
@@ -56,16 +59,20 @@ const unavailableReasons = computed(() =>
               :key="item"
               :value="item"
               :disabled="unavailableModes.includes(item)"
+              :aria-describedby="
+                unavailableModes.includes(item) ? reasonId(item) : undefined
+              "
             >
               {{ $t(item) }}
             </SelectItem>
             <!-- A disabled item takes no pointer events, so its reason sits below the items. -->
             <p
               v-for="reason in unavailableReasons"
-              :key="reason"
+              :id="reason.id"
+              :key="reason.id"
               class="text-muted-foreground max-w-56 px-2 py-1.5 text-xs whitespace-normal"
             >
-              {{ reason }}
+              {{ reason.text }}
             </p>
           </SelectContent>
         </Select>

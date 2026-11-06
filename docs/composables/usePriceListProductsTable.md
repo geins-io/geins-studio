@@ -84,7 +84,7 @@ Creates a complete column configuration for price list products with all necessa
   - `onMarginBlur`: Handler for margin field blur events
   - `onDiscountBlur`: Handler for discount field blur events
   - `listPriceTitle`: Title of the editable list price column, suffixed with `vatDescription`. Defaults to "Price list price"; the company editor passes `t('pricing.company_price')`
-  - `pending`: what a preview is still working out. `isFieldPending` drives the `loading` of the list price (`price`), discount (`discountPercent`) and margin (`margin`) inputs, `isVolumePricingPending` the volume pricing cell's. Both are read inside the cells, so the columns aren't rebuilt and only the cells whose state changed re-render. Without it, no loaders show
+  - `pending`: what a preview is still working out. `isFieldPending` drives the `loading` of the list price (`price`), discount (`discountPercent`) and margin (`margin`) inputs, `isVolumePricingPending` the volume pricing cell's. Both are read inside the cells, so a loader turns on or off without new columns and re-renders only the cells whose state changed (the settled preview rebuilds the columns as before). Without it, no loaders show
 
 - **Returns**: Complete array of column definitions
 - **Features**: Editable columns, actions, volume pricing, price modes. The editable list price column is highlighted (`meta.highlight`), as in the read-only grid

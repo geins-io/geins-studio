@@ -164,4 +164,25 @@ describe('usePriceListPreview', () => {
       expect.objectContaining({ title: 'last' }),
     );
   });
+
+  it('joins a queued preview for a call made as the running one settles', async () => {
+    let settleFirst!: (value: ProductPriceList) => void;
+    newPreview.mockImplementationOnce(
+      () => new Promise((resolve) => (settleFirst = resolve)),
+    );
+    const { previewPriceList } = setup(null, withSelection);
+
+    const first = previewPriceList('first');
+    // Chained before the queued call, so it runs once the first preview
+    // settles but before the queued run starts.
+    const late = first.then(() => previewPriceList('late'));
+    const queuedCall = previewPriceList('queued');
+
+    settleFirst(response);
+    await Promise.all([first, queuedCall, late]);
+    expect(newPreview).toHaveBeenCalledTimes(2);
+    expect(toast).toHaveBeenLastCalledWith(
+      expect.objectContaining({ title: 'late' }),
+    );
+  });
 });
