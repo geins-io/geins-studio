@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { ComboboxPortal } from 'reka-ui';
-import {
-  storefrontFonts,
-  storefrontFontsCssUrl,
-  fontFallback,
-  type StorefrontFont,
-} from '@/utils/storefrontFonts';
+import type { StorefrontFont } from '@/utils/storefrontFonts';
 
 const model = defineModel<string>();
 

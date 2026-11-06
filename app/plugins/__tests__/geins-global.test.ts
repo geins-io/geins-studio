@@ -3,9 +3,10 @@ import { mockNuxtImport } from '@nuxt/test-utils/runtime';
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { computed, nextTick, ref } from 'vue';
 
-const { accountStore, productsStore } = vi.hoisted(() => ({
+const { accountStore, productsStore, userStore } = vi.hoisted(() => ({
   accountStore: { init: vi.fn(), reset: vi.fn() },
   productsStore: { reset: vi.fn() },
+  userStore: { init: vi.fn(), reset: vi.fn() },
 }));
 
 const status = ref<'loading' | 'authenticated' | 'unauthenticated'>(
@@ -17,6 +18,7 @@ mockNuxtImport('useAuth', () => () => ({ status }));
 mockNuxtImport('useGeinsAuth', () => () => ({ isAuthenticated }));
 mockNuxtImport('useAccountStore', () => () => accountStore);
 mockNuxtImport('useProductsStore', () => () => productsStore);
+mockNuxtImport('useUserStore', () => () => userStore);
 
 import geinsGlobal from '../geins-global';
 
@@ -43,6 +45,8 @@ describe('geins-global plugin', () => {
     expect(productsStore.reset).not.toHaveBeenCalled();
     expect(accountStore.reset).not.toHaveBeenCalled();
     expect(accountStore.init).not.toHaveBeenCalled();
+    expect(userStore.reset).not.toHaveBeenCalled();
+    expect(userStore.init).not.toHaveBeenCalled();
   });
 
   it('resets the stores on logout', async () => {
@@ -51,5 +55,6 @@ describe('geins-global plugin', () => {
 
     expect(productsStore.reset).toHaveBeenCalledTimes(1);
     expect(accountStore.reset).toHaveBeenCalledTimes(1);
+    expect(userStore.reset).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,6 +1,7 @@
 // @vitest-environment node
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type { SchemaFormField, StorefrontSchema } from '#shared/types';
+import { buildChannel } from '../../../test/fixtures';
 import defaultSchema from '../../assets/schemas/storefront-settings-default.json';
 import {
   analyzeSchemaChange,
@@ -10,6 +11,8 @@ import {
   getDefaultSettings,
   getSettingValue,
   isValueValidForField,
+  resetStorefrontToDefault,
+  resolveStorefrontSchema,
   setSettingValue,
 } from '../storefront';
 
@@ -573,5 +576,76 @@ describe('deleteSettingValue', () => {
   it('returns the input unchanged for a missing path', () => {
     const settings = { a: { b: 1 } };
     expect(deleteSettingValue(settings, 'a.x.y')).toBe(settings);
+  });
+});
+
+describe('resolveStorefrontSchema', () => {
+  it('falls back to the bundled default when no schema is stored', () => {
+    expect(resolveStorefrontSchema(undefined)).toBe(defaultSchema);
+    expect(resolveStorefrontSchema({})).toBe(defaultSchema);
+  });
+
+  it('keeps a stored schema', () => {
+    expect(resolveStorefrontSchema(changeSchema)).toBe(changeSchema);
+  });
+});
+
+describe('resetStorefrontToDefault', () => {
+  const customSettings = {
+    branding: { logo: 'logo.png' },
+    theme: { colors: { primary: '#123456' } },
+    legacy: { banner: 'Sale' },
+  };
+
+  function setup(resetResponseSchema: StorefrontSchema) {
+    const saved = buildChannel({ storefrontSchema: changeSchema });
+    const api = {
+      resetSchema: vi.fn().mockResolvedValue(
+        buildChannel({
+          storefrontSchema: resetResponseSchema,
+          storefrontSettings: customSettings,
+        }),
+      ),
+      fetchSchema: vi.fn().mockResolvedValue(changeSchema),
+      saveSettings: vi.fn().mockResolvedValue(saved),
+    };
+    return { api, saved };
+  }
+
+  it("saves the reset schema's defaults, dropping custom values", async () => {
+    const { api, saved } = setup(changeSchema);
+
+    await expect(resetStorefrontToDefault(api)).resolves.toBe(saved);
+
+    expect(api.fetchSchema).not.toHaveBeenCalled();
+    expect(api.saveSettings).toHaveBeenCalledWith(
+      getDefaultSettings(changeSchema),
+    );
+    const [settings] = api.saveSettings.mock.calls[0]!;
+    expect(getSettingValue(settings, 'branding.logo')).toBeUndefined();
+    expect(getSettingValue(settings, 'theme.colors.primary')).toBe('#000000');
+    expect(settings).not.toHaveProperty('legacy');
+  });
+
+  it('fetches the schema when the reset response leaves it out', async () => {
+    const { api } = setup({});
+
+    await resetStorefrontToDefault(api);
+
+    expect(api.fetchSchema).toHaveBeenCalledOnce();
+    expect(api.saveSettings).toHaveBeenCalledWith(
+      getDefaultSettings(changeSchema),
+    );
+  });
+
+  it('uses the bundled default when the channel has no stored schema', async () => {
+    const { api } = setup({});
+    api.fetchSchema.mockResolvedValue({});
+
+    await resetStorefrontToDefault(api);
+
+    expect(api.saveSettings).toHaveBeenCalledWith(
+      getDefaultSettings(defaultSchema as StorefrontSchema),
+    );
   });
 });

@@ -150,6 +150,18 @@ Include only specific columns. When provided, only these columns will be display
 includeColumns: ['name', 'price', 'status'];
 ```
 
+### `columnSizes`
+
+Fixed column widths in px. Each sets the column's `size`, `minSize` and `maxSize`, overriding the width its type would give it. A `default` column otherwise has size `0`, which leaves its width to the browser's table layout, so it can take spare width meant for another column. Leave the column that should take the spare width out.
+
+**Example**
+
+```ts
+columnSizes: {
+  productCount: 120;
+}
+```
+
 ### `columnCellProps`
 
 Pass additional props to specific column cell components. Useful for configuring editable columns, tooltips, and other interactive elements.
@@ -352,6 +364,7 @@ When no specific `columnTypes` are provided, the system automatically infers typ
 | `default`             | Basic text display with truncation, boolean indicators, and array formatting                                   |
 | `product`             | Displays product info (image, name, article number) using `TableCellProduct`                                   |
 | `currency`            | Expects object with `price` and `currency` properties, displays formatted currency                             |
+| `percentage`          | Read-only number with a `%` prefix, in the same prefixed layout as `currency` (`TableCellCurrency`)            |
 | `price`               | Simple number formatting as currency with current locale and current currency                                  |
 | `date`                | Formats to date using current locale                                                                           |
 | `image`               | Displays images as small thumbnails with alt text                                                              |
@@ -479,6 +492,7 @@ interface ColumnOptions<T> {
   includeColumns?: StringKeyOf<T>[];
   columnCellProps?: Partial<Record<StringKeyOf<T>, Record<string, unknown>>>;
   linkColumns?: Partial<Record<StringKeyOf<T>, LinkColumnConfig<T>>>;
+  columnSizes?: Partial<Record<StringKeyOf<T>, number>>;
 }
 
 type ColumnTypes<T> = Partial<Record<StringKeyOf<T>, ColumnType>>;

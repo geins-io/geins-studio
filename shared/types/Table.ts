@@ -27,6 +27,7 @@ export type EditableColumnType =
 export type ColumnType =
   | 'default'
   | 'currency'
+  | 'percentage'
   | 'price'
   | 'date'
   | 'number'
@@ -93,6 +94,8 @@ export interface ColumnOptions<T> {
   columnCellProps?: Partial<Record<StringKeyOf<T>, Record<string, unknown>>>;
   linkColumns?: Partial<Record<StringKeyOf<T>, LinkColumnConfig<T>>>;
   iconColumns?: Partial<Record<StringKeyOf<T>, IconColumnConfig<T>>>;
+  /** Fixed widths in px (`size`, `minSize` and `maxSize`); overrides the type's size. */
+  columnSizes?: Partial<Record<StringKeyOf<T>, number>>;
   maxTextLength?: number;
 }
 
@@ -102,6 +105,8 @@ declare module '@tanstack/vue-table' {
     title?: string;
     type: ColumnType;
     skipInactiveDim?: boolean;
+    /** Tints the column (header and cells) and bolds its text to draw the eye. */
+    highlight?: boolean;
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface TableMeta<TData extends RowData> {

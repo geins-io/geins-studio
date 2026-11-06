@@ -28,6 +28,7 @@ const {
   removeRule,
 } = usePriceListRules({
   entityDataUpdate,
+  editedProducts,
   previewPriceList,
 });
 
@@ -49,11 +50,13 @@ await applyRule({
 ```ts
 interface UsePriceListRulesOptions {
   entityDataUpdate: Ref<ProductPriceListUpdate>;
+  editedProducts: Ref<PriceListProduct[]>;
   previewPriceList: (message?: string) => Promise<void>;
 }
 ```
 
 - **`entityDataUpdate`**: Reactive reference to the price list entity being updated
+- **`editedProducts`**: The editor's manual rows, which [`usePriceListEditor`](usePriceListEditor.md) syncs into `entityDataUpdate.products`. Overwrites reset rows here, so the next price edit keeps the reset.
 - **`previewPriceList`**: Function to refresh the price list preview with optional feedback message
 
 ## Properties and Methods
@@ -230,7 +233,7 @@ Removes product-specific pricing for a given price break.
 
 - **Parameters**:
   - `staggeredCount`: The price break to clear pricing for
-- **Behavior**: Sets price, margin, and discountPercent to undefined for products at the specified price break
+- **Behavior**: Replaces the `editedProducts` rows at that price break with bare `{ productId, staggeredCount }` rows, which reset them to the rule. It writes `editedProducts`, not `entityDataUpdate.products`: the editor syncs its rows into the draft, so a draft-only reset would be undone by the next price edit.
 
 ### `overwriteBaseRulePromptVisible`
 

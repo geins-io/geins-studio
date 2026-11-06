@@ -1,24 +1,14 @@
 /* eslint-disable import/order, import/first */
-import { mockNuxtImport } from '@nuxt/test-utils/runtime';
+import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { buildAsset } from '../../../../test/fixtures';
+import { buildAsset, buildFolder } from '../../../../test/fixtures';
 import { mountWithContext } from '../../../../test/helpers';
 
 const { assetApi } = vi.hoisted(() => ({
-  assetApi: { query: vi.fn(), byIds: vi.fn() },
+  assetApi: { query: vi.fn(), byIds: vi.fn(), folder: { list: vi.fn() } },
 }));
 
 mockNuxtImport('useGeinsRepository', () => () => ({ assetApi }));
-
-mockNuxtImport('useFolders', () => () => ({
-  folders: { value: [] },
-  tree: { value: [] },
-  folderName: () => 'Marketing',
-  descendantIds: () => [],
-  loading: { value: false },
-  error: { value: null },
-  refresh: vi.fn(),
-}));
 
 import AssetPickerPanel from '../AssetPickerPanel.vue';
 
@@ -74,7 +64,7 @@ async function mountPanel(props: Record<string, unknown>) {
 afterEach(() => {
   for (const panel of mounted) panel.unmount();
   mounted = [];
-  clearNuxtData('asset-picker-list');
+  clearNuxtData(['asset-picker-list', 'asset-folders']);
 });
 
 async function flush() {
@@ -87,9 +77,34 @@ beforeEach(() => {
   assetApi.query.mockResolvedValue(batch([IMG, IMG2, PDF]));
   assetApi.byIds.mockReset();
   assetApi.byIds.mockResolvedValue([]);
+  assetApi.folder.list.mockReset();
+  assetApi.folder.list.mockResolvedValue([]);
 });
 
 describe('AssetPickerPanel', () => {
+  it('loads no folders while closed, then once on open', async () => {
+    assetApi.folder.list.mockResolvedValue([
+      buildFolder({ _id: 'f1', name: 'Marketing' }),
+    ]);
+    assetApi.query.mockResolvedValue(
+      batch([buildAsset({ _id: 'img-9', folderId: 'f1' })]),
+    );
+    // Typed mount (not mountPanel) so setProps knows `open`.
+    const panel = await mountSuspended(AssetPickerPanel, {
+      props: { open: false },
+      global: { stubs },
+    });
+    mounted.push(panel);
+    await flush();
+    expect(assetApi.folder.list).not.toHaveBeenCalled();
+    expect(assetApi.query).not.toHaveBeenCalled();
+
+    await panel.setProps({ open: true });
+    await flush();
+    expect(assetApi.folder.list).toHaveBeenCalledTimes(1);
+    expect(panel.text()).toContain('Marketing');
+  });
+
   it('fetches the library when opened', async () => {
     await mountPanel({});
     await flush();

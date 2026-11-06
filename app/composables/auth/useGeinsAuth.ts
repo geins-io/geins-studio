@@ -1,27 +1,50 @@
+import {
+  useBroadcastChannel,
+  type UseBroadcastChannelReturn,
+} from '@vueuse/core';
 import { jwtDecode, type JwtPayload } from 'jwt-decode';
 import type {
+  AuthBroadcastMessage,
+  AuthSessionError,
   AuthTokens,
+  ForceRefreshRequest,
   LoginCredentials,
   Session,
   SignInResponse,
 } from '#shared/types';
+import { createSingleFlight } from '#shared/utils/single-flight';
+
+const REFRESH_LOCK_NAME = 'geins-auth-refresh';
+const AUTH_CHANNEL_NAME = 'geins-auth';
+
+// Module-level, so every useGeinsAuth() caller shares them: one session read
+// in flight per tab, one at a time across tabs, and one channel per tab (a
+// tab never receives its own posts).
+let sharedRefresh: (() => Promise<Session>) | undefined;
+let sharedForceRefresh:
+  | ((rejectedToken: string | undefined) => Promise<Session>)
+  | undefined;
+let sharedSync: (() => Promise<Session>) | undefined;
+let authChannel:
+  | UseBroadcastChannelReturn<AuthBroadcastMessage, AuthBroadcastMessage>
+  | undefined;
 
 interface UseGeinsAuthReturnType {
   session: Ref<Session | null | undefined>;
   accessToken: ComputedRef<string | undefined>;
   isAuthenticated: ComputedRef<boolean>;
-  isRefreshing: Ref<boolean>;
+  sessionError: ComputedRef<AuthSessionError | undefined>;
   authStateDiffers: ComputedRef<boolean>;
   accountKey: ComputedRef<string | undefined>;
-  preLogin: () => Promise<void>;
+  authSignal: ComputedRef<AuthBroadcastMessage | undefined>;
+  broadcastAuthSignal: (message: AuthBroadcastMessage) => void;
   login: (credentials: LoginCredentials) => Promise<SignInResponse>;
   verify: (tokens: AuthTokens) => Promise<SignInResponse>;
   setAccount: (accountKey: string) => Promise<SignInResponse>;
-  setSession: (session: Session) => Promise<SignInResponse>;
-  sessionsAreEqual: (session1: Session, session2: Session) => boolean;
   logout: () => Promise<void>;
   refresh: () => Promise<Session>;
-  setIsRefreshing: (value: boolean) => void;
+  forceRefresh: (rejectedToken: string | undefined) => Promise<Session>;
+  syncSession: () => Promise<Session>;
   parseToken: (token?: string | null) => JwtPayload | null;
   isExpired: (token?: string | null) => boolean;
   expiresSoon: (token?: string | null, threshold?: number) => boolean;
@@ -37,26 +60,24 @@ interface UseGeinsAuthReturnType {
  * @property {Ref} session - Current authentication session data
  * @property {ComputedRef<string>} accessToken - Current access token
  * @property {ComputedRef<boolean>} isAuthenticated - Whether user is authenticated
- * @property {Ref<boolean>} isRefreshing - Whether token refresh is in progress
+ * @property {ComputedRef<AuthSessionError>} sessionError - Why the last token refresh failed, if it did
  * @property {ComputedRef<boolean>} authStateDiffers - Whether auth state has inconsistencies
  * @property {ComputedRef<string>} accountKey - Current account key
- * @property {function} preLogin - Performs pre-login API pings
+ * @property {ComputedRef<AuthBroadcastMessage>} authSignal - The last auth signal from another tab
+ * @property {function} broadcastAuthSignal - Posts an auth signal to the other tabs
  * @property {function} login - Authenticates user with credentials
  * @property {function} verify - Verifies authentication tokens
  * @property {function} setAccount - Sets the active account
- * @property {function} setSession - Updates the session data
- * @property {function} sessionsAreEqual - Compares two session objects
  * @property {function} logout - Logs out the user
- * @property {function} refresh - Refreshes the authentication session
- * @property {function} setIsRefreshing - Sets the refreshing state
+ * @property {function} refresh - Re-reads the session (the server refreshes the token if due); single-flight per tab, locked across tabs. Signals the other tabs when the token changed
+ * @property {function} forceRefresh - Refreshes the token now, even if it hasn't expired, after the API rejected `rejectedToken`; single-flight per tab, under the same lock as `refresh`. Signals the other tabs when the token changed
+ * @property {function} syncSession - Re-reads the session like `refresh`, without signalling (for signal receivers)
  * @property {function} parseToken - Parses JWT token payload
  * @property {function} isExpired - Checks if token is expired
  * @property {function} expiresSoon - Checks if token expires soon
  */
 export const useGeinsAuth = (): UseGeinsAuthReturnType => {
   const auth = useAuth();
-  // TODO: remove isrefreshing flow and replace with auth state loading
-  const isRefreshing = ref(false);
 
   const session = toRef(auth.data);
   const isAuthenticated = computed<boolean>(() => {
@@ -67,6 +88,7 @@ export const useGeinsAuth = (): UseGeinsAuthReturnType => {
     );
   });
   const accessToken = computed(() => session.value?.accessToken);
+  const sessionError = computed(() => session.value?.error);
   const authStateDiffers = computed(
     () =>
       auth.status.value === 'authenticated' && !session.value?.isAuthenticated,
@@ -74,86 +96,105 @@ export const useGeinsAuth = (): UseGeinsAuthReturnType => {
 
   const accountKey = computed(() => session.value?.accountKey);
 
-  const preLogin = async () => {
-    $fetch('/api/ping/auth');
-    $fetch('/api/ping/account');
+  // Detached scope: the channel must outlive the component that happens to
+  // call useGeinsAuth first. The auth-state plugin calls it before any
+  // component does, so the channel opens right away rather than on mount.
+  authChannel ??= effectScope(true).run(() =>
+    useBroadcastChannel<AuthBroadcastMessage, AuthBroadcastMessage>({
+      name: AUTH_CHANNEL_NAME,
+    }),
+  );
+  const authSignal = computed(() => authChannel?.data.value);
+  // Signals only, never tokens or sessions: tabs share the session cookie,
+  // so a receiver re-reads its own session.
+  const broadcastAuthSignal = (message: AuthBroadcastMessage) => {
+    authChannel?.post(message);
   };
 
-  const login = async (
-    credentials: LoginCredentials,
+  const signIn = async (
+    options: LoginCredentials | AuthTokens | Session,
   ): Promise<SignInResponse> => {
-    return await auth.signIn('credentials', {
+    const result = await auth.signIn('credentials', {
       redirect: false,
-      ...credentials,
+      ...options,
     });
+    if (!result?.error && isAuthenticated.value) {
+      broadcastAuthSignal({ type: 'session-changed' });
+    }
+    return result;
   };
 
-  const verify = async (tokens: AuthTokens): Promise<SignInResponse> => {
-    return await auth.signIn('credentials', {
-      redirect: false,
-      ...tokens,
-    });
-  };
+  const login = (credentials: LoginCredentials): Promise<SignInResponse> =>
+    signIn(credentials);
+
+  const verify = (tokens: AuthTokens): Promise<SignInResponse> =>
+    signIn(tokens);
 
   const setAccount = async (accountKey: string): Promise<SignInResponse> => {
     // Exclude user from the session to prevent it from being stored in JWT
     const { user, ...currentSession } = auth.data.value || {};
-    const session: Session = {
-      ...currentSession,
-      accountKey,
-    };
-
-    return await auth.signIn('credentials', {
-      redirect: false,
-      ...session,
-    });
+    return signIn({ ...currentSession, accountKey });
   };
 
-  const setSession = async (session: Session): Promise<SignInResponse> => {
-    // Exclude user from the session to prevent it from being stored in JWT
-    const { user, ...sessionWithoutUser } = session;
-    const sessionObjectsStringified =
-      stringifySessionObjects(sessionWithoutUser);
-
-    return await auth.signIn('credentials', {
-      redirect: false,
-      ...sessionWithoutUser,
-      ...sessionObjectsStringified,
-    });
-  };
-
-  const stringifySessionObjects = (session: Session) => {
-    return Object.keys(session).reduce<Record<keyof Session, string>>(
-      (acc, key) => {
-        const k = key as keyof Session;
-        if (typeof session[k] === 'object') {
-          acc[k] = JSON.stringify(session[k]);
-        }
-        return acc;
-      },
-      {} as Record<keyof Session, string>,
-    );
-  };
-
-  const sessionsAreEqual = (session1: Session, session2: Session) => {
-    const copy1 = { ...session1 };
-    const copy2 = { ...session2 };
-    delete copy1.expires;
-    delete copy2.expires;
-    return JSON.stringify(copy1) === JSON.stringify(copy2);
-  };
-
+  // Every logout lands on /auth/logout, where the auth middleware signals the
+  // other tabs once the cookie is cleared.
   const logout = async () => {
     await auth.signOut({ callbackUrl: '/auth/logout' });
   };
 
-  const refresh = async (): Promise<Session> => {
-    return (await auth.refresh()) as Session;
-  };
-
-  const setIsRefreshing = (value: boolean) => {
-    isRefreshing.value = value;
-  };
+  // After taking the lock, `getSession` reads the shared cookie: if another tab
+  // already rotated the token, the server sees it isn't due and won't refresh
+  // again with the old refresh token.
+  const lockOptions = { lockName: REFRESH_LOCK_NAME, locks: navigator.locks };
+  if (!sharedRefresh && !navigator.locks) {
+    useGeinsLog('composables/useGeinsAuth.ts').geinsLogWarn(
+      'Web Locks unavailable: token refresh is single-flight per tab only',
+    );
+  }
+  sharedRefresh ??= createSingleFlight(async () => {
+    const previousToken = accessToken.value;
+    const next = (await auth.getSession()) as Session;
+    if (next?.isAuthenticated && next.accessToken !== previousToken) {
+      broadcastAuthSignal({ type: 'session-changed' });
+    }
+    return next;
+  }, lockOptions);
+  if (!sharedForceRefresh) {
+    // Resolved like nuxt-auth resolves its own: the pathname of `baseURL`.
+    const sessionEndpoint = `${new URL(
+      useRuntimeConfig().public.auth.baseURL,
+      window.location.origin,
+    ).pathname.replace(/\/$/, '')}/session`;
+    // `$fetch` because nuxt-auth 1.2's client has no `update()`: a POST to the
+    // session endpoint runs the jwt callback with `trigger: 'update'`. The
+    // server refreshes only while the cookie still holds the rejected token.
+    sharedForceRefresh = createSingleFlight(
+      async (rejectedToken: string | undefined) => {
+        const csrfToken = await auth.getCsrfToken();
+        const data: ForceRefreshRequest = { forceRefresh: true, rejectedToken };
+        await $fetch<unknown>(sessionEndpoint, {
+          method: 'POST',
+          body: { csrfToken, data },
+        });
+        // Read back through nuxt-auth so its state holds the new session.
+        const next = (await auth.getSession()) as Session;
+        if (next?.isAuthenticated && next.accessToken !== rejectedToken) {
+          broadcastAuthSignal({ type: 'session-changed' });
+        }
+        return next;
+      },
+      lockOptions,
+    );
+  }
+  // Separate flight for signal receivers: re-signalling would echo the change
+  // back to every tab.
+  sharedSync ??= createSingleFlight(
+    async () => (await auth.getSession()) as Session,
+    lockOptions,
+  );
+  const refresh = sharedRefresh;
+  const forceRefresh = sharedForceRefresh;
+  const syncSession = sharedSync;
 
   const parseToken = (token?: string | null) => {
     token = token || accessToken.value;
@@ -184,18 +225,18 @@ export const useGeinsAuth = (): UseGeinsAuthReturnType => {
     session,
     accessToken,
     isAuthenticated,
-    isRefreshing,
+    sessionError,
     authStateDiffers,
     accountKey,
-    preLogin,
+    authSignal,
+    broadcastAuthSignal,
     login,
     verify,
     setAccount,
-    setSession,
-    sessionsAreEqual,
     logout,
     refresh,
-    setIsRefreshing,
+    forceRefresh,
+    syncSession,
     parseToken,
     isExpired,
     expiresSoon,

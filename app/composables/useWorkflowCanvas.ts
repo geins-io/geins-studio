@@ -1,5 +1,4 @@
 import type {
-  ConnectionType,
   ErrorHandlingStrategy,
   RetryPolicy,
   WorkflowDefinition,
@@ -118,21 +117,16 @@ const toCanvasEdge = (
   index: number,
   conditionNodeIds: Set<string>,
   handleSourceNodeIds: Set<string>,
-  inferLabel?: (
-    source: string,
-    connection: WorkflowNodeConnection,
-  ) => string | undefined,
 ): Edge => {
   const { source, target } = readEndpoints(
     c as unknown as Record<string, unknown>,
   );
   const isConditional =
     c.type === 'conditional' || (!!source && conditionNodeIds.has(source));
-  let label = c.label ?? undefined;
-  // Infer missing labels for condition node edges from the node's branch config.
-  if (isConditional && !label && source && inferLabel) {
-    label = inferLabel(source, c);
-  }
+  // Never infer a missing label from the node's branches: the engine routes
+  // on the saved label only, so an unlabeled edge must look unrouted, not
+  // attached to a branch it never runs.
+  const label = c.label || undefined;
   // Restore the source handle from the saved `label` for any node that routes
   // through named handles: condition branches AND the structural handles on
   // iterator/loop (foreach/completed) and paginator (fetchPage/forEachPage/
@@ -177,65 +171,9 @@ export const useWorkflowCanvas = (): WorkflowCanvasReturnType => {
         .map((n) => n.id),
     );
 
-    // Build branch labels per condition node so we can infer missing labels
-    // on legacy connections that were saved with empty label/type.
-    const conditionBranches = new Map<string, string[]>();
-    for (const n of apiNodes) {
-      if (kindOf(n) !== 'condition') continue;
-      const labels: string[] = [];
-      const conds = n.config?.conditions as { label: string }[] | undefined;
-      if (Array.isArray(conds)) {
-        for (const c of conds) if (c.label) labels.push(c.label);
-      }
-      const def = n.config?.defaultLabel as string | undefined;
-      if (def) labels.push(def);
-      if (labels.length) conditionBranches.set(n.id, labels);
-    }
-
-    // Collect labels already claimed per source node so we can find the
-    // unclaimed one for a connection with an empty label.
-    const claimedLabels = new Map<string, Set<string>>();
-    for (const c of apiConnections) {
-      if (!c.label) continue;
-      const { source } = readEndpoints(c as unknown as Record<string, unknown>);
-      if (!source) continue;
-      if (!claimedLabels.has(source)) claimedLabels.set(source, new Set());
-      claimedLabels.get(source)!.add(c.label);
-    }
-
-    // Pre-assign labels to unlabeled condition edges so each gets a unique
-    // branch. When only one label is unclaimed the match is unambiguous;
-    // otherwise assign unclaimed labels in order so edges at least attach to
-    // real handles instead of the node centre.
-    const inferredLabels = new Map<WorkflowNodeConnection, string>();
-    const unlabeledBySource = new Map<string, WorkflowNodeConnection[]>();
-    for (const c of apiConnections) {
-      if (c.label) continue;
-      const { source } = readEndpoints(c as unknown as Record<string, unknown>);
-      if (!source || !conditionNodeIds.has(source)) continue;
-      if (!unlabeledBySource.has(source)) unlabeledBySource.set(source, []);
-      unlabeledBySource.get(source)!.push(c);
-    }
-    for (const [source, conns] of unlabeledBySource) {
-      const allLabels = conditionBranches.get(source);
-      if (!allLabels) continue;
-      const claimed = claimedLabels.get(source);
-      const unclaimed = allLabels.filter((l) => !claimed?.has(l));
-      for (let i = 0; i < conns.length && i < unclaimed.length; i++) {
-        const conn = conns[i];
-        const branchLabel = unclaimed[i];
-        if (conn && branchLabel) inferredLabels.set(conn, branchLabel);
-      }
-    }
-
-    const inferLabel = (
-      _source: string,
-      connection: WorkflowNodeConnection,
-    ): string | undefined => inferredLabels.get(connection);
-
     const nodes = apiNodes.map(toCanvasNode);
     const edges = apiConnections.map((c, i) =>
-      toCanvasEdge(c, i, conditionNodeIds, handleSourceNodeIds, inferLabel),
+      toCanvasEdge(c, i, conditionNodeIds, handleSourceNodeIds),
     );
     return { nodes, edges };
   };
@@ -278,19 +216,8 @@ export const useWorkflowCanvas = (): WorkflowCanvasReturnType => {
         } as WorkflowNode;
       }),
     connections: edges.map((e) => {
-      const storedType = (e.data as { type?: ConnectionType } | undefined)
-        ?.type;
       const existingUi = (e.data as { ui?: NodeUi } | undefined)?.ui;
-      const type: ConnectionType =
-        storedType ?? (e.sourceHandle ? 'conditional' : 'sequential');
-      // Conditional edges carry the branch name on `sourceHandle`. Fall back to
-      // it so the API stores which branch this edge represents.
-      const label =
-        typeof e.label === 'string' && e.label
-          ? e.label
-          : type === 'conditional'
-            ? (e.sourceHandle ?? '')
-            : '';
+      const { type, label } = edgeConnectionRouting(e);
       // The API expects `null` (not `{}`) when no editor metadata is attached;
       // only emit an object once at least one ui key exists.
       const ui =

@@ -1,9 +1,15 @@
-import type { PriceListProductList } from '#shared/types';
+import type { PriceListProductList, PriceListRuleField } from '#shared/types';
 import type { ColumnDef, Row } from '@tanstack/vue-table';
 import {
   PriceListVolumePricingCell,
   PriceListPriceModeCell,
 } from '#components';
+
+/** What a preview is still working out, read by the cells so a change re-renders only them. */
+interface PriceListPendingCells {
+  isFieldPending: (productId: string, field: PriceListRuleField) => boolean;
+  isVolumePricingPending: (productId: string) => boolean;
+}
 
 interface UsePriceListProductsTableReturnType {
   setupPriceListColumns: (
@@ -23,11 +29,21 @@ interface UsePriceListProductsTableReturnType {
       value: string | number,
       row: Row<PriceListProductList>,
     ) => void,
+    listPriceTitle?: string,
+    pending?: PriceListPendingCells,
+  ) => ColumnDef<PriceListProductList>[];
+  setupReadOnlyPriceListColumns: (
+    products: PriceListProductList[],
+    vatDescription: string,
+    listPriceTitle: string,
+    onViewVolumePricing: (payload: { id: string; name: string }) => void,
   ) => ColumnDef<PriceListProductList>[];
   addVolumePricingColumn: (
     columns: ColumnDef<PriceListProductList>[],
     onEdit: (payload: { id: string; name: string }) => void,
     vatDescription: string,
+    readonly?: boolean,
+    isLoading?: (productId: string) => boolean,
   ) => ColumnDef<PriceListProductList>[];
   getPinnedState: ComputedRef<{
     left: never[];
@@ -42,14 +58,15 @@ interface UsePriceListProductsTableReturnType {
  * price list products, including editable pricing fields, volume pricing, and actions.
  *
  * @returns {UsePriceListProductsTableReturnType} - An object containing table setup utilities
- * @property {function} setupPriceListColumns - Creates complete column configuration for price list products
+ * @property {function} setupPriceListColumns - Creates complete column configuration for price list products, with the list price highlighted
+ * @property {function} setupReadOnlyPriceListColumns - Read-only columns (no inputs, price mode or actions) with the list price highlighted
  * @property {function} addVolumePricingColumn - Adds volume pricing column to existing columns
  * @property {ComputedRef} getPinnedState - Computed pinned state based on layout space
  */
 export const usePriceListProductsTable =
   (): UsePriceListProductsTableReturnType => {
     const { t } = useI18n();
-    const { hasReducedSpace } = useLayout();
+    const { hasReducedSpace } = useAppLayout();
     const {
       getBasicCellStyle,
       getBasicHeaderStyle,
@@ -57,6 +74,19 @@ export const usePriceListProductsTable =
       addActionsColumn,
       extendColumns,
     } = useColumns<PriceListProductList>();
+
+    // The list price is what a list sets, so both grids tint it to draw the eye.
+    const highlightListPrice = (
+      column: ColumnDef<PriceListProductList>,
+    ): ColumnDef<PriceListProductList> =>
+      column.id === 'listPrice' && column.meta
+        ? { ...column, meta: { ...column.meta, highlight: true } }
+        : column;
+
+    const isFieldUnavailable = (
+      row: Row<PriceListProductList>,
+      field: PriceListRuleField,
+    ) => getUnavailablePriceListFields(row.original).includes(field);
 
     const setupPriceListColumns = (
       selectedProducts: PriceListProductList[],
@@ -75,7 +105,13 @@ export const usePriceListProductsTable =
         value: string | number,
         row: Row<PriceListProductList>,
       ) => void,
+      listPriceTitle: string = t('pricing.price_list_price'),
+      pending?: PriceListPendingCells,
     ) => {
+      const isPending =
+        (field: PriceListRuleField) => (row: Row<PriceListProductList>) =>
+          !!pending?.isFieldPending(row.original._id, field);
+
       const columnOptions: ColumnOptions<PriceListProductList> = {
         columnTypes: {
           listPrice: 'editable-currency',
@@ -83,28 +119,43 @@ export const usePriceListProductsTable =
           margin: 'editable-percentage',
         },
         columnTitles: {
-          listPrice: `${t('pricing.price_list_price')} (${vatDescription})`,
+          listPrice: `${listPriceTitle} (${vatDescription})`,
           regularPrice: `${t('price')} (${vatDescription})`,
         },
         excludeColumns: ['volumePricing', 'priceMode'],
         columnCellProps: {
           listPrice: {
             onBlur: onPriceBlur,
+            loading: isPending('price'),
           },
           discount: {
             onBlur: onDiscountBlur,
+            disabled: (row: Row<PriceListProductList>) =>
+              isFieldUnavailable(row, 'discountPercent'),
+            disabledTooltip: t('pricing.price_list_discount_needs_price'),
+            loading: isPending('discountPercent'),
           },
           margin: {
             onBlur: onMarginBlur,
+            disabled: (row: Row<PriceListProductList>) =>
+              isFieldUnavailable(row, 'margin'),
+            disabledTooltip: t(
+              'pricing.price_list_margin_needs_purchase_price',
+            ),
+            loading: isPending('margin'),
           },
         },
       };
 
-      let columns = getColumns(selectedProducts, columnOptions);
+      let columns = getColumns(selectedProducts, columnOptions).map(
+        highlightListPrice,
+      );
       columns = addVolumePricingColumn(
         columns,
         onEditVolumePricing,
         vatDescription,
+        false,
+        pending?.isVolumePricingPending,
       );
       columns = addPriceModeColumn(columns);
       addActionsColumn(
@@ -118,10 +169,47 @@ export const usePriceListProductsTable =
       return columns;
     };
 
+    const setupReadOnlyPriceListColumns = (
+      products: PriceListProductList[],
+      vatDescription: string,
+      listPriceTitle: string,
+      onViewVolumePricing: (payload: { id: string; name: string }) => void,
+    ) => {
+      const columns = getColumns(products, {
+        columnTypes: {
+          discount: 'percentage',
+          margin: 'percentage',
+        },
+        columnTitles: {
+          listPrice: `${listPriceTitle} (${vatDescription})`,
+          regularPrice: `${t('price')} (${vatDescription})`,
+        },
+        excludeColumns: ['volumePricing', 'priceMode'],
+      }).map((column) =>
+        // Same width as the editable list price, so its longer title fits.
+        column.id === 'listPrice'
+          ? {
+              ...highlightListPrice(column),
+              size: 180,
+              minSize: 180,
+              maxSize: 180,
+            }
+          : column,
+      );
+      return addVolumePricingColumn(
+        columns,
+        onViewVolumePricing,
+        vatDescription,
+        true,
+      );
+    };
+
     const addVolumePricingColumn = (
       columns: ColumnDef<PriceListProductList>[],
       onEdit: (payload: { id: string; name: string }) => void,
       vatDescription: string,
+      readonly = false,
+      isLoading?: (productId: string) => boolean,
     ): ColumnDef<PriceListProductList>[] => {
       const volumePricingColumn: ColumnDef<PriceListProductList> = {
         id: 'volumePricing',
@@ -138,6 +226,9 @@ export const usePriceListProductsTable =
             vatDescription,
             id: rowData._id,
             name: rowData.name,
+            readonly,
+            // Read in the cell's own render, so a change re-renders only this cell.
+            loading: isLoading?.(rowData._id),
             onEdit,
           });
         },
@@ -194,6 +285,7 @@ export const usePriceListProductsTable =
 
     return {
       setupPriceListColumns,
+      setupReadOnlyPriceListColumns,
       addVolumePricingColumn,
       getPinnedState,
     };

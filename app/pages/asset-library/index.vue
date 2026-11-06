@@ -31,7 +31,6 @@ import { ENTITIES } from '#shared/utils/entities';
 import { formatFileSize } from '#shared/utils/file';
 import { serializeSort } from '#shared/utils/list-query';
 import { useToast } from '@/components/ui/toast/use-toast';
-import { cn, segmentedButtonClass } from '@/utils/index';
 import type { ColumnDef } from '@tanstack/vue-table';
 
 // Fixed-height list layout: header + toolbar + folder nav + pagination stay put;

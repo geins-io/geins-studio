@@ -18,6 +18,7 @@ import type {
 import { buildQueryObject } from '#shared/utils/api-query';
 import { ENTITIES } from '#shared/utils/entities';
 import { entityGetRepo } from './entity-base';
+import type { RepoFetchOptions } from './entity-base';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const BASE_ENDPOINT = '/order';
@@ -49,11 +50,13 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     async query(
       batchQuery: OrderBatchQuery,
       options?: OrderApiOptions,
+      fetchOptions?: RepoFetchOptions,
     ): Promise<BatchQueryResult<Order>> {
       return await fetch<BatchQueryResult<Order>>(`${orderEndpoint}/query`, {
         method: 'POST',
         body: batchQuery,
         query: buildQueryObject(options),
+        ...fetchOptions,
       });
     },
 

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { ProductMatch } from '#shared/types';
 import { parseProductRef } from '#shared/utils/asset';
-import { segmentedButtonClass } from '@/utils/index';
 
 /**
  * Step 3 of the upload wizard — the review list. A read-only summary of every

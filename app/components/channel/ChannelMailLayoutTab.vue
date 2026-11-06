@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { ChannelMailSettings } from '#shared/types';
-import { fontToGoogleUrl } from '@/utils/storefrontFonts';
 
 export type MailLayoutStagedFiles = {
   logoUrl?: File;

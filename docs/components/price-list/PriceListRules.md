@@ -10,6 +10,7 @@
 - Stable identity per row via `internalId` (auto-generated when missing) — keeps Vue keyed renders correct across edits
 - Loading flag (`v-model:loading`) routed to the row whose `loadingIndex` matches
 - Add break button hidden when `disabled` is `true` (used for the global-rules read-only preview)
+- `unavailableFields` passed to every row, so a product without a price / purchase price can't take a discount / margin
 
 ## Usage
 
@@ -86,7 +87,7 @@ Forwarded to each row (only used in `all` mode).
 disabled?: boolean
 ```
 
-Hides the Add break button — used to render the global-rules preview as read-only.
+Hides the Add break button and disables every row (inputs and buttons, via `PriceListRule`'s `disabled`) — used for the global-rules preview and for read-only price lists.
 
 - **Default:** `false`
 
@@ -107,6 +108,14 @@ showLoading?: boolean
 When `true`, sets `loading` to `true` while a row's preview update is in flight.
 
 - **Default:** `false`
+
+### `unavailableFields`
+
+```ts
+unavailableFields?: PriceListRuleField[]
+```
+
+Forwarded to each [`PriceListRule`](/components/price-list/PriceListRule#unavailablefields): fields the product can't be priced by, disabled in every row. The volume pricing panel passes `getUnavailablePriceListFields(product)`.
 
 ## v-model
 

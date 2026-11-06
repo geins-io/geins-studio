@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { useDebounceFn } from '@vueuse/core';
+import {
+  calculatePriceListPrices,
+  type PriceListPrices,
+} from '#shared/utils/price-list-preview';
 import { useToast } from '@/components/ui/toast/use-toast';
 
 const props = withDefaults(
@@ -7,9 +11,18 @@ const props = withDefaults(
     rules: PriceListRule[];
     productId: string;
     productName: string;
-    priceListId: string;
+    /** Saved list to preview prices on; without it, prices are worked out locally from `product`. */
+    priceListId?: string;
     currency?: string;
     vatDescription?: string;
+    /** View-only: the product's price breaks, no inputs, Close-only footer. */
+    readonly?: boolean;
+    /** Read-only header values (price, list price, margin) for the product, and the base for local prices. */
+    product?: PriceListProductList;
+    /** Label for the product's list price in the read-only header. */
+    listPriceTitle?: string;
+    /** Read-only price breaks description; defaults to the company wording. */
+    description?: string;
   }>(),
   {},
 );
@@ -43,6 +56,21 @@ const productRules = computed(() => {
 
 const editableRules = ref<PriceListRule[]>(productRules.value);
 
+const withVat = (label: string) =>
+  props.vatDescription ? `${label} (${props.vatDescription})` : label;
+const readonlySummary = computed(() => {
+  if (!props.product) return [];
+  const { regularPrice, listPrice, margin } = props.product;
+  return [
+    { label: withVat(t('price')), ...regularPrice },
+    {
+      label: withVat(props.listPriceTitle || t('pricing.price_list_price')),
+      ...(listPrice ?? { currency: props.currency || '' }),
+    },
+    { label: t('margin'), price: String(margin ?? ''), currency: '%' },
+  ];
+});
+
 watch(propRules, (newRules) => {
   editableRules.value = newRules.filter((rule: PriceListRule) => !rule.global);
 });
@@ -56,12 +84,48 @@ const handleUpdate = useDebounceFn((rules: PriceListRule[]) => {
   editableRules.value = rules;
 }, 800);
 
+const setRulePrices = (index: number, prices: PriceListPrices) => {
+  // Create a new array to ensure reactivity
+  const updatedRules = [...editableRules.value];
+  updatedRules[index] = {
+    ...updatedRules[index],
+    margin: prices.margin,
+    discountPercent: prices.discountPercent,
+    price: prices.price,
+  };
+  editableRules.value = updatedRules;
+};
+
+const unavailableFields = computed(() =>
+  props.product ? getUnavailablePriceListFields(props.product) : [],
+);
+
+const productBase = computed(() => ({
+  price: Number(props.product?.listPrice?.price) || undefined,
+  margin: props.product?.margin,
+  regularPrice: Number(props.product?.regularPrice?.price) || undefined,
+}));
+
 const handleUpdateRule = useDebounceFn(
   async (payload: { index: number; rule: PriceListRule }) => {
+    const valueType = payload.rule.lastFieldChanged || 'price';
+    const value = payload.rule[valueType];
     try {
       rulesLoading.value = true;
-      const valueType = payload.rule.lastFieldChanged || 'price';
-      const value = payload.rule[valueType];
+      // previewprice only works on a saved list.
+      if (!props.priceListId) {
+        if (value !== undefined && !isNaN(Number(value))) {
+          setRulePrices(
+            payload.index,
+            calculatePriceListPrices(
+              valueType,
+              Number(value),
+              productBase.value,
+            ),
+          );
+        }
+        return;
+      }
       const previewProduct = {
         productId: props.productId,
         ...(valueType === 'price' && { price: value }),
@@ -73,16 +137,7 @@ const handleUpdateRule = useDebounceFn(
       const previewPrice = await productApi.priceList
         .id(props.priceListId)
         .previewPrice(previewProduct, { suppressErrorToast: true });
-
-      // Create a new array to ensure reactivity
-      const updatedRules = [...editableRules.value];
-      updatedRules[payload.index] = {
-        ...updatedRules[payload.index],
-        margin: previewPrice.margin,
-        discountPercent: previewPrice.discountPercent,
-        price: previewPrice.price,
-      };
-      editableRules.value = updatedRules;
+      setRulePrices(payload.index, previewPrice);
     } catch (error) {
       geinsLogError('error fetching preview price', error);
       toast({
@@ -96,6 +151,8 @@ const handleUpdateRule = useDebounceFn(
   },
   800,
 );
+
+const readonlyCellClasses = 'px-4 py-2.5 text-left font-normal';
 
 const handleCancel = () => {
   open.value = false;
@@ -166,11 +223,84 @@ const handleRemove = async (rule: PriceListRule) => {
       <SheetHeader>
         <SheetTitle>{{ $t('pricing.price_list_volume_pricing') }}</SheetTitle>
         <SheetDescription>
-          {{ $t('pricing.price_list_volume_pricing_sheet_description') }}
+          {{
+            readonly
+              ? $t('pricing.price_list_volume_pricing_readonly_description')
+              : $t('pricing.price_list_volume_pricing_sheet_description')
+          }}
           <strong>{{ productName }}</strong>
         </SheetDescription>
       </SheetHeader>
-      <SheetBody>
+      <SheetBody v-if="readonly">
+        <div v-if="readonlySummary.length" class="mb-6 grid grid-cols-3 gap-4">
+          <div v-for="item in readonlySummary" :key="item.label">
+            <p class="text-muted-foreground mb-1 text-xs">{{ item.label }}</p>
+            <TableCellCurrency
+              :price="item.price"
+              :currency="item.currency"
+              class="text-xs"
+            />
+          </div>
+        </div>
+        <ContentCardHeader
+          size="sm"
+          :title="$t('pricing.price_list_product_volume_pricing')"
+          :description="
+            description || $t('pricing.company_volume_pricing_description')
+          "
+          class="mb-4"
+        />
+        <div class="overflow-hidden rounded-lg border">
+          <table class="w-full text-xs">
+            <thead class="bg-background">
+              <tr class="border-b">
+                <th :class="readonlyCellClasses">{{ $t('quantity') }}</th>
+                <th :class="readonlyCellClasses">{{ withVat($t('price')) }}</th>
+                <th :class="readonlyCellClasses">{{ $t('discount') }}</th>
+                <th :class="readonlyCellClasses">{{ $t('margin') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="rule in rules"
+                :key="rule.quantity"
+                class="border-b last:border-0"
+              >
+                <td :class="cn(readonlyCellClasses, 'tabular-nums')">
+                  {{ rule.quantity }}+
+                </td>
+                <td :class="readonlyCellClasses">
+                  <TableCellCurrency
+                    :price="String(rule.price ?? '')"
+                    :currency="currency || ''"
+                  />
+                </td>
+                <td :class="readonlyCellClasses">
+                  <TableCellCurrency
+                    :price="String(rule.discountPercent ?? '')"
+                    currency="%"
+                  />
+                </td>
+                <td :class="readonlyCellClasses">
+                  <TableCellCurrency
+                    :price="String(rule.margin ?? '')"
+                    currency="%"
+                  />
+                </td>
+              </tr>
+              <tr v-if="!rules.length">
+                <td
+                  colspan="4"
+                  class="text-muted-foreground px-4 py-6 text-center"
+                >
+                  {{ $t('pricing.price_list_no_product_breaks') }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </SheetBody>
+      <SheetBody v-else>
         <ContentCardHeader
           size="sm"
           :title="$t('pricing.price_list_global_volume_pricing')"
@@ -204,6 +334,7 @@ const handleRemove = async (rule: PriceListRule) => {
           :show-loading="true"
           :rules="editableRules"
           :product-id="productId"
+          :unavailable-fields="unavailableFields"
           :vat-description="vatDescription"
           :currency="currency"
           @update-rule="handleUpdateRule"
@@ -216,13 +347,20 @@ const handleRemove = async (rule: PriceListRule) => {
           type="negative"
           class="mt-10"
         >
-          <template #title>Check your price breaks and try again</template>
+          <template #title>
+            {{ $t('pricing.price_breaks_invalid_title') }}
+          </template>
           <template #description>
-            Quantity must be more than 1 and at least one value must be present
+            {{ $t('pricing.price_breaks_invalid_description') }}
           </template>
         </Feedback>
       </SheetBody>
-      <SheetFooter>
+      <SheetFooter v-if="readonly">
+        <Button variant="outline" @click="open = false">
+          {{ $t('close') }}
+        </Button>
+      </SheetFooter>
+      <SheetFooter v-else>
         <Button variant="outline" @click="handleCancel">
           {{ $t('cancel') }}
         </Button>

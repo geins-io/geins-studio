@@ -1,4 +1,5 @@
 import type {
+  PriceListProduct,
   PriceListRule,
   PriceListRuleMode,
   ProductPriceListUpdate,
@@ -7,6 +8,8 @@ import { useToast } from '@/components/ui/toast/use-toast';
 
 export interface UsePriceListRulesOptions {
   entityDataUpdate: Ref<ProductPriceListUpdate>;
+  /** The editor's manual rows, which it syncs into `entityDataUpdate.products`. */
+  editedProducts: Ref<PriceListProduct[]>;
   previewPriceList: (message?: string) => Promise<void>;
 }
 
@@ -48,6 +51,7 @@ export interface UsePriceListRulesReturnType {
  */
 export function usePriceListRules({
   entityDataUpdate,
+  editedProducts,
   previewPriceList,
 }: UsePriceListRulesOptions): UsePriceListRulesReturnType {
   const { t } = useI18n();
@@ -285,17 +289,18 @@ export function usePriceListRules({
   };
 
   const overwriteProducts = async (staggeredCount: number) => {
-    // Original logic - only keep productId and staggeredCount for overwritten products
-    entityDataUpdate.value.products =
-      entityDataUpdate.value.products?.map((product) => {
-        if (product.staggeredCount === staggeredCount) {
-          return {
-            productId: product.productId,
-            staggeredCount: product.staggeredCount,
-          };
-        }
-        return product;
-      }) || [];
+    // A bare row resets to the rule. Reset the editor's rows, not the draft:
+    // the editor syncs its rows into the draft, so a draft-only reset was
+    // undone by the next price edit.
+    editedProducts.value = editedProducts.value.map((product) => {
+      if (product.staggeredCount === staggeredCount) {
+        return {
+          productId: product.productId,
+          staggeredCount: product.staggeredCount,
+        };
+      }
+      return product;
+    });
   };
 
   return {

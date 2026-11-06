@@ -22,10 +22,6 @@ import {
   StepperTitle,
   StepperTrigger,
 } from '@/components/ui/stepper';
-import {
-  uploadWizardKey,
-  useUploadWizard,
-} from '@/composables/useUploadWizard';
 
 // App-shell layout (overflow-hidden): the stepper is pinned at the top and the
 // footer nav at the bottom; only the step content between them scrolls.

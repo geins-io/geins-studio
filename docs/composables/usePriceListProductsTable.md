@@ -14,6 +14,8 @@ This composable is specifically designed for price list product tables and will 
 - **Responsive column pinning** based on layout space
 - **Integrated actions** for product management
 - **VAT-aware labeling** for pricing columns
+- **Pending loaders** on the price and volume pricing cells while a preview works them out
+- **Read-only variant** (`setupReadOnlyPriceListColumns`) for prices that can't be edited, e.g. a company's ERP-maintained account list
 
 ## Usage
 
@@ -63,6 +65,11 @@ setupPriceListColumns(
   onPriceBlur: (value: string | number, row: Row<PriceListProductList>) => void,
   onMarginBlur: (value: string | number, row: Row<PriceListProductList>) => void,
   onDiscountBlur: (value: string | number, row: Row<PriceListProductList>) => void,
+  listPriceTitle?: string,
+  pending?: {
+    isFieldPending: (productId: string, field: PriceListRuleField) => boolean;
+    isVolumePricingPending: (productId: string) => boolean;
+  },
 ): ColumnDef<PriceListProductList>[]
 ```
 
@@ -76,9 +83,25 @@ Creates a complete column configuration for price list products with all necessa
   - `onPriceBlur`: Handler for price field blur events
   - `onMarginBlur`: Handler for margin field blur events
   - `onDiscountBlur`: Handler for discount field blur events
+  - `listPriceTitle`: Title of the editable list price column, suffixed with `vatDescription`. Defaults to "Price list price"; the company editor passes `t('pricing.company_price')`
+  - `pending`: what a preview is still working out. `isFieldPending` drives the `loading` of the list price (`price`), discount (`discountPercent`) and margin (`margin`) inputs, `isVolumePricingPending` the volume pricing cell's. Both are read inside the cells, so a loader turns on or off without new columns and re-renders only the cells whose state changed (the settled preview rebuilds the columns as before). Without it, no loaders show
 
 - **Returns**: Complete array of column definitions
-- **Features**: Editable columns, actions, volume pricing, price modes
+- **Features**: Editable columns, actions, volume pricing, price modes. The editable list price column is highlighted (`meta.highlight`), as in the read-only grid
+- **Unavailable fields**: a row's discount input is disabled when the product has no price, and its margin input when it has no purchase price (`getUnavailablePriceListFields`, a `0` counts as missing), each with a tooltip saying why. A saved value stays visible. The list price stays editable
+
+### `setupReadOnlyPriceListColumns`
+
+```ts
+setupReadOnlyPriceListColumns(
+  products: PriceListProductList[],
+  vatDescription: string,
+  listPriceTitle: string,
+  onViewVolumePricing: (payload: { id: string; name: string }) => void,
+): ColumnDef<PriceListProductList>[]
+```
+
+Read-only counterpart of `setupPriceListColumns`: the same columns without inputs, the price mode column or row actions. Discount and margin use the read-only `percentage` column type, the list price column is titled `` `${listPriceTitle} (${vatDescription})` ``, sized 180 like the editable list price so the title fits, and highlighted (`meta.highlight`), and the volume pricing cell shows the tier count only (`readonly`) as a link that calls `onViewVolumePricing` — open `PriceListVolumePricingPanel` with `readonly` from it. Pair it with `getPinnedState`, which pins the list price, discount, margin and volume pricing columns. Used by the company page's Company set prices card.
 
 ### `addVolumePricingColumn`
 
@@ -87,6 +110,8 @@ addVolumePricingColumn(
   columns: ColumnDef<PriceListProductList>[],
   onEdit: (payload: { id: string; name: string }) => void,
   vatDescription: string,
+  readonly?: boolean,
+  isLoading?: (productId: string) => boolean,
 ): ColumnDef<PriceListProductList>[]
 ```
 
@@ -96,6 +121,8 @@ Adds a volume pricing column to an existing column configuration.
   - `columns`: Existing column definitions
   - `onEdit`: Handler for editing volume pricing
   - `vatDescription`: VAT status for proper labeling
+  - `readonly`: render the cell's tier count only, without the edit/add button (default `false`)
+  - `isLoading`: shows the cell's loader for a row; read in the cell's own render
 
 - **Returns**: Updated column array with volume pricing column
 - **Features**: Custom cell component, fixed sizing, interactive editing
@@ -122,6 +149,11 @@ Computed property that returns appropriate column pinning configuration based on
 ```ts
 function usePriceListProductsTable(): UsePriceListProductsTableReturnType;
 
+interface PriceListPendingCells {
+  isFieldPending: (productId: string, field: PriceListRuleField) => boolean;
+  isVolumePricingPending: (productId: string) => boolean;
+}
+
 interface UsePriceListProductsTableReturnType {
   setupPriceListColumns: (
     selectedProducts: PriceListProductList[],
@@ -140,11 +172,21 @@ interface UsePriceListProductsTableReturnType {
       value: string | number,
       row: Row<PriceListProductList>,
     ) => void,
+    listPriceTitle?: string,
+    pending?: PriceListPendingCells,
+  ) => ColumnDef<PriceListProductList>[];
+  setupReadOnlyPriceListColumns: (
+    products: PriceListProductList[],
+    vatDescription: string,
+    listPriceTitle: string,
+    onViewVolumePricing: (payload: { id: string; name: string }) => void,
   ) => ColumnDef<PriceListProductList>[];
   addVolumePricingColumn: (
     columns: ColumnDef<PriceListProductList>[],
     onEdit: (payload: { id: string; name: string }) => void,
     vatDescription: string,
+    readonly?: boolean,
+    isLoading?: (productId: string) => boolean,
   ) => ColumnDef<PriceListProductList>[];
   getPinnedState: ComputedRef<{
     left: never[];
@@ -158,6 +200,6 @@ interface UsePriceListProductsTableReturnType {
 This composable depends on:
 
 1. **useColumns** for base column functionality
-2. **useLayout** for responsive behavior
+2. **useAppLayout** for responsive behavior
 3. **useI18n** for internationalization
 4. **TanStack Vue Table** for table types and functionality

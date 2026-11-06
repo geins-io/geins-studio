@@ -8,9 +8,12 @@
   - **Global** (`disabled`) — rules inherited from the price list, read-only
   - **Product** — editable rules for this product
 - Live price-preview calls: every per-row change debounces a call to `productApi.priceList.id(...).previewPrice(...)` and writes the calculated `margin`, `discountPercent`, `price` back into the row
+- **New list** (no `priceListId`): `previewprice` only works on a saved list, so the row's other two values are worked out locally with `calculatePriceListPrices` (`#shared/utils/price-list-preview`) from `product`. The cost comes from the product's previewed price and margin, so the list's currency and VAT basis are already applied. Without `product`, only the value typed stays; the list's next preview fills in the rest
+- Product without a price / purchase price: its rules' discount / margin inputs are disabled with a tooltip (`unavailableFields` from `getUnavailablePriceListFields(product)`)
 - Save flow: validates each rule (quantity > 1, at least one numeric value) and converts to `PriceListProduct[]` via [`usePriceListProducts`](/composables/usePriceListProducts) — surfaces a [`Feedback`](/components/Feedback) banner when invalid
 - Cancel discards local changes; Save commits via the `save` event
 - Two-way `v-model:open` and `v-model:priceListProducts` so the parent's selected-products state stays in sync
+- **Read-only mode** (`readonly`) for prices that can't be edited (the company page's ERP company set prices): a price / list price / margin header for the product, a plain table of its price breaks (quantity `10+`, price, discount, margin), no global section, no inputs, Close-only footer
 
 ## Usage
 
@@ -38,6 +41,27 @@ const onSave = (products: PriceListProduct[]) => {
   />
 </template>
 ```
+
+### Read-only
+
+```vue
+<template>
+  <PriceListVolumePricingPanel
+    v-model:open="open"
+    readonly
+    :rules="product?.volumePricing ?? []"
+    :product="product"
+    :product-id="product?._id ?? ''"
+    :product-name="product?.name ?? ''"
+    :price-list-id="priceList._id"
+    :currency="priceList.currency"
+    :vat-description="vatDescription"
+    :list-price-title="$t('pricing.company_price')"
+  />
+</template>
+```
+
+`product` is a `PriceListProductList` row from `transformProductsForList`, so the tiers come from the grid's data — no extra fetch.
 
 ## Props
 
@@ -68,10 +92,10 @@ Used in the sheet description.
 ### `priceListId`
 
 ```ts
-priceListId: string;
+priceListId?: string
 ```
 
-Used to scope the preview-price API call.
+Used to scope the preview-price API call. Leave it out for a list that isn't saved yet, and pass `product` so the prices can be worked out locally.
 
 ### `currency`
 
@@ -88,6 +112,38 @@ vatDescription?: string
 ```
 
 Localized VAT descriptor (e.g. `"ex VAT"`).
+
+### `readonly`
+
+```ts
+readonly?: boolean
+```
+
+View-only mode: the product's price breaks (all of `rules`, including global ones) in a plain table, no inputs, no global section, Close-only footer. The editable mode is unchanged.
+
+### `product`
+
+```ts
+product?: PriceListProductList
+```
+
+Read-only mode: supplies the header values (`regularPrice`, `listPrice`, `margin`). Editable mode: which fields the product can't be priced by (no `regularPrice` → discount, no `purchasePrice` → margin), and without `priceListId` the base (`listPrice`, `margin`, `regularPrice`) for working out prices locally.
+
+### `listPriceTitle`
+
+```ts
+listPriceTitle?: string
+```
+
+Read-only mode only: label for `listPrice` in the header, suffixed with `vatDescription`. Defaults to "Price list price".
+
+### `description`
+
+```ts
+description?: string
+```
+
+Read-only mode only: description under the product's price breaks heading. Defaults to the company wording ("…for this company"); the price list page passes its own.
 
 ## v-model
 
@@ -132,3 +188,4 @@ The `SheetTrigger` content (typically a button).
 - [`ContentCardHeader`](/components/content/ContentCardHeader), [`Feedback`](/components/Feedback)
 - [`usePriceListProducts`](/composables/usePriceListProducts) — `getPriceListProduct`, `getNewPriceListProducts`
 - [`useGeinsRepository`](/composables/useGeinsRepository) — `productApi.priceList.previewPrice`
+- `calculatePriceListPrices` from `#shared/utils/price-list-preview` — local prices without `priceListId`

@@ -3,13 +3,15 @@ import {
   createError,
   defineEventHandler,
   readBody,
-  proxyRequest,
+  readRawBody,
+  sendProxy,
   getHeaders,
   getQuery,
   getRequestHost,
+  type H3Event,
 } from 'h3';
 import { resolveAppId } from '#shared/utils/app';
-import { restoreIfMatch } from '#shared/utils/proxy-headers';
+import { pickUpstreamHeaders } from '#shared/utils/proxy-headers';
 import { describeNetworkError } from '../utils/error-logging';
 import {
   refreshSalesPortal,
@@ -57,13 +59,32 @@ async function triggerChannelRefresh(
   }
 }
 
+const PAYLOAD_METHODS = new Set(['PATCH', 'POST', 'PUT', 'DELETE']);
+
+// h3's `proxyRequest` lays every inbound header (cookie included) under the
+// ones passed in and can't drop any, so pipe through `sendProxy` with ours only.
+async function pipeUpstream(
+  event: H3Event,
+  target: string,
+  headers: Record<string, string>,
+) {
+  const raw = PAYLOAD_METHODS.has(event.method)
+    ? await readRawBody(event, false)
+    : undefined;
+  // fetch's `BodyInit` doesn't take Node's `Buffer<ArrayBufferLike>`.
+  const body = raw && new Uint8Array(raw);
+  return sendProxy(event, target, {
+    fetchOptions: { method: event.method, body, headers },
+  });
+}
+
 /**
  * Event handler for processing API requests.
  *
  * This handler is a catch-all for API requests that are not handled by other routes.
  * It forwards the request to the target API and returns the response.
  * The target API URL is specified in the request query string.
- * The handler adds the account key to the request headers.
+ * Only allowlisted headers go upstream (`pickUpstreamHeaders`).
  *
  */
 export default defineEventHandler(async (event) => {
@@ -76,7 +97,6 @@ export default defineEventHandler(async (event) => {
   const correlationId = randomUUID();
 
   const headers = getHeaders(event);
-  const token = headers['x-access-token'];
 
   const targetUrl = event.context.params?._;
   if (!targetUrl) {
@@ -104,21 +124,13 @@ export default defineEventHandler(async (event) => {
 
   geinsLog(`[${correlationId}] ${event.method} ${fetchUrl}`);
 
-  const apiHeaders: Record<string, string> = {
-    ...headers,
-    ...(token ? { authorization: `Bearer ${token}` } : {}),
-  };
-  restoreIfMatch(apiHeaders);
+  const apiHeaders = pickUpstreamHeaders(headers);
 
   if (!apiHeaders['x-app']) {
     apiHeaders['x-app'] = resolveAppId(
       config.public.appId as string,
       getRequestHost(event, { xForwardedHost: true }),
     );
-  }
-
-  if (event.method === 'DELETE' && apiHeaders['content-length'] === '0') {
-    delete apiHeaders['content-length'];
   }
 
   // HOTFIX STU-216 — match channel PATCH once, reuse in both branches below
@@ -129,7 +141,7 @@ export default defineEventHandler(async (event) => {
 
   const contentType = headers['content-type'] ?? '';
   if (contentType.includes('multipart/form-data')) {
-    const result = await proxyRequest(event, fetchUrl, { headers: apiHeaders });
+    const result = await pipeUpstream(event, fetchUrl, apiHeaders);
     if (channelPatchId) {
       await triggerChannelRefresh(
         channelPatchId,
@@ -143,7 +155,7 @@ export default defineEventHandler(async (event) => {
   // Stream endpoints (e.g. /orchestrator/executions/:id/stream) need to be
   // piped through without buffering so the client gets incremental chunks.
   if (targetUrl.endsWith('/stream')) {
-    return proxyRequest(event, fetchUrl, { headers: apiHeaders });
+    return pipeUpstream(event, fetchUrl, apiHeaders);
   }
 
   let body;

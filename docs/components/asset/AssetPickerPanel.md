@@ -104,6 +104,8 @@ On the dialog's `uploaded` event the panel:
 
 Server-driven: one [`useListQuery`](/composables/useListQuery) (`key: 'asset-picker-list'`, `immediate: false`, refreshed on open) over `assetApi.query`, scoped by `assetListOptions(folder)`. Page sizes are 12 / 24 / 48 (default 24).
 
+Folder names come from [`useFolders`](/composables/useFolders) with `immediate: false`, loaded on open. The host keeps the panel mounted on every signed-in page, so a closed panel fetches nothing.
+
 - **Types** — `types` is sent as a fixed `assetTypes` filter from the fetcher, so it never counts as an active query (the empty state reads "no assets", not "no matches").
 - **Search** — the backend's word-prefix search, not a substring match on the name.
 - **Recently added** — all assets, `createdAt desc`, paged like any folder. Picking a folder clears that sort unless the user has since sorted by a column.

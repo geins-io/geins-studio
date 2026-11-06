@@ -3,12 +3,12 @@ import type {
   AuthTokens,
   LoginCredentials,
   AuthResponse,
-  User,
   Session,
   ApiOptions,
 } from '#shared/types';
 import { buildQueryString } from '#shared/utils/api-query';
 import { resolveAppId } from '#shared/utils/app';
+import { AuthApiError } from '#shared/utils/auth-session';
 import type { JWT } from 'next-auth/jwt';
 
 const config = useRuntimeConfig();
@@ -18,9 +18,16 @@ const { geinsLog } = log('server/utils/auth.ts');
 
 const ENDPOINTS = {
   LOGIN: 'auth',
-  USER: 'user/me',
   REFRESH: 'auth/refresh',
   VERIFY: 'auth/verify',
+};
+// A hung refresh must fail as a retryable network error, not run into the
+// function timeout.
+const REQUEST_TIMEOUT_MS = 10_000;
+const STATUS_MESSAGES: Record<number, string> = {
+  401: 'Unauthorized',
+  403: 'Insufficient permissions',
+  404: 'Resource not found',
 };
 // TODO: move some of these functions to shared folder (Nuxt 3.14)
 
@@ -37,7 +44,7 @@ export const auth = () => {
    * @param {object} [data] - The request payload.
    * @param {string} [token] - The authorization token.
    * @returns {Promise<T>} The response data.
-   * @throws Will throw an error if the response status is not ok.
+   * @throws {AuthApiError} With the HTTP status for a non-OK response, or status `0` for a network failure or timeout.
    */
   const callAPI = async <T>(
     url: string,
@@ -57,25 +64,27 @@ export const auth = () => {
       const queryString = buildQueryString(options);
       url += `${queryString}`;
     }
-    const response = await fetch(`${API_URL}/${url}`, {
-      method,
-      headers,
-      body: data ? JSON.stringify(data) : undefined,
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${API_URL}/${url}`, {
+        method,
+        headers,
+        body: data ? JSON.stringify(data) : undefined,
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      });
+    } catch (error) {
+      throw new AuthApiError(0, `Request to ${url} failed`, { cause: error });
+    }
 
     if (response.ok) {
       return response.json();
     }
 
-    const text = await response.text();
-    if (response.status === 401) {
-      throw { status: response.status, message: 'Unauthorized' };
-    } else if (response.status === 403) {
-      throw { status: response.status, message: 'Insufficient permissions' };
-    } else if (response.status === 404) {
-      throw { status: response.status, message: 'Resource not found' };
-    }
-    throw new Error(text);
+    throw new AuthApiError(
+      response.status,
+      STATUS_MESSAGES[response.status] ??
+        `Request to ${url} failed with ${response.status}`,
+    );
   };
 
   /**
@@ -95,29 +104,16 @@ export const auth = () => {
   };
 
   /**
-   * Retrieves the user data using the provided access token.
-   *
-   * @param {string} accessToken - The access token.
-   * @returns {Promise<User | undefined>} The user data or undefined if not found.
-   */
-  const getUser = async (accessToken: string): Promise<User | undefined> => {
-    return callAPI<User>(ENDPOINTS.USER, 'GET', undefined, accessToken, {
-      fields: ['accounts'],
-    });
-  };
-
-  /**
    * Refreshes the session using the provided refresh token.
    *
    * @param {string} [refreshToken] - The refresh token.
-   * @returns {Promise<Session | undefined>} The new session data or undefined if no refresh token is provided.
+   * @returns {Promise<AuthResponse>} The new tokens.
+   * @throws {AuthApiError} 401 when there is no refresh token, else as `callAPI`.
    */
-  const refresh = async (
-    refreshToken?: string,
-  ): Promise<AuthResponse | undefined> => {
+  const refresh = async (refreshToken?: string): Promise<AuthResponse> => {
     geinsLog('refreshing token');
     if (!refreshToken) {
-      return undefined;
+      throw new AuthApiError(401, 'Missing refresh token');
     }
     return callAPI<AuthResponse>(ENDPOINTS.REFRESH, 'POST', { refreshToken });
   };
@@ -235,7 +231,6 @@ export const auth = () => {
       tokenExpires: Number(parsedToken?.exp),
       refreshedAt: Number(parsedToken?.iat),
       mfaActive: false,
-      user: session.user,
     };
 
     return authenticatedSession;
@@ -274,7 +269,6 @@ export const auth = () => {
 
   return {
     login,
-    getUser,
     refresh,
     verify,
     parseToken,

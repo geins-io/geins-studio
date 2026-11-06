@@ -20,6 +20,8 @@ const props = withDefaults(
     currency?: string;
     fetchEntitiesExternally?: boolean;
     columnsOrder?: (keyof T)[];
+    /** View-only: shows the selection without quick add, browse or removal. */
+    disabled?: boolean;
   }>(),
   {
     entityKey: 'product',
@@ -280,6 +282,7 @@ defineExpose({
           :selection="includeSelection"
           :title="$t('entity_selection', { entityKey })"
           :description="$t('selector_include_description')"
+          :disabled="disabled"
           @add="addToManuallySelected($event)"
           @remove="removeFromManuallySelected($event)"
         />
@@ -296,12 +299,14 @@ defineExpose({
             :entity-key="entityKey"
             :entities="entities"
             :selection-strategy="selectionStrategy"
+            :disabled="disabled"
           />
           <ContentSwitch
             v-if="allowExclusions"
             v-model:checked="showExclude"
             :label="$t('exclude_entity_from_selection', { entityKey }, 2)"
             :description="$t('selector_exclude_description')"
+            :disabled="disabled"
           >
             <SelectorSelection
               v-model:selection="excludeSelection"
@@ -310,6 +315,7 @@ defineExpose({
               :currency="selectorCurrency"
               :entity-key="entityKey"
               :entities="entities"
+              :disabled="disabled"
             />
           </ContentSwitch>
         </slot>

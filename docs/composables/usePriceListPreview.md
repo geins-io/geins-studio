@@ -9,10 +9,12 @@ This composable is specifically designed to work alongside other price list mana
 ## Features
 
 - **Price list preview generation** with product fetching and transformation
+- **Saved or new lists** — previews changes on a saved list by `entityId`, or a list that doesn't exist yet when `entityId` is `null`
 - **Product state management** with reactive updates
 - **Custom pricing preservation** during product updates
 - **Loading states and error handling** with user-friendly feedback
 - **Flexible feedback options** for different update scenarios
+- **Overlapping calls** run once more after the running preview, so an edit made meanwhile is never dropped
 
 ## Usage
 
@@ -64,7 +66,7 @@ interface UsePriceListPreviewOptions {
 }
 ```
 
-- **`entityId`**: Reactive reference to the current price list entity ID
+- **`entityId`**: Reactive reference to the saved price list's ID. `null` previews a new list (e.g. a company's own list before "Save company" creates it)
 - **`entityDataUpdate`**: Reactive reference to the price list entity being updated
 - **`transformProductsForList`**: Function to transform raw products into display format
 - **`setupColumns`**: Callback function for setting up table columns
@@ -116,9 +118,12 @@ previewPriceList(
 ): Promise<void>
 ```
 
-Generates a price list preview by fetching products based on the current selection query and rules.
+Generates a price list preview by fetching products based on the current selection query and rules. Does nothing without `entityDataUpdate.productSelectionQuery`.
 
+A call made while a preview runs (a second row edit, say) changed the draft after the running preview sent it, so it previews once more when that one settles. Every call made meanwhile shares that one run: the last call's `feedbackMessage` and `showFeedback` win, and `updateProducts` is kept if any of them asked for it. The promise settles once the preview that includes the call does, so it's safe to clear per-call state (loaders) on it. It never rejects: a failed preview shows its error toast and resolves.
+
+- **Endpoint**: `productApi.priceList.id(entityId).preview(...)` (`POST /product/pricelist/{id}/preview`) for a saved list, `productApi.priceList.preview(...)` (`POST /product/pricelist/preview`) when `entityId` is `null`. Both send `{ priceList: entityDataUpdate, batchQuery }`.
 - **Parameters**:
-  - `feedbackMessage`: Custom message to show on successful update (default: "Price list preview updated.")
-  - `updateProducts`: Whether to update the entity's product list (default: false)
+  - `feedbackMessage`: Custom message to show on successful update (default: "Price list preview updated")
+  - `updateProducts`: Whether to update the entity's product list (default: false). Rows the preview made up carry `new_`-prefixed ids; those are dropped (`isPreviewId` from `#shared/utils/price-list-preview`), because create and update fail on them
   - `showFeedback`: Whether to show toast notifications (default: true)

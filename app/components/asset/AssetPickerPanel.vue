@@ -8,7 +8,6 @@ import type {
 import { TableMode } from '#shared/types';
 import { assetListOptions } from '#shared/utils/asset';
 import { ENTITIES } from '#shared/utils/entities';
-import { cn } from '@/utils/index';
 import type { ColumnDef } from '@tanstack/vue-table';
 
 /**
@@ -51,7 +50,8 @@ const open = defineModel<boolean>('open', { default: false });
 const { t } = useI18n();
 const { geinsLogError } = useGeinsLog('AssetPickerPanel');
 const { assetApi } = useGeinsRepository();
-const { folderName } = useFolders();
+// The host keeps this panel mounted app-wide, so folders wait for the first open.
+const { folderName, load: loadFolders } = useFolders({ immediate: false });
 const { resolveIcon } = useLucideIcon();
 const { getColumns, getBasicCellStyle, getBasicHeaderStyle } =
   useColumns<Asset>();
@@ -326,6 +326,7 @@ watch(
     uploadOpen.value = false;
     opening.value = true;
     refresh();
+    loadFolders();
   },
   { immediate: true },
 );

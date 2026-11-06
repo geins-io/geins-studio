@@ -5,7 +5,6 @@ import type {
   StorefrontSchema,
   StorefrontSettings,
 } from '#shared/types';
-import { analyzeSchemaChange } from '@/utils/storefront';
 
 const props = defineProps<{
   open: boolean;
