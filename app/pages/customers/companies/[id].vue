@@ -433,6 +433,14 @@ if (!usersError.value && Array.isArray(usersData.value)) {
   }));
 }
 
+// An API user already assigned stays selectable, or the next save would drop it.
+const salesRepOptions = computed(() => {
+  const assigned = new Set(entityData.value?.salesReps ?? []);
+  return users.value.filter(
+    (user) => user.apiUserType !== 'api' || assigned.has(user._id),
+  );
+});
+
 // =====================================================================================
 // BUYERS MANAGEMENT
 // =====================================================================================
@@ -1497,7 +1505,7 @@ if (!createMode.value) {
                         <FormInputTagsSearch
                           :model-value="componentField.modelValue"
                           entity-key="sales_rep"
-                          :data-set="users"
+                          :data-set="salesRepOptions"
                           @update:model-value="
                             componentField['onUpdate:modelValue']
                           "
