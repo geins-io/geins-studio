@@ -3,6 +3,7 @@ import type {
   Quotation,
   QuotationList,
   QuotationBatchQueryResult,
+  QuotationStatus,
   ColumnOptions,
   StringKeyOf,
 } from '#shared/types';
@@ -68,6 +69,14 @@ const { data, error, refresh } = await useAsyncData<QuotationBatchQueryResult>(
   () => orderApi.quotation.list(),
 );
 
+const deletableStatuses: QuotationStatus[] = [
+  'draft',
+  'requested',
+  'rejected',
+  'expired',
+  'canceled',
+];
+
 const { getColumns, addActionsColumn, setColumnOrder } =
   useColumns<EntityList>();
 
@@ -115,6 +124,10 @@ onMounted(() => {
       'modifiedAt',
       'discount',
       'settings',
+      'request',
+      'orderDetails',
+      'externalReference',
+      'orderPublicId',
     ],
   };
   // GET AND SET COLUMNS
@@ -140,9 +153,7 @@ onMounted(() => {
       },
       onDelete: async (item: EntityList) => await openDeleteDialog(item._id),
       disabledActions: (item: EntityList) =>
-        !['draft', 'rejected', 'expired', 'canceled'].includes(
-          item.status as string,
-        )
+        !deletableStatuses.includes(item.status)
           ? (['delete'] as TableRowAction[])
           : [],
     },

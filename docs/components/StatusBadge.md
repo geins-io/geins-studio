@@ -73,6 +73,7 @@ type StatusBadgeStatus =
   | 'finalized'
   | 'healthy'
   | 'enabled'
+  | 'requested' // amber outline
   | 'accepted'
   | 'completed'
   | 'confirmed'
