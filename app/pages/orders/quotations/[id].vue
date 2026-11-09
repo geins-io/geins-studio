@@ -35,6 +35,7 @@ import type {
   ChangelogEntry,
 } from '#shared/types';
 import { ENTITIES, entityEditUrl } from '#shared/utils/entities';
+import { isQuotationEditable } from '#shared/utils/quotation';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, Row } from '@tanstack/vue-table';
 
@@ -98,7 +99,7 @@ const entityBase: QuotationCreate = {
 // =====================================================================================
 // UI STATE MANAGEMENT
 // =====================================================================================
-// Sent mode — set from API response in parseEntityData
+// Sent mode = the read-only layout — set from API response in parseEntityData
 const sentMode = ref(false);
 const currentStatus = ref<QuotationStatus>('draft');
 const canDeleteInSentMode = computed(() =>
@@ -651,9 +652,8 @@ const {
     quotationTotal.value = quotation.total || null;
     previewTotal.value = null;
 
-    // Sent mode: any non-draft status
     currentStatus.value = quotation.status;
-    sentMode.value = quotation.status !== 'draft';
+    sentMode.value = !isQuotationEditable(quotation);
     communications.value = quotation.communication || [];
 
     // Discount & shipping fee from API response
@@ -683,8 +683,9 @@ const {
     billingAddress.value = quotation.billingAddress;
     shippingAddress.value = quotation.shippingAddress;
 
-    // Resolve payment terms from validPaymentMethods
-    const paymentTerms = quotation.terms || 'Net 30';
+    // No fallback: a buyer's request arrives without terms, and a default shown
+    // here but never saved would let Send go out with no terms.
+    const paymentTerms = quotation.terms || '';
 
     // Set items from API response as the source of truth
     displayItems.value = quotation.items || [];
@@ -784,7 +785,7 @@ const {
 // =====================================================================================
 // ERROR HANDLING SETUP
 // =====================================================================================
-const { handleFetchResult } = usePageError({
+const { handleFetchResult, throwPageError } = usePageError({
   entity: ENTITIES.quotation,
   entityId: entityId.value,
   scope,
@@ -1137,6 +1138,8 @@ if (!createMode.value) {
   onMounted(async () => {
     // Validate entity data
     const quotation = handleFetchResult<Quotation>(error.value, data.value);
+    // A request the buyer hasn't sent is never shown, even from an old link
+    if (quotation.status === 'requestDraft') throwPageError(404);
 
     // Fetch only the selected company (instead of all companies)
     const companyId = quotation.company?._id || '';
@@ -1300,7 +1303,24 @@ const statusActions = computed<StatusActionLayout>(() => {
     showDatePicker: true,
   });
 
+  const cancelAction: StatusAction = {
+    action: 'cancel',
+    label: t('cancel_entity', en),
+    title: t('cancel_entity', en),
+    description: t('orders.cancel_quotation_description'),
+    icon: 'ban',
+  };
+
   switch (status) {
+    // Cancel declines the buyer's request. The API's reject from requested is
+    // the buyer withdrawing it, so Studio doesn't offer it.
+    case 'requested':
+      return {
+        placeOrder: false,
+        groupActions: [],
+        dropdownActions: [cancelAction],
+      };
+
     case 'pending':
       if (strict) {
         return {
@@ -1323,27 +1343,13 @@ const statusActions = computed<StatusActionLayout>(() => {
           ],
           dropdownActions: [
             extendAction(t('orders.extend_quotation_description_pending')),
-            {
-              action: 'cancel',
-              label: t('cancel_entity', en),
-              title: t('cancel_entity', en),
-              description: t('orders.cancel_quotation_description'),
-              icon: 'ban',
-            },
+            cancelAction,
           ],
         };
       }
       return {
         placeOrder: true,
-        groupActions: [
-          {
-            action: 'cancel',
-            label: t('cancel_entity', en),
-            title: t('cancel_entity', en),
-            description: t('orders.cancel_quotation_description'),
-            icon: 'ban',
-          },
-        ],
+        groupActions: [cancelAction],
         dropdownActions: [
           extendAction(t('orders.extend_quotation_description_pending')),
         ],
@@ -1371,29 +1377,13 @@ const statusActions = computed<StatusActionLayout>(() => {
             messageType: 'toCustomer',
           },
         ],
-        dropdownActions: [
-          {
-            action: 'cancel',
-            label: t('cancel_entity', en),
-            title: t('cancel_entity', en),
-            description: t('orders.cancel_quotation_description'),
-            icon: 'ban',
-          },
-        ],
+        dropdownActions: [cancelAction],
       };
 
     case 'confirmed':
       return {
         placeOrder: true,
-        groupActions: [
-          {
-            action: 'cancel',
-            label: t('cancel_entity', en),
-            title: t('cancel_entity', en),
-            description: t('orders.cancel_quotation_description'),
-            icon: 'ban',
-          },
-        ],
+        groupActions: [cancelAction],
         dropdownActions: [],
       };
 
@@ -1775,6 +1765,10 @@ const quotationStatus = computed<QuotationStatus>(
   () => entityData.value?.status || 'draft',
 );
 
+const workflowStartStatus = computed(() =>
+  quotationStatus.value === 'requested' ? 'requested' : 'draft',
+);
+
 const { summaryProps } = useEntityEditSummary({
   createMode,
   formTouched,
@@ -1843,7 +1837,11 @@ definePageMeta({
               :disabled="!hasUnsavedChanges || loading || fetchingData"
               @click="handleSave"
             >
-              {{ $t('save_entity', { entityKey: 'draft' }) }}
+              {{
+                $t('save_entity', {
+                  entityKey: currentStatus === 'draft' ? 'draft' : entityKey,
+                })
+              }}
             </ButtonIcon>
             <ButtonGroup>
               <ButtonIcon
@@ -1875,6 +1873,20 @@ definePageMeta({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
+                  <template v-if="statusActions.dropdownActions.length">
+                    <DropdownMenuItem
+                      v-for="action in statusActions.dropdownActions"
+                      :key="action.action"
+                      @click="openTransitionDialog(action)"
+                    >
+                      <LucideBan
+                        v-if="action.icon === 'ban'"
+                        class="mr-2 size-4"
+                      />
+                      {{ action.label }}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </template>
                   <DropdownMenuItem as-child>
                     <NuxtLink :to="newEntityUrl">
                       <LucidePlus class="mr-2 size-4" />
@@ -2363,6 +2375,7 @@ definePageMeta({
                           :require-confirmation="
                             entityData?.settings?.requireConfirmation
                           "
+                          :start-status="workflowStartStatus"
                         />
                       </div>
                       <p class="text-sm">
@@ -2528,6 +2541,7 @@ definePageMeta({
                         <template #after-label>
                           <QuotationWorkflowInfo
                             :require-confirmation="value"
+                            :start-status="workflowStartStatus"
                             edit-mode
                             @update:require-confirmation="handleChange"
                           />
