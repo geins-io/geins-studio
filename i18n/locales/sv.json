@@ -759,6 +759,7 @@
     "vat_included_description": "Ordrar från detta företag kommer inkludera moms",
     "no_price_lists_connected": "Inga prislistor är kopplade till detta företag"
   },
+  "you": "Du",
   "managed_externally": "Hanteras externt, utanför Studio, till exempel från ditt affärssystem.",
   "pricing": {
     "price_list_channel": "Kanal",

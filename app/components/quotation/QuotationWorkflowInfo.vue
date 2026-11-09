@@ -45,7 +45,7 @@ interface FlowItem {
 const startItem = computed<FlowItem>(() => ({
   step: {
     status: props.startStatus,
-    actors: ['You'],
+    actors: [t('you')],
     description: t(`orders.workflow_step_${props.startStatus}`),
   },
   action: {
@@ -59,7 +59,7 @@ const defaultFlow = computed<FlowItem[]>(() => [
   {
     step: {
       status: 'pending',
-      actors: ['Customer', 'You'],
+      actors: [t('customer'), t('you')],
       description: t('orders.workflow_step_pending_default'),
     },
     action: {
@@ -80,7 +80,7 @@ const strictFlow = computed<FlowItem[]>(() => [
   {
     step: {
       status: 'pending',
-      actors: ['Customer', 'You'],
+      actors: [t('customer'), t('you')],
       description: t('orders.workflow_step_pending'),
     },
     action: {
@@ -91,7 +91,7 @@ const strictFlow = computed<FlowItem[]>(() => [
   {
     step: {
       status: 'accepted',
-      actors: ['You'],
+      actors: [t('you')],
       description: t('orders.workflow_step_accepted'),
     },
     action: {
@@ -102,7 +102,7 @@ const strictFlow = computed<FlowItem[]>(() => [
   {
     step: {
       status: 'confirmed',
-      actors: ['Customer', 'You'],
+      actors: [t('customer'), t('you')],
       description: t('orders.workflow_step_confirmed'),
     },
     action: {
