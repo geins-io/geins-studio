@@ -10,6 +10,7 @@ The files you will find in the `server` directory that are handling authenticati
 - `server/api/auth/[...].ts` - The catch-all for auth requests containing the [NuxtAuthHandler](https://auth.sidebase.io/guide/authjs/nuxt-auth-handler)
 - `server/utils/auth.ts` - A utility file with all Geins-specific authentication logic
 - `shared/utils/auth-session.ts` - Pure session decisions used by the `NuxtAuthHandler` callbacks: the one retry of a refresh answered `403`, whether a session update forces a refresh, the token after a refresh succeeds or fails, and the session built from a token
+- `server/middleware/csrf.ts` - Refuses a state-changing `/api` call that Studio itself didn't send (see [CSRF](#csrf)); the decision is `csrfRejection` in `shared/utils/csrf.ts`
 - `server/api/[...].ts` - The API proxy. It turns the `x-access-token` header into a Bearer `authorization` and forwards only allowlisted headers (`pickUpstreamHeaders` in `shared/utils/proxy-headers.ts`), so the session cookie, which holds the tokens, never reaches the Geins API
 
 ## Application Files
@@ -119,3 +120,17 @@ All tabs share the session cookie, so tabs only send each other signals on the `
 | `signed-out`      | The auth middleware on `/auth/logout`, where every logout lands after the cookie was cleared                  | Re-reads its session and, if it is no longer authenticated, goes to the login page                        |
 
 A receiving tab never re-signals, and only a deliberate logout sends `signed-out` — a tab whose own session fetch fails or comes back unauthenticated decides for itself and tells no one.
+
+## CSRF
+
+A browser attaches Studio's cookies to a request from any site, so every state-changing `/api` call (anything but `GET`, `HEAD` and `OPTIONS`) must prove Studio sent it. `server/middleware/csrf.ts` answers `403` unless both hold:
+
+1. **Same origin.** `Sec-Fetch-Site`, which every current browser sends and a page can't set, must be `same-origin`; `same-site` (a sibling subdomain such as `qa.` calling the main host) is refused too. Without it, the `Origin` host must match the host the browser addressed (`x-forwarded-host` honoured). A request with neither passes this step.
+2. **The `x-geins-csrf: 1` header.** `$geinsApi` sets it on every request. A cross-origin page can only send a custom header after a CORS preflight, and Studio never answers one.
+
+The header never reaches Geins: it isn't in `UPSTREAM_HEADERS`. A refusal is logged as method, path and reason, never headers or bodies.
+
+Exempt:
+
+- `/api/csp-report` — the browser posts CSP reports itself, without our header.
+- `/api/auth/*`, while next-auth owns it — its client can't send our header, and next-auth guards its own POSTs with a double-submit CSRF token. Marked `cutover:`; it goes with the sealed session.

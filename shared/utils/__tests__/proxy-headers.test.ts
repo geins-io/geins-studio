@@ -65,6 +65,7 @@ describe('pickUpstreamHeaders', () => {
     'x-account-key': 'acc-1',
     'x-app': 'geins',
     'x-access-token': 'tok-1',
+    'x-geins-csrf': '1',
     'x-custom': '1',
     cookie: '__Secure-next-auth.session-token=jwt; studio-pref=1',
     host: 'studio.geins.io',

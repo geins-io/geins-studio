@@ -1,6 +1,7 @@
 import type { GeinsApiError, GeinsApiFetch } from '#shared/types';
 import { resolveAppId } from '#shared/utils/app';
 import { createUnauthorizedRecovery } from '#shared/utils/auth-recovery';
+import { CSRF_HEADER } from '#shared/utils/csrf';
 import { tunnelIfMatch } from '#shared/utils/proxy-headers';
 /**
  * Nuxt plugin for handling Geins API requests.
@@ -79,6 +80,8 @@ export default defineNuxtPlugin(() => {
       // Outside the try: a failed token refresh must not let a raw `If-Match`
       // reach Vercel's edge, which would answer it with its own 412.
       tunnelIfMatch(options.headers);
+      // The server's CSRF guard refuses a mutation without it.
+      options.headers.set(CSRF_HEADER, '1');
       try {
         if (isExpired() || expiresSoon()) {
           await refresh();
