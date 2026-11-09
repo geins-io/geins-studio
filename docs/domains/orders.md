@@ -14,12 +14,18 @@ The Orders domain manages the quotation-to-order workflow. Currently it covers q
 **Quotation lifecycle** — A quotation progresses through a state machine:
 
 ```
-draft → pending → accepted → confirmed → finalized
-                ↘ expired      ↘ canceled
-                ↘ rejected
+requestDraft → requested ─┐            (buyer requests)
+                          ↓ send
+               draft → pending → accepted → confirmed → finalized
+                               ↘ expired      ↘ canceled
+                               ↘ rejected
 ```
 
 All status transitions are one-way (no revert to draft). Each transition is a `POST /quotation/{id}/{action}` with a `StatusTransitionRequest` body. The `expire` transition is automatic (never triggered manually).
+
+**Buyer requests** — A buyer can ask for a quotation from the sales portal. While they write it, the quotation is `requestDraft` and only the buyer edits it. Once they send it, it becomes `requested` and it is the seller's turn: `send` moves it to `pending`, and `reject`/`cancel` are allowed too. What the buyer sent is on `quotation.request`.
+
+**`requestDraft` is never shown in Studio** — `orderApi.quotation.list()` excludes it server-side by default (`VISIBLE_QUOTATIONS_QUERY` in `app/utils/repositories/order.ts`). The API ignores `exclude` when `all: true` is set and only subtracts `exclude` from an `include`. So the query includes every quotation with `hasExternalReference: true OR false` and excludes `statuses: ['requestDraft']`. It doesn't list the allowed statuses, so statuses the API adds later still show up. A caller that passes its own batch query to `list()` or `query()` must exclude request drafts the same way.
 
 **Snapshots** — When a quotation is created, the API captures point-in-time snapshots of the company (`QuotationCompany`), owner/sales rep (`QuotationOwner`), and buyer (`QuotationCustomer`). Each snapshot extends `EntitySnapshot` with `_id`, `_type`, `_snapshotAt`. Read IDs via `company._id`, `owner._id`, `customer._id` (not `companyId`/`ownerId`). Owner and customer use `firstName`/`lastName` (no combined `name` or `email`). Addresses use the standard `Address` type.
 
@@ -33,7 +39,7 @@ All status transitions are one-way (no revert to draft). Each transition is a `P
 
 **Currency default in create mode** — When a company is selected, the currency auto-defaults to the channel's default market currency (via `channel.defaultMarket` → market lookup → `market.currency._id`), falling back to `availableCurrencies[0]`.
 
-**Deletable statuses** — Delete is available for `draft`, `rejected`, `expired`, and `canceled` quotations. Statuses like `pending`, `accepted`, `confirmed`, and `finalized` do not allow deletion.
+**Deletable statuses** — Delete is available for `draft`, `requested`, `rejected`, `expired`, and `canceled` quotations. Statuses like `pending`, `accepted`, `confirmed`, and `finalized` do not allow deletion.
 
 **Changelog** — `changelogApi.getForEntity('quotation', id)` fetches changelog entries. `ChangelogEntry.id` is a `number` from the API (typed as `string | number`). Entries with `subEntity === 'message'` are filtered out (messages are shown separately). The `changes` field is a JSON string of `[{ p: string, c: string[] }]`.
 
@@ -55,7 +61,9 @@ All status transitions are one-way (no revert to draft). Each transition is a `P
 
 **`QuotationCompany.vatNumber`** — The company snapshot uses `vatNumber` (not `orgNr`).
 
-**`QuotationStatus` casing** — All status values are lowercase (`'draft'`, `'pending'`, `'accepted'`, etc.) — consistent with the API.
+**`QuotationStatus` casing** — Status values are camelCase as the API sends them: single words are lowercase (`'draft'`, `'pending'`, `'requested'`), and the one compound is `'requestDraft'`.
+
+**`request`, `orderDetails`, `externalReference`, `orderPublicId`** — Omitted from the response when empty. `QuotationRequest`, `QuotationOrderDetails` and `QuotationExternalReference` are value objects with no `_id`/`_type`. The list page keeps them on the row data but excludes them as columns.
 
 **`prepareUpdateData` must NOT spread** — `entityDataUpdate` contains response-only fields (`billingAddress`, `shippingAddress`, `total`, `company`, `owner`, `customer`, `communication`, `changelog`). Only include OpenAPI update schema fields: `name`, `validTo`, `companyId`, `ownerId`, `customerId`, `validPaymentMethods`, `validShippingMethods`, `suggestedShippingFee`, `terms`, `billingAddressId`, `shippingAddressId`, `items`.
 
