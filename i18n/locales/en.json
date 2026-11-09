@@ -762,6 +762,7 @@
     "vat_included_description": "Orders from this company will include VAT",
     "no_price_lists_connected": "No price lists are connected to this company"
   },
+  "you": "You",
   "managed_externally": "Managed externally, outside of Studio. Such as from your ERP.",
   "pricing": {
     "price_list_channel": "Channel",
