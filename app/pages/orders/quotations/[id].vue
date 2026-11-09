@@ -2390,6 +2390,11 @@ definePageMeta({
                 </div>
               </ContentEditCard>
 
+              <QuotationRequestDetails
+                v-if="entityData?.request"
+                :request="entityData.request"
+              />
+
               <!-- Card 2: Customer (read-only, no Change button) -->
               <ContentEditCard :create-mode="false" :title="$t('customer')">
                 <QuotationCustomerDisplay
@@ -2520,6 +2525,17 @@ definePageMeta({
                             allow-clear
                           />
                         </FormControl>
+                        <FormDescription
+                          v-if="entityData?.request?.requestedValidTo"
+                        >
+                          {{
+                            $t('orders.requested_valid_to_hint', {
+                              date: formatDate(
+                                entityData.request.requestedValidTo,
+                              ),
+                            })
+                          }}
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     </FormField>
@@ -2551,6 +2567,11 @@ definePageMeta({
                   </FormGrid>
                 </FormGridWrap>
               </ContentEditCard>
+
+              <QuotationRequestDetails
+                v-if="entityData?.request"
+                :request="entityData.request"
+              />
 
               <!-- Card 2: Customer -->
               <ContentEditCard :create-mode="false" :title="$t('customer')">
