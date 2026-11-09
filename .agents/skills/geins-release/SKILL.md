@@ -81,15 +81,19 @@ Use only the headings that have entries, in this order:
 Write it by hand from the merged PRs:
 
 - **Important, user-noticeable changes only.** No cosmetic tweaks, no test-only work, no routine tooling churn. Fold several PRs on one feature into one bullet.
+- **A new feature leads Enhancements as one bold bullet**, named as the feature (usually its Linear project name): `- **Assets library** — new section for …: browse …; edit …; upload …`. All of its PRs go in that bullet; no separate per-area bullets for its parts.
+- **No fixes to unreleased work.** A fix to something that first ships in this release is part of that feature, not a Bug Fix. List only fixes to what's already on `main` (check the bug's code or trigger exists on `origin/main`).
 - Plain user language, sentence case, lead with the area ("Assets library — …").
 - **Security fixes: impact only.** Say what is now protected, in user terms, under `Security — …`. Never the exploit, the affected endpoint or how it could be abused. E.g. "Security — server logs no longer include request payloads or authentication tokens".
 - Contributors = authors of the included PRs (`gh pr view N --json author`).
+
+**New features also go on the Features docs page**: add a row at the top of the table in `docs/introduction/features.md` — bold feature name (same as the CHANGELOG bullet), a short description, and `vX.Y.Z` as Available since.
 
 Show the developer the section before committing. Then:
 
 ```bash
 pnpm lint:check && pnpm typecheck && pnpm build
-git add package.json CHANGELOG.md
+git add package.json CHANGELOG.md docs/introduction/features.md
 git commit -m "chore: release vX.Y.Z" -m "Co-Authored-By: <model attribution from the session>"
 git push origin next
 ```
