@@ -3,11 +3,11 @@ import type {
   Quotation,
   QuotationList,
   QuotationBatchQueryResult,
-  QuotationStatus,
   ColumnOptions,
   StringKeyOf,
 } from '#shared/types';
 import { ENTITIES, entityNewUrl, entityEditUrl } from '#shared/utils/entities';
+import { isQuotationDeletable } from '#shared/utils/quotation';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 
@@ -68,14 +68,6 @@ const { data, error, refresh } = await useAsyncData<QuotationBatchQueryResult>(
   'orders-quotations-list',
   () => orderApi.quotation.list(),
 );
-
-const deletableStatuses: QuotationStatus[] = [
-  'draft',
-  'requested',
-  'rejected',
-  'expired',
-  'canceled',
-];
 
 const { getColumns, addActionsColumn, setColumnOrder } =
   useColumns<EntityList>();
@@ -153,9 +145,7 @@ onMounted(() => {
       },
       onDelete: async (item: EntityList) => await openDeleteDialog(item._id),
       disabledActions: (item: EntityList) =>
-        !deletableStatuses.includes(item.status)
-          ? (['delete'] as TableRowAction[])
-          : [],
+        !isQuotationDeletable(item) ? (['delete'] as TableRowAction[]) : [],
     },
     'actions',
     ['edit', 'copy', 'delete'],

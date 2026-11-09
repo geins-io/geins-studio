@@ -762,6 +762,7 @@
     "vat_included_description": "Orders from this company will include VAT",
     "no_price_lists_connected": "No price lists are connected to this company"
   },
+  "managed_externally": "Managed externally, outside of Studio. Such as from your ERP.",
   "pricing": {
     "price_list_channel": "Channel",
     "price_list_currency": "Currency",
@@ -799,7 +800,6 @@
     "price_list_volume_pricing_readonly_description": "Quantity-based price breaks for",
     "price_list_readonly_breaks_description": "These price breaks apply only to this product in this price list.",
     "price_list_read_only_title": "Read-only price list",
-    "managed_externally": "Managed externally, outside of Studio. Such as from your ERP.",
     "company_volume_pricing_description": "These price breaks apply only to this product for this company.",
     "price_list_no_product_breaks": "No price breaks for this product.",
     "error_applying_quick_action": "Error applying quick action",
@@ -927,6 +927,9 @@
     "goods_label": "Goods label",
     "customer_reference": "Customer reference",
     "requested_valid_to_hint": "Requested by the customer: {date}",
+    "quotation_read_only_title": "Read-only quotation",
+    "external_quotation_number": "External quotation number",
+    "external_order_number": "External order number",
     "workflow_step_pending": "can accept the quotation",
     "workflow_step_accepted": "can confirm the quotation",
     "workflow_step_confirmed": "can place the order",

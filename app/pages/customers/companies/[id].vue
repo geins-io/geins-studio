@@ -734,7 +734,7 @@ const companyPriceListColumns = computed(() => {
                   h(LucideLock, { class: 'text-muted-foreground size-4' }),
                 ),
               ),
-              h(TooltipContent, null, () => t('pricing.managed_externally')),
+              h(TooltipContent, null, () => t('managed_externally')),
             ]),
           ),
       ]),

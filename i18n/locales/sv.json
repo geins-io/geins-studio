@@ -759,6 +759,7 @@
     "vat_included_description": "Ordrar från detta företag kommer inkludera moms",
     "no_price_lists_connected": "Inga prislistor är kopplade till detta företag"
   },
+  "managed_externally": "Hanteras externt, utanför Studio, till exempel från ditt affärssystem.",
   "pricing": {
     "price_list_channel": "Kanal",
     "price_list_currency": "Valuta",
@@ -796,7 +797,6 @@
     "price_list_volume_pricing_readonly_description": "Antal-baserade prisavbrott för",
     "price_list_readonly_breaks_description": "Dessa prisavbrott gäller endast denna produkt i denna prislista.",
     "price_list_read_only_title": "Skrivskyddad prislista",
-    "managed_externally": "Hanteras externt, utanför Studio, till exempel från ditt affärssystem.",
     "company_volume_pricing_description": "Dessa prisavbrott gäller endast denna produkt för detta företag.",
     "price_list_no_product_breaks": "Inga prisavbrott för denna produkt.",
     "error_applying_quick_action": "Fel vid tillämpning av snabbåtgärd",
@@ -924,6 +924,9 @@
     "goods_label": "Godsmärkning",
     "customer_reference": "Kundreferens",
     "requested_valid_to_hint": "Önskat av kunden: {date}",
+    "quotation_read_only_title": "Skrivskyddad offert",
+    "external_quotation_number": "Externt offertnummer",
+    "external_order_number": "Externt ordernummer",
     "workflow_step_pending": "Kund kan acceptera",
     "workflow_step_accepted": "Du kan bekräfta",
     "workflow_step_confirmed": "Kund (eller du) kan lägga ordern",
