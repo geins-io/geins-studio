@@ -1,0 +1,436 @@
+import type {
+  CustomerCompanyBase,
+  PriceListContent,
+  PriceListPriceMode,
+  PriceListProduct,
+  PriceListProductList,
+  PriceListRule,
+  PriceListRuleField,
+  PriceListRuleMode,
+  ProductPriceList,
+  ProductPriceListCreate,
+  ProductPriceListUpdate,
+} from '#shared/types';
+
+type PriceListOwnership = Pick<
+  ProductPriceList,
+  'accountSpecific' | 'wholesaleAccountId'
+>;
+
+/**
+ * Whether `priceList` is an account list owned by the wholesale account
+ * `accountId`. A shared list sends `wholesaleAccountId: ""`, so branch on
+ * `accountSpecific` rather than null-checking the id.
+ */
+export function isOwnAccountPriceList(
+  priceList: PriceListOwnership,
+  accountId: string,
+): boolean {
+  return (
+    priceList.accountSpecific && priceList.wholesaleAccountId === accountId
+  );
+}
+
+/**
+ * Whether an ERP controls the company's prices: it has an `externalId`. Nothing
+ * syncs prices from Studio back to the ERP, so Studio adds no company lists to
+ * these companies. Pass the saved company, not the form's values.
+ */
+export function isErpControlledCompany(
+  company: Partial<Pick<CustomerCompanyBase, 'externalId'>> | undefined,
+): boolean {
+  return !!company?.externalId?.trim();
+}
+
+export type CompanyPriceListSaveAction =
+  | 'create'
+  | 'update'
+  | 'activate'
+  | 'deactivate'
+  | 'none';
+
+/**
+ * What "Save company" does to the company's own list for the switch state
+ * `enabled`. Off keeps the list (and its prices) and only deactivates it.
+ * Edited content makes it an `update`, which also carries an `active` change.
+ * A read-only (ERP) list is never saved: `PATCH` on it answers 422.
+ */
+export function getCompanyPriceListSaveAction(
+  priceList: Pick<ProductPriceList, 'active' | 'readOnly'> | undefined,
+  enabled: boolean,
+  contentDirty = false,
+): CompanyPriceListSaveAction {
+  if (!priceList) return enabled ? 'create' : 'none';
+  if (priceList.readOnly) return 'none';
+  if (contentDirty) return 'update';
+  if (priceList.active === enabled) return 'none';
+  return enabled ? 'activate' : 'deactivate';
+}
+
+export interface PriceListSummaryCounts {
+  manual: number;
+  volume: number;
+}
+
+/**
+ * The manual and volume price counts from `fields: ['counts']`. Undefined
+ * while the API leaves either one null, so the summary hides the line.
+ */
+export function getPriceListSummaryCounts(
+  priceList?: Pick<
+    ProductPriceList,
+    'manualPriceProductCount' | 'volumePriceProductCount'
+  > | null,
+): PriceListSummaryCounts | undefined {
+  const manual = priceList?.manualPriceProductCount;
+  const volume = priceList?.volumePriceProductCount;
+  if (typeof manual !== 'number' || typeof volume !== 'number') {
+    return undefined;
+  }
+  return { manual, volume };
+}
+
+/**
+ * Name of a company list Studio creates, e.g. "Sonora Lab AB SEK", or
+ * "Sonora Lab AB Sweden SEK" with the `channelName` of a multi-channel company.
+ */
+export function companyPriceListName(
+  companyName: string,
+  currency: string,
+  channelName?: string,
+): string {
+  return [companyName.trim(), channelName?.trim(), currency]
+    .filter(Boolean)
+    .join(' ');
+}
+
+/**
+ * Identifier of a company list Studio creates, e.g. "10234-SEK", or
+ * "10234-1-SEK" with the `channel` id of a multi-channel company. A list's
+ * `identifier` is for external references, so it only exists when the company
+ * has an `externalId`.
+ */
+export function companyPriceListIdentifier(
+  externalId: string | undefined,
+  currency: string,
+  channel?: string,
+): string | undefined {
+  const id = externalId?.trim();
+  return id ? [id, channel, currency].filter(Boolean).join('-') : undefined;
+}
+
+type PriceListSlot = Pick<ProductPriceList, 'channel' | 'currency'>;
+
+export interface FreeCompanyPriceListSlot {
+  channel: string;
+  currencies: string[];
+}
+
+/**
+ * The channel and currency slots where the company can still get a list of its
+ * own: an account owns at most one per slot. `taken` holds its saved lists (ERP
+ * and Studio-managed) and unsaved drafts. Channels with no free currency are
+ * left out; currencies keep `getCurrencies`' order.
+ */
+export function getFreeCompanyPriceListSlots(
+  channels: string[],
+  getCurrencies: (channel: string) => string[],
+  taken: PriceListSlot[],
+): FreeCompanyPriceListSlot[] {
+  return channels
+    .map((channel) => ({
+      channel,
+      currencies: getCurrencies(channel).filter(
+        (currency) =>
+          !taken.some(
+            (slot) =>
+              String(slot.channel) === String(channel) &&
+              slot.currency === currency,
+          ),
+      ),
+    }))
+    .filter((slot) => slot.currencies.length > 0);
+}
+
+interface CompanyPriceListEntryState {
+  /** The server copy; a draft has none yet. */
+  saved?: Pick<ProductPriceList, 'active'>;
+  active: boolean;
+  readOnly: boolean;
+  contentDirty: boolean;
+  markedForDeletion?: boolean;
+}
+
+/**
+ * Whether "Save company" has something to save for one of the company's lists:
+ * it's an unsaved draft, it's marked for deletion, its switch differs from the
+ * saved list, or its content was edited. A read-only (ERP) list never saves.
+ */
+export function isCompanyPriceListEntryDirty(
+  entry: CompanyPriceListEntryState,
+): boolean {
+  if (entry.readOnly) return false;
+  if (!entry.saved || entry.markedForDeletion) return true;
+  return entry.active !== entry.saved.active || entry.contentDirty;
+}
+
+const PRICE_FIELDS: PriceListRuleField[] = [
+  'price',
+  'margin',
+  'discountPercent',
+];
+
+const PRICE_FIELD_BY_MODE: Partial<
+  Record<PriceListPriceMode, PriceListRuleField>
+> = {
+  fixed: 'price',
+  margin: 'margin',
+  discount: 'discountPercent',
+};
+
+function priceListRuleBody(
+  rule: PriceListRule,
+  keepId: boolean,
+): PriceListRule {
+  return {
+    ...(keepId && rule._id !== undefined && { _id: rule._id }),
+    quantity: rule.quantity,
+    ...(rule.margin != null && { margin: rule.margin }),
+    ...(rule.discountPercent != null && {
+      discountPercent: rule.discountPercent,
+    }),
+  };
+}
+
+/**
+ * A manual row targeted by `productId` + `staggeredCount`. A GET row carries
+ * all three price fields, so its `priceMode` picks the one to send; a row
+ * without a price is a reset to auto.
+ */
+function priceListProductBody(row: PriceListProduct): PriceListProduct {
+  const { productId, staggeredCount } = row;
+  if (row.delete) return { productId, staggeredCount, delete: true };
+  const field = row.priceMode
+    ? PRICE_FIELD_BY_MODE[row.priceMode]
+    : PRICE_FIELDS.find((f) => row[f] != null);
+  const body: PriceListProduct = { productId, staggeredCount };
+  if (field && row[field] != null) body[field] = row[field];
+  return body;
+}
+
+const hasPrice = (row: PriceListProduct) =>
+  PRICE_FIELDS.some((f) => row[f] !== undefined);
+
+/**
+ * A GET list's rules as an editor holds them: `quantity` and the set `margin`
+ * or `discountPercent`, without read-only fields. A new list takes them
+ * without `_id` (`keepId: false`).
+ */
+export function priceListDraftRules(
+  rules: PriceListRule[] = [],
+  keepId = true,
+): PriceListRule[] {
+  return rules.map((rule) => ({
+    ...(keepId && { _id: rule._id }),
+    quantity: rule.quantity,
+    ...(rule.margin && { margin: rule.margin }),
+    ...(rule.discountPercent && { discountPercent: rule.discountPercent }),
+  }));
+}
+
+/**
+ * Content for a company list started from `source`: its rules without ids, its
+ * selection, and its manual rows (fixed, margin or discount, volume breaks
+ * included) with only their mode's price. Rule and auto rows are left out,
+ * since the new list works them out again.
+ */
+export function companyPriceListContentFromSource(
+  source: Pick<ProductPriceList, 'rules' | 'productSelectionQuery'>,
+  rows: PriceListProduct[] = [],
+): PriceListContent {
+  return {
+    rules: priceListDraftRules(source.rules, false),
+    ...(source.productSelectionQuery && {
+      productSelectionQuery: source.productSelectionQuery,
+    }),
+    products: rows
+      .filter((row) => row.priceMode && PRICE_FIELD_BY_MODE[row.priceMode])
+      .map(priceListProductBody)
+      .filter(hasPrice),
+  };
+}
+
+function priceListContentBody(
+  { rules, productSelectionQuery, products }: PriceListContent,
+  create: boolean,
+): PriceListContent {
+  const rows = products?.map(priceListProductBody);
+  return {
+    ...(rules && {
+      rules: rules.map((rule) => priceListRuleBody(rule, !create)),
+    }),
+    ...(productSelectionQuery && { productSelectionQuery }),
+    // A new list has nothing to reset or delete.
+    ...(rows && { products: create ? rows.filter(hasPrice) : rows }),
+  };
+}
+
+export interface CompanyPriceListCreateOptions {
+  companyId: string;
+  companyName: string;
+  externalId?: string;
+  channel: string;
+  /**
+   * Set when the company has more than one channel: the name then includes it
+   * and the identifier the channel id, or two lists in one currency would clash
+   * (`409` on the identifier).
+   */
+  channelName?: string;
+  currency: string;
+  /** Defaults to `true`; lists are inactive by default on the API. */
+  active?: boolean;
+  /** Defaults to `true`; a list started from another list takes that list's. */
+  exVat?: boolean;
+  content?: PriceListContent;
+}
+
+/** `POST` body for a company's own list, with the edited `content` if any. */
+export function companyPriceListCreateBody({
+  companyId,
+  companyName,
+  externalId,
+  channel,
+  channelName,
+  currency,
+  active = true,
+  exVat = true,
+  content,
+}: CompanyPriceListCreateOptions): ProductPriceListCreate {
+  return {
+    name: companyPriceListName(companyName, currency, channelName),
+    identifier: companyPriceListIdentifier(
+      externalId,
+      currency,
+      channelName ? channel : undefined,
+    ),
+    channel,
+    currency,
+    wholesaleAccountId: companyId,
+    active,
+    exVat,
+    // Only the selection's products, never ones created later; `forced` has no
+    // effect on an account list.
+    autoAddProducts: false,
+    forced: false,
+    dateCreated: '',
+    ...(content && priceListContentBody(content, true)),
+  };
+}
+
+/**
+ * `PATCH` body for a company's own list: `active` when the switch changed, plus
+ * the edited `content`. Rules and the selection replace what's saved, so pass
+ * them in full; a content field left `undefined` is kept as saved.
+ */
+export function companyPriceListUpdateBody(
+  priceList: Pick<ProductPriceList, 'active'>,
+  enabled: boolean,
+  content?: PriceListContent,
+): ProductPriceListUpdate {
+  return {
+    ...(priceList.active !== enabled && { active: enabled }),
+    ...(content && priceListContentBody(content, false)),
+  };
+}
+
+type PriceListProductBases = Pick<
+  PriceListProductList,
+  'regularPrice' | 'purchasePrice'
+>;
+
+/** The rule field each "Calculate by" mode sets. */
+export const PRICE_LIST_RULE_MODE_FIELD: Record<
+  PriceListRuleMode,
+  PriceListRuleField
+> = {
+  discount: 'discountPercent',
+  margin: 'margin',
+};
+
+/**
+ * The fields a product's list price can't be set by: a discount works from
+ * its price and a margin from its purchase price. A base of 0 counts as
+ * missing, as it would give a 0 list price.
+ */
+export function getUnavailablePriceListFields(
+  product: PriceListProductBases,
+): PriceListRuleField[] {
+  const fields: PriceListRuleField[] = [];
+  if (!Number(product.regularPrice?.price)) fields.push('discountPercent');
+  if (!Number(product.purchasePrice?.price)) fields.push('margin');
+  return fields;
+}
+
+/** The "Calculate by" modes that no product in `products` can use; none for an empty list. */
+export function getUnavailablePriceListRuleModes(
+  products: PriceListProductBases[],
+): PriceListRuleMode[] {
+  if (!products.length) return [];
+  const unavailable = products.map(getUnavailablePriceListFields);
+  return (
+    Object.keys(PRICE_LIST_RULE_MODE_FIELD) as PriceListRuleMode[]
+  ).filter((mode) =>
+    unavailable.every((fields) =>
+      fields.includes(PRICE_LIST_RULE_MODE_FIELD[mode]),
+    ),
+  );
+}
+
+/** `mode`, or the other mode when only `mode` is unavailable. */
+export function resolvePriceListRuleMode(
+  mode: PriceListRuleMode,
+  unavailableModes: PriceListRuleMode[],
+): PriceListRuleMode {
+  const other: PriceListRuleMode = mode === 'discount' ? 'margin' : 'discount';
+  return unavailableModes.includes(mode) && !unavailableModes.includes(other)
+    ? other
+    : mode;
+}
+
+/** The three grid fields that set a product's list price. */
+export const PRICE_LIST_PRICE_FIELDS: PriceListRuleField[] = [
+  'price',
+  'discountPercent',
+  'margin',
+];
+
+/** The fields a preview works out again after `changed` is edited: the other two. */
+export function getRecalculatedPriceListFields(
+  changed: PriceListRuleField,
+): PriceListRuleField[] {
+  return PRICE_LIST_PRICE_FIELDS.filter((field) => field !== changed);
+}
+
+/**
+ * The products a base rule reprices: those without their own price (at
+ * quantity 1) in `editedProducts`.
+ */
+export function getBaseRuleProductIds(
+  products: Pick<PriceListProductList, '_id'>[],
+  editedProducts: PriceListProduct[],
+): string[] {
+  const ownPrice = new Set(
+    editedProducts
+      .filter(
+        (product) =>
+          product.staggeredCount === 1 &&
+          (product.price != null ||
+            product.margin != null ||
+            product.discountPercent != null),
+      )
+      .map((product) => product.productId),
+  );
+  return products
+    .map((product) => product._id)
+    .filter((id) => !ownPrice.has(id));
+}

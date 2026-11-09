@@ -50,6 +50,10 @@ export function getErrorStatus(error: unknown): number {
   return 0;
 }
 
+function isMarkup(value: string): boolean {
+  return value.trimStart().startsWith('<') || /<(html|!doctype)\b/i.test(value);
+}
+
 // Helper function to get appropriate error messages
 export function getFallbackErrorMessage(
   status: number,
@@ -64,12 +68,13 @@ export function getFallbackErrorMessage(
       : nested && typeof nested === 'object' && 'message' in nested
         ? (nested as Record<string, unknown>).message
         : null;
-  const msg =
-    (typeof nestedMsg === 'string' ? nestedMsg : null) ||
-    data?.message ||
-    data?.error ||
-    null;
-  const serverMessage = typeof msg === 'string' ? msg : null;
+  // A gateway in front of the backend (e.g. IIS on a 502) can answer with an
+  // HTML error page — never surface markup as the message.
+  const serverMessage =
+    [nestedMsg, data?.message, data?.error].find(
+      (value): value is string =>
+        typeof value === 'string' && value !== '' && !isMarkup(value),
+    ) ?? null;
 
   const statusMessages: Record<number, string> = {
     0: 'Network error — please check your connection',

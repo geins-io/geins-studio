@@ -340,7 +340,7 @@ async send(id: string, data: StatusTransitionRequest): Promise<void> {
 2. **Export types** → Register the new file in `shared/types/index.ts`.
 3. **Repository** → `app/utils/repositories/{entity}.ts` using the factory chain. Spread CRUD, only write custom fetch calls for non-standard endpoints/actions.
 4. **Register** → Add the factory to `app/utils/repos.ts` and expose it via `app/composables/useGeinsRepository.ts`.
-5. **Verify** → Run `pnpm lint:check` and `pnpm typecheck`. Run `pnpm test --run` when tests exist for the changed code. Use `buildQueryObject(options)` for supported query params and custom `list()` / `query()` methods for non-standard list shapes.
+5. **Verify** → Run `pnpm lint:check` and `pnpm typecheck`. Run the affected tests (`pnpm test:changed`). Use `buildQueryObject(options)` for supported query params and custom `list()` / `query()` methods for non-standard list shapes.
 
 ## Self-check before finishing
 

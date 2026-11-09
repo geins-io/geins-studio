@@ -3,9 +3,11 @@ import type {
   PriceListProductList,
   ProductPriceListUpdate,
 } from '#shared/types';
+import { isPreviewId } from '#shared/utils/price-list-preview';
 import { useToast } from '@/components/ui/toast/use-toast';
 
 export interface UsePriceListPreviewOptions {
+  /** Saved list to preview changes on; without it, previews a new list. */
   entityId: Ref<string | null>;
   entityDataUpdate: Ref<ProductPriceListUpdate>;
   transformProductsForList: (
@@ -76,32 +78,80 @@ export function usePriceListPreview({
   // METHODS
   // =====================================================================================
 
-  const previewPriceList = async (
-    feedbackMessage: string = 'Price list preview updated.',
+  interface PreviewCall {
+    feedbackMessage: string;
+    updateProducts: boolean;
+    showFeedback: boolean;
+  }
+  let running: Promise<void> | null = null;
+  let queued: { call: PreviewCall; done: Promise<void> } | null = null;
+
+  const previewPriceList = (
+    feedbackMessage: string = t('price_list_preview_updated'),
     updateProducts: boolean = false,
     showFeedback: boolean = true,
-  ) => {
-    if (
-      !entityId.value ||
-      !entityDataUpdate.value.productSelectionQuery ||
-      updateInProgress.value
-    )
-      return;
+  ): Promise<void> => {
+    if (!entityDataUpdate.value.productSelectionQuery) return Promise.resolve();
 
+    if (running) {
+      // The draft changed after the running preview sent it, so preview once
+      // more when it settles; calls meanwhile share that one run.
+      const call: PreviewCall = {
+        feedbackMessage,
+        updateProducts: updateProducts || !!queued?.call.updateProducts,
+        showFeedback,
+      };
+      if (queued) {
+        queued.call = call;
+        return queued.done;
+      }
+      const next: { call: PreviewCall; done: Promise<void> } = {
+        call,
+        done: running.then(() => {
+          queued = null;
+          running = null;
+          const { call } = next;
+          return previewPriceList(
+            call.feedbackMessage,
+            call.updateProducts,
+            call.showFeedback,
+          );
+        }),
+      };
+      queued = next;
+      return next.done;
+    }
+
+    running = runPreview(feedbackMessage, updateProducts, showFeedback).finally(
+      () => {
+        // A queued call takes over in its own callback a tick later; until
+        // then, a new call joins it rather than starting a run of its own.
+        if (!queued) running = null;
+      },
+    );
+    return running;
+  };
+
+  const runPreview = async (
+    feedbackMessage: string,
+    updateProducts: boolean,
+    showFeedback: boolean,
+  ) => {
     try {
       updateInProgress.value = true;
 
       const id = entityId.value;
+      const preview = id
+        ? productApi.priceList.id(id).preview
+        : productApi.priceList.preview;
       // Preview is a read-style POST with its own contextual error toast
       // below — opt out of the global toast to avoid a double.
-      const previewPriceList = await productApi.priceList
-        .id(id)
-        .preview(
-          entityDataUpdate.value,
-          batchQueryNoPagination.value,
-          { fields: ['products', 'productinfo'] },
-          { suppressErrorToast: true },
-        );
+      const previewPriceList = await preview(
+        entityDataUpdate.value,
+        batchQueryNoPagination.value,
+        { fields: ['products', 'productinfo'] },
+        { suppressErrorToast: true },
+      );
 
       priceListProducts.value = previewPriceList.products?.items || [];
 
@@ -125,7 +175,7 @@ export function usePriceListPreview({
               p.staggeredCount ?? 0,
             );
             return {
-              _id: p._id,
+              ...(!isPreviewId(p._id) && { _id: p._id }),
               ...product,
             };
           });

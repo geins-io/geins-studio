@@ -344,6 +344,16 @@
   @apply bg-card after:bg-border sticky top-0 after:absolute after:bottom-0 after:left-0 after:z-10 after:h-px after:w-full;
 }
 
+/* Header of a `meta.highlight` column. Plain CSS like the rule above, which a
+   bg utility on the cell can't override; the bold reaches past the sort
+   button's own font-semibold. */
+.table-view__header--highlight {
+  @apply bg-background;
+}
+.table-view__header--highlight :is(div, button) {
+  @apply font-bold;
+}
+
 .link-text {
   @apply text-link hover:text-muted-foreground font-semibold underline underline-offset-2;
 }

@@ -1,5 +1,6 @@
-import type { GeinsApiError, GeinsApiFetch, Session } from '#shared/types';
+import type { GeinsApiError, GeinsApiFetch } from '#shared/types';
 import { resolveAppId } from '#shared/utils/app';
+import { createUnauthorizedRecovery } from '#shared/utils/auth-recovery';
 import { tunnelIfMatch } from '#shared/utils/proxy-headers';
 /**
  * Nuxt plugin for handling Geins API requests.
@@ -12,12 +13,17 @@ import { tunnelIfMatch } from '#shared/utils/proxy-headers';
  *
  * @remarks
  * The plugin uses the `useGeinsAuth` composable to manage authentication state and token refresh.
- * It intercepts API requests to check token expiration and refresh the token if necessary.
- * If a request fails with a 401 status, it attempts to refresh the token and retry the request.
+ * It intercepts API requests to check token expiration and refresh the token if necessary, through
+ * `useGeinsAuth().refresh` (one refresh in flight per tab, one at a time across tabs).
+ * A 401 to a token the tab still holds forces a refresh (`useGeinsAuth().forceRefresh`) and
+ * retries the request once; `onRequest` re-runs and picks up the new token. A 401 to that retry
+ * logs out (`createUnauthorizedRecovery`).
  */
 
 export default defineNuxtPlugin(() => {
-  const { geinsLog, geinsLogError } = useGeinsLog('plugins/geins-api.ts');
+  const { geinsLog, geinsLogError, geinsLogWarn } = useGeinsLog(
+    'plugins/geins-api.ts',
+  );
   // The global error toast emitter lives in the useApiErrorToast composable.
   // Keeping NuxtApp/$i18n out of THIS file is deliberate: referencing them here
   // re-instantiates the provided $geinsApiFetchInstance type and tips Nitro's
@@ -25,54 +31,26 @@ export default defineNuxtPlugin(() => {
   // GeinsApiFetch note below).
   const { showGlobalErrorToast } = useApiErrorToast();
   const {
-    isAuthenticated,
     accessToken,
-    isRefreshing,
     accountKey,
+    isAuthenticated,
     refresh,
-    setIsRefreshing,
+    forceRefresh,
+    logout,
     isExpired,
     expiresSoon,
   } = useGeinsAuth();
+  const router = useRouter();
+  const recoverFromUnauthorized = createUnauthorizedRecovery({
+    forceRefresh,
+    logout,
+    onError: (error) =>
+      geinsLogWarn('recovering from a rejected token failed:', error),
+  });
   const appId = resolveAppId(
     useRuntimeConfig().public.appId as string,
     window.location.hostname,
   );
-
-  // Create a WeakMap to store refresh promises per user session
-  // This prevents shared state between different users
-  const refreshPromises = new WeakMap<object, Promise<Session>>();
-
-  /**
-   * Refreshes the authentication token.
-   *
-   * This function checks if there is an ongoing token refresh process. If not, it initiates a new token refresh process.
-   * It sets the `isRefreshing` state to true, attempts to refresh the token, and handles any errors by logging out the user.
-   * Once the refresh process is complete, it resets the `isRefreshing` state and clears the `refreshPromise`.
-   *
-   * @returns {Promise<Session>} A promise that resolves to the new session.
-   * @throws Will throw an error if the token refresh fails.
-   */
-  const refreshAuthToken = async (): Promise<Session> => {
-    // Use the session object as a key to ensure per-user refresh promises
-    const sessionKey = { id: accessToken.value || 'anonymous' };
-
-    let currentRefreshPromise = refreshPromises.get(sessionKey);
-    if (!currentRefreshPromise) {
-      currentRefreshPromise = (async () => {
-        setIsRefreshing(true);
-        try {
-          const newSession = await refresh();
-          return newSession;
-        } finally {
-          setIsRefreshing(false);
-          refreshPromises.delete(sessionKey); // Clear the refresh promise after completion
-        }
-      })();
-      refreshPromises.set(sessionKey, currentRefreshPromise);
-    }
-    return currentRefreshPromise;
-  };
 
   /**
    * The `$fetch` instance for the Geins API.
@@ -102,18 +80,8 @@ export default defineNuxtPlugin(() => {
       // reach Vercel's edge, which would answer it with its own 412.
       tunnelIfMatch(options.headers);
       try {
-        // Check token expiration
         if (isExpired() || expiresSoon()) {
-          if (!isRefreshing.value) {
-            await refreshAuthToken();
-          } else {
-            // Wait for the ongoing refresh to complete
-            const sessionKey = { id: accessToken.value || 'anonymous' };
-            const currentRefreshPromise = refreshPromises.get(sessionKey);
-            if (currentRefreshPromise) {
-              await currentRefreshPromise;
-            }
-          }
+          await refresh();
         }
         // Set the content type header
         if (
@@ -122,8 +90,10 @@ export default defineNuxtPlugin(() => {
         ) {
           options.headers.set('content-type', 'application/json');
         }
-        // Add the token to the request
-        if (isAuthenticated.value && accessToken.value) {
+        // Add the token to the request. Not gated on `isAuthenticated`: the
+        // login page loads the user (for account selection) before an account
+        // is picked.
+        if (accessToken.value) {
           options.headers.set('x-access-token', `${accessToken.value}`);
         }
         // Add the account key to the request
@@ -235,6 +205,25 @@ export default defineNuxtPlugin(() => {
         geinsApiError,
       );
 
+      if (
+        response.status === 401 &&
+        (await recoverFromUnauthorized({
+          status: response.status,
+          sentToken: options.headers.get('x-access-token') ?? undefined,
+          currentToken: accessToken.value,
+          isAuthenticated: isAuthenticated.value,
+          onAuthPage: router.currentRoute.value.path.startsWith('/auth'),
+          retried: !!options.authRetried,
+        }))
+      ) {
+        // Returning without a throw hands the 401 to ofetch's retry (it's in
+        // `retryStatusCodes`), which re-runs `onRequest` with the new token.
+        options.retry = 1;
+        options.retryDelay = 0;
+        options.authRetried = true;
+        return;
+      }
+
       // Surface mutation failures globally. Reads (GET/HEAD) render page-level
       // error/empty states instead, and 401 is the silent token refresh/retry
       // path. 412 (optimistic-concurrency precondition failure, from an
@@ -263,10 +252,12 @@ export default defineNuxtPlugin(() => {
    * Typed wrapper around the $fetch instance for direct API calls.
    * Uses the GeinsApiFetch interface which avoids Nitro's complex
    * route type resolution that causes excessive TypeScript stack depth.
+   * The explicit `<unknown>` matters too: it switches off Nuxt's route
+   * inference for `request`, which overflows on a plain `string`.
    * All auth interceptors from the underlying $fetch instance are preserved.
    */
   const geinsApi: GeinsApiFetch = (request, options) =>
-    geinsApiFetchInstance(request, options);
+    geinsApiFetchInstance<unknown>(request, options);
 
   return {
     provide: {

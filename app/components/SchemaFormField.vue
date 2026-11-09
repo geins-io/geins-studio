@@ -1,12 +1,5 @@
 <script setup lang="ts">
 import type { SchemaFormField, StorefrontSettings } from '#shared/types';
-import {
-  getSettingValue,
-  setSettingValue,
-  groupFieldsIntoRows,
-  gridClass,
-  getSubSectionContrastWarnings,
-} from '@/utils/storefront';
 
 defineOptions({ name: 'SchemaFormField' });
 

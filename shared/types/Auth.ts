@@ -49,14 +49,23 @@ export interface AuthResponse extends AuthTokens {
   accounts?: AuthAccounts[];
 }
 
+/**
+ * Why the last token refresh didn't go through. `RefreshTokenInvalid`: Geins
+ * rejected the refresh token (any 4xx but 408/429; an expired one gets a 403),
+ * so the session is over unless another tab rotated it meanwhile.
+ * `RefreshFailed`: transient (5xx, 408, 429, network, timeout); the token is
+ * kept and the next session fetch retries.
+ */
+export type AuthSessionError = 'RefreshTokenInvalid' | 'RefreshFailed';
+
 export interface Session extends AuthTokens {
   isAuthenticated?: boolean;
   tokenExpires?: number;
   refreshedAt?: number;
-  user?: User;
   mfaActive?: boolean;
   mfaMethod?: string;
   expires?: string;
+  error?: AuthSessionError;
 }
 
 export interface LoginCredentials {
@@ -71,16 +80,31 @@ export interface AuthAccounts {
   roles: string[];
 }
 
-export interface AuthBroadcastData {
-  session?: Session | null;
-  isRefreshing?: boolean;
+/**
+ * Session update data that asks the server to refresh now, sent after the API
+ * answered 401 to a token that hasn't expired. `rejectedToken` is the access
+ * token the client holds; the server refreshes only while the cookie still
+ * holds it, so a token another tab already rotated isn't revoked again.
+ */
+export interface ForceRefreshRequest {
+  forceRefresh: true;
+  rejectedToken: string | undefined;
 }
+
+/**
+ * Cross-tab auth signal on the `geins-auth` BroadcastChannel. Signals only —
+ * never tokens or sessions: tabs share the session cookie, so a receiver
+ * re-reads its own session and decides for itself.
+ */
+export type AuthBroadcastMessage =
+  | { type: 'session-changed' }
+  | { type: 'signed-out' };
 
 /**
  * Response from auth sign-in operations.
  *
  * Represents the result of calling signIn through @sidebase/nuxt-auth.
- * Used as the return type for login, verify, setAccount, and setSession
+ * Used as the return type for login, verify, and setAccount
  * in the useGeinsAuth composable.
  */
 export interface SignInResponse {

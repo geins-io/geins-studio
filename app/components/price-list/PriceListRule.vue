@@ -7,9 +7,14 @@ const props = withDefaults(
     loading?: boolean;
     lastFieldChanged?: PriceListRuleField;
     global?: boolean;
+    /** View-only: inputs and actions disabled. */
+    disabled?: boolean;
+    /** Fields the product can't be priced by; their inputs are disabled, with the reason. */
+    unavailableFields?: PriceListRuleField[];
   }>(),
   {
     mode: 'margin',
+    unavailableFields: () => [],
   },
 );
 const quantity = defineModel<number | undefined>('quantity');
@@ -61,6 +66,16 @@ const ruleValid = computed(() => {
 
 const tdClasses = 'text-xs text-left py-3 pr-2 @2xl:pr-5';
 
+const inputDisabled = computed(
+  () => props.disabled || (props.global && props.mode === 'all'),
+);
+const marginUnavailable = computed(() =>
+  props.unavailableFields.includes('margin'),
+);
+const discountUnavailable = computed(() =>
+  props.unavailableFields.includes('discountPercent'),
+);
+
 const handleApply = (overwrite: boolean) => {
   emit(overwrite ? 'apply-overwrite' : 'apply');
 };
@@ -73,36 +88,63 @@ const handleApply = (overwrite: boolean) => {
         type="number"
         size="sm"
         class="min-w-14"
-        :disabled="global && mode === 'all'"
+        :disabled="inputDisabled"
         :valid="quantityValid"
         @blur="quantityBlurred = true"
       />
     </td>
     <td v-if="mode === 'margin' || mode === 'all'" :class="tdClasses">
-      <Input
-        v-model.number="margin"
-        size="sm"
-        placeholder="0"
-        class="min-w-20"
-        :loading="loading && lastFieldChanged !== 'margin' && mode === 'all'"
-        :disabled="global && mode === 'all'"
-      >
-        <template #valueDescriptor>%</template>
-      </Input>
+      <!-- A disabled input fires no pointer events, so the span is the trigger. -->
+      <TooltipProvider :delay-duration="100">
+        <Tooltip :disabled="!marginUnavailable">
+          <TooltipTrigger as-child>
+            <span class="block">
+              <Input
+                v-model.number="margin"
+                size="sm"
+                placeholder="0"
+                class="min-w-20"
+                :loading="
+                  loading && lastFieldChanged !== 'margin' && mode === 'all'
+                "
+                :disabled="inputDisabled || marginUnavailable"
+              >
+                <template #valueDescriptor>%</template>
+              </Input>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            {{ $t('pricing.price_list_margin_needs_purchase_price') }}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </td>
     <td v-if="mode === 'discount' || mode === 'all'" :class="tdClasses">
-      <Input
-        v-model.number="discount"
-        size="sm"
-        placeholder="0"
-        class="min-w-20"
-        :loading="
-          loading && lastFieldChanged !== 'discountPercent' && mode === 'all'
-        "
-        :disabled="global && mode === 'all'"
-      >
-        <template #valueDescriptor>%</template>
-      </Input>
+      <TooltipProvider :delay-duration="100">
+        <Tooltip :disabled="!discountUnavailable">
+          <TooltipTrigger as-child>
+            <span class="block">
+              <Input
+                v-model.number="discount"
+                size="sm"
+                placeholder="0"
+                class="min-w-20"
+                :loading="
+                  loading &&
+                  lastFieldChanged !== 'discountPercent' &&
+                  mode === 'all'
+                "
+                :disabled="inputDisabled || discountUnavailable"
+              >
+                <template #valueDescriptor>%</template>
+              </Input>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            {{ $t('pricing.price_list_discount_needs_price') }}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </td>
     <td v-if="mode === 'all'" :class="tdClasses">
       <Input
@@ -111,7 +153,7 @@ const handleApply = (overwrite: boolean) => {
         placeholder="0"
         class="min-w-28"
         :loading="loading && lastFieldChanged !== 'price' && mode === 'all'"
-        :disabled="global && mode === 'all'"
+        :disabled="inputDisabled"
       >
         <template #valueDescriptor>{{ currency }}</template>
       </Input>
@@ -125,7 +167,7 @@ const handleApply = (overwrite: boolean) => {
     <td class="flex items-center justify-end gap-2 py-3">
       <Button
         v-if="props.mode !== 'all'"
-        :disabled="applied || quantity === undefined || !ruleValid"
+        :disabled="disabled || applied || quantity === undefined || !ruleValid"
         size="xs"
         variant="outline"
         @click="handleApply(false)"
@@ -134,7 +176,7 @@ const handleApply = (overwrite: boolean) => {
       </Button>
       <Button
         v-if="props.mode !== 'all'"
-        :disabled="quantity === undefined || !ruleValid"
+        :disabled="disabled || quantity === undefined || !ruleValid"
         size="xs"
         variant="outline"
         @click="handleApply(true)"
@@ -142,7 +184,7 @@ const handleApply = (overwrite: boolean) => {
         {{ $t('pricing.price_list_apply_overwrite') }}
       </Button>
       <Button
-        :disabled="global && mode === 'all'"
+        :disabled="inputDisabled"
         size="xs"
         variant="outline"
         class="hover:text-destructive size-7"

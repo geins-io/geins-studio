@@ -4,7 +4,7 @@ import type { Asset } from '#shared/types';
 /**
  * Single app-wide instance of [AssetPickerPanel](/components/asset/AssetPickerPanel),
  * bound to the shared state from [useAssetPicker](/composables/useAssetPicker).
- * Mounted once in `app.vue`; consumers open it imperatively via `useAssetPicker`
+ * Mounted once in the default layout; consumers open it imperatively via `useAssetPicker`
  * or declaratively via [AssetPicker](/components/asset/AssetPicker) — never place
  * this component directly on a page.
  */

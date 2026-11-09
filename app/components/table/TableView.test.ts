@@ -173,6 +173,16 @@ describe('TableView — client mode', () => {
     expect(tableOf(wrapper).getState().pagination.pageSize).toBe(60);
     expect(names(wrapper)).toEqual(['b', 'a', 'c']);
   });
+
+  it('keeps the loading skeleton the same between reads', async () => {
+    // A new skeleton per read resets the page index on every render, which
+    // re-renders the table again: an endless microtask loop that freezes the page.
+    const wrapper = await mountTable({ loading: true });
+    const table = tableOf(wrapper);
+    expect(table.options.data).toHaveLength(30);
+    expect(table.options.data).toBe(table.options.data);
+    expect(table.options.columns).toBe(table.options.columns);
+  });
 });
 
 describe('TableView — server mode selection', () => {

@@ -25,7 +25,6 @@ useHead({
     <NuxtLayout>
       <NuxtPage />
       <Toaster />
-      <AssetPickerHost />
     </NuxtLayout>
   </ConfigProvider>
 </template>

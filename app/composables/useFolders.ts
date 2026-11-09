@@ -13,7 +13,13 @@ export interface UseFoldersReturnType {
   descendantIds: (rootId: string) => string[];
   loading: Ref<boolean>;
   error: Ref<unknown>;
+  load: () => Promise<void>;
   refresh: () => Promise<void>;
+}
+
+export interface UseFoldersOptions {
+  /** Load on setup (default). `false` waits for `load()`, e.g. until a panel opens. */
+  immediate?: boolean;
 }
 
 const FOLDERS_KEY = 'asset-folders';
@@ -45,14 +51,24 @@ function buildTree(folders: Folder[]): FolderNode[] {
  * nested `tree` and resolves names by id. Folder filtering itself is
  * server-side; `descendantIds` is only a client mirror for UI needs.
  */
-export function useFolders(): UseFoldersReturnType {
+export function useFolders(
+  options: UseFoldersOptions = {},
+): UseFoldersReturnType {
+  const { immediate = true } = options;
   const { assetApi } = useGeinsRepository();
 
-  const { data, pending, error, refresh } = useAsyncData<Folder[]>(
+  // Never useAsyncData's own `immediate`: it refetches for every new consumer
+  // of the key while a fetch is still in flight. `load` skips that case.
+  const { data, status, pending, error, refresh } = useAsyncData<Folder[]>(
     FOLDERS_KEY,
     () => assetApi.folder.list(),
-    { default: () => [] },
+    { default: () => [], immediate: false },
   );
+
+  const load = async (): Promise<void> => {
+    if (status.value === 'idle' || status.value === 'error') await refresh();
+  };
+  if (immediate) load();
 
   const folders = computed<Folder[]>(() =>
     Array.isArray(data.value) ? data.value : [],
@@ -108,6 +124,7 @@ export function useFolders(): UseFoldersReturnType {
     descendantIds,
     loading: pending,
     error,
+    load,
     refresh,
   };
 }

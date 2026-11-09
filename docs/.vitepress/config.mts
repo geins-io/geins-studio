@@ -53,6 +53,7 @@ export default defineConfig({
           { text: 'API Repositories', link: '/concepts/api-repositories' },
           { text: 'List queries', link: '/concepts/list-queries' },
           { text: 'Background jobs', link: '/concepts/background-jobs' },
+          { text: 'Security headers', link: '/concepts/security-headers' },
         ],
       },
       {
@@ -118,7 +119,7 @@ export default defineConfig({
               { text: 'useDate', link: '/composables/useDate.md' },
               { text: 'useGeinsImage', link: '/composables/useGeinsImage.md' },
               { text: 'useGeinsLog', link: '/composables/useGeinsLog.md' },
-              { text: 'useLayout', link: '/composables/useLayout.md' },
+              { text: 'useAppLayout', link: '/composables/useAppLayout.md' },
               {
                 text: 'useBackgroundJobs',
                 link: '/composables/useBackgroundJobs.md',
@@ -182,6 +183,10 @@ export default defineConfig({
                 text: 'useCustomerCompanies',
                 link: '/composables/useCustomerCompanies.md',
               },
+              {
+                text: 'useCompanyPriceLists',
+                link: '/composables/useCompanyPriceLists.md',
+              },
             ],
           },
           {
@@ -215,6 +220,14 @@ export default defineConfig({
               {
                 text: 'usePriceListRules',
                 link: '/composables/usePriceListRules.md',
+              },
+              {
+                text: 'usePriceListEditor',
+                link: '/composables/usePriceListEditor.md',
+              },
+              {
+                text: 'usePriceListPendingFields',
+                link: '/composables/usePriceListPendingFields.md',
               },
               { text: 'useWholesale', link: '/composables/useWholesale.md' },
               {
@@ -916,12 +929,24 @@ export default defineConfig({
                 text: 'CompanyBuyerPanel',
                 link: '/components/company/CompanyBuyerPanel.md',
               },
+              {
+                text: 'CompanyPriceListEditor',
+                link: '/components/company/CompanyPriceListEditor.md',
+              },
+              {
+                text: 'CompanyPriceListAddDialog',
+                link: '/components/company/CompanyPriceListAddDialog.md',
+              },
             ],
           },
           {
             text: 'Price list',
             collapsed: true,
             items: [
+              {
+                text: 'PriceListEditor',
+                link: '/components/price-list/PriceListEditor.md',
+              },
               {
                 text: 'PriceListRulesWrapper',
                 link: '/components/price-list/PriceListRulesWrapper.md',

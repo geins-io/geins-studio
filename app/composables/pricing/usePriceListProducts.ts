@@ -64,7 +64,9 @@ export const usePriceListProducts = (): UsePriceListProductsReturnType => {
         return {
           _id: product.productId,
           name: product.name || '',
-          thumbnail: getProductThumbnail(product.thumbnail),
+          // thumbnailUrl is absolute and set only for assets-library images.
+          thumbnail:
+            product.thumbnailUrl || getProductThumbnail(product.thumbnail),
           purchasePrice: convertToPrice(
             product.purchasePrice,
             product.purchasePriceCurrency || '',

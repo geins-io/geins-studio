@@ -1,19 +1,12 @@
-import { useBroadcastChannel } from '@vueuse/core';
+import { loginUrl } from '#shared/utils/login-redirect';
 
 export default defineNuxtRouteMiddleware(async (to) => {
-  const { isAuthenticated } = useGeinsAuth();
-  const { post: broadcastPost } = useBroadcastChannel<
-    AuthBroadcastData,
-    AuthBroadcastData
-  >({
-    name: 'geins-auth',
-  });
+  const { isAuthenticated, broadcastAuthSignal } = useGeinsAuth();
 
   if (to.path.startsWith('/auth')) {
-    if (to.path.includes('logout')) {
-      broadcastPost({
-        session: null,
-      });
+    // Every logout lands here once next-auth has cleared the shared cookie
+    if (to.path.includes('logout') && !isAuthenticated.value) {
+      broadcastAuthSignal({ type: 'signed-out' });
     }
     return isAuthenticated.value ? navigateTo('/') : true;
   }
@@ -22,9 +15,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return;
   }
 
-  const redirect = to.path === '/' ? '' : `?redirect=${to.fullPath}`;
-
-  return navigateTo(`/auth/login${redirect}`, {
+  return navigateTo(loginUrl(to.fullPath), {
     external: true,
   });
 });

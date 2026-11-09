@@ -2,6 +2,8 @@
 
 The `useFolders` composable is the single shared source of Assets Library folders. It fetches the folder list once (by the stable `asset-folders` key, so every consumer shares the same data) and derives the nested tree and the name and path lookups by id.
 
+A consumer that mounts while the first load is still in flight joins it rather than starting another, so a page plus its folder tree make one request.
+
 :::tip NOTE
 Folder **filtering** is server-side — the library page and the asset picker scope `assetApi.query` by folder and the backend resolves descendants. `descendantIds` here is only a client mirror for UI needs.
 
@@ -20,6 +22,26 @@ const name = folderName(asset.folderId);
 await assetApi.folder.create({ name: 'Campaigns', parentFolderId: null });
 await refresh();
 ```
+
+Something mounted before it is shown (like the app-wide [`AssetPickerPanel`](/components/asset/AssetPickerPanel)) should wait:
+
+```ts
+const { folderName, load } = useFolders({ immediate: false });
+
+watch(open, (isOpen) => {
+  if (isOpen) load();
+});
+```
+
+## Options
+
+### `immediate`
+
+```ts
+immediate?: boolean; // default true
+```
+
+`true` loads on setup. `false` loads nothing until you call `load()`.
 
 ## Returns
 
@@ -63,9 +85,17 @@ descendantIds(rootId: string): string[]
 
 A folder plus all its descendants — a client mirror of the server filter, for UI needs only.
 
+### `load`
+
+```ts
+load(): Promise<void>
+```
+
+Loads the folders unless they are already loaded or loading. A failed load is retried. Use it with `immediate: false`.
+
 ### `loading` / `error` / `refresh`
 
-Standard `useAsyncData` state; call `refresh()` after any folder mutation to update every consumer.
+Standard `useAsyncData` state; call `refresh()` after any folder mutation to update every consumer. Unlike `load`, `refresh` always refetches.
 
 ## Type Definitions
 
@@ -74,5 +104,9 @@ interface FolderNode extends Folder {
   children: FolderNode[];
 }
 
-function useFolders(): UseFoldersReturnType;
+interface UseFoldersOptions {
+  immediate?: boolean;
+}
+
+function useFolders(options?: UseFoldersOptions): UseFoldersReturnType;
 ```

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { SchemaTab, StorefrontSettings } from '#shared/types';
-import { groupFieldsIntoRows, gridClass } from '@/utils/storefront';
 
 defineProps<{
   schema: SchemaTab;

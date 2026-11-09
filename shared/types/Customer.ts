@@ -9,6 +9,7 @@ import type {
   AddressCreate,
   AddressUpdate,
   ProductPriceList,
+  PriceListContent,
   Price,
 } from './index';
 
@@ -132,7 +133,7 @@ export interface CustomerOrder {
   status: string;
 }
 
-export interface CustomerPriceList extends Omit<
+export type CustomerPriceList = Omit<
   ProductPriceList,
   | 'products'
   | 'rules'
@@ -140,6 +141,37 @@ export interface CustomerPriceList extends Omit<
   | 'autoAddProducts'
   | 'forced'
   | 'dateCreated'
-> {
+>;
+
+/** One of the company's own lists on its Pricing tab, saved or an unsaved draft. */
+export interface CompanyPriceListEntry {
+  /** The list's `_id`, or `draft-…` for a draft; kept after a create so its editor stays mounted. */
+  key: string;
+  /** The server copy; a draft has none until "Save company" creates it. */
+  saved?: CustomerPriceList;
+  channel: string;
+  currency: string;
+  active: boolean;
+  readOnly: boolean;
   productCount: number;
+  /** The editor's content and dirty state (`v-model`). */
+  content?: PriceListContent;
+  contentDirty: boolean;
+  /** A draft started from another list keeps that list's; a new list is ex VAT. */
+  exVat?: boolean;
+  /** A saved list the user deleted: hidden, and "Save company" deletes it. */
+  markedForDeletion?: boolean;
+}
+
+/** A row of the company's price list table: one `CompanyPriceListEntry`. */
+export interface CompanyPriceListRow {
+  key: string;
+  /** The channel's name. */
+  channel: string;
+  currency: string;
+  productCount: number;
+  active: boolean;
+  readOnly: boolean;
+  /** Not saved yet: "Save company" creates it. */
+  draft: boolean;
 }

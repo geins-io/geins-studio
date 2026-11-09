@@ -149,6 +149,10 @@ const searchInput: Ref<string> = serverMode ? searchModel : ref('');
 const expanded = ref<ExpandedState>({});
 
 const { getSkeletonColumns, getSkeletonData } = useSkeleton();
+// Built once: TanStack queues a page index reset whenever `data` is a new array,
+// and the reset re-renders the table, so a fresh skeleton per read never settles.
+const skeletonData = getSkeletonData<TData>();
+const skeletonColumns = getSkeletonColumns<TData>(skeletonData);
 
 const tableMaximized = useState<boolean>('table-maximized', () => false);
 const advancedMode = computed(() => props.mode === TableMode.Advanced);
@@ -356,9 +360,14 @@ const pinnedStyles = computed(() => {
           ? column.getStart('left')
           : column.getAfter('right');
 
+      // The offsets assume every pinned column renders at exactly getSize();
+      // auto table layout would otherwise shrink cells with narrow content
+      // (text, not inputs) and leave gaps between the sticky columns.
       return {
         [isPinned]: `${position}px`,
         width: `${width}px`,
+        minWidth: `${width}px`,
+        maxWidth: `${width}px`,
       };
     }
     return { width: width ? `${width}px` : undefined };
@@ -386,10 +395,10 @@ const columnPinningState = computed(() => {
 const table = useVueTable({
   getRowId: (row: TData) => String(row[props.idColumn as keyof TData]),
   get data() {
-    return showSkeleton.value ? getSkeletonData<TData>() : props.data;
+    return showSkeleton.value ? skeletonData : props.data;
   },
   get columns() {
-    return showSkeleton.value ? getSkeletonColumns<TData>() : props.columns;
+    return showSkeleton.value ? skeletonColumns : props.columns;
   },
   get rowCount() {
     return serverMode ? props.rowCount : undefined;
@@ -694,6 +703,8 @@ const hasSearchableColumns = computed(() => {
               cn(
                 `z-30 ${getCellClasses(header.column, true)} table-view__header`,
                 `${simpleMode || minimalMode ? 'bg-background' : ''}`,
+                header.column.columnDef.meta?.highlight &&
+                  'table-view__header--highlight',
               )
             "
             :style="pinnedStyles(header.column)"
@@ -726,6 +737,8 @@ const hasSearchableColumns = computed(() => {
                     !cell.column.columnDef.meta?.skipInactiveDim
                     ? 'opacity-50'
                     : '',
+                  cell.column.columnDef.meta?.highlight &&
+                    'bg-background font-semibold',
                 )
               "
               :style="pinnedStyles(cell.column)"

@@ -30,14 +30,31 @@ await fetchOrders(
 ```
 
 ```vue
-<TableView :columns="orderColumns" :data="ordersList" entity-key="order" />
+<TableView
+  :columns="orderColumns"
+  :data="ordersList"
+  entity-key="order"
+  :loading="ordersLoading"
+  :error="ordersError"
+  :on-retry="loadOrders"
+/>
 ```
+
+`loadOrders` is a page-level wrapper that calls `fetchOrders` with the page's own arguments, so the table's retry button repeats the same query.
 
 ## Properties and Methods
 
 ### `ordersList`
 
 A `ref` containing the list of transformed customer orders.
+
+### `ordersLoading`
+
+A `ref<boolean>` that is `true` while `fetchOrders` runs. Bind it to `TableView`'s `loading` prop.
+
+### `ordersError`
+
+A `ref<boolean>` that is `true` when the last `fetchOrders` call failed. Bind it to `TableView`'s `error` prop, together with `on-retry`, to show the error state with a retry button.
 
 ### `orderColumns`
 
@@ -68,7 +85,8 @@ Fetches orders from the API with filtering and transformation.
   - `allCompanies`: Company entities for name resolution, will add company column if provided
   - `allBuyers`: Buyer entities for name resolution, will add buyer column if provided
 
-- **Features**: Error handling, data caching, automatic transformation
+- **Features**: Error handling, automatic transformation
+- **Errors**: `POST /order/query` is a read, so the call passes `suppressErrorToast: true` and no global error toast fires. On failure `ordersList` is emptied and `ordersError` is set; the page shows the failure through the table's error state.
 
 ### `transformOrdersForList`
 
@@ -99,6 +117,8 @@ function useCompanyOrders(): UseCompanyOrdersReturnType;
 
 interface UseCompanyOrdersReturnType {
   ordersList: Ref<CustomerOrder[]>;
+  ordersLoading: Ref<boolean>;
+  ordersError: Ref<boolean>;
   orderColumns: ComputedRef<ColumnDef<CustomerOrder>[]>;
   columnOptionsOrders: ColumnOptions<CustomerOrder>;
   fetchOrders: (

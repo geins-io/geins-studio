@@ -204,4 +204,4 @@ dataList.push({
 - Unsaved changes dialog: making a change then navigating away shows the confirmation dialog
 - Read-only/sent mode: no empty-value wipe on field unmount
 - Run `pnpm lint:check` and `pnpm typecheck`
-- Run `pnpm test --run` when tests exist for the changed code
+- Run the affected tests (`pnpm test:changed`)

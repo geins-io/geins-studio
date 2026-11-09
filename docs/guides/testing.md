@@ -35,7 +35,30 @@ shared/
 pnpm test              # Watch mode
 pnpm test --run        # Single run (used by CI)
 pnpm test --run <path> # Run specific file or folder
+pnpm test:changed      # Only tests affected by the branch (local preflight)
 ```
+
+Run `test:changed` before you push — there is no pre-push hook. The full suite runs in CI on every PR, and `next` requires it to pass before merging.
+
+`test:changed` follows imports: a changed file selects every test that imports it, directly or indirectly (editing `i18n/locales/*.json` selects the en↔sv key-parity check in `entities.test.ts`). A change to `package.json`, `nuxt.config.ts`, `vitest.config.ts` or the test setup reruns the whole suite.
+
+## What to test
+
+Tests earn their keep as a regression net for **later** changes — a test written alongside the code it covers mostly repeats the same assumptions. Write them where a future change could silently break something:
+
+| Write a test for                                                          | Skip a test for                                   |
+| ------------------------------------------------------------------------- | ------------------------------------------------- |
+| Pure logic: transforms, normalizers, parsers, URL/query builders, pricing | Templates and wiring that only restate the markup |
+| Every bug fix — a regression test that fails without the fix              | Props passed straight through to a child          |
+| Tricky state: dirty tracking, form reseeding, polling, race conditions    | Copy, styling, layout                             |
+| Repository request shapes (method, endpoint, query)                       | Behaviour already covered by a lower-level test   |
+
+Prefer `// @vitest-environment node` tests of the logic over `mountSuspended` component tests — each `nuxt`-environment file boots the whole app and is what makes the suite slow.
+
+## When a test fails
+
+- **A test for code you changed on purpose** (spec change) → update the assertion to match the new behaviour.
+- **A test you didn't touch for this change** → treat it as a possible regression. Stop and report it before changing anything; don't rewrite its assertion to make it pass.
 
 ## Two-Environment Strategy
 
@@ -164,6 +187,10 @@ describe('MyComponent', () => {
   });
 });
 ```
+
+::: warning `@nuxt/test-utils` is pinned to 4.2.0
+From 4.3.0, the `createI18n` instance that `test/vitest.setup.ts` installs for every mount comes from a different `vue-i18n` module instance than the components, so `<i18n-t>` throws `i18n[TranslateVNodeSymbol] is not a function` (caught by `AuthForm.test.ts`). Check that test before bumping it.
+:::
 
 ### Providing Context for Components
 

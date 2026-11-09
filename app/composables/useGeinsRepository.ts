@@ -1,5 +1,3 @@
-import { repo } from '@/utils/repos';
-
 interface UseGeinsRepositoryReturnType {
   accountApi: ReturnType<typeof repo.account>;
   assetApi: ReturnType<typeof repo.asset>;

@@ -23,18 +23,18 @@ const {
   session,
   accessToken,
   isAuthenticated,
-  isRefreshing,
+  sessionError,
   authStateDiffers,
   accountKey,
-  preLogin,
+  authSignal,
+  broadcastAuthSignal,
   login,
   verify,
   setAccount,
-  setSession,
-  sessionsAreEqual,
   logout,
   refresh,
-  setIsRefreshing,
+  forceRefresh,
+  syncSession,
   parseToken,
   isExpired,
   expiresSoon,
@@ -55,9 +55,9 @@ A `computed` reference to the access token from the session.
 
 A `computed` reference that returns `true` if the user is authenticated.
 
-### `isRefreshing`
+### `sessionError`
 
-A `ref` that indicates whether a token refresh is in progress.
+A `computed` reference to `session.error`: why the last token refresh failed, if it did. `'RefreshTokenInvalid'` means Geins rejected the refresh token with a `4xx` other than `408`/`429` (an expired one gets a `403`), and the session is `isAuthenticated: false`; `'RefreshFailed'` means a transient failure (5xx, 408, 429, network, timeout) — the session is kept and the next session fetch retries. See [When a refresh fails](/concepts/authentication#when-a-refresh-fails).
 
 ### `authStateDiffers`
 
@@ -67,15 +67,17 @@ A `computed` reference that returns `true` if the auth state indicates the user 
 
 A `computed` reference to the current account key from the session.
 
-### `preLogin`
+### `authSignal`
+
+A `computed` reference to the last auth signal received from another tab on the `geins-auth` BroadcastChannel: `{ type: 'session-changed' }` or `{ type: 'signed-out' }`. The `auth-state.ts` plugin reacts to it. Tabs share the session cookie, so signals never carry tokens or sessions — a receiving tab re-reads its own session with `syncSession`.
+
+### `broadcastAuthSignal`
 
 ```ts
-preLogin(): Promise<void>
+broadcastAuthSignal(message: AuthBroadcastMessage): void
 ```
 
-Prepares the authentication environment by pinging auth and account endpoints.
-
-- **Returns**: Promise that resolves when pre-login setup is complete
+Posts an auth signal to the other tabs (a tab never receives its own). `login`, `verify`, `setAccount` and `refresh` post `session-changed` themselves when they leave the tab authenticated with a new session; the auth middleware posts `signed-out` on `/auth/logout`, where every logout lands after the cookie was cleared.
 
 ### `login`
 
@@ -107,40 +109,11 @@ Verifies the user's tokens for MFA authentication.
 setAccount(accountKey: string): Promise<any>
 ```
 
-Sets the account context for the current session.
+Sets the account context for the current session, then signals the other tabs (`session-changed`).
 
 - **Parameters:**
   - `accountKey`: The account key to set for the session
 - **Returns:** A promise that resolves to the updated session
-
-### `setSession`
-
-```ts
-setSession(session: Session): Promise<any>
-```
-
-Updates the current session with new session data.
-
-::: info NOTE
-This method automatically excludes `user` before updating to not store it in the JWT token.
-:::
-
-- **Parameters:**
-  - `session`: The complete session object to set
-- **Returns:** A promise that resolves to the updated session
-
-### `sessionsAreEqual`
-
-```ts
-sessionsAreEqual(session1: Session, session2: Session): boolean
-```
-
-Compares two session objects for equality, excluding `expires` and `accounts` properties.
-
-- **Parameters:**
-  - `session1`: First session to compare
-  - `session2`: Second session to compare
-- **Returns:** `true` if sessions are equal, otherwise `false`
 
 ### `logout`
 
@@ -148,7 +121,7 @@ Compares two session objects for equality, excluding `expires` and `accounts` pr
 logout(): Promise<void>
 ```
 
-Logs out the user and clears the session.
+Logs out the user and clears the session. It lands on `/auth/logout`, where the auth middleware signals the other tabs (`signed-out`) to go to the login page.
 
 - **Returns:** A promise that resolves when the logout process is complete
 
@@ -158,20 +131,33 @@ Logs out the user and clears the session.
 refresh(): Promise<Session>
 ```
 
-Refreshes the session and retrieves a new access token.
+Re-reads the session from the server, which refreshes the access token if it is expired or expires within 5 minutes. Concurrent calls in a tab share one request, and calls across tabs run one at a time under the Web Lock `geins-auth-refresh` — so after one tab rotates the token, the others read it from the shared cookie instead of refreshing again. See [Refresh Flow](/concepts/authentication#refresh-flow).
 
 - **Returns:** A promise that resolves to the updated session
 
-### `setIsRefreshing`
+When the access token changed, `refresh` signals the other tabs (`session-changed`).
+
+### `forceRefresh`
 
 ```ts
-setIsRefreshing(value: boolean): void
+forceRefresh(rejectedToken: string | undefined): Promise<Session>
 ```
 
-Sets the `isRefreshing` state.
+Refreshes the access token now, even though it hasn't expired, and resolves with the session after it. `rejectedToken` is the token the API answered `401` to; it's taken before the wait for the lock, so a token the tab adopted meanwhile isn't mistaken for it. `$geinsApi` calls it when the API answers `401` to the token this tab holds (see [When the API rejects a token](/concepts/authentication#when-the-api-rejects-a-token)). It posts `{ forceRefresh: true, rejectedToken }` to the session endpoint, which runs the `jwt` callback with `trigger: 'update'`, then re-reads the session so nuxt-auth's state holds it. The server refreshes only while the cookie still holds the rejected token, so a token another tab already rotated isn't revoked again.
 
-- **Parameters:**
-  - `value`: A boolean indicating the refresh state
+Single-flight like `refresh`: concurrent calls in a tab share one call (the first caller's `rejectedToken` counts), and calls across tabs run one at a time under the same Web Lock. A failed refresh comes back as `sessionError`, as with `refresh`. When the access token changed, it signals the other tabs (`session-changed`).
+
+- **Returns:** A promise that resolves to the updated session
+
+### `syncSession`
+
+```ts
+syncSession(): Promise<Session>
+```
+
+Re-reads the session like `refresh` (same lock), but never signals the other tabs. Used by signal receivers, so a change doesn't echo back to every tab.
+
+- **Returns:** A promise that resolves to the updated session
 
 ### `parseToken`
 
@@ -266,18 +252,18 @@ interface UseGeinsAuthReturnType {
   session: ComputedRef<Session | null>;
   accessToken: ComputedRef<string | undefined>;
   isAuthenticated: ComputedRef<boolean>;
-  isRefreshing: Ref<boolean>;
+  sessionError: ComputedRef<AuthSessionError | undefined>;
   authStateDiffers: ComputedRef<boolean>;
   accountKey: ComputedRef<string | undefined>;
-  preLogin: () => Promise<void>;
+  authSignal: ComputedRef<AuthBroadcastMessage | undefined>;
+  broadcastAuthSignal: (message: AuthBroadcastMessage) => void;
   login: (credentials: LoginCredentials) => Promise<any>;
   verify: (tokens: AuthTokens) => Promise<any>;
   setAccount: (accountKey: string) => Promise<any>;
-  setSession: (session: Session) => Promise<any>;
-  sessionsAreEqual: (session1: Session, session2: Session) => boolean;
   logout: () => Promise<void>;
   refresh: () => Promise<Session>;
-  setIsRefreshing: (value: boolean) => void;
+  forceRefresh: (rejectedToken: string | undefined) => Promise<Session>;
+  syncSession: () => Promise<Session>;
   parseToken: (token?: string | null) => any | null;
   isExpired: (token?: string | null) => boolean;
   expiresSoon: (token?: string | null, threshold?: number) => boolean;
@@ -297,14 +283,20 @@ interface AuthResponse extends AuthTokens {
   accounts?: AuthAccounts[];
 }
 
+type AuthSessionError = 'RefreshTokenInvalid' | 'RefreshFailed';
+
+type AuthBroadcastMessage =
+  | { type: 'session-changed' }
+  | { type: 'signed-out' };
+
 interface Session extends AuthTokens {
   isAuthenticated?: boolean;
   tokenExpires?: number;
   refreshedAt?: number;
-  user?: User;
   mfaActive?: boolean;
   mfaMethod?: string;
   expires?: string;
+  error?: AuthSessionError;
 }
 
 interface LoginCredentials {

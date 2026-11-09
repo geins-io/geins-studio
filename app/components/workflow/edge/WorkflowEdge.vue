@@ -4,7 +4,7 @@ import {
   EdgeLabelRenderer,
   getBezierPath,
   useEdge,
-  type Position,
+  Position,
 } from '@vue-flow/core';
 
 const props = defineProps<{
@@ -20,20 +20,50 @@ const props = defineProps<{
 
 const { edge } = useEdge();
 
+const isUnrouted = computed(() => {
+  const sourceNode = edge.sourceNode;
+  return (
+    sourceNode?.type === 'condition' &&
+    isUnroutedConditionEdge(edge, sourceNode.data)
+  );
+});
+
+// VueFlow draws an edge with no `sourceHandle` from the node's first handle,
+// which on a condition is a branch the engine never sends down this edge.
+// Draw it from the node's bottom instead so it doesn't look connected.
+const source = computed(() => {
+  const sourceNode = edge.sourceNode;
+  const hasBranchHandles =
+    Array.isArray(sourceNode?.data?.conditions) &&
+    sourceNode.data.conditions.length > 0;
+  if (!isUnrouted.value || !hasBranchHandles) {
+    return {
+      x: props.sourceX,
+      y: props.sourceY,
+      position: props.sourcePosition as Position,
+    };
+  }
+  return {
+    x: sourceNode.computedPosition.x + sourceNode.dimensions.width / 2,
+    y: sourceNode.computedPosition.y + sourceNode.dimensions.height,
+    position: Position.Bottom,
+  };
+});
+
 const path = computed(() =>
   getBezierPath({
-    sourceX: props.sourceX,
-    sourceY: props.sourceY,
+    sourceX: source.value.x,
+    sourceY: source.value.y,
     targetX: props.targetX,
     targetY: props.targetY,
-    sourcePosition: props.sourcePosition as Position,
+    sourcePosition: source.value.position,
     targetPosition: props.targetPosition as Position,
   }),
 );
 
 const edgeLength = computed(() => {
-  const dx = props.targetX - props.sourceX;
-  const dy = props.targetY - props.sourceY;
+  const dx = props.targetX - source.value.x;
+  const dy = props.targetY - source.value.y;
   return Math.sqrt(dx * dx + dy * dy);
 });
 
@@ -105,6 +135,7 @@ const onDelete = () => {
     :marker-end="markerEnd"
     :label="label"
     :interaction-width="24"
+    :class="{ '!stroke-destructive [stroke-dasharray:6_4]': isUnrouted }"
   />
   <EdgeLabelRenderer>
     <div
@@ -115,6 +146,20 @@ const onDelete = () => {
       @mouseenter="isHovered = true"
       @mouseleave="isHovered = false"
     >
+      <TooltipProvider v-if="isUnrouted" :delay-duration="100">
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <div
+              class="bg-destructive text-destructive-foreground flex h-6 w-6 items-center justify-center rounded-full shadow-sm"
+            >
+              <LucideTriangleAlert class="h-3 w-3" />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent class="max-w-xs">
+            {{ t('workflow_builder.unrouted_condition_edge') }}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       <button
         v-show="!isHovered || isCompact"
         class="bg-background text-muted-foreground hover:border-foreground/30 hover:text-foreground flex h-6 w-6 items-center justify-center rounded-full border shadow-sm transition-colors"

@@ -431,10 +431,10 @@ import {
 } from '#shared/utils/entities';
 ```
 
-### `useLayout`
+### `useAppLayout`
 
 ```ts
-const { hasReducedSpace } = useLayout();
+const { hasReducedSpace } = useAppLayout();
 
 const showSidebar = computed(() => {
   return !hasReducedSpace.value && currentTab.value === 0;

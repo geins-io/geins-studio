@@ -3,10 +3,12 @@ import type { MaybeRefOrGetter } from 'vue';
 /**
  * Run `fn` on a fixed interval only while `active` is true.
  *
- * Handles start/stop on `active` transitions, clears the timer on unmount,
- * and swallows errors thrown by `fn` so a transient failure doesn't stop
- * polling. Used for refreshing running-execution state and for pulling in
- * new executions on the list page.
+ * Handles start/stop on `active` transitions, clears the timer when the
+ * calling scope is disposed (component unmount, or app teardown when called
+ * from a plugin), and swallows errors thrown by `fn` so a transient failure
+ * doesn't stop polling. Used for refreshing running-execution state, for
+ * pulling in new executions on the list page, and for the proactive token
+ * refresh in `auth-state.ts`.
  *
  * @param active - reactive boolean/getter gating the poll
  * @param fn - work to perform each tick (may be async)
@@ -49,5 +51,5 @@ export const usePollWhile = (
     { immediate: true },
   );
 
-  onBeforeUnmount(stop);
+  onScopeDispose(stop);
 };

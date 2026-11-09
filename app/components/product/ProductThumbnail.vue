@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { cn } from '@/utils/index';
 import type { HTMLAttributes } from 'vue';
 
 /**

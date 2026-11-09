@@ -51,7 +51,7 @@ Transforms raw price list products into a format suitable for display in lists o
   - `entityData`: Price list entity containing currency and settings
 
 - **Returns**: Array of transformed products with display-ready properties
-- **Features**: Filters base quantities, converts prices, adds thumbnails
+- **Features**: Filters base quantities, converts prices, adds thumbnails (an assets-library `thumbnailUrl` wins over the legacy `thumbnail` name)
 
 ### `getVolumePricing`
 

@@ -272,5 +272,5 @@ Wrap `TableView` in `<NuxtErrorBoundary>` as a runtime safety net for unexpected
 - [ ] `hiddenColumns` for fields hidden by default (toggleable)
 - [ ] Actions column with appropriate `availableActions`
 - [ ] `NuxtErrorBoundary` + `fetchError` pattern
-- [ ] `pnpm typecheck && pnpm lint:check && pnpm test --run` pass
+- [ ] `pnpm typecheck && pnpm lint:check && pnpm test:changed` pass
 - [ ] At least one Vitest render test

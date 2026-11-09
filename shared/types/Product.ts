@@ -236,6 +236,10 @@ export interface ProductPriceListBase {
   forced: boolean;
   rules?: PriceListRule[];
   productSelectionQuery?: SelectorSelectionQueryBase;
+  // Optional here so create bodies omit them: a set wholesaleAccountId makes
+  // an account list, and PATCH ignores it.
+  wholesaleAccountId?: string;
+  readOnly?: boolean;
 }
 
 export interface ProductPriceListCreate extends CreateEntity<ProductPriceListBase> {
@@ -244,8 +248,22 @@ export interface ProductPriceListCreate extends CreateEntity<ProductPriceListBas
 export interface ProductPriceListUpdate extends UpdateEntity<ProductPriceListBase> {
   products?: PriceListProduct[];
 }
+/** What a price list editor changes and saves: rules, selection and manual rows. */
+export type PriceListContent = Pick<
+  ProductPriceListUpdate,
+  'rules' | 'productSelectionQuery' | 'products'
+>;
 export interface ProductPriceList extends ResponseEntity<ProductPriceListBase> {
+  accountSpecific: boolean;
+  /** Owning account's `_id` on an account list, `""` on a shared list. */
+  wholesaleAccountId: string;
+  readOnly: boolean;
+  productCount: number;
   products?: BatchQueryResult<PriceListProduct>;
+  /** Products with a price of their own (fixed, margin, discount or rule); only with `fields: ['counts']`. */
+  manualPriceProductCount?: number | null;
+  /** Products with a price at a quantity above 1; only with `fields: ['counts']`. */
+  volumePriceProductCount?: number | null;
 }
 
 export type ProductPriceListFieldsFilter =
@@ -254,7 +272,8 @@ export type ProductPriceListFieldsFilter =
   | 'products'
   | 'rules'
   | 'selectionquery'
-  | 'productinfo';
+  | 'productinfo'
+  | 'counts';
 
 export interface ProductPriceListApiOptions extends ApiOptions<ProductPriceListFieldsFilter> {
   pageSize?: string;
@@ -266,6 +285,7 @@ export interface PriceListProduct {
   productId: string;
   name?: string;
   thumbnail?: string;
+  thumbnailUrl?: string;
   price?: number;
   regularPrice?: number;
   margin?: number;

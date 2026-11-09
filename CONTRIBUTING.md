@@ -86,8 +86,9 @@ geinsLog('Something happened', data);
 ## Branching & CI
 
 - PRs target `next`
-- CI runs `lint:check`, `typecheck`, and `test --run` on every PR
-- All checks must pass before merge
+- CI runs `lint:check`, `format:check`, `typecheck`, `test --run` and `build` on every PR
+- `next` requires the CI check to pass before merge — merge with `gh pr merge --auto`
+- The pre-commit hook only formats + lint-fixes staged files; there is no pre-push hook. Before opening a PR, run `pnpm lint:check && pnpm typecheck && pnpm test:changed` — the full suite + build run in CI
 
 ## Scripts Reference
 
@@ -99,6 +100,7 @@ geinsLog('Something happened', data);
 | `pnpm format:check` | Prettier read-only              | Yes                |
 | `pnpm test`         | Vitest (watch mode)             | No                 |
 | `pnpm test --run`   | Vitest single run               | Yes                |
+| `pnpm test:changed` | Tests affected by the branch    | Yes                |
 | `pnpm build`        | Nuxt production build           | Yes                |
 | `pnpm dev`          | Dev server (localhost:3000)     | —                  |
 | `pnpm docs:dev`     | VitePress docs (localhost:3010) | —                  |

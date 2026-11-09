@@ -127,6 +127,42 @@ describe('getFallbackErrorMessage', () => {
     );
   });
 
+  describe('upstream HTML error pages', () => {
+    const iisPage =
+      '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN">\r\n<html><head><title>502 - Web server received an invalid response</title></head><body></body></html>';
+
+    it('ignores an HTML page in the Nitro-wrapped data.data', () => {
+      expect(getFallbackErrorMessage(502, { data: iisPage })).toBe(
+        'Bad gateway',
+      );
+    });
+
+    it('falls through to the next readable field', () => {
+      expect(
+        getFallbackErrorMessage(502, {
+          data: iisPage,
+          message: 'Bad Gateway',
+        }),
+      ).toBe('Bad Gateway');
+    });
+
+    it.each([
+      ['leading whitespace', '\n  <html><body>Down</body></html>'],
+      ['a bare fragment', '<h1>Service Unavailable</h1>'],
+      ['markup after a prefix', 'Error: <!doctype html><html></html>'],
+    ])('ignores %s', (_, value) => {
+      expect(getFallbackErrorMessage(503, { message: value })).toBe(
+        'Service unavailable',
+      );
+    });
+
+    it('keeps a plain message that mentions a comparison', () => {
+      expect(
+        getFallbackErrorMessage(400, { message: 'Quantity must be < 10' }),
+      ).toBe('Quantity must be < 10');
+    });
+  });
+
   it.each([
     [400, 'Bad request'],
     [401, 'Authentication required'],

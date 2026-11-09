@@ -81,4 +81,33 @@ export default createConfigForNuxt()
       ],
     },
   })
+  .append({
+    files: ['app/**/*.{ts,vue}'],
+    // shadcn CLI output imports `cn` explicitly; tests import the module under test.
+    ignores: ['app/components/ui/**', '**/__tests__/**', '**/*.{test,spec}.ts'],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '@/utils',
+                '@/utils/*',
+                '~/utils',
+                '~/utils/*',
+                '@/composables',
+                '@/composables/**',
+                '~/composables',
+                '~/composables/**',
+              ],
+              allowTypeImports: true,
+              message:
+                'app/utils and app/composables are auto-imported — drop the import (type-only imports are fine).',
+            },
+          ],
+        },
+      ],
+    },
+  })
   .append(prettierConfig);

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { cva } from 'class-variance-authority';
-import { cn } from '@/utils/index';
 
 /**
  * Shared read-only tag pill — the bordered-pill look used across Selector,

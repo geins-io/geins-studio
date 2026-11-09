@@ -30,7 +30,7 @@
 | useDeleteDialog.ts           | Infrastructure | Delete confirmation logic       |
 | usePageError.ts              | Infrastructure | Page error handling             |
 | useStepManagement.ts         | Infrastructure | Multi-step form logic           |
-| useLayout.ts                 | Infrastructure | Layout state (sidebar)          |
+| useAppLayout.ts              | Infrastructure | Layout state (sidebar)          |
 | useDate.ts                   | Infrastructure | Date formatting                 |
 | usePrice.ts                  | Infrastructure | Price formatting                |
 | useGeinsLog.ts               | Infrastructure | Scoped logging                  |

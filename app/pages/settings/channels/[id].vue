@@ -26,11 +26,6 @@ import {
 import { ENTITIES } from '#shared/utils/entities';
 import defaultStorefrontSchema from '@/assets/schemas/storefront-settings-default.json';
 import { useToast } from '@/components/ui/toast/use-toast';
-import {
-  applySchemaChange,
-  deepMerge,
-  getDefaultSettings,
-} from '@/utils/storefront';
 
 // =====================================================================================
 // COMPOSABLES & STORES
@@ -68,9 +63,9 @@ const formSchema = toTypedSchema(
       .object({
         disabled: z.boolean(),
         displayName: z.string(),
-        orderConfirmationBCCEmail: z
-          .email(t('channels.validation_email_format'))
-          .or(z.literal('')),
+        orderConfirmationBCCEmail: createEmailListSchema(
+          t('channels.validation_email_list_format'),
+        ),
         loginUrl: z.string(),
         passwordResetUrl: z.string(),
       })
@@ -371,6 +366,7 @@ const {
   createEntity,
   updateEntity,
   parseAndSaveData,
+  setOriginalSavedData,
 } = useEntityEdit<
   ChannelBase,
   Channel,
@@ -410,16 +406,7 @@ const {
     entityLiveStatus.value = entity.active;
     isLocked.value = entity.locked;
     internalName.value = entity.identifier;
-    activeSchema.value =
-      entity.storefrontSchema && Object.keys(entity.storefrontSchema).length > 0
-        ? entity.storefrontSchema
-        : (defaultStorefrontSchema as StorefrontSchema);
-    storefrontSettings.value = deepMerge(
-      getDefaultSettings(activeSchema.value),
-      entity.storefrontSettings ?? {},
-    );
-
-    schemaChanged.value = false;
+    parseStorefront(entity);
     // Set explicit default IDs from the API response
     defaultLanguageId.value = entity.defaultLanguage ?? '';
     defaultMarketId.value = entity.defaultMarket ?? '';
@@ -519,6 +506,15 @@ const {
 // =====================================================================================
 // STOREFRONT SETTINGS HANDLERS
 // =====================================================================================
+function parseStorefront(entity: Channel) {
+  activeSchema.value = resolveStorefrontSchema(entity.storefrontSchema);
+  storefrontSettings.value = deepMerge(
+    getDefaultSettings(activeSchema.value),
+    entity.storefrontSettings ?? {},
+  );
+  schemaChanged.value = false;
+}
+
 function handleSchemaApply(
   schema: StorefrontSchema,
   options: SchemaApplyOptions,
@@ -536,9 +532,28 @@ function handleSchemaApply(
 async function handleResetToDefault() {
   if (!entityId.value) return;
   isResettingSchema.value = true;
+  // Pending edits in other tabs aren't saved by the reset, so they stay dirty
+  const hadUnsavedChanges = hasUnsavedChanges.value;
   try {
-    await accountApi.channel.id(entityId.value).resetStorefrontSchema();
-    await refreshEntityData.value?.();
+    const id = entityId.value;
+    const channel = await resetStorefrontToDefault({
+      resetSchema: () => accountApi.channel.id(id).resetStorefrontSchema(),
+      fetchSchema: async () =>
+        (await accountApi.channel.get(id, { fields: ['storefrontSchema'] }))
+          .storefrontSchema,
+      saveSettings: (settings) =>
+        accountApi.channel.update(
+          id,
+          { storefrontSettings: settings },
+          { fields: ['storefrontSettings', 'storefrontSchema'] },
+        ),
+    });
+    parseStorefront(channel);
+    if (channel.locked) isLocked.value = true;
+    if (!hadUnsavedChanges) {
+      await nextTick();
+      setOriginalSavedData();
+    }
     toast({ title: t('channels.reset_schema_success') });
   } catch {
     // Error toast shown globally by $geinsApi.

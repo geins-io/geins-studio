@@ -1,75 +1,56 @@
-import { useBroadcastChannel, useDebounceFn } from '@vueuse/core';
-import type { Session, AuthBroadcastData } from '#shared/types';
+import { promiseTimeout, useEventListener } from '@vueuse/core';
+
+const REFRESH_CHECK_INTERVAL_MS = 60_000;
+// Long enough for another tab's (or lambda's) token rotation to land in the
+// shared cookie before a `RefreshTokenInvalid` session is re-read.
+const INVALID_RECHECK_DELAY_MS = 1_500;
 
 export default defineNuxtPlugin(async (_nuxtApp) => {
-  const { meta: routeMeta } = useRoute();
+  const router = useRouter();
+  const { geinsLogWarn } = useGeinsLog('plugins/auth-state.ts');
   const {
     authStateDiffers,
     session,
+    sessionError,
     isAuthenticated,
-    accessToken,
-    isRefreshing,
-    setIsRefreshing,
-    setSession,
-    sessionsAreEqual,
+    accountKey,
+    authSignal,
+    refresh,
+    syncSession,
+    isExpired,
+    expiresSoon,
     logout,
   } = useGeinsAuth();
-  const { data: broadcastData, post: broadcastPost } = useBroadcastChannel<
-    AuthBroadcastData,
-    AuthBroadcastData
-  >({
-    name: 'geins-auth',
+
+  // Another tab's login, account switch, refresh or logout. Each tab re-reads
+  // its own session (the cookie is shared) and acts on what it finds, so one
+  // tab's failed fetch can never log out the others.
+  watch(authSignal, async (signal) => {
+    if (!signal) {
+      return;
+    }
+    const previousAccountKey = accountKey.value;
+    try {
+      await syncSession();
+    } catch (error) {
+      geinsLogWarn(`syncing the session after ${signal.type} failed:`, error);
+      return;
+    }
+    const onAuthPage = router.currentRoute.value.path.startsWith('/auth');
+    if (!isAuthenticated.value) {
+      if (signal.type === 'signed-out' && !onAuthPage) {
+        await navigateTo('/auth/login', { external: true });
+      }
+      return;
+    }
+    if (onAuthPage) {
+      await navigateTo('/');
+    } else if (previousAccountKey && accountKey.value !== previousAccountKey) {
+      // Full reload: this tab's stores and open page hold the previous
+      // account's data.
+      await navigateTo('/', { external: true });
+    }
   });
-
-  // Debounced function to broadcast changes
-  const broadcastChange = useDebounceFn(() => {
-    broadcastPost({
-      session: toRaw(session.value),
-      isRefreshing: isRefreshing.value,
-    });
-  }, 500);
-
-  // Watch for changes to isAuthenticated, accessToken, and isRefreshing
-  watch(
-    [isAuthenticated, accessToken, isRefreshing],
-    async (newValues, oldValues) => {
-      if (newValues.some((newVal, index) => newVal !== oldValues[index])) {
-        broadcastChange();
-        if (newValues[0] === true && routeMeta.layout === 'auth') {
-          await navigateTo('/');
-        }
-      }
-    },
-  );
-
-  // Watch for changes to broadcastData
-  watch(
-    broadcastData,
-    async () => {
-      const refreshing = Boolean(broadcastData.value?.isRefreshing);
-      let broadcastedSession: Session = {};
-      let currentSession: Session = {};
-      if (refreshing !== isRefreshing.value) {
-        setIsRefreshing(refreshing);
-      } else if (broadcastData.value.session) {
-        broadcastedSession = toRaw(broadcastData.value.session);
-      }
-      if (session.value) {
-        currentSession = toRaw(session.value);
-      }
-      if (!sessionsAreEqual(broadcastedSession, currentSession)) {
-        if (
-          broadcastedSession?.isAuthenticated === false ||
-          Object.keys(broadcastedSession).length === 0
-        ) {
-          await logout();
-          return;
-        }
-        setSession(broadcastedSession);
-      }
-    },
-    { deep: true },
-  );
 
   // Watch for changes in the auth state to set the cookie that is used for the app skeleton state
   watch(
@@ -85,20 +66,46 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
     { immediate: true },
   );
 
-  // Function to handle auth state changes
-  const authStateHandler = async () => {
-    if (session.value?.mfaActive) {
+  // Refresh before the token expires instead of on the next API call, and as
+  // soon as a tab becomes visible again: timers don't run while a laptop sleeps.
+  const refreshIfDue = async () => {
+    if (!isAuthenticated.value || !(isExpired() || expiresSoon())) {
       return;
     }
-    if (authStateDiffers.value) {
-      clearError();
-      await logout();
+    try {
+      await refresh();
+    } catch (error) {
+      geinsLogWarn('proactive refresh failed:', error);
     }
   };
+  usePollWhile(isAuthenticated, refreshIfDue, REFRESH_CHECK_INTERVAL_MS);
+  useEventListener(document, 'visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      void refreshIfDue();
+    }
+  });
 
-  watch(
-    () => authStateDiffers,
-    async () => await authStateHandler(),
-    { immediate: true },
-  );
+  // Logging out is this tab's deliberate decision, never a side effect of a
+  // failed fetch. A `RefreshTokenInvalid` session is re-read once first:
+  // another tab or lambda may have just rotated the token.
+  const authStateHandler = async () => {
+    if (session.value?.mfaActive || !authStateDiffers.value) {
+      return;
+    }
+    if (sessionError.value === 'RefreshTokenInvalid') {
+      await promiseTimeout(INVALID_RECHECK_DELAY_MS);
+      try {
+        await refresh();
+      } catch (error) {
+        geinsLogWarn('re-checking an invalid session failed:', error);
+      }
+      if (!authStateDiffers.value) {
+        return;
+      }
+    }
+    clearError();
+    await logout();
+  };
+
+  watch(authStateDiffers, authStateHandler, { immediate: true });
 });

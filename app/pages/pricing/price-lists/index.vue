@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ColumnOptions, StringKeyOf } from '#shared/types';
+import type { ColumnOptions, StringKeyOf, TableRowAction } from '#shared/types';
 import { ENTITIES, entityNewUrl, entityEditUrl } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
@@ -67,7 +67,14 @@ onMounted(() => {
       name: { entityKey: entityKey, idField: '_id' },
     },
     columnTitles: { active: t('status') },
-    excludeColumns: ['autoAddProducts', 'forced', 'identifier'],
+    // Account lists never reach this list, so these are always false and "".
+    excludeColumns: [
+      'autoAddProducts',
+      'forced',
+      'identifier',
+      'accountSpecific',
+      'wholesaleAccountId',
+    ],
   };
   // GET AND SET COLUMNS
   columns.value = getColumns(dataList.value, columnOptions);
@@ -90,6 +97,9 @@ onMounted(() => {
         }
       },
       onDelete: async (item: Entity) => await openDeleteDialog(item._id),
+      // An ERP import maintains read-only lists: DELETE on them answers 422.
+      disabledActions: (item: Entity): TableRowAction[] =>
+        item.readOnly ? ['delete'] : [],
     },
     'actions',
     ['edit', 'copy', 'delete'],

@@ -41,7 +41,7 @@ The primary flow through the system from start to finish:
 
 1. **Entry** — User visits a protected route → `auth.global.ts` middleware checks session → redirects to `/auth/login` if unauthenticated → NextAuth.js `CredentialsProvider` verifies credentials → JWT issued → user lands on the dashboard.
 2. **Core** — Dashboard → navigate to a domain (Customers / Orders / Pricing) → list page shows entities via `useAsyncData` → click an entity (or "New") → detail/edit page loads with `useEntityEdit`.
-3. **Data flow** — Page calls `useGeinsRepository()` → composable injects `$geinsApi` into a repository factory → factory method calls `$geinsApi('/endpoint')` → Nitro catch-all proxy (`server/api/[...].ts`) adds the Bearer token and forwards to the Geins Management API → response returned to the page.
+3. **Data flow** — Page calls `useGeinsRepository()` → composable injects `$geinsApi` into a repository factory → factory method calls `$geinsApi('/endpoint')` → Nitro catch-all proxy (`server/api/[...].ts`) adds the Bearer token, keeps only allowlisted headers (never the session cookie) and forwards to the Geins Management API → response returned to the page.
 4. **Exit** — User edits the form and clicks Save → `updateEntity()` (or `createEntity()`) calls the repository → API responds → `parseAndSaveData` resets the form to the saved state → `hasUnsavedChanges` clears → unsaved-changes guard deactivates.
 
 ## Directory Structure
@@ -122,6 +122,9 @@ JWT-based auth with credential providers, token refresh, and session management.
 
 **2024-07-02: VeeValidate + Zod for form validation**
 Zod schemas define validation rules in TypeScript; VeeValidate bridges them to Vue form components via `toTypedSchema()`.
+
+**2026-11-03: Hand-written security headers, CSP hashed from the served HTML**
+Frame protection and the basic headers are route rules, so Vercel's edge and the Node server both send them on every response. The CSP is report-only until its reports are clean. Its inline-script hashes are computed from each response (or each prerendered page at build time), because the shell's config script and importmap change per build and per runtime env. The `nuxt-security` module was not used: with `ssr: false` it only hashes prerendered pages, and its default rate limiter and XSS validator would break the API proxy. See [docs/concepts/security-headers.md](docs/concepts/security-headers.md).
 
 **2026-03-19: Trimmed to ~1 page overview**
 Detailed sections (auth flow, plugins, state management, page patterns, component architecture, styling, logging, i18n, path aliases) relocated to APP.md, CLAUDE.md, and domain docs. ARCHITECTURE.md now serves the 10,000ft altitude only.

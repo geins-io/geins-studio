@@ -2,6 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   IF_MATCH_PROXY_HEADER,
+  pickUpstreamHeaders,
   restoreIfMatch,
   tunnelIfMatch,
 } from '../proxy-headers';
@@ -52,5 +53,82 @@ describe('restoreIfMatch', () => {
     const received = Object.fromEntries(browser.entries());
     restoreIfMatch(received);
     expect(received).toEqual({ 'if-match': 'W/"abc"' });
+  });
+});
+
+describe('pickUpstreamHeaders', () => {
+  const browser = {
+    accept: 'application/json',
+    'accept-language': 'sv-SE',
+    'content-type': 'application/json',
+    'idempotency-key': 'run-1',
+    'x-account-key': 'acc-1',
+    'x-app': 'geins',
+    'x-access-token': 'tok-1',
+    'x-custom': '1',
+    cookie: '__Secure-next-auth.session-token=jwt; studio-pref=1',
+    host: 'studio.geins.io',
+    'x-forwarded-for': '203.0.113.7',
+    'x-forwarded-host': 'studio.geins.io',
+    'x-real-ip': '203.0.113.7',
+    'x-vercel-id': 'arn1::abc',
+    connection: 'keep-alive',
+    'accept-encoding': 'gzip, br',
+    'content-length': '42',
+    'user-agent': 'Mozilla/5.0',
+  };
+
+  it('keeps the allowlisted headers and maps the token to authorization', () => {
+    expect(pickUpstreamHeaders(browser)).toEqual({
+      accept: 'application/json',
+      'accept-language': 'sv-SE',
+      'content-type': 'application/json',
+      'idempotency-key': 'run-1',
+      'x-account-key': 'acc-1',
+      'x-app': 'geins',
+      authorization: 'Bearer tok-1',
+    });
+  });
+
+  it('never forwards the session cookie or host', () => {
+    const upstream = pickUpstreamHeaders(browser);
+    expect(upstream).not.toHaveProperty('cookie');
+    expect(upstream).not.toHaveProperty('host');
+  });
+
+  it('drops content-length, so an empty DELETE never carries `0`', () => {
+    const upstream = pickUpstreamHeaders({ 'content-length': '0' });
+    expect(upstream).toEqual({});
+  });
+
+  it('ignores an inbound authorization header', () => {
+    expect(pickUpstreamHeaders({ authorization: 'Bearer forged' })).toEqual({});
+    expect(
+      pickUpstreamHeaders({
+        authorization: 'Bearer forged',
+        'x-access-token': 'tok-1',
+      }),
+    ).toEqual({ authorization: 'Bearer tok-1' });
+  });
+
+  it('restores If-Match from the tunnel header', () => {
+    expect(pickUpstreamHeaders({ [IF_MATCH_PROXY_HEADER]: 'W/"e1"' })).toEqual({
+      'if-match': 'W/"e1"',
+    });
+  });
+
+  it('prefers the tunnelled etag over a raw If-Match', () => {
+    expect(
+      pickUpstreamHeaders({
+        'if-match': '"raw"',
+        [IF_MATCH_PROXY_HEADER]: '"tunnelled"',
+      }),
+    ).toEqual({ 'if-match': '"tunnelled"' });
+  });
+
+  it('leaves the inbound headers untouched', () => {
+    const headers = { [IF_MATCH_PROXY_HEADER]: '"e1"', cookie: 'a=b' };
+    pickUpstreamHeaders(headers);
+    expect(headers).toEqual({ [IF_MATCH_PROXY_HEADER]: '"e1"', cookie: 'a=b' });
   });
 });

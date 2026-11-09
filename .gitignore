@@ -25,7 +25,8 @@ logs
 .DS_Store
 .fleet
 .idea
-.claude
+.claude/*
+!.claude/agents/
 .projects
 .mcp.json
 repomix.config.json
@@ -45,3 +46,4 @@ docs/.vitepress/dist
 docs/.vitepress/cache
 
 package-lock.json
+.vercel

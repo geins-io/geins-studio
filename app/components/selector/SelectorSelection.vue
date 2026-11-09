@@ -19,6 +19,8 @@ const props = withDefaults(
     mode: SelectorMode;
     entities: SelectorEntity[];
     selectionStrategy?: SelectorSelectionStrategy;
+    /** View-only: no browse, tag removal or condition change. */
+    disabled?: boolean;
   }>(),
   {},
 );
@@ -194,6 +196,7 @@ const noSelectionLabel = computed(() => {
     </ContentHeading>
     <div class="relative rounded-lg border px-3 py-4">
       <SelectorPanel
+        v-if="!disabled"
         :selection="selection"
         :mode="mode"
         :currency="currentCurrency"
@@ -204,7 +207,14 @@ const noSelectionLabel = computed(() => {
       >
         <Button class="absolute top-3.5 right-3">{{ $t('browse') }}</Button>
       </SelectorPanel>
-      <div class="flex w-[calc(100%-5.5rem)] flex-col gap-3">
+      <div
+        :class="
+          cn(
+            'flex flex-col gap-3',
+            disabled ? 'w-full' : 'w-[calc(100%-5.5rem)]',
+          )
+        "
+      >
         <!-- All / No products tag -->
         <SelectorTags
           v-if="
@@ -224,6 +234,7 @@ const noSelectionLabel = computed(() => {
           >
             <SelectorTag
               :label="getCategoryName(id)"
+              :removable="!disabled"
               @remove="selection.categoryIds?.splice(index, 1)"
             />
           </SelectorTagLink>
@@ -242,6 +253,7 @@ const noSelectionLabel = computed(() => {
           >
             <SelectorTag
               :label="getBrandName(id)"
+              :removable="!disabled"
               @remove="selection.brandIds?.splice(index, 1)"
             />
           </SelectorTagLink>
@@ -260,6 +272,7 @@ const noSelectionLabel = computed(() => {
           >
             <SelectorTag
               :label="getPriceTagText(price)"
+              :removable="!disabled"
               @remove="selection.price?.splice(index, 1)"
             />
           </SelectorTagLink>
@@ -278,6 +291,7 @@ const noSelectionLabel = computed(() => {
           >
             <SelectorTag
               :label="`${getUnderstandableOperator(stock.condition)} ${stock.quantity}`"
+              :removable="!disabled"
               @remove="selection.stock?.splice(index, 1)"
             />
           </SelectorTagLink>
@@ -292,6 +306,7 @@ const noSelectionLabel = computed(() => {
         <SelectorTags v-if="selection.ids?.length">
           <SelectorTag
             :label="manuallySelectedText"
+            :removable="!disabled"
             @remove="selection.ids = []"
           />
         </SelectorTags>
@@ -307,6 +322,7 @@ const noSelectionLabel = computed(() => {
         <RadioGroup
           v-model="selection.condition"
           default-value="and"
+          :disabled="disabled"
           class="items-center gap-2 @2xl:flex @2xl:gap-4"
         >
           <div class="flex items-center space-x-2">

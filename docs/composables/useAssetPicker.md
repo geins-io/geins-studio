@@ -1,6 +1,6 @@
 # `useAssetPicker`
 
-`useAssetPicker` is the **imperative singleton service** for the asset picker. One [`AssetPickerPanel`](/components/asset/AssetPickerPanel) instance lives app-wide via [`AssetPickerHost`](/components/asset/AssetPickerHost) (mounted once in `app.vue`); every caller drives that one instance through shared module-level state.
+`useAssetPicker` is the **imperative singleton service** for the asset picker. One [`AssetPickerPanel`](/components/asset/AssetPickerPanel) instance lives app-wide via [`AssetPickerHost`](/components/asset/AssetPickerHost) (mounted once in the default layout); every caller drives that one instance through shared module-level state.
 
 Open the picker from anywhere — a button, a field, a table row action — and `await` the chosen assets:
 

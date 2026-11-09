@@ -1,4 +1,5 @@
 import type {
+  Channel,
   SchemaApplyOptions,
   SchemaChangeAnalysis,
   StorefrontSchema,
@@ -6,11 +7,45 @@ import type {
   SchemaFormField,
 } from '#shared/types';
 import { getContrastWarning } from '#shared/utils/contrast';
+import defaultStorefrontSchema from '@/assets/schemas/storefront-settings-default.json';
 
 /**
  * Settings are stored as a nested object. Field `key` values are deep
  * dot-notation paths (e.g. `theme.colors.buttonBackground`).
  */
+
+function hasSchema(
+  schema: StorefrontSchema | undefined,
+): schema is StorefrontSchema {
+  return !!schema && Object.keys(schema).length > 0;
+}
+
+/** The schema a channel renders with — the bundled default when none is stored. */
+export function resolveStorefrontSchema(
+  schema: StorefrontSchema | undefined,
+): StorefrontSchema {
+  return hasSchema(schema)
+    ? schema
+    : (defaultStorefrontSchema as StorefrontSchema);
+}
+
+/**
+ * Resets a channel's schema to the default and saves that schema's defaults
+ * as its settings. The reset endpoint leaves the settings alone, and a PATCH
+ * replaces them whole, so values without a default (logo, favicon) are cleared.
+ */
+export async function resetStorefrontToDefault(api: {
+  resetSchema: () => Promise<Channel>;
+  fetchSchema: () => Promise<StorefrontSchema | undefined>;
+  saveSettings: (settings: StorefrontSettings) => Promise<Channel>;
+}): Promise<Channel> {
+  const { storefrontSchema } = await api.resetSchema();
+  // The schema is a `fields` include, so the reset response may leave it out
+  const schema = hasSchema(storefrontSchema)
+    ? storefrontSchema
+    : await api.fetchSchema();
+  return api.saveSettings(getDefaultSettings(resolveStorefrontSchema(schema)));
+}
 
 /** Walk every field and materialize defaults into a nested settings object. */
 export function getDefaultSettings(

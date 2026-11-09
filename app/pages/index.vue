@@ -8,7 +8,8 @@ definePageMeta({
 });
 
 const { customerApi } = useGeinsRepository();
-const { ordersList, orderColumns, fetchOrders } = useCompanyOrders();
+const { ordersList, ordersLoading, ordersError, orderColumns, fetchOrders } =
+  useCompanyOrders();
 
 const { data: allCompanies, error } = await useAsyncData<CustomerCompany[]>(
   'customer-companies',
@@ -19,33 +20,37 @@ if (!allCompanies.value || error.value) {
   allCompanies.value = [];
 }
 
-if (allCompanies.value.length === 0) {
-  ordersList.value = [];
-} else {
-  const orderSelectionQuery: OrderBatchQuery = {
-    include: [
-      {
-        selections: [
-          {
-            condition: SelectorCondition.And,
-            orderTypes: ['wholesale'],
-          },
-        ],
-      },
-    ],
-  };
-  // Initial fetch of orders
+const orderSelectionQuery: OrderBatchQuery = {
+  include: [
+    {
+      selections: [
+        {
+          condition: SelectorCondition.And,
+          orderTypes: ['wholesale'],
+        },
+      ],
+    },
+  ],
+};
+
+const loadOrders = async () => {
   await fetchOrders(
     orderSelectionQuery,
     undefined,
     undefined,
-    allCompanies.value,
+    allCompanies.value ?? [],
   );
 
   // Order ordersList by dateCreated descending
   ordersList.value.sort((a, b) => {
     return new Date(b.created).getTime() - new Date(a.created).getTime();
   });
+};
+
+if (allCompanies.value.length === 0) {
+  ordersList.value = [];
+} else {
+  await loadOrders();
 }
 
 const { brandName } = useBrand();
@@ -132,6 +137,9 @@ breadcrumbsStore.setShowBreadcrumbs(false);
           :page-size="10"
           :mode="TableMode.Simple"
           :empty-icon="LucidePackage"
+          :loading="ordersLoading"
+          :error="ordersError"
+          :on-retry="loadOrders"
         />
       </div>
     </div>

@@ -473,6 +473,6 @@ Clicking **Apply** opens a dialog where you choose what happens to the channel's
 
 Nothing is saved until you save the channel, so discarding the unsaved changes undoes an apply.
 
-To revert to the Geins default, click **Reset to default** in the same panel.
+To revert to the Geins default, click **Reset to default** in the same panel. It replaces the schema with the Geins default and every setting with that schema's defaults, and saves both right away — custom values (logo, favicon, colors, …) are lost. Unsaved changes in other tabs stay unsaved.
 
 > **Note:** Custom schema keys map directly to your storefront's settings consumption code. Changing key names will break existing saved values until you migrate the stored settings.
