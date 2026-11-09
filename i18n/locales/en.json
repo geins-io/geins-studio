@@ -921,6 +921,7 @@
     "workflow_default_title": "No confirmation required",
     "workflow_strict_title": "Confirmation required",
     "workflow_step_draft": "can make changes",
+    "workflow_step_requested": "can review and change the request",
     "workflow_step_pending": "can accept the quotation",
     "workflow_step_accepted": "can confirm the quotation",
     "workflow_step_confirmed": "can place the order",

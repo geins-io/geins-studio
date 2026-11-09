@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { StatusBadgeStatus } from '#shared/types';
+import type { QuotationStatus, StatusBadgeStatus } from '#shared/types';
 import type { Component } from 'vue';
 import {
   LucideSend,
@@ -10,9 +10,17 @@ import {
 
 const { t } = useI18n();
 
-defineProps<{
-  editMode?: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    editMode?: boolean;
+    /** The status the flow starts at: a buyer's request starts at `requested`. */
+    startStatus?: Extract<QuotationStatus, 'draft' | 'requested'>;
+  }>(),
+  {
+    editMode: false,
+    startStatus: 'draft',
+  },
+);
 
 const requireConfirmation = defineModel<boolean>('requireConfirmation', {
   default: false,
@@ -34,18 +42,20 @@ interface FlowItem {
   action?: Action;
 }
 
-const defaultFlow = computed<FlowItem[]>(() => [
-  {
-    step: {
-      status: 'draft',
-      actors: ['You'],
-      description: t('orders.workflow_step_draft'),
-    },
-    action: {
-      icon: LucideSend,
-      label: t('send_entity', { entityKey: 'quotation' }),
-    },
+const startItem = computed<FlowItem>(() => ({
+  step: {
+    status: props.startStatus,
+    actors: ['You'],
+    description: t(`orders.workflow_step_${props.startStatus}`),
   },
+  action: {
+    icon: LucideSend,
+    label: t('send_entity', { entityKey: 'quotation' }),
+  },
+}));
+
+const defaultFlow = computed<FlowItem[]>(() => [
+  startItem.value,
   {
     step: {
       status: 'pending',
@@ -66,17 +76,7 @@ const defaultFlow = computed<FlowItem[]>(() => [
 ]);
 
 const strictFlow = computed<FlowItem[]>(() => [
-  {
-    step: {
-      status: 'draft',
-      actors: ['You'],
-      description: t('orders.workflow_step_draft'),
-    },
-    action: {
-      icon: LucideSend,
-      label: t('send_entity', { entityKey: 'quotation' }),
-    },
-  },
+  startItem.value,
   {
     step: {
       status: 'pending',
