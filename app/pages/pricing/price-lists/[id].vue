@@ -759,7 +759,7 @@ if (!createMode.value) {
                     {{ $t('pricing.price_list_read_only_title') }}
                   </ItemTitle>
                   <ItemDescription>
-                    {{ $t('pricing.managed_externally') }}
+                    {{ $t('managed_externally') }}
                   </ItemDescription>
                 </ItemContent>
               </Item>

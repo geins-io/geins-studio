@@ -35,7 +35,11 @@ import type {
   ChangelogEntry,
 } from '#shared/types';
 import { ENTITIES, entityEditUrl } from '#shared/utils/entities';
-import { isQuotationEditable } from '#shared/utils/quotation';
+import {
+  isQuotationDeletable,
+  isQuotationEditable,
+  isQuotationExternal,
+} from '#shared/utils/quotation';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, Row } from '@tanstack/vue-table';
 
@@ -102,11 +106,9 @@ const entityBase: QuotationCreate = {
 // Sent mode = the read-only layout — set from API response in parseEntityData
 const sentMode = ref(false);
 const currentStatus = ref<QuotationStatus>('draft');
-const canDeleteInSentMode = computed(() =>
-  (['rejected', 'expired', 'canceled'] as QuotationStatus[]).includes(
-    currentStatus.value,
-  ),
-);
+// Owned by an external system (e.g. Monitor): read-only in any status
+const externallyManaged = ref(false);
+const canDelete = ref(false);
 const communications = ref<QuotationMessage[]>([]);
 
 // Discount & shipping (standalone refs, not form fields)
@@ -653,7 +655,9 @@ const {
     previewTotal.value = null;
 
     currentStatus.value = quotation.status;
+    externallyManaged.value = isQuotationExternal(quotation);
     sentMode.value = !isQuotationEditable(quotation);
+    canDelete.value = isQuotationDeletable(quotation);
     communications.value = quotation.communication || [];
 
     // Discount & shipping fee from API response
@@ -1292,6 +1296,11 @@ const statusActions = computed<StatusActionLayout>(() => {
   const status = entityData.value?.status;
   const strict = entityData.value?.settings?.requireConfirmation ?? false;
 
+  // The API refuses every transition on an external quotation
+  if (externallyManaged.value) {
+    return { placeOrder: false, groupActions: [], dropdownActions: [] };
+  }
+
   const en = { entityKey };
 
   const extendAction = (description: string): StatusAction => ({
@@ -1691,6 +1700,21 @@ const summary = computed<DataItem[]>(() => {
       value: entityData.value.quotationNumber,
       displayType: DataItemDisplayType.Copy,
     });
+    const externalReference = entityData.value.externalReference;
+    if (externalReference?.number) {
+      dataList.push({
+        label: t('orders.external_quotation_number'),
+        value: externalReference.number,
+        displayType: DataItemDisplayType.Copy,
+      });
+    }
+    if (externalReference?.orderNumber) {
+      dataList.push({
+        label: t('orders.external_order_number'),
+        value: externalReference.orderNumber,
+        displayType: DataItemDisplayType.Copy,
+      });
+    }
     dataList.push({
       label: t('orders.require_confirmation'),
       value: entityData.value.settings?.requireConfirmation
@@ -1985,7 +2009,7 @@ definePageMeta({
                     <LucideCopy class="mr-2 size-4" />
                     <span>{{ $t('orders.copy_as_new_draft') }}</span>
                   </DropdownMenuItem>
-                  <template v-if="canDeleteInSentMode">
+                  <template v-if="canDelete">
                     <DropdownMenuSeparator />
                     <DropdownMenuItem @click="openDeleteDialog">
                       <LucideTrash class="mr-2 size-4" />
@@ -2010,7 +2034,7 @@ definePageMeta({
                   {{ $t('orders.copy_as_new_draft') }}
                 </Button>
                 <Button
-                  v-if="canDeleteInSentMode"
+                  v-if="canDelete"
                   variant="secondary"
                   @click="openDeleteDialog"
                 >
@@ -2775,6 +2799,21 @@ definePageMeta({
 
         <template #sidebar>
           <ContentEditSummary v-bind="summaryProps">
+            <template v-if="externallyManaged" #before-summary>
+              <Item variant="outline">
+                <ItemMedia variant="icon">
+                  <LucideLock class="text-muted-foreground" />
+                </ItemMedia>
+                <ItemContent>
+                  <ItemTitle>
+                    {{ $t('orders.quotation_read_only_title') }}
+                  </ItemTitle>
+                  <ItemDescription>
+                    {{ $t('managed_externally') }}
+                  </ItemDescription>
+                </ItemContent>
+              </Item>
+            </template>
             <template #after-summary>
               <ContentDataList
                 v-if="!createMode && companySummary.length"
