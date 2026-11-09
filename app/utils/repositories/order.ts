@@ -15,6 +15,7 @@ import type {
   StatusTransitionRequest,
   ExtendTransitionRequest,
 } from '#shared/types';
+import { SelectorCondition } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
 import { ENTITIES } from '#shared/utils/entities';
 import { entityGetRepo } from './entity-base';
@@ -23,6 +24,23 @@ import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const BASE_ENDPOINT = '/order';
 const QUOTATION_ENDPOINT = ENTITIES.quotation.endpoint;
+
+// Request drafts belong to the buyer until submitted, so Studio never shows them.
+// The API ignores `exclude` next to `all: true` and only subtracts it from an
+// `include`, so the include is a match-all on hasExternalReference. Excluding,
+// rather than listing allowed statuses, keeps statuses the API adds later visible.
+const VISIBLE_QUOTATIONS_QUERY: QuotationBatchQuery = {
+  include: [
+    {
+      condition: SelectorCondition.Or,
+      selections: [
+        { hasExternalReference: true },
+        { hasExternalReference: false },
+      ],
+    },
+  ],
+  exclude: [{ selections: [{ statuses: ['requestDraft'] }] }],
+};
 
 /**
  * Repository for managing order operations
@@ -91,8 +109,11 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         );
       },
 
+      /**
+       * Every quotation Studio may show — request drafts excluded
+       */
       async list(
-        batchQuery: QuotationBatchQuery = { all: true },
+        batchQuery: QuotationBatchQuery = VISIBLE_QUOTATIONS_QUERY,
         options?: QuotationApiOptions,
       ): Promise<QuotationBatchQueryResult> {
         return await this.query(batchQuery, options);

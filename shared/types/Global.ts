@@ -16,6 +16,7 @@ export type StatusBadgeKnownStatus =
   | 'rejected'
   | 'refunded'
   | 'inactive'
+  | 'requested'
   | 'accepted'
   | 'completed'
   | 'confirmed'

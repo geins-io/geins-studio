@@ -18,6 +18,8 @@ const badgeVariant = computed(() => {
     case 'sent':
     case 'degraded':
       return 'warning';
+    case 'requested':
+      return 'warning-outline';
     case 'canceled':
     case 'unhealthy':
       return 'negative-light';
