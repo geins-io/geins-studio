@@ -23,7 +23,7 @@ requestDraft → requested ─┐            (buyer requests)
 
 All status transitions are one-way (no revert to draft). Each transition is a `POST /quotation/{id}/{action}` with a `StatusTransitionRequest` body. The `expire` transition is automatic (never triggered manually).
 
-**Buyer requests** — A buyer can ask for a quotation from the sales portal. While they write it, the quotation is `requestDraft` and only the buyer edits it. Once they send it, it becomes `requested` and it is the seller's turn: `send` moves it to `pending`, and `reject`/`cancel` are allowed too. What the buyer sent is on `quotation.request`.
+**Buyer requests** — A buyer can ask for a quotation from the sales portal. While they write it, the quotation is `requestDraft` and only the buyer edits it. Once they send it, it becomes `requested` and it is the seller's turn: `send` moves it to `pending`, and `reject`/`cancel` are allowed too. What the buyer sent is on `quotation.request`, shown read-only by `QuotationRequestDetails` in both General layouts; its `requestedValidTo` is only a wish (it never sets `validTo`), shown as a hint under the Expiration date field while editing.
 
 **`requestDraft` is never shown in Studio** — `orderApi.quotation.list()` excludes it server-side by default (`VISIBLE_QUOTATIONS_QUERY` in `app/utils/repositories/order.ts`). The API ignores `exclude` when `all: true` is set and only subtracts `exclude` from an `include`. So the query includes every quotation with `hasExternalReference: true OR false` and excludes `statuses: ['requestDraft']`. It doesn't list the allowed statuses, so statuses the API adds later still show up. A caller that passes its own batch query to `list()` or `query()` must exclude request drafts the same way.
 

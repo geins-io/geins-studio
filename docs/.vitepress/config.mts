@@ -996,6 +996,10 @@ export default defineConfig({
                 link: '/components/quotation/QuotationCustomerDisplay.md',
               },
               {
+                text: 'QuotationRequestDetails',
+                link: '/components/quotation/QuotationRequestDetails.md',
+              },
+              {
                 text: 'QuotationWorkflowInfo',
                 link: '/components/quotation/QuotationWorkflowInfo.md',
               },
