@@ -1,5 +1,32 @@
 # Changelog
 
+## v0.7.0 - 2026-11-09
+
+### 🚀 Enhancements
+
+- **Company set prices** — new Pricing tab on the company page (formerly Price lists) for prices that apply to one company: add several company price lists from a dialog or start one from a shared list, edit each in its own sub view and delete it from its row; switch Studio-managed set prices on and off, with a summary; ERP-maintained lists show read-only with their volume pricing, plus notices for ERP companies, external systems and restricted buyers; connected price lists sit in their own card ([#453](https://github.com/geins-io/geins-studio/pull/453), [#455](https://github.com/geins-io/geins-studio/pull/455), [#456](https://github.com/geins-io/geins-studio/pull/456), [#458](https://github.com/geins-io/geins-studio/pull/458), [#459](https://github.com/geins-io/geins-studio/pull/459), [#462](https://github.com/geins-io/geins-studio/pull/462), [#464](https://github.com/geins-io/geins-studio/pull/464), [#475](https://github.com/geins-io/geins-studio/pull/475), [#476](https://github.com/geins-io/geins-studio/pull/476), [#478](https://github.com/geins-io/geins-studio/pull/478), [#479](https://github.com/geins-io/geins-studio/pull/479), [#483](https://github.com/geins-io/geins-studio/pull/483), [#494](https://github.com/geins-io/geins-studio/pull/494))
+- Pricing — price lists maintained by an ERP are locked on the price list page, with an option to edit or delete one anyway ([#457](https://github.com/geins-io/geins-studio/pull/457), [#484](https://github.com/geins-io/geins-studio/pull/484), [#494](https://github.com/geins-io/geins-studio/pull/494))
+- Pricing — preview a new price list before it's saved ([#470](https://github.com/geins-io/geins-studio/pull/470))
+- Pricing — discount and margin are disabled until a pricing base is set, and the fields a preview recalculates show a loader ([#500](https://github.com/geins-io/geins-studio/pull/500))
+- Channels — Host Grotesk is available as a storefront font ([#492](https://github.com/geins-io/geins-studio/pull/492))
+
+### 🐛 Bug Fixes
+
+- Sign-in — sessions stay alive through temporary refresh and network errors, and tabs no longer sign each other out. A token the API rejects is refreshed once, and you're signed out cleanly only if that fails ([#485](https://github.com/geins-io/geins-studio/pull/485), [#487](https://github.com/geins-io/geins-studio/pull/487), [#495](https://github.com/geins-io/geins-studio/pull/495), [#502](https://github.com/geins-io/geins-studio/pull/502))
+- Security — tokens are no longer shared between browser tabs, the login redirect only leads to Studio pages, requests to the API carry only the headers it needs, and Studio sends security headers ([#485](https://github.com/geins-io/geins-studio/pull/485), [#486](https://github.com/geins-io/geins-studio/pull/486), [#488](https://github.com/geins-io/geins-studio/pull/488), [#491](https://github.com/geins-io/geins-studio/pull/491))
+- Pricing — "Apply and overwrite" is no longer undone by the next price edit ([#473](https://github.com/geins-io/geins-studio/pull/473))
+- Channels — order confirmations accept several BCC addresses, and resetting the storefront schema resets its settings too ([#468](https://github.com/geins-io/geins-studio/pull/468), [#474](https://github.com/geins-io/geins-studio/pull/474))
+- Orders — a failed order query no longer fills the error toast with a raw server error page ([#466](https://github.com/geins-io/geins-studio/pull/466))
+- Workflows — condition edges without a label show as unrouted ([#467](https://github.com/geins-io/geins-studio/pull/467))
+
+### 🏡 Chore
+
+- Nuxt upgraded to 4.6.3 ([#489](https://github.com/geins-io/geins-studio/pull/489))
+
+### ❤️ Contributors
+
+- Olivia Axelsson ([@olivia-geins](https://github.com/olivia-geins))
+
 ## v0.6.2 - 2026-10-30
 
 ### 🐛 Bug Fixes

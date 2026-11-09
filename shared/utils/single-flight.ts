@@ -16,19 +16,23 @@ export interface SingleFlightOptions {
 /**
  * Wraps `run` so concurrent callers in this tab share one in-flight call, and,
  * when `locks` is given, calls across tabs run one at a time under `lockName`.
- * Once a call settles, the next caller starts a new one.
+ * Once a call settles, the next caller starts a new one. `run` gets the
+ * arguments of the caller that started the call, as they were before the
+ * wait for the lock; callers that join an in-flight call share its result.
  *
  * Web Locks aren't reentrant: `run` must never wait on a call under the same
  * lock name, or it deadlocks.
  */
-export const createSingleFlight = <T>(
-  run: () => Promise<T>,
+export const createSingleFlight = <T, A extends unknown[] = []>(
+  run: (...args: A) => Promise<T>,
   { lockName, locks }: SingleFlightOptions,
-): (() => Promise<T>) => {
+): ((...args: A) => Promise<T>) => {
   let inFlight: Promise<T> | null = null;
 
-  return () => {
-    inFlight ??= (locks ? locks.request(lockName, run) : run()).finally(() => {
+  return (...args: A) => {
+    inFlight ??= (
+      locks ? locks.request(lockName, () => run(...args)) : run(...args)
+    ).finally(() => {
       inFlight = null;
     });
     return inFlight;

@@ -121,4 +121,42 @@ describe('createSingleFlight', () => {
     await expect(refresh()).resolves.toBe('ok');
     expect(calls).toBe(2);
   });
+
+  it('runs with the arguments of the caller that started it, taken before the lock wait', async () => {
+    const locks = new FakeLocks();
+    let token = 'token-1';
+    let releaseHolder!: () => void;
+    // Another call holds the lock and swaps the token before letting go.
+    const holder = locks.request(
+      LOCK_NAME,
+      () =>
+        new Promise<void>((resolve) => {
+          releaseHolder = () => {
+            token = 'token-2';
+            resolve();
+          };
+        }),
+    );
+    const seen: string[] = [];
+    const forceRefresh = createSingleFlight(
+      async (rejected: string) => {
+        seen.push(rejected);
+        return rejected;
+      },
+      { lockName: LOCK_NAME, locks },
+    );
+
+    const first = forceRefresh(token);
+    const joined = forceRefresh('ignored');
+    await nextTick();
+    releaseHolder();
+    await holder;
+
+    await expect(Promise.all([first, joined])).resolves.toEqual([
+      'token-1',
+      'token-1',
+    ]);
+    expect(seen).toEqual(['token-1']);
+    expect(token).toBe('token-2');
+  });
 });

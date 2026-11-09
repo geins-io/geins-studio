@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { userLoadRetryDelay } from '#shared/utils/auth-recovery';
 
 /**
  * User store — the signed-in user, loaded from `user/me` (with accounts).
@@ -20,19 +21,24 @@ export const useUserStore = defineStore('user', () => {
   const { geinsLogWarn } = useGeinsLog('stores/user.ts');
   const user = ref<User>();
   let pendingInit: Promise<void> | null = null;
+  let failedLoads = 0;
+  let retryTimer: ReturnType<typeof setTimeout> | undefined;
 
-  /**
-   * Loads the signed-in user. Concurrent calls share one request; a failure
-   * is logged and leaves `user` as it was.
-   */
-  async function init(): Promise<void> {
+  function load(): Promise<void> {
+    clearTimeout(retryTimer);
     pendingInit ??= userApi.me
       .get({ fields: ['accounts'] })
       .then((data) => {
         user.value = data;
+        failedLoads = 0;
       })
       .catch((error) => {
         geinsLogWarn('error fetching user:', error);
+        const status = (error as Partial<GeinsApiError> | undefined)?.status;
+        const delay = userLoadRetryDelay(failedLoads++, status);
+        if (delay !== undefined) {
+          retryTimer = setTimeout(() => void load(), delay);
+        }
       })
       .finally(() => {
         pendingInit = null;
@@ -40,7 +46,21 @@ export const useUserStore = defineStore('user', () => {
     return pendingInit;
   }
 
+  /**
+   * Loads the signed-in user. Concurrent calls share one request. A failure
+   * is logged and leaves `user` as it was; a transient one (no response, 5xx)
+   * is retried in the background a few times, with growing pauses, while the
+   * caller goes on. Each call starts a fresh round of retries. A 401 is left
+   * to `$geinsApi`, which refreshes or logs out.
+   */
+  async function init(): Promise<void> {
+    failedLoads = 0;
+    return load();
+  }
+
   function reset(): void {
+    clearTimeout(retryTimer);
+    failedLoads = 0;
     user.value = undefined;
   }
 
@@ -68,8 +88,7 @@ export const useUserStore = defineStore('user', () => {
     }
 
     // Fallback to email
-    const fallbackFromEmail = user.value.email?.substring(0, 2).toUpperCase();
-    return fallbackFromEmail || 'N/A';
+    return user.value.email?.substring(0, 2).toUpperCase() ?? '';
   });
 
   const userName = computed(() => {
@@ -77,7 +96,7 @@ export const useUserStore = defineStore('user', () => {
   });
 
   const userEmail = computed(() => {
-    return user.value?._id || 'N/A';
+    return user.value?._id ?? '';
   });
 
   // Merge: a profile update response may omit fields we loaded (accounts).

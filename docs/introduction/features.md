@@ -4,6 +4,7 @@ This is a list of the main features available in Geins Studio to this date.
 
 | Feature                | Description                                                                | Available&nbsp;since |
 | ---------------------- | -------------------------------------------------------------------------- | -------------------- |
+| **Company set prices** | Manage prices that apply to one company on the company's Pricing tab       | v0.7.0               |
 | **Assets library**     | Upload, edit, and manage assets                                            | v0.6.0               |
 | **Orchestrator**       | Build, run & monitor automated workflows with a visual Blockly editor      | v0.5.0               |
 | **Channels**           | Manage channels, languages, markets, payments, mails & storefront settings | v0.4.0               |

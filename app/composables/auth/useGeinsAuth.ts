@@ -7,6 +7,7 @@ import type {
   AuthBroadcastMessage,
   AuthSessionError,
   AuthTokens,
+  ForceRefreshRequest,
   LoginCredentials,
   Session,
   SignInResponse,
@@ -20,6 +21,9 @@ const AUTH_CHANNEL_NAME = 'geins-auth';
 // in flight per tab, one at a time across tabs, and one channel per tab (a
 // tab never receives its own posts).
 let sharedRefresh: (() => Promise<Session>) | undefined;
+let sharedForceRefresh:
+  | ((rejectedToken: string | undefined) => Promise<Session>)
+  | undefined;
 let sharedSync: (() => Promise<Session>) | undefined;
 let authChannel:
   | UseBroadcastChannelReturn<AuthBroadcastMessage, AuthBroadcastMessage>
@@ -39,6 +43,7 @@ interface UseGeinsAuthReturnType {
   setAccount: (accountKey: string) => Promise<SignInResponse>;
   logout: () => Promise<void>;
   refresh: () => Promise<Session>;
+  forceRefresh: (rejectedToken: string | undefined) => Promise<Session>;
   syncSession: () => Promise<Session>;
   parseToken: (token?: string | null) => JwtPayload | null;
   isExpired: (token?: string | null) => boolean;
@@ -65,6 +70,7 @@ interface UseGeinsAuthReturnType {
  * @property {function} setAccount - Sets the active account
  * @property {function} logout - Logs out the user
  * @property {function} refresh - Re-reads the session (the server refreshes the token if due); single-flight per tab, locked across tabs. Signals the other tabs when the token changed
+ * @property {function} forceRefresh - Refreshes the token now, even if it hasn't expired, after the API rejected `rejectedToken`; single-flight per tab, under the same lock as `refresh`. Signals the other tabs when the token changed
  * @property {function} syncSession - Re-reads the session like `refresh`, without signalling (for signal receivers)
  * @property {function} parseToken - Parses JWT token payload
  * @property {function} isExpired - Checks if token is expired
@@ -153,6 +159,33 @@ export const useGeinsAuth = (): UseGeinsAuthReturnType => {
     }
     return next;
   }, lockOptions);
+  if (!sharedForceRefresh) {
+    // Resolved like nuxt-auth resolves its own: the pathname of `baseURL`.
+    const sessionEndpoint = `${new URL(
+      useRuntimeConfig().public.auth.baseURL,
+      window.location.origin,
+    ).pathname.replace(/\/$/, '')}/session`;
+    // `$fetch` because nuxt-auth 1.2's client has no `update()`: a POST to the
+    // session endpoint runs the jwt callback with `trigger: 'update'`. The
+    // server refreshes only while the cookie still holds the rejected token.
+    sharedForceRefresh = createSingleFlight(
+      async (rejectedToken: string | undefined) => {
+        const csrfToken = await auth.getCsrfToken();
+        const data: ForceRefreshRequest = { forceRefresh: true, rejectedToken };
+        await $fetch<unknown>(sessionEndpoint, {
+          method: 'POST',
+          body: { csrfToken, data },
+        });
+        // Read back through nuxt-auth so its state holds the new session.
+        const next = (await auth.getSession()) as Session;
+        if (next?.isAuthenticated && next.accessToken !== rejectedToken) {
+          broadcastAuthSignal({ type: 'session-changed' });
+        }
+        return next;
+      },
+      lockOptions,
+    );
+  }
   // Separate flight for signal receivers: re-signalling would echo the change
   // back to every tab.
   sharedSync ??= createSingleFlight(
@@ -160,6 +193,7 @@ export const useGeinsAuth = (): UseGeinsAuthReturnType => {
     lockOptions,
   );
   const refresh = sharedRefresh;
+  const forceRefresh = sharedForceRefresh;
   const syncSession = sharedSync;
 
   const parseToken = (token?: string | null) => {
@@ -201,6 +235,7 @@ export const useGeinsAuth = (): UseGeinsAuthReturnType => {
     setAccount,
     logout,
     refresh,
+    forceRefresh,
     syncSession,
     parseToken,
     isExpired,

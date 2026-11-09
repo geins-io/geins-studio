@@ -1,5 +1,5 @@
 import { jwtDecode } from 'jwt-decode';
-import type { AuthResponse, Session } from '#shared/types';
+import type { AuthResponse, ForceRefreshRequest, Session } from '#shared/types';
 
 /**
  * Error from a server-side call to a Geins auth endpoint. `status` is the HTTP
@@ -132,6 +132,27 @@ export const refreshWithRetry = async (
     return refresh(refreshToken);
   }
 };
+
+const isForceRefreshRequest = (
+  update: unknown,
+): update is ForceRefreshRequest =>
+  !!update &&
+  typeof update === 'object' &&
+  'forceRefresh' in update &&
+  update.forceRefresh === true;
+
+/**
+ * Whether a session update forces a refresh of `token` now. The client sends
+ * one after the API answered 401 to a token that hasn't expired, which a
+ * plain session read wouldn't refresh. Only while the stored token is still
+ * the rejected one: if another tab already rotated it, refreshing again would
+ * revoke that tab's new token.
+ */
+export const shouldForceRefresh = (token: Session, update: unknown): boolean =>
+  isForceRefreshRequest(update) &&
+  !!token.isAuthenticated &&
+  !!token.accessToken &&
+  update.rejectedToken === token.accessToken;
 
 /**
  * Builds the client session from the stored token. Pure — no network calls and
