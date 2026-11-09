@@ -2643,7 +2643,9 @@ definePageMeta({
                         <FormControl>
                           <Select v-bind="componentField">
                             <SelectTrigger>
-                              <SelectValue />
+                              <SelectValue
+                                :placeholder="$t('orders.payment_terms')"
+                              />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem
