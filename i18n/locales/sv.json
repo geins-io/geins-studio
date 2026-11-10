@@ -373,7 +373,8 @@
     "field_required": "Detta fält är obligatoriskt",
     "invalid_email": "Ogiltig e-postadress",
     "optional": "valfritt",
-    "cannot_be_changed": "Kan inte ändras efter att den skapats"
+    "cannot_be_changed": "Kan inte ändras efter att den skapats",
+    "max_characters": "Använd högst {max} tecken"
   },
   "table": {
     "available_columns": "Tillgängliga kolumner",
@@ -924,6 +925,12 @@
     "desired_delivery_date": "Önskat leveransdatum",
     "goods_label": "Godsmärkning",
     "customer_reference": "Kundreferens",
+    "order_details": "Orderdetaljer",
+    "order_details_description": "Läggs till på ordern när offerten slutförs",
+    "customer_order_number": "Kundens ordernummer",
+    "customer_reference_hint": "Sparas på offerten och läggs inte till på ordern",
+    "order_details_cannot_clear": "Ett sparat värde kan inte tas bort, bara ändras",
+    "delivery_date_in_future": "Välj ett datum efter i dag",
     "requested_valid_to_hint": "Önskat av kunden: {date}",
     "quotation_read_only_title": "Skrivskyddad offert",
     "external_quotation_number": "Externt offertnummer",

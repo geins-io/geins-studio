@@ -25,6 +25,7 @@ import type {
   QuotationDiscountRequest,
   QuotationMessage,
   QuotationMessageType,
+  QuotationOrderDetails,
   QuotationStatus,
   StatusTransitionRequest,
   ExtendTransitionRequest,
@@ -39,6 +40,9 @@ import {
   isQuotationDeletable,
   isQuotationEditable,
   isQuotationExternal,
+  ORDER_DETAILS_FIELDS,
+  orderDetailsFormValues,
+  orderDetailsRequest,
 } from '#shared/utils/quotation';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, Row } from '@tanstack/vue-table';
@@ -88,6 +92,10 @@ const formSchema = toTypedSchema(
       paymentTerms: z.string().optional(),
       requireConfirmation: z.boolean().optional(),
     }),
+    // Sent mode never mounts these fields, so there's nothing to check there
+    orderDetails: createOrderDetailsSchema(t, () =>
+      sentMode.value ? undefined : storedOrderDetails.value,
+    ),
   }),
 );
 
@@ -110,6 +118,8 @@ const currentStatus = ref<QuotationStatus>('draft');
 const externallyManaged = ref(false);
 const canDelete = ref(false);
 const communications = ref<QuotationMessage[]>([]);
+// What the API holds; edits are sent as changes against it
+const storedOrderDetails = ref<QuotationOrderDetails | null>(null);
 
 // Discount & shipping (standalone refs, not form fields)
 const discountType = ref<'percent' | 'fixedAmount'>('percent');
@@ -624,6 +634,8 @@ const {
     })),
     discount: entityData.discount?.value ? entityData.discount : undefined,
     settings: entityData.settings ?? { requireConfirmation: false },
+    // Only the seller's pending changes go here, so a fresh load has none
+    orderDetails: undefined,
     validPaymentMethods:
       entityData.validPaymentMethods?.map((pm) => ({
         paymentId: String(pm.paymentId),
@@ -646,6 +658,7 @@ const {
       paymentTerms: 'Net 30',
       requireConfirmation: false,
     },
+    orderDetails: orderDetailsFormValues(),
   }),
   parseEntityData: (quotation: Quotation) => {
     breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
@@ -659,6 +672,7 @@ const {
     sentMode.value = !isQuotationEditable(quotation);
     canDelete.value = isQuotationDeletable(quotation);
     communications.value = quotation.communication || [];
+    storedOrderDetails.value = quotation.orderDetails ?? null;
 
     // Discount & shipping fee from API response
     if (quotation.discount) {
@@ -706,6 +720,7 @@ const {
         paymentTerms,
         requireConfirmation: quotation.settings?.requireConfirmation ?? false,
       },
+      orderDetails: orderDetailsFormValues(quotation.orderDetails),
     });
   },
   prepareCreateData: (formData) => {
@@ -724,6 +739,7 @@ const {
           ? Number(shippingFeeInput.value)
           : undefined,
       settings: { requireConfirmation: formData.details.requireConfirmation },
+      orderDetails: orderDetailsRequest(formData.orderDetails),
     };
   },
   prepareUpdateData: (formData, _entity) => ({
@@ -742,6 +758,10 @@ const {
         ? Number(shippingFeeInput.value)
         : undefined,
     settings: { requireConfirmation: formData.details.requireConfirmation },
+    orderDetails: orderDetailsRequest(
+      formData.orderDetails,
+      storedOrderDetails.value,
+    ),
   }),
   onFormValuesChange: (values) => {
     if (createMode.value) {
@@ -755,6 +775,7 @@ const {
         items:
           quotationItems.value.length > 0 ? quotationItems.value : undefined,
         settings: { requireConfirmation: values.details.requireConfirmation },
+        orderDetails: orderDetailsRequest(values.orderDetails),
       };
     } else {
       // In sent mode, form fields are unmounted and VeeValidate clears their values.
@@ -781,6 +802,10 @@ const {
         settings: {
           requireConfirmation: values.details.requireConfirmation ?? false,
         },
+        orderDetails: orderDetailsRequest(
+          values.orderDetails,
+          storedOrderDetails.value,
+        ),
       };
     }
   },
@@ -1224,7 +1249,19 @@ if (!createMode.value) {
 // Custom save handler that delays the unsaved-changes snapshot until all
 // reactive side effects (quotationItems watcher, debounced onFormValuesChange)
 // have settled — matching the pattern used during initial data loading.
+// Only the order details: a buyer's request may lack fields the rest of the
+// schema requires, and the seller must still be able to save it as it is.
+const orderDetailsValid = async () => {
+  const results = await Promise.all(
+    ORDER_DETAILS_FIELDS.map((field) =>
+      form.validateField(`orderDetails.${field}`),
+    ),
+  );
+  return results.every((result) => result.valid);
+};
+
 const handleSave = async () => {
+  if (!(await orderDetailsValid())) return;
   const result = await updateEntity(undefined, undefined, false);
   if (result) {
     cancelPendingFormSync();
@@ -2273,6 +2310,14 @@ definePageMeta({
                 </FormGridWrap>
               </ContentEditCard>
 
+              <ContentEditCard
+                :create-mode="false"
+                :title="$t('orders.order_details')"
+                :description="$t('orders.order_details_description')"
+              >
+                <QuotationOrderDetailsFields />
+              </ContentEditCard>
+
               <div class="flex flex-row justify-end gap-4">
                 <Button variant="secondary" as-child>
                   <NuxtLink :to="entityListUrl">
@@ -2590,6 +2635,14 @@ definePageMeta({
                     </FormField>
                   </FormGrid>
                 </FormGridWrap>
+              </ContentEditCard>
+
+              <ContentEditCard
+                :create-mode="false"
+                :title="$t('orders.order_details')"
+                :description="$t('orders.order_details_description')"
+              >
+                <QuotationOrderDetailsFields />
               </ContentEditCard>
 
               <QuotationRequestDetails
