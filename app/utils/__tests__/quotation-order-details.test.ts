@@ -26,12 +26,19 @@ function errors(
 }
 
 describe('createOrderDetailsSchema', () => {
+  // "Today" is local, so pin the zone along with the clock
+  let originalTz: string | undefined;
+
   beforeEach(() => {
+    originalTz = process.env.TZ;
+    process.env.TZ = 'Europe/Stockholm';
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-11-10T12:00:00Z'));
   });
   afterEach(() => {
     vi.useRealTimers();
+    if (originalTz === undefined) delete process.env.TZ;
+    else process.env.TZ = originalTz;
   });
 
   it('accepts no order details at all', () => {

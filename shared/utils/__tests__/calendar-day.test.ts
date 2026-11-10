@@ -7,19 +7,23 @@ import {
   toCalendarDayIso,
 } from '../calendar-day';
 
+// Assigning `undefined` would store the string "undefined"
+const setTz = (tz: string | undefined) => {
+  if (tz === undefined) delete process.env.TZ;
+  else process.env.TZ = tz;
+};
+
 const originalTz = process.env.TZ;
-afterAll(() => {
-  process.env.TZ = originalTz;
-});
+afterAll(() => setTz(originalTz));
 
 // Node re-reads TZ when it changes, so each block runs in its own zone.
 const inZone = (tz: string, fn: () => void) => () => {
   const previous = process.env.TZ;
-  process.env.TZ = tz;
+  setTz(tz);
   try {
     fn();
   } finally {
-    process.env.TZ = previous;
+    setTz(previous);
   }
 };
 
