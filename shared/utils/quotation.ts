@@ -1,4 +1,11 @@
-import type { Quotation, QuotationStatus } from '#shared/types';
+import type {
+  Quotation,
+  QuotationOrderDetails,
+  QuotationOrderDetailsForm,
+  QuotationOrderDetailsRequest,
+  QuotationStatus,
+} from '#shared/types';
+import { calendarDayToLocalIso, toCalendarDayIso } from './calendar-day';
 
 /**
  * Statuses the seller edits like a draft: their own draft, or a request the
@@ -54,4 +61,65 @@ export function isQuotationDeletable(
     DELETABLE_QUOTATION_STATUSES.includes(quotation.status) &&
     !isQuotationExternal(quotation)
   );
+}
+
+/**
+ * The order-detail text fields, with the most characters the API accepts
+ */
+export const ORDER_DETAILS_MAX_LENGTH = {
+  goodsLabel: 500,
+  customerOrderNumber: 30,
+  customerReference: 200,
+} as const;
+
+export const ORDER_DETAILS_TEXT_FIELDS = Object.keys(
+  ORDER_DETAILS_MAX_LENGTH,
+) as (keyof typeof ORDER_DETAILS_MAX_LENGTH)[];
+
+export const ORDER_DETAILS_FIELDS: readonly (keyof QuotationOrderDetailsForm)[] =
+  [...ORDER_DETAILS_TEXT_FIELDS, 'desiredDeliveryDate'];
+
+/**
+ * Form values for the order details, seeded from what's stored. The delivery
+ * date becomes its day's local midnight, so the date picker shows that day.
+ */
+export function orderDetailsFormValues(
+  stored?: QuotationOrderDetails | null,
+): QuotationOrderDetailsForm {
+  return {
+    goodsLabel: stored?.goodsLabel ?? '',
+    customerOrderNumber: stored?.customerOrderNumber ?? '',
+    desiredDeliveryDate: stored?.desiredDeliveryDate
+      ? (calendarDayToLocalIso(stored.desiredDeliveryDate) ?? '')
+      : '',
+    customerReference: stored?.customerReference ?? '',
+  };
+}
+
+/**
+ * The `orderDetails` to send: only the fields that are set and differ from
+ * what's stored, since the API keeps a field left out. The delivery date goes
+ * as a calendar day. `undefined` when nothing changed — the API refuses an
+ * empty object.
+ */
+export function orderDetailsRequest(
+  values: Partial<QuotationOrderDetailsForm> | undefined,
+  stored?: QuotationOrderDetails | null,
+): QuotationOrderDetailsRequest | undefined {
+  const request: QuotationOrderDetailsRequest = {};
+
+  for (const field of ORDER_DETAILS_TEXT_FIELDS) {
+    const value = values?.[field]?.trim();
+    if (value && value !== stored?.[field]?.trim()) request[field] = value;
+  }
+
+  const day = values?.desiredDeliveryDate
+    ? toCalendarDayIso(values.desiredDeliveryDate)
+    : undefined;
+  const storedDay = stored?.desiredDeliveryDate
+    ? toCalendarDayIso(stored.desiredDeliveryDate)
+    : undefined;
+  if (day && day !== storedDay) request.desiredDeliveryDate = day;
+
+  return Object.keys(request).length ? request : undefined;
 }

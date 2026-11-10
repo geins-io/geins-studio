@@ -105,6 +105,28 @@ export interface QuotationOrderDetails {
 }
 
 /**
+ * Order details to set (request). A field left out keeps its stored value; a
+ * stored value can't be cleared, only replaced. The API refuses an empty object.
+ */
+export interface QuotationOrderDetailsRequest {
+  /** A calendar day at UTC midnight, `YYYY-MM-DDT00:00:00Z` */
+  desiredDeliveryDate?: string;
+  goodsLabel?: string;
+  customerOrderNumber?: string;
+  customerReference?: string;
+}
+
+/**
+ * Order details as form values: `''` for a field with no value
+ */
+export interface QuotationOrderDetailsForm {
+  goodsLabel: string;
+  customerOrderNumber: string;
+  desiredDeliveryDate: string;
+  customerReference: string;
+}
+
+/**
  * Link to the quote in an external system that owns the quotation, e.g. Monitor (response)
  */
 export interface QuotationExternalReference {
@@ -314,6 +336,7 @@ export interface QuotationCreate extends CreateEntity<QuotationBase> {
   items?: QuotationItemCreate[];
   discount?: QuotationDiscountRequest | null;
   settings?: QuotationSettings;
+  orderDetails?: QuotationOrderDetailsRequest;
 }
 
 /**
@@ -331,6 +354,7 @@ export interface QuotationUpdate extends UpdateEntity<QuotationBase> {
   items?: QuotationItemCreate[];
   discount?: QuotationDiscountRequest | null;
   settings?: QuotationSettings;
+  orderDetails?: QuotationOrderDetailsRequest;
 }
 
 /**

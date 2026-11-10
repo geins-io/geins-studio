@@ -373,7 +373,8 @@
     "field_required": "This field is required",
     "invalid_email": "Invalid email address",
     "optional": "optional",
-    "cannot_be_changed": "Cannot be changed upon creation"
+    "cannot_be_changed": "Cannot be changed upon creation",
+    "max_characters": "Use at most {max} characters"
   },
   "table": {
     "available_columns": "Available columns",
@@ -927,6 +928,12 @@
     "desired_delivery_date": "Desired delivery date",
     "goods_label": "Goods label",
     "customer_reference": "Customer reference",
+    "order_details": "Order details",
+    "order_details_description": "Added to the order when the quotation is finalized",
+    "customer_order_number": "Customer order number",
+    "customer_reference_hint": "Stays on the quotation and isn't added to the order",
+    "order_details_cannot_clear": "A saved value can't be removed, only changed",
+    "delivery_date_in_future": "Pick a date after today",
     "requested_valid_to_hint": "Requested by the customer: {date}",
     "quotation_read_only_title": "Read-only quotation",
     "external_quotation_number": "External quotation number",
