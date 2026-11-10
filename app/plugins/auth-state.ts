@@ -22,6 +22,13 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
     logout,
   } = useGeinsAuth();
 
+  // Plugins run before the route middleware, which needs the session.
+  try {
+    await syncSession();
+  } catch (error) {
+    geinsLogWarn('reading the session failed:', error);
+  }
+
   // Another tab's login, account switch, refresh or logout. Each tab re-reads
   // its own session (the cookie is shared) and acts on what it finds, so one
   // tab's failed fetch can never log out the others.
@@ -56,12 +63,7 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
   watch(
     isAuthenticated,
     (value) => {
-      const cookieSettings: { expires?: Date } = {};
-      if (session.value?.expires) {
-        cookieSettings.expires = new Date(session.value?.expires);
-      }
-      const authCookie = useCookie<boolean>('geins-auth', cookieSettings);
-      authCookie.value = value;
+      useCookie<boolean>('geins-auth').value = value;
     },
     { immediate: true },
   );

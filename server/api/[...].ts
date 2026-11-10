@@ -11,8 +11,12 @@ import {
   type H3Event,
 } from 'h3';
 import { resolveAppId } from '#shared/utils/app';
-import { pickUpstreamHeaders } from '#shared/utils/proxy-headers';
+import {
+  isGeinsAuthPath,
+  pickUpstreamHeaders,
+} from '#shared/utils/proxy-headers';
 import { describeNetworkError } from '../utils/error-logging';
+import { readGeinsSession } from '../utils/geins-session';
 import {
   refreshSalesPortal,
   describeFetchError,
@@ -84,7 +88,8 @@ async function pipeUpstream(
  * This handler is a catch-all for API requests that are not handled by other routes.
  * It forwards the request to the target API and returns the response.
  * The target API URL is specified in the request query string.
- * Only allowlisted headers go upstream (`pickUpstreamHeaders`).
+ * Only allowlisted headers go upstream (`pickUpstreamHeaders`); the token and
+ * account key come from the sealed session.
  *
  */
 export default defineEventHandler(async (event) => {
@@ -101,6 +106,9 @@ export default defineEventHandler(async (event) => {
   const targetUrl = event.context.params?._;
   if (!targetUrl) {
     return { success: false, error: 'Target URL is required' };
+  }
+  if (isGeinsAuthPath(targetUrl)) {
+    throw createError({ statusCode: 404, statusMessage: 'Not Found' });
   }
 
   const fullUrl = `${config.public.apiUrl}/${targetUrl}`;
@@ -124,7 +132,13 @@ export default defineEventHandler(async (event) => {
 
   geinsLog(`[${correlationId}] ${event.method} ${fetchUrl}`);
 
-  const apiHeaders = pickUpstreamHeaders(headers);
+  // Refreshes first when the token is due, rewriting the session cookie on
+  // this response; a failed refresh is never written here.
+  const session = await readGeinsSession(event);
+  const apiHeaders = pickUpstreamHeaders(headers, {
+    accessToken: session.secure?.accessToken,
+    accountKey: session.accountKey,
+  });
 
   if (!apiHeaders['x-app']) {
     apiHeaders['x-app'] = resolveAppId(

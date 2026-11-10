@@ -5,15 +5,11 @@ import { log } from '#shared/utils/log';
 // The browser posts CSP reports itself, without our header.
 const EXEMPT_PATHS = new Set(['/api/csp-report']);
 
-// cutover: next-auth's client can't send our header, and next-auth guards its
-// own POSTs with a double-submit CSRF token. Goes with the sealed session.
-const EXEMPT_PREFIX = '/api/auth/';
-
 /** Every state-changing `/api` call must come from Studio itself. */
 export default defineEventHandler((event) => {
   const path = (event.path.split('?')[0] ?? '').toLowerCase();
   if (!path.startsWith('/api/')) return;
-  if (EXEMPT_PATHS.has(path) || path.startsWith(EXEMPT_PREFIX)) return;
+  if (EXEMPT_PATHS.has(path)) return;
   const reason = csrfRejection({
     method: event.method,
     host: getRequestHost(event, { xForwardedHost: true }),

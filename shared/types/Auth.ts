@@ -58,13 +58,30 @@ export interface AuthResponse extends AuthTokens {
  */
 export type AuthSessionError = 'RefreshTokenInvalid' | 'RefreshFailed';
 
-export interface Session extends AuthTokens {
+/**
+ * Server-only: the tokens a session holds, as the refresh helpers in
+ * `shared/utils/auth-session.ts` see them. Never sent to the browser.
+ */
+export interface TokenSession extends AuthTokens {
   isAuthenticated?: boolean;
   tokenExpires?: number;
   refreshedAt?: number;
   mfaActive?: boolean;
+  error?: AuthSessionError;
+}
+
+/**
+ * The session the browser sees (`GET /api/auth/session`). It never holds a
+ * token: the Geins tokens stay in the sealed session cookie on the server.
+ */
+export interface Session {
+  isAuthenticated: boolean;
+  accountKey?: string;
+  /** The access token's `exp`, in seconds. Also identifies the token. */
+  tokenExpires?: number;
+  /** Waiting for the MFA code; the login token stays on the server. */
+  mfaActive?: boolean;
   mfaMethod?: string;
-  expires?: string;
   error?: AuthSessionError;
 }
 
@@ -81,14 +98,13 @@ export interface AuthAccounts {
 }
 
 /**
- * Session update data that asks the server to refresh now, sent after the API
- * answered 401 to a token that hasn't expired. `rejectedToken` is the access
- * token the client holds; the server refreshes only while the cookie still
- * holds it, so a token another tab already rotated isn't revoked again.
+ * Body of `POST /api/auth/refresh`, sent after the API answered 401 to a token
+ * that hasn't expired. `rejectedTokenExpires` is the `tokenExpires` of the
+ * session the tab holds; the server refreshes only while the cookie still
+ * holds that token, so a token another tab already rotated isn't revoked again.
  */
 export interface ForceRefreshRequest {
-  forceRefresh: true;
-  rejectedToken: string | undefined;
+  rejectedTokenExpires: number | undefined;
 }
 
 /**
@@ -101,21 +117,13 @@ export type AuthBroadcastMessage =
   | { type: 'signed-out' };
 
 /**
- * Response from auth sign-in operations.
- *
- * Represents the result of calling signIn through @sidebase/nuxt-auth.
- * Used as the return type for login, verify, and setAccount
- * in the useGeinsAuth composable.
+ * Result of `login`, `verify` and `setAccount` in `useGeinsAuth`. `status` is
+ * the HTTP status of the auth route (`429`: too many attempts), or `0` when no
+ * response came back.
  */
 export interface SignInResponse {
-  /** Error message if the sign-in failed, null on success */
-  error: string | null;
-  /** HTTP status code of the sign-in response */
-  status: number;
-  /** Whether the sign-in was successful */
   ok: boolean;
-  /** Redirect URL, if any */
-  url: string | null;
+  status: number;
 }
 
 export type AuthFormMode =

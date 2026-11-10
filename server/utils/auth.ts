@@ -1,15 +1,13 @@
-import { jwtDecode } from 'jwt-decode';
 import type {
   AuthTokens,
   LoginCredentials,
   AuthResponse,
-  Session,
+  TokenSession,
   ApiOptions,
 } from '#shared/types';
 import { buildQueryString } from '#shared/utils/api-query';
 import { resolveAppId } from '#shared/utils/app';
 import { AuthApiError } from '#shared/utils/auth-session';
-import type { JWT } from 'next-auth/jwt';
 
 const config = useRuntimeConfig();
 const API_URL = config.public.apiUrl;
@@ -29,7 +27,6 @@ const STATUS_MESSAGES: Record<number, string> = {
   403: 'Insufficient permissions',
   404: 'Resource not found',
 };
-// TODO: move some of these functions to shared folder (Nuxt 3.14)
 
 /**
  * Utility functions for authentication.
@@ -134,16 +131,6 @@ export const auth = () => {
   };
 
   /**
-   * Parses the provided token.
-   *
-   * @param {string | null} [token] - The token to parse.
-   * @returns {JWT | null} - The parsed token data.
-   */
-  const parseToken = (token?: string | null): JWT | null => {
-    return token ? jwtDecode<JWT>(token) : null;
-  };
-
-  /**
    * Checks if the token is expired.
    *
    * @param {number} [exp] - The expiration time in seconds.
@@ -173,94 +160,12 @@ export const auth = () => {
   };
 
   /**
-   * Transform the login/verify/refresh response into a session object.
-   *
-   * @param {AuthResponse} response - The auth response.
-   * @returns {Session} The token data including authorization status and expiration times.
-   */
-  const getSessionFromResponse = (response: AuthResponse): Session => {
-    // User is not authenticated because MFA is required
-    if (response.mfaRequired && response.loginToken) {
-      return {
-        isAuthenticated: false,
-        mfaActive: true,
-        mfaMethod: response.mfaMethod,
-        loginToken: response.loginToken,
-      };
-    }
-
-    // User is not authenticated because no access token was provided
-    if (!response.mfaRequired && !response.accessToken) {
-      return { isAuthenticated: false };
-    }
-
-    // User is authenticated, set up session
-    const session: Session = getAuthenticatedSession(response);
-
-    // If account is already selected or set, return session
-    if (session.accountKey) {
-      return session;
-    }
-
-    // Handle auto-selecting account if only one is available
-    if (response.accounts) {
-      session.accountKey =
-        response.accounts.length === 1
-          ? response.accounts[0]?.accountKey
-          : undefined;
-      return session;
-    } else {
-      throw new Error('No account key found for user');
-    }
-  };
-
-  /**
-   * Creates a session object that is authenticated.
-   *
-   * @param {Session} session - The session object to authenticate.
-   * @returns {Session} The authenticated session object.
-   */
-  const getAuthenticatedSession = (session: Session): Session => {
-    const parsedToken = parseToken(session.accessToken);
-
-    const authenticatedSession: Session = {
-      isAuthenticated: true,
-      accessToken: session.accessToken,
-      refreshToken: session.refreshToken,
-      accountKey: session.accountKey,
-      tokenExpires: Number(parsedToken?.exp),
-      refreshedAt: Number(parsedToken?.iat),
-      mfaActive: false,
-    };
-
-    return authenticatedSession;
-  };
-
-  /**
-   * Parses a session object that contains JSON strings as values.
-   *
-   * @param {Session} payload - The session object to parse.
-   * @returns {Session} The parsed session object.
-   */
-  const parseSessionObjectStrings = (payload: Session): Session => {
-    const session: Session = {};
-    Object.entries(payload).forEach(([key, value]) => {
-      try {
-        session[key as keyof Session] = JSON.parse(value as string);
-      } catch {
-        session[key as keyof Session] = value;
-      }
-    });
-    return session;
-  };
-
-  /**
    * Determines if the token should be refreshed.
    *
-   * @param {Session} session - The session token.
+   * @param {TokenSession} session - The session token.
    * @returns {boolean} True if the token should be refreshed, false otherwise.
    */
-  const shouldRefresh = (session: Session): boolean => {
+  const shouldRefresh = (session: TokenSession): boolean => {
     return !!(
       session.isAuthenticated &&
       (isExpired(session.tokenExpires) || expiresSoon(session.tokenExpires))
@@ -271,12 +176,8 @@ export const auth = () => {
     login,
     refresh,
     verify,
-    parseToken,
     isExpired,
     expiresSoon,
-    getSessionFromResponse,
-    getAuthenticatedSession,
-    parseSessionObjectStrings,
     shouldRefresh,
   };
 };

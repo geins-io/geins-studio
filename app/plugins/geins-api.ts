@@ -16,9 +16,9 @@ import { tunnelIfMatch } from '#shared/utils/proxy-headers';
  * The plugin uses the `useGeinsAuth` composable to manage authentication state and token refresh.
  * It intercepts API requests to check token expiration and refresh the token if necessary, through
  * `useGeinsAuth().refresh` (one refresh in flight per tab, one at a time across tabs).
- * A 401 to a token the tab still holds forces a refresh (`useGeinsAuth().forceRefresh`) and
- * retries the request once; `onRequest` re-runs and picks up the new token. A 401 to that retry
- * logs out (`createUnauthorizedRecovery`).
+ * The browser holds no token: the API proxy attaches the session's. A 401 to the token the tab
+ * still holds (known by its `tokenExpires`) forces a refresh (`useGeinsAuth().forceRefresh`) and
+ * retries the request once. A 401 to that retry logs out (`createUnauthorizedRecovery`).
  */
 
 export default defineNuxtPlugin(() => {
@@ -32,8 +32,7 @@ export default defineNuxtPlugin(() => {
   // GeinsApiFetch note below).
   const { showGlobalErrorToast } = useApiErrorToast();
   const {
-    accessToken,
-    accountKey,
+    session,
     isAuthenticated,
     refresh,
     forceRefresh,
@@ -57,9 +56,9 @@ export default defineNuxtPlugin(() => {
    * The `$fetch` instance for the Geins API.
    *
    * This instance is created using the nuxt `$fetch.create` method.
-   * It intercepts requests to add the authentication token to the headers.
-   * If the token has expired, it refreshes the token before retrying the request.
-   * If a request fails with a 401 status, it attempts to refresh the token and retry the request.
+   * It refreshes a token that is due before the request, so the proxy rarely
+   * has to. If a request fails with a 401 status, it forces a refresh and
+   * retries the request once.
    *
    * @example
    * ```ts
@@ -93,21 +92,12 @@ export default defineNuxtPlugin(() => {
         ) {
           options.headers.set('content-type', 'application/json');
         }
-        // Add the token to the request. Not gated on `isAuthenticated`: the
-        // login page loads the user (for account selection) before an account
-        // is picked.
-        if (accessToken.value) {
-          options.headers.set('x-access-token', `${accessToken.value}`);
-        }
-        // Add the account key to the request
-        if (accountKey.value) {
-          options.headers.set('x-account-key', accountKey.value);
-        }
         options.headers.set('x-app', appId);
       } catch (error) {
         const errorMessage = getErrorMessage(error);
         geinsLogError('error during request setup', errorMessage);
       }
+      options.sentTokenExpires = session.value?.tokenExpires;
     },
     async onRequestError({ error, options, request }) {
       const timestamp = new Date().toISOString();
@@ -212,8 +202,8 @@ export default defineNuxtPlugin(() => {
         response.status === 401 &&
         (await recoverFromUnauthorized({
           status: response.status,
-          sentToken: options.headers.get('x-access-token') ?? undefined,
-          currentToken: accessToken.value,
+          sentTokenExpires: options.sentTokenExpires,
+          currentTokenExpires: session.value?.tokenExpires,
           isAuthenticated: isAuthenticated.value,
           onAuthPage: router.currentRoute.value.path.startsWith('/auth'),
           retried: !!options.authRetried,

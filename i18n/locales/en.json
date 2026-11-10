@@ -344,6 +344,8 @@
     "invalid_credentials_description": "Please check your email and password and try again.",
     "invalid_code_title": "Invalid code",
     "invalid_code_description": "Please check the verification code and try again.",
+    "too_many_attempts_title": "Too many attempts",
+    "too_many_attempts_description": "Please wait a few minutes before you try again.",
     "reset_password_error_title": "Password reset failed",
     "reset_password_error_description": "Your token is invalid or expired. Please try again.",
     "general_error_title": "Something went wrong",

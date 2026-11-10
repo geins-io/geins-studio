@@ -31,18 +31,20 @@ This document is the **single source of truth** for all environment variables an
 
 These are **sensitive values** that must be kept secret. They are encrypted by GitHub.
 
-| Secret                  | Required | Description                       | How to Get             |
-| ----------------------- | :------: | --------------------------------- | ---------------------- |
-| `AZURE_CLIENT_ID`       |    ✅    | Service Principal App (Client) ID | Run `pnpm infra:setup` |
-| `AZURE_TENANT_ID`       |    ✅    | Azure AD Tenant ID                | Run `pnpm infra:setup` |
-| `AZURE_SUBSCRIPTION_ID` |    ✅    | Target Azure Subscription ID      | Run `pnpm infra:setup` |
-| `AUTH_SECRET`           |    ✅    | NextAuth.js secret key            | Generate with openssl  |
-| `GEINS_API_URL`         |    ✅    | Geins Management API URL          | Geins admin portal     |
+| Secret                  | Required | Description                           | How to Get             |
+| ----------------------- | :------: | ------------------------------------- | ---------------------- |
+| `AZURE_CLIENT_ID`       |    ✅    | Service Principal App (Client) ID     | Run `pnpm infra:setup` |
+| `AZURE_TENANT_ID`       |    ✅    | Azure AD Tenant ID                    | Run `pnpm infra:setup` |
+| `AZURE_SUBSCRIPTION_ID` |    ✅    | Target Azure Subscription ID          | Run `pnpm infra:setup` |
+| `NUXT_APP_SECRET`       |    ✅    | Seals the session cookie (≥ 32 chars) | Generate with openssl  |
+| `AUTH_SECRET`           |    ✅    | Old NextAuth.js secret (cutover)      | Keep the current value |
+| `GEINS_API_URL`         |    ✅    | Geins Management API URL              | Geins admin portal     |
 
 ### Notes on Secrets
 
 - **AZURE\_\*** secrets are created by running `pnpm infra:setup` - the script outputs the values
-- **AUTH_SECRET** can be generated with `openssl rand -base64 32`
+- **NUXT_APP_SECRET** can be generated with `openssl rand -base64 32`. The session cookie is sealed with a key derived from it (`deriveSecret`), so changing it signs everyone out. Builds don't generate one, and the Bicep deployment refuses a value under 32 characters.
+- **AUTH_SECRET** (cutover) now only decrypts the old next-auth session cookie, so users signed in before the switch stay signed in. Keep its current value; remove it, together with `AUTH_PATH` and `AUTH_ORIGIN`, one or two releases after the sealed session ships, once the old cookies have expired (30 days) or been migrated.
 
 ---
 
@@ -72,29 +74,31 @@ These are **non-sensitive configuration values** visible in the repository setti
 
 The `deploy.yml` workflow passes GitHub variables to Bicep, which sets these in Azure App Service:
 
-| Azure App Setting             | Source                       | Maps to nuxt.config.ts              |
-| ----------------------------- | ---------------------------- | ----------------------------------- |
-| `NODE_ENV`                    | Set by Bicep per environment | `process.env.NODE_ENV`              |
-| `GEINS_API_URL`               | `secrets.GEINS_API_URL`      | `runtimeConfig.public.apiUrl`       |
-| `AUTH_SECRET`                 | `secrets.AUTH_SECRET`        | `runtimeConfig.private.authSecret`  |
-| `BASE_URL`                    | `vars.BASE_URL`              | `runtimeConfig.public.baseUrl`      |
-| `AUTH_PATH`                   | `vars.AUTH_PATH`             | Auth server function path           |
-| `GEINS_DEBUG`                 | `vars.GEINS_DEBUG`           | `runtimeConfig.public.debug`        |
-| `SALES_PORTAL_WEBHOOK_SECRET` | `secrets.*`                  | `runtimeConfig.private.*` (STU-216) |
-| `NITRO_HOST`                  | Hardcoded `0.0.0.0`          | Required for Azure containers       |
-| `NITRO_PORT`                  | Hardcoded `3000`             | Container port                      |
-| `WEBSITES_PORT`               | Hardcoded `3000`             | Azure port mapping                  |
+| Azure App Setting             | Source                       | Maps to nuxt.config.ts                       |
+| ----------------------------- | ---------------------------- | -------------------------------------------- |
+| `NODE_ENV`                    | Set by Bicep per environment | `process.env.NODE_ENV`                       |
+| `GEINS_API_URL`               | `secrets.GEINS_API_URL`      | `runtimeConfig.public.apiUrl`                |
+| `NUXT_APP_SECRET`             | `secrets.NUXT_APP_SECRET`    | `runtimeConfig.appSecret`                    |
+| `NUXT_PRIVATE_AUTH_SECRET`    | `secrets.AUTH_SECRET`        | `runtimeConfig.private.authSecret` (cutover) |
+| `BASE_URL`                    | `vars.BASE_URL`              | `runtimeConfig.public.baseUrl`               |
+| `AUTH_PATH`                   | `vars.AUTH_PATH`             | Unused since the sealed session (cutover)    |
+| `GEINS_DEBUG`                 | `vars.GEINS_DEBUG`           | `runtimeConfig.public.debug`                 |
+| `SALES_PORTAL_WEBHOOK_SECRET` | `secrets.*`                  | `runtimeConfig.private.*` (STU-216)          |
+| `NITRO_HOST`                  | Hardcoded `0.0.0.0`          | Required for Azure containers                |
+| `NITRO_PORT`                  | Hardcoded `3000`             | Container port                               |
+| `WEBSITES_PORT`               | Hardcoded `3000`             | Azure port mapping                           |
 
 ---
 
 ## Build-Time vs Runtime Variables
 
-| Variable        | Build-Time | Runtime | Where to Set             |
-| --------------- | :--------: | :-----: | ------------------------ |
-| `GEINS_API_URL` |     ❌     |   ✅    | GitHub Secrets → Azure   |
-| `AUTH_SECRET`   |     ❌     |   ✅    | GitHub Secrets → Azure   |
-| `BASE_URL`      |     ❌     |   ✅    | GitHub Variables → Azure |
-| `GEINS_DEBUG`   |     ❌     |   ✅    | GitHub Variables → Azure |
+| Variable          | Build-Time | Runtime | Where to Set             |
+| ----------------- | :--------: | :-----: | ------------------------ |
+| `GEINS_API_URL`   |     ❌     |   ✅    | GitHub Secrets → Azure   |
+| `NUXT_APP_SECRET` |     ❌     |   ✅    | GitHub Secrets → Azure   |
+| `AUTH_SECRET`     |     ❌     |   ✅    | GitHub Secrets → Azure   |
+| `BASE_URL`        |     ❌     |   ✅    | GitHub Variables → Azure |
+| `GEINS_DEBUG`     |     ❌     |   ✅    | GitHub Variables → Azure |
 
 **Build-time** = Used during `docker build` in GitHub Actions
 **Runtime** = Used when the app runs in Azure
@@ -109,9 +113,9 @@ You can set different values per GitHub Environment (dev, staging, prod):
 
 ### Required Production Secrets
 
-| Environment | `AUTH_SECRET` | `GEINS_API_URL` | Notes          |
-| ----------- | :-----------: | :-------------: | -------------- |
-| prod        |      ✅       |       ✅        | Production API |
+| Environment | `NUXT_APP_SECRET` | `AUTH_SECRET` | `GEINS_API_URL` | Notes          |
+| ----------- | :---------------: | :-----------: | :-------------: | -------------- |
+| prod        |        ✅         |      ✅       |       ✅        | Production API |
 
 ---
 
@@ -131,13 +135,14 @@ Copy the output values for the next step.
 - [ ] `AZURE_CLIENT_ID` - From setup script output
 - [ ] `AZURE_TENANT_ID` - From setup script output
 - [ ] `AZURE_SUBSCRIPTION_ID` - From setup script output
-- [ ] `AUTH_SECRET` - Generated NextAuth secret
+- [ ] `NUXT_APP_SECRET` - `openssl rand -base64 32`; seals the session cookie
+- [ ] `AUTH_SECRET` - The current NextAuth secret, kept only to migrate old session cookies (cutover)
 - [ ] `GEINS_API_URL` - Geins Management API URL
 
 ### 3. GitHub Variables (Optional)
 
 - [ ] `BASE_URL` - If different from Azure default hostname
-- [ ] `AUTH_PATH` - If using custom auth path
+- [ ] `AUTH_PATH` - Unused since the sealed session; remove after the cutover
 - [ ] `GEINS_DEBUG` - Set to `true` for debugging
 - [ ] `LOG_LEVEL` - Adjust as needed
 

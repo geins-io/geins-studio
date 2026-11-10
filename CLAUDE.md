@@ -147,7 +147,7 @@ All API calls flow through typed repository factories → `$geinsApi` → Nitro 
 
 Access via `useGeinsRepository()`: `orderApi.quotation`, `customerApi.company`, `productApi`, `accountApi`.
 
-Factory chain: `entityGetRepo` → `entityListRepo` → `entityBaseRepo` → `entityRepo` (full CRUD). Nitro proxy (`server/api/[...].ts`) adds auth headers and forwards only allowlisted request headers (`UPSTREAM_HEADERS` in [proxy-headers.ts](shared/utils/proxy-headers.ts)) — a new header the backend needs goes on that list or it never arrives; the session cookie never leaves the proxy. No response transformation.
+Factory chain: `entityGetRepo` → `entityListRepo` → `entityBaseRepo` → `entityRepo` (full CRUD). Nitro proxy (`server/api/[...].ts`) adds auth headers and forwards only allowlisted request headers (`UPSTREAM_HEADERS` in [proxy-headers.ts](shared/utils/proxy-headers.ts)) — a new header the backend needs goes on that list or it never arrives; the session cookie never leaves the proxy. No response transformation. The browser never holds a Geins token: the proxy takes `authorization` + `x-account-key` from the sealed session ([authentication.md](docs/concepts/authentication.md)). A state-changing `/api` call needs `x-geins-csrf: 1` from the same origin — `$geinsApi` and `useGeinsAuth` send it; a raw `$fetch`/`fetch` mutation gets `403` from the CSRF guard.
 
 ### Repository rules
 

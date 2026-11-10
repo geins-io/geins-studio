@@ -344,6 +344,8 @@
     "invalid_credentials_description": "Kontrollera din e-post och ditt lösenord och försök igen.",
     "invalid_code_title": "Ogiltig kod",
     "invalid_code_description": "Kontrollera verifieringskoden och försök igen.",
+    "too_many_attempts_title": "För många försök",
+    "too_many_attempts_description": "Vänta några minuter innan du försöker igen.",
     "reset_password_error_title": "Återställning av lösenord misslyckades",
     "reset_password_error_description": "Din token är ogiltig eller har utgått. Försök igen.",
     "general_error_title": "Något gick fel",

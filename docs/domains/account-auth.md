@@ -11,22 +11,24 @@ The Account & Auth domain handles everything related to identity and merchant co
 
 ## Key Concepts
 
-**Multi-layered auth flow** — Authentication involves 6 layers working in sequence:
+**Multi-layered auth flow** — The Geins tokens never reach the browser. Authentication involves these layers:
 
 1. **Middleware** (`auth.global.ts`) — Route guard redirecting unauthenticated users to `/auth/login?redirect=…` (the requested path, encoded whole; `loginUrl` in `shared/utils/login-redirect.ts`). After login, the login page goes there only if `safeRedirect` accepts it as an in-app path, else to `/`
-2. **Server handler** (`server/api/auth/[...].ts`) — NextAuth.js with `CredentialsProvider`, JWT handling. Its `jwt`/`session` callbacks never throw (next-auth 4 wipes the cookie on a throw); a failed refresh becomes `session.error` (`RefreshTokenInvalid` with the tokens dropped on any 4xx but 408/429 — Geins answers an expired refresh token with 403; `RefreshFailed` with the token kept on 5xx, 408, 429, network errors and timeouts). A 403 is retried once first, after 300–800 ms with the same refresh token (`refreshWithRetry`): Geins also answers 403 when its own token check fails, so one 403 may be a backend blip, not a dead token. Decisions live in `shared/utils/auth-session.ts`
-3. **Server utility** (`server/utils/auth.ts`) — Direct API calls to Geins auth endpoints (login, refresh, verify); throws `AuthApiError` (HTTP status, or `0` for network/timeout)
-4. **Plugin** (`geins-api.ts`) — `$geinsApi` fetch instance; refreshes a due token before each request through `useGeinsAuth().refresh` (one refresh in flight per tab, one at a time across tabs via the Web Lock `geins-auth-refresh`). A `401` to the token the tab holds forces a refresh (`useGeinsAuth().forceRefresh`, a session update) and retries once; a `401` to the retry logs out. Decisions live in `shared/utils/auth-recovery.ts` ([When the API rejects a token](/concepts/authentication#when-the-api-rejects-a-token))
-5. **Composable** (`useGeinsAuth`) — Client-side auth state: `session`, `isAuthenticated`, `login()`, `logout()`
-6. **Plugin** (`auth-state.ts`) — Cross-tab sync via `BroadcastChannel('geins-auth')`, carrying signals only (`session-changed`, `signed-out`) — never tokens; each tab re-reads its own session from the shared cookie. Also the proactive refresh (every 60s and when a tab becomes visible), and the deliberate logout, after one re-check of a `RefreshTokenInvalid` session
+2. **Auth routes** (`server/api/auth/`) — `login`, `verify` (the MFA login token stays in the session), `account` (`403` unless the token's own claims allow the account: `geins:accountkey`, or the global Super Admin role), `logout`, `session` (the client's view, no tokens) and `refresh` (forced, after a `401`). Geins errors map to `401`/`429`/`502` (`auth-route-error.ts`)
+3. **Sealed session** (`server/utils/sealed-session.ts`, `geins-session.ts`) — The tokens live in an `iron-webcrypto`-sealed value keyed by `deriveSecret` from `NUXT_APP_SECRET`, split over up to 4 httpOnly `SameSite=Lax` cookies (`geins-session.0…3`). A due token is refreshed on read, once per server instance; only the session routes write a failed refresh (`RefreshTokenInvalid` with the tokens dropped on any 4xx but 408/429 — Geins answers an expired refresh token with 403; `RefreshFailed` with the token kept on 5xx, 408, 429, network errors and timeouts). A 403 is retried once first, after 300–800 ms with the same refresh token (`refreshWithRetry`). Decisions live in `shared/utils/auth-session.ts`. `cutover:` a next-auth cookie from before the switch is migrated once (`legacy-session.ts`)
+4. **Server utility** (`server/utils/auth.ts`) — Direct API calls to Geins auth endpoints (login, refresh, verify); throws `AuthApiError` (HTTP status, or `0` for network/timeout)
+5. **API proxy** (`server/api/[...].ts`) — Sends the session's token as `authorization` and its account as `x-account-key`, never the browser's; refuses Geins' own `auth` endpoints. The CSRF guard (`server/middleware/csrf.ts`) refuses a state-changing `/api` call without `x-geins-csrf` from the same origin
+6. **Plugin** (`geins-api.ts`) — `$geinsApi` fetch instance; refreshes a due token before each request through `useGeinsAuth().refresh` (one refresh in flight per tab, one at a time across tabs via the Web Lock `geins-auth-refresh`). A `401` to the token the tab holds (known by its `tokenExpires`) forces a refresh (`useGeinsAuth().forceRefresh`) and retries once; a `401` to the retry logs out. Decisions live in `shared/utils/auth-recovery.ts` ([When the API rejects a token](/concepts/authentication#when-the-api-rejects-a-token))
+7. **Composable** (`useGeinsAuth`) — Client-side auth state in `useState('geins-session')`: `session` (no tokens), `isAuthenticated`, `login()`, `verify()`, `setAccount()`, `logout()`
+8. **Plugin** (`auth-state.ts`) — Reads the session before the route middleware runs. Cross-tab sync via `BroadcastChannel('geins-auth')`, carrying signals only (`session-changed`, `signed-out`); each tab re-reads its own session from the shared cookie. Also the proactive refresh (every 60s and when a tab becomes visible), and the deliberate logout, after one re-check of a `RefreshTokenInvalid` session
 
 **Multi-account support** — Users can belong to multiple merchant accounts (`AuthAccounts[]`). After login, if `accounts.length > 1`, the user selects an account. The selected `accountKey` is passed to all subsequent API calls.
 
 **MFA** — Supported via `mfaRequired` / `mfaMethod` on `AuthResponse`. The `AuthForm` component switches to `verify` mode when MFA is triggered.
 
-**Account store** — `useAccountStore` caches merchant-level data (channels, currencies, languages) and persists user preferences (`currentChannelId`, `currentCurrency`, `currentLanguage`) in cookies. Initialized by the `geins-global.ts` plugin on session start. On logout the plugin resets it and the products store. It ignores the brief `loading` status during a token refresh, so a refresh never counts as a logout.
+**Account store** — `useAccountStore` caches merchant-level data (channels, currencies, languages) and persists user preferences (`currentChannelId`, `currentCurrency`, `currentLanguage`) in cookies. Initialized by the `geins-global.ts` plugin on session start. On logout the plugin resets it and the products store. A refresh keeps the last session until the new one arrives, so it never counts as a logout.
 
-**User store** — `useUserStore` loads the signed-in user from `user/me` (with accounts) through `$geinsApi` — the session carries tokens only. `geins-global.ts` awaits `init()` at boot and resets it on logout; the login page loads it for account selection. A transient failure is retried in the background and never signs out; until the user loads, the sidebar shows a skeleton, never "N/A". It derives display properties (`userInitials`, `userName`, `userEmail`, `userAccounts`) and provides role/permission checks (`hasAnyRole`, `hasAnyPermission` — currently TODO stubs).
+**User store** — `useUserStore` loads the signed-in user from `user/me` (with accounts) through `$geinsApi` — the session carries no profile. `geins-global.ts` awaits `init()` at boot and resets it on logout; the login page loads it for account selection. A transient failure is retried in the background and never signs out; until the user loads, the sidebar shows a skeleton, never "N/A". It derives display properties (`userInitials`, `userName`, `userEmail`, `userAccounts`) and provides role/permission checks (`hasAnyRole`, `hasAnyPermission` — currently TODO stubs).
 
 ## API Shape
 
@@ -53,7 +55,7 @@ The Account & Auth domain handles everything related to identity and merchant co
 | `Channel`, `Market`, `Currency` | All domains | Scoping products, prices, and quotations                  |
 | `Account`                       | All domains | Merchant context (`accountKey`, `defaultCurrency`)        |
 | `User`                          | Orders      | Author info for quotation messages and status transitions |
-| `Session`, `AuthTokens`         | Plugins     | Token management and request authentication               |
+| `Session`                       | Plugins     | The client session: sign-in state, account, token expiry  |
 
 ## Dependencies
 
@@ -62,16 +64,16 @@ The Account & Auth domain handles everything related to identity and merchant co
 
 ## Key Files
 
-| Layer        | Path                                                                                                  |
-| ------------ | ----------------------------------------------------------------------------------------------------- |
-| Types        | `shared/types/Auth.ts`, `shared/types/Account.ts`                                                     |
-| Repositories | `app/utils/repositories/user.ts`, `app/utils/repositories/global.ts`                                  |
-| Stores       | `app/stores/account.ts`, `app/stores/user.ts`                                                         |
-| Composables  | `useGeinsAuth.ts`, `useGeinsApi.ts`                                                                   |
-| Plugins      | `geins-api.ts`, `auth-state.ts`, `geins-global.ts`, `error-handler.ts`                                |
-| Server       | `server/api/auth/[...].ts`, `server/utils/auth.ts`                                                    |
-| Components   | `app/components/auth/AuthForm.vue`                                                                    |
-| Pages        | `app/pages/auth/login.vue`, `logout.vue`, `reset-password.vue`, `app/pages/account/profile/index.vue` |
+| Layer        | Path                                                                                                                                                |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Types        | `shared/types/Auth.ts`, `shared/types/Account.ts`                                                                                                   |
+| Repositories | `app/utils/repositories/user.ts`, `app/utils/repositories/global.ts`                                                                                |
+| Stores       | `app/stores/account.ts`, `app/stores/user.ts`                                                                                                       |
+| Composables  | `useGeinsAuth.ts`, `useGeinsApi.ts`                                                                                                                 |
+| Plugins      | `geins-api.ts`, `auth-state.ts`, `geins-global.ts`, `error-handler.ts`                                                                              |
+| Server       | `server/api/auth/*`, `server/utils/{sealed-session,geins-session,geins-token,auth,auth-route-error,legacy-session}.ts`, `server/middleware/csrf.ts` |
+| Components   | `app/components/auth/AuthForm.vue`                                                                                                                  |
+| Pages        | `app/pages/auth/login.vue`, `logout.vue`, `reset-password.vue`, `app/pages/account/profile/index.vue`                                               |
 
 ## Decision Log
 
@@ -91,7 +93,7 @@ Tabs used to broadcast the whole session (access and refresh tokens) and receive
 The `session` callback used to call `user/me` on every `/api/auth/session` (the user was never stored in the token) and threw on failure, which wiped the cookie. Now the callbacks are pure and never throw, and `useUserStore` loads the user via `$geinsApi`. Keeps the JWT cookie small (staff users have long account lists) and the name fresh after a profile edit.
 
 **2026-11-05: Tokens stay server-side in a sealed, chunked session cookie**
-Decided in STU-475; rolling out in STU-493 and STU-494. `@sidebase/nuxt-auth` + `next-auth` give way to a session of our own, with no auth library. The Geins tokens live only in a session sealed with `iron-webcrypto`, keyed by Nuxt's `deriveSecret`, and split across httpOnly, `SameSite=Lax` cookies of under 4 KB each. The API proxy sets `authorization` and `x-account-key` from that session, and the session the browser reads holds no tokens. Why:
+Decided in STU-475; built in STU-493 (CSRF guard) and STU-494 (sealed session, with a one-time migration of next-auth cookies so nobody is logged out at deploy). `@sidebase/nuxt-auth` + `next-auth` give way to a session of our own, with no auth library. The Geins tokens live only in a session sealed with `iron-webcrypto`, keyed by Nuxt's `deriveSecret`, and split across httpOnly, `SameSite=Lax` cookies of under 4 KB each. The API proxy sets `authorization` and `x-account-key` from that session, and the session the browser reads holds no tokens. Why:
 
 - No sidebase release lifts its `next-auth ~4.21.1` pin, so the critical `next-auth`/`next` advisories can't be patched.
 - next-auth's `getToken` is read-only, so the proxy couldn't refresh.
