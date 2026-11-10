@@ -40,6 +40,29 @@ export function isQuotationExternal(
 }
 
 /**
+ * Sent statuses where the API still takes the order details, in a PATCH that
+ * carries nothing else. A full update is refused there, and would reset the
+ * buyer's payment and shipping choices if it went through.
+ */
+export const ORDER_DETAILS_EDITABLE_STATUSES: readonly QuotationStatus[] = [
+  'pending',
+  'expired',
+  'accepted',
+];
+
+/**
+ * Whether a sent quotation's order details can be edited on their own.
+ */
+export function canEditSentOrderDetails(
+  quotation: Pick<Quotation, 'status' | 'externalReference'>,
+): boolean {
+  return (
+    ORDER_DETAILS_EDITABLE_STATUSES.includes(quotation.status) &&
+    !isQuotationExternal(quotation)
+  );
+}
+
+/**
  * Whether the quotation opens in the editable layout (General + Products).
  */
 export function isQuotationEditable(

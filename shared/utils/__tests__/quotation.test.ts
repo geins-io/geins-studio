@@ -6,6 +6,7 @@ import type {
   QuotationStatus,
 } from '#shared/types';
 import {
+  canEditSentOrderDetails,
   isQuotationDeletable,
   isQuotationEditable,
   isQuotationExternal,
@@ -84,6 +85,33 @@ describe('isQuotationDeletable', () => {
     );
     expect(
       isQuotationDeletable({ status: 'canceled', externalReference }),
+    ).toBe(false);
+  });
+});
+
+describe('canEditSentOrderDetails', () => {
+  it.each<QuotationStatus>(['pending', 'expired', 'accepted'])(
+    'edits order details on %s',
+    (status) => {
+      expect(canEditSentOrderDetails({ status })).toBe(true);
+    },
+  );
+
+  it.each<QuotationStatus>([
+    'draft',
+    'requested',
+    'requestDraft',
+    'confirmed',
+    'finalized',
+    'rejected',
+    'canceled',
+  ])('leaves %s alone', (status) => {
+    expect(canEditSentOrderDetails({ status })).toBe(false);
+  });
+
+  it('leaves an external quotation alone', () => {
+    expect(
+      canEditSentOrderDetails({ status: 'pending', externalReference }),
     ).toBe(false);
   });
 });
