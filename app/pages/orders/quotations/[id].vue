@@ -37,6 +37,7 @@ import type {
 } from '#shared/types';
 import { ENTITIES, entityEditUrl } from '#shared/utils/entities';
 import {
+  canEditSentOrderDetails,
   isQuotationDeletable,
   isQuotationEditable,
   isQuotationExternal,
@@ -120,6 +121,7 @@ const canDelete = ref(false);
 const communications = ref<QuotationMessage[]>([]);
 // What the API holds; edits are sent as changes against it
 const storedOrderDetails = ref<QuotationOrderDetails | null>(null);
+const canEditOrderDetails = ref(false);
 
 // Discount & shipping (standalone refs, not form fields)
 const discountType = ref<'percent' | 'fixedAmount'>('percent');
@@ -673,6 +675,7 @@ const {
     canDelete.value = isQuotationDeletable(quotation);
     communications.value = quotation.communication || [];
     storedOrderDetails.value = quotation.orderDetails ?? null;
+    canEditOrderDetails.value = canEditSentOrderDetails(quotation);
 
     // Discount & shipping fee from API response
     if (quotation.discount) {
@@ -2458,6 +2461,20 @@ definePageMeta({
                   </div>
                 </div>
               </ContentEditCard>
+
+              <QuotationOrderDetailsCard :order-details="storedOrderDetails">
+                <template v-if="canEditOrderDetails" #action>
+                  <QuotationOrderDetailsPanel
+                    :quotation-id="entityId"
+                    :order-details="storedOrderDetails"
+                    @saved="refreshEntityData?.()"
+                  >
+                    <Button variant="outline" size="sm">
+                      {{ $t('edit') }}
+                    </Button>
+                  </QuotationOrderDetailsPanel>
+                </template>
+              </QuotationOrderDetailsCard>
 
               <QuotationRequestDetails
                 v-if="entityData?.request"

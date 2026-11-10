@@ -12,6 +12,7 @@ import type {
   QuotationPreviewResponse,
   QuotationMessageCreate,
   QuotationMessageUpdate,
+  QuotationOrderDetailsRequest,
   StatusTransitionRequest,
   ExtendTransitionRequest,
 } from '#shared/types';
@@ -180,6 +181,20 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/extend`, {
           method: 'POST',
           body: data,
+          errorContext: { action: 'updating', entity: 'quotation' },
+        });
+      },
+      /**
+       * Order details alone — the one update a pending, expired or accepted
+       * quotation takes. The status stays the same and nothing is sent again.
+       */
+      async updateOrderDetails(
+        id: string,
+        orderDetails: QuotationOrderDetailsRequest,
+      ): Promise<void> {
+        await fetch<null>(`${QUOTATION_ENDPOINT}/${id}`, {
+          method: 'PATCH',
+          body: { orderDetails },
           errorContext: { action: 'updating', entity: 'quotation' },
         });
       },

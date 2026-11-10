@@ -1004,6 +1004,14 @@ export default defineConfig({
                 link: '/components/quotation/QuotationOrderDetailsFields.md',
               },
               {
+                text: 'QuotationOrderDetailsCard',
+                link: '/components/quotation/QuotationOrderDetailsCard.md',
+              },
+              {
+                text: 'QuotationOrderDetailsPanel',
+                link: '/components/quotation/QuotationOrderDetailsPanel.md',
+              },
+              {
                 text: 'QuotationWorkflowInfo',
                 link: '/components/quotation/QuotationWorkflowInfo.md',
               },
