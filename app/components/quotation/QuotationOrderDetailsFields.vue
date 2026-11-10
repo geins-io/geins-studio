@@ -13,7 +13,11 @@ const toPickedDay = (value?: string) =>
 <template>
   <FormGridWrap>
     <FormGrid design="1+1">
-      <FormField v-slot="{ componentField }" name="orderDetails.goodsLabel">
+      <FormField
+        v-slot="{ componentField }"
+        name="orderDetails.goodsLabel"
+        :validate-on-model-update="true"
+      >
         <FormItem>
           <FormLabel>{{ $t('orders.goods_label') }}</FormLabel>
           <FormControl>
@@ -28,6 +32,7 @@ const toPickedDay = (value?: string) =>
       <FormField
         v-slot="{ componentField }"
         name="orderDetails.customerOrderNumber"
+        :validate-on-model-update="true"
       >
         <FormItem>
           <FormLabel>{{ $t('orders.customer_order_number') }}</FormLabel>
@@ -63,6 +68,7 @@ const toPickedDay = (value?: string) =>
       <FormField
         v-slot="{ componentField }"
         name="orderDetails.customerReference"
+        :validate-on-model-update="true"
       >
         <FormItem>
           <FormLabel>{{ $t('orders.customer_reference') }}</FormLabel>

@@ -130,7 +130,8 @@ describe('order details', () => {
     process.env.TZ = 'Europe/Stockholm';
   });
   afterEach(() => {
-    process.env.TZ = originalTz;
+    if (originalTz === undefined) delete process.env.TZ;
+    else process.env.TZ = originalTz;
   });
 
   describe('orderDetailsFormValues', () => {

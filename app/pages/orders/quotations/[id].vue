@@ -1249,9 +1249,6 @@ if (!createMode.value) {
 // =====================================================================================
 // SAVE HANDLER
 // =====================================================================================
-// Custom save handler that delays the unsaved-changes snapshot until all
-// reactive side effects (quotationItems watcher, debounced onFormValuesChange)
-// have settled — matching the pattern used during initial data loading.
 // Only the order details: a buyer's request may lack fields the rest of the
 // schema requires, and the seller must still be able to save it as it is.
 const orderDetailsValid = async () => {
@@ -1263,6 +1260,9 @@ const orderDetailsValid = async () => {
   return results.every((result) => result.valid);
 };
 
+// Custom save handler that delays the unsaved-changes snapshot until all
+// reactive side effects (quotationItems watcher, debounced onFormValuesChange)
+// have settled — matching the pattern used during initial data loading.
 const handleSave = async () => {
   if (!(await orderDetailsValid())) return;
   const result = await updateEntity(undefined, undefined, false);
