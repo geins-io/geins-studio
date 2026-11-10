@@ -132,6 +132,7 @@ async function refreshSession(
   mayDowngrade: boolean,
 ): Promise<GeinsSession> {
   const token = toTokenSession(session);
+  event.context.geinsRefreshed = true;
   let next: TokenSession;
   try {
     next = tokenAfterRefresh(
@@ -231,7 +232,12 @@ export async function forceRefreshSession(
   request: unknown,
 ): Promise<GeinsSession> {
   const session = await readGeinsSession(event, { mayDowngrade: true });
-  if (!shouldForceRefresh(toTokenSession(session), request)) {
+  // A due token was just refreshed by that read; if it failed transiently,
+  // the expiry still matches, and a second round would only add load.
+  if (
+    event.context.geinsRefreshed ||
+    !shouldForceRefresh(toTokenSession(session), request)
+  ) {
     return session;
   }
   geinsLogWarn('the API rejected the token, forcing a refresh');

@@ -44,6 +44,7 @@ These are **sensitive values** that must be kept secret. They are encrypted by G
 
 - **AZURE\_\*** secrets are created by running `pnpm infra:setup` - the script outputs the values
 - **NUXT_APP_SECRET** can be generated with `openssl rand -base64 32`. The session cookie is sealed with a key derived from it (`deriveSecret`), so changing it signs everyone out. Builds don't generate one, and the Bicep deployment refuses a value under 32 characters.
+- **Vercel** (prod, flight, QA and Preview, in every Vercel project) needs `NUXT_APP_SECRET` too, set before this ships: without it every session read answers `500`, so nobody can sign in. Keep `AUTH_SECRET` there as well.
 - **AUTH_SECRET** (cutover) now only decrypts the old next-auth session cookie, so users signed in before the switch stay signed in. Keep its current value; remove it, together with `AUTH_PATH` and `AUTH_ORIGIN`, one or two releases after the sealed session ships, once the old cookies have expired (30 days) or been migrated.
 
 ---

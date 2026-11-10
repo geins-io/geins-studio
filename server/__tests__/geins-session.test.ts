@@ -248,6 +248,18 @@ describe('forceRefreshSession', () => {
     expect(response.body.tokenExpires).not.toBe(current.tokenExpires);
   });
 
+  it('refreshes a due token once, even when that refresh fails', async () => {
+    geinsAuth.refresh.mockRejectedValue(new AuthApiError(503, 'Down'));
+    const current = signedIn(accessToken(60));
+    const { request } = await seeded(current);
+    const response = await request('/refresh', {
+      method: 'POST',
+      body: { rejectedTokenExpires: current.tokenExpires },
+    });
+    expect(geinsAuth.refresh).toHaveBeenCalledTimes(1);
+    expect(response.body.error).toBe('RefreshFailed');
+  });
+
   it("doesn't refresh a token another tab already rotated", async () => {
     const current = signedIn(accessToken(3600));
     const { request } = await seeded(current);

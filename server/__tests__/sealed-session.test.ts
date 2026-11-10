@@ -130,7 +130,7 @@ describe('sealed session', () => {
     expect((await request('/read')).body).toEqual({});
   });
 
-  it('refuses a session over 4 chunks, and writes nothing', async () => {
+  it(`refuses a session over ${MAX_CHUNKS} chunks, and writes nothing`, async () => {
     const huge = {
       ...session,
       secure: { accessToken: 'x'.repeat(CHUNK_SIZE * MAX_CHUNKS) },
@@ -152,6 +152,14 @@ describe('sealed session', () => {
 });
 
 describe('chunk helpers', () => {
+  // Node answers 431 to request headers over 16 KB, before any handler runs:
+  // a full session must leave room for the other cookies and headers.
+  it('keeps a full session well under the 16 KB header limit', () => {
+    const cookieHeader =
+      MAX_CHUNKS * (CHUNK_SIZE + 'geins-session.0=; '.length);
+    expect(cookieHeader).toBeLessThanOrEqual(12 * 1024);
+  });
+
   it('joins chunks in index order, whatever order the cookies come in', () => {
     const cookies = {
       'geins-session.10': 'k',

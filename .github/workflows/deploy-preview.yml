@@ -90,6 +90,7 @@ jobs:
             ghcrUsername=${{ github.actor }}
             ghcrToken=${{ secrets.GHCR_PAT }}
             authSecret=${{ secrets.AUTH_SECRET }}
+            appSecret=${{ secrets.NUXT_APP_SECRET }}
             geinsApiUrl=${{ secrets.GEINS_API_URL }}
             baseUrl=${{ vars.BASE_URL }}
             authPath=${{ vars.AUTH_PATH }}

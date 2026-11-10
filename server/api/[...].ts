@@ -77,8 +77,19 @@ async function pipeUpstream(
     : undefined;
   // fetch's `BodyInit` doesn't take Node's `Buffer<ArrayBufferLike>`.
   const body = raw && new Uint8Array(raw);
+  // A refresh before this call wrote the session cookies, and `sendProxy`
+  // replaces `set-cookie` with the upstream's whenever it sends any: keep
+  // ours, and drop Geins' (the JSON path never forwards them either).
+  const sessionCookies = event.node.res.getHeader('set-cookie');
   return sendProxy(event, target, {
     fetchOptions: { method: event.method, body, headers },
+    onResponse: (proxied) => {
+      if (sessionCookies === undefined) {
+        proxied.node.res.removeHeader('set-cookie');
+      } else {
+        proxied.node.res.setHeader('set-cookie', sessionCookies);
+      }
+    },
   });
 }
 

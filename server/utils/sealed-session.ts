@@ -30,8 +30,11 @@ export interface GeinsSession {
 export const SESSION_COOKIE = 'geins-session';
 // Browsers cap one cookie at 4096 bytes, name and attributes included.
 export const CHUNK_SIZE = 3800;
-// Node rejects request headers over 16 KB in total (431).
-export const MAX_CHUNKS = 4;
+// Node rejects a request whose headers pass 16 KB in total (431) before any
+// handler runs, so a session that fills 4 chunks would lock its user out of
+// every request, logout included. 3 chunks (~11.4 KB) leave room for the
+// other cookies and headers; a bigger session is refused when it's written.
+export const MAX_CHUNKS = 3;
 
 const CHUNK_NAME = new RegExp(`^${SESSION_COOKIE}\\.(\\d+)$`);
 
@@ -102,6 +105,8 @@ declare module 'h3' {
     geinsSession?: GeinsSession;
     /** How many chunks the browser holds once this response lands. */
     geinsSessionChunks?: number;
+    /** A Geins refresh already ran in this request. */
+    geinsRefreshed?: boolean;
   }
 }
 
