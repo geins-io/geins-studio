@@ -1,4 +1,8 @@
 import type { GeinsApiError, GeinsApiFetch } from '#shared/types';
+import {
+  API_RETRY_STATUS_CODES,
+  shouldRetryTransient,
+} from '#shared/utils/api-retry';
 import { resolveAppId } from '#shared/utils/app';
 import { createUnauthorizedRecovery } from '#shared/utils/auth-recovery';
 import { CSRF_HEADER } from '#shared/utils/csrf';
@@ -19,6 +23,7 @@ import { tunnelIfMatch } from '#shared/utils/proxy-headers';
  * The browser holds no token: the API proxy attaches the session's. A 401 to the token the tab
  * still holds (known by its `tokenExpires`) forces a refresh (`useGeinsAuth().forceRefresh`) and
  * retries the request once. A 401 to that retry logs out (`createUnauthorizedRecovery`).
+ * A 502, 503 or 504 to a GET or HEAD is retried once after a second (`shouldRetryTransient`).
  */
 
 export default defineNuxtPlugin(() => {
@@ -58,7 +63,8 @@ export default defineNuxtPlugin(() => {
    * This instance is created using the nuxt `$fetch.create` method.
    * It refreshes a token that is due before the request, so the proxy rarely
    * has to. If a request fails with a 401 status, it forces a refresh and
-   * retries the request once.
+   * retries the request once. A read that fails with a 502, 503 or 504 is
+   * retried once.
    *
    * @example
    * ```ts
@@ -70,9 +76,10 @@ export default defineNuxtPlugin(() => {
    * */
   const geinsApiFetchInstance = $fetch.create({
     baseURL: '/api',
-    // 500 deliberately excluded — it is often a non-idempotent server fault and
-    // a blind retry just doubles the failure count
-    retryStatusCodes: [401, 502, 503, 504],
+    // ofetch retries only when `onResponseError` returns without throwing, so
+    // that hook decides which status and method retry (`shouldRetryTransient`,
+    // `createUnauthorizedRecovery`). This list only has to contain them.
+    retryStatusCodes: [...API_RETRY_STATUS_CODES],
     retry: 1,
     retryDelay: 1000,
     async onRequest({ options }) {
@@ -187,18 +194,13 @@ export default defineNuxtPlugin(() => {
         originalError: errorData,
       };
 
-      // Flag responses that $fetch will auto-retry (matches retryStatusCodes
-      // above) so a retried call is visible in the logs rather than looking
-      // like two unrelated failures.
-      const willRetry = [401, 502, 503, 504].includes(response.status);
-      geinsLogError(
-        `[${method}] ${url} ::: response error ::: ${response.status}${
-          willRetry ? ' (retryable)' : ''
-        } ::: `,
-        geinsApiError,
-      );
-
-      if (
+      const retryTransient = shouldRetryTransient({
+        status: response.status,
+        method,
+        retry: options.retry,
+        retryStatusCodes: options.retryStatusCodes,
+      });
+      const retryUnauthorized =
         response.status === 401 &&
         (await recoverFromUnauthorized({
           status: response.status,
@@ -207,13 +209,27 @@ export default defineNuxtPlugin(() => {
           isAuthenticated: isAuthenticated.value,
           onAuthPage: router.currentRoute.value.path.startsWith('/auth'),
           retried: !!options.authRetried,
-        }))
-      ) {
-        // Returning without a throw hands the 401 to ofetch's retry (it's in
-        // `retryStatusCodes`), which re-runs `onRequest` with the new token.
+        }));
+
+      // Flag an attempt ofetch retries, so a retried call doesn't look like
+      // two unrelated failures in the logs.
+      geinsLogError(
+        `[${method}] ${url} ::: response error ::: ${response.status}${
+          retryTransient || retryUnauthorized ? ' (retrying)' : ''
+        } ::: `,
+        geinsApiError,
+      );
+
+      // Returning without a throw hands the response to ofetch's retry, which
+      // re-runs `onRequest` (after a 401: with the new token). Throwing on the
+      // last attempt keeps ofetch's own FetchError from reaching the caller.
+      if (retryUnauthorized) {
         options.retry = 1;
         options.retryDelay = 0;
         options.authRetried = true;
+        return;
+      }
+      if (retryTransient) {
         return;
       }
 
