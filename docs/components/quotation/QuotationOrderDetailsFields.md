@@ -1,17 +1,18 @@
 # `QuotationOrderDetailsFields`
 
-`QuotationOrderDetailsFields` renders the four order-detail form fields of a quotation: goods label, customer order number, desired delivery date and customer reference. It holds no state; it binds to the `orderDetails.*` fields of the surrounding vee-validate form.
+`QuotationOrderDetailsFields` renders the order-detail form fields of a quotation: goods label, PO number / reference and desired delivery date. It holds no state; it binds to the `orderDetails.*` fields of the surrounding vee-validate form.
 
 ## Features
 
-- Goods label | customer order number on the first row; desired delivery date | customer reference on the second
-- Labels the buyer's PO number as **Customer order number**, the name it gets on the order
-- Customer reference carries a hint that it stays on the quotation and isn't added to the order
+- Goods label | PO number / reference on the first row; desired delivery date on the second
+- `customerOrderNumber` is labelled **PO number / reference**, its name in the Sales Portal. The API's `customerReference` isn't shown
 - The delivery date picker starts tomorrow and can be cleared
 - Turns the picked date into its local midnight before it reaches the form, so the picker shows the picked day in any time zone (see [Calendar days](#calendar-days))
 - Validation messages come from the form's schema through `FormMessage`
 
 ## Usage
+
+The quotation page renders it in the **Order details** card between Quotation details and Customer, only on a draft the seller created (`canEditOrderDetails()` in `shared/utils/quotation.ts`). The create step leaves it out, and a buyer's request shows its order details read-only in [`QuotationRequestDetails`](/components/quotation/QuotationRequestDetails).
 
 Nest the values under `orderDetails` in the form and validate them with `createOrderDetailsSchema` (`app/utils/quotation-order-details.ts`). Seed the form with `orderDetailsFormValues(stored)` and build the request with `orderDetailsRequest(values, stored)` (`shared/utils/quotation.ts`).
 
@@ -52,8 +53,7 @@ The desired delivery date names a day, not a moment. The API takes it as that da
 `createOrderDetailsSchema(t, stored)` matches the API:
 
 - goods label: at most 500 characters
-- customer order number: at most 30 characters
-- customer reference: at most 200 characters
+- PO number / reference: at most 30 characters
 - desired delivery date: after today, checked only once it differs from the stored date
 - a stored value can't be emptied, only replaced
 

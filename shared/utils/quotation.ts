@@ -40,24 +40,16 @@ export function isQuotationExternal(
 }
 
 /**
- * Sent statuses where the API still takes the order details, in a PATCH that
- * carries nothing else. A full update is refused there, and would reset the
- * buyer's payment and shipping choices if it went through.
+ * Whether the seller fills in the order details: only on their own draft. A
+ * buyer's request brings its own (shown in Request details), and once the
+ * quotation is sent they're locked.
  */
-export const ORDER_DETAILS_EDITABLE_STATUSES: readonly QuotationStatus[] = [
-  'pending',
-  'expired',
-  'accepted',
-];
-
-/**
- * Whether a sent quotation's order details can be edited on their own.
- */
-export function canEditSentOrderDetails(
-  quotation: Pick<Quotation, 'status' | 'externalReference'>,
+export function canEditOrderDetails(
+  quotation: Pick<Quotation, 'status' | 'externalReference' | 'request'>,
 ): boolean {
   return (
-    ORDER_DETAILS_EDITABLE_STATUSES.includes(quotation.status) &&
+    quotation.status === 'draft' &&
+    !quotation.request &&
     !isQuotationExternal(quotation)
   );
 }
@@ -92,7 +84,6 @@ export function isQuotationDeletable(
 export const ORDER_DETAILS_MAX_LENGTH = {
   goodsLabel: 500,
   customerOrderNumber: 30,
-  customerReference: 200,
 } as const;
 
 export const ORDER_DETAILS_TEXT_FIELDS = Object.keys(
@@ -115,7 +106,6 @@ export function orderDetailsFormValues(
     desiredDeliveryDate: stored?.desiredDeliveryDate
       ? (calendarDayToLocalIso(stored.desiredDeliveryDate) ?? '')
       : '',
-    customerReference: stored?.customerReference ?? '',
   };
 }
 

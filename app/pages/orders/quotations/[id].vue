@@ -37,7 +37,7 @@ import type {
 } from '#shared/types';
 import { ENTITIES, entityEditUrl } from '#shared/utils/entities';
 import {
-  canEditSentOrderDetails,
+  canEditOrderDetails,
   isQuotationDeletable,
   isQuotationEditable,
   isQuotationExternal,
@@ -93,9 +93,9 @@ const formSchema = toTypedSchema(
       paymentTerms: z.string().optional(),
       requireConfirmation: z.boolean().optional(),
     }),
-    // Sent mode never mounts these fields, so there's nothing to check there
+    // Only a draft mounts these fields; elsewhere they stay empty and pass
     orderDetails: createOrderDetailsSchema(t, () =>
-      sentMode.value ? undefined : storedOrderDetails.value,
+      orderDetailsEditable.value ? storedOrderDetails.value : undefined,
     ),
   }),
 );
@@ -121,7 +121,7 @@ const canDelete = ref(false);
 const communications = ref<QuotationMessage[]>([]);
 // What the API holds; edits are sent as changes against it
 const storedOrderDetails = ref<QuotationOrderDetails | null>(null);
-const canEditOrderDetails = ref(false);
+const orderDetailsEditable = ref(false);
 
 // Discount & shipping (standalone refs, not form fields)
 const discountType = ref<'percent' | 'fixedAmount'>('percent');
@@ -675,7 +675,7 @@ const {
     canDelete.value = isQuotationDeletable(quotation);
     communications.value = quotation.communication || [];
     storedOrderDetails.value = quotation.orderDetails ?? null;
-    canEditOrderDetails.value = canEditSentOrderDetails(quotation);
+    orderDetailsEditable.value = canEditOrderDetails(quotation);
 
     // Discount & shipping fee from API response
     if (quotation.discount) {
@@ -723,7 +723,10 @@ const {
         paymentTerms,
         requireConfirmation: quotation.settings?.requireConfirmation ?? false,
       },
-      orderDetails: orderDetailsFormValues(quotation.orderDetails),
+      // Left empty where they're locked, so nothing is validated or sent
+      orderDetails: orderDetailsFormValues(
+        orderDetailsEditable.value ? quotation.orderDetails : undefined,
+      ),
     });
   },
   prepareCreateData: (formData) => {
@@ -742,7 +745,6 @@ const {
           ? Number(shippingFeeInput.value)
           : undefined,
       settings: { requireConfirmation: formData.details.requireConfirmation },
-      orderDetails: orderDetailsRequest(formData.orderDetails),
     };
   },
   prepareUpdateData: (formData, _entity) => ({
@@ -778,7 +780,6 @@ const {
         items:
           quotationItems.value.length > 0 ? quotationItems.value : undefined,
         settings: { requireConfirmation: values.details.requireConfirmation },
-        orderDetails: orderDetailsRequest(values.orderDetails),
       };
     } else {
       // In sent mode, form fields are unmounted and VeeValidate clears their values.
@@ -2313,14 +2314,6 @@ definePageMeta({
                 </FormGridWrap>
               </ContentEditCard>
 
-              <ContentEditCard
-                :create-mode="false"
-                :title="$t('orders.order_details')"
-                :description="$t('orders.order_details_description')"
-              >
-                <QuotationOrderDetailsFields />
-              </ContentEditCard>
-
               <div class="flex flex-row justify-end gap-4">
                 <Button variant="secondary" as-child>
                   <NuxtLink :to="entityListUrl">
@@ -2462,23 +2455,13 @@ definePageMeta({
                 </div>
               </ContentEditCard>
 
-              <QuotationOrderDetailsCard :order-details="storedOrderDetails">
-                <template v-if="canEditOrderDetails" #action>
-                  <QuotationOrderDetailsPanel
-                    :quotation-id="entityId"
-                    :order-details="storedOrderDetails"
-                    @saved="refreshEntityData?.()"
-                  >
-                    <Button variant="outline" size="sm">
-                      {{ $t('edit') }}
-                    </Button>
-                  </QuotationOrderDetailsPanel>
-                </template>
-              </QuotationOrderDetailsCard>
-
               <QuotationRequestDetails
                 v-if="entityData?.request"
                 :request="entityData.request"
+              />
+              <QuotationOrderDetailsCard
+                v-else
+                :order-details="storedOrderDetails"
               />
 
               <!-- Card 2: Customer (read-only, no Change button) -->
@@ -2654,18 +2637,18 @@ definePageMeta({
                 </FormGridWrap>
               </ContentEditCard>
 
+              <QuotationRequestDetails
+                v-if="entityData?.request"
+                :request="entityData.request"
+              />
               <ContentEditCard
+                v-else-if="orderDetailsEditable"
                 :create-mode="false"
                 :title="$t('orders.order_details')"
                 :description="$t('orders.order_details_description')"
               >
                 <QuotationOrderDetailsFields />
               </ContentEditCard>
-
-              <QuotationRequestDetails
-                v-if="entityData?.request"
-                :request="entityData.request"
-              />
 
               <!-- Card 2: Customer -->
               <ContentEditCard :create-mode="false" :title="$t('customer')">

@@ -1,19 +1,20 @@
 # `QuotationRequestDetails`
 
-`QuotationRequestDetails` is the read-only **Request details** card on a quotation — what the buyer sent with their request from the sales portal (`quotation.request`): desired delivery date, goods label, their own reference and their message.
+`QuotationRequestDetails` is the read-only **Request details** card on a quotation — what the buyer sent with their request from the sales portal (`quotation.request`): the order details it brings (goods label, PO number / reference, desired delivery date) and their message. It's the only place a requested quotation shows its order details; they're never edited.
 
 ## Features
 
 - Renders its own [`ContentEditCard`](/components/content/edit/ContentEditCard) titled "Request details"
-- Desired delivery date | goods label on the first row; customer reference and message full width below, rows split by a top border like the other read-only quotation cards
-- Formats the delivery date with [`useDate`](/composables/useDate)`().formatDate`
+- Same order and labels as [`QuotationOrderDetailsCard`](/components/quotation/QuotationOrderDetailsCard): goods label | PO number / reference, then desired delivery date, then the message full width; rows split by a top border like the other read-only quotation cards
+- PO number / reference is `request.customerOrderNumber`, its name in the Sales Portal
+- Formats the delivery date as a calendar day (its local midnight through [`useDate`](/composables/useDate)`().formatDate`), so it shows the requested day in any time zone
 - Keeps the buyer's line breaks in the message (`whitespace-pre-line`)
 - Renders `'-'` for missing values
-- Leaves out `requestedValidTo` (shown as a hint under the Expiration date field instead) and `customerOrderNumber` (the PO number belongs to the order details)
+- Leaves out `requestedValidTo` (shown as a hint under the Expiration date field instead) and `customerReference` (not used in Studio)
 
 ## Usage
 
-The API omits `request` on quotations the seller started, so render it only when it's there. The quotation page shows it in both the editable and the read-only General layout, right after the quotation details card.
+The API omits `request` on quotations the seller started, so render it only when it's there. The quotation page shows it in both the editable and the read-only General layout, right after the quotation details card, in place of the order details card, so nothing shows twice.
 
 ```vue
 <template>

@@ -6,7 +6,7 @@ import type {
   QuotationStatus,
 } from '#shared/types';
 import {
-  canEditSentOrderDetails,
+  canEditOrderDetails,
   isQuotationDeletable,
   isQuotationEditable,
   isQuotationExternal,
@@ -89,30 +89,35 @@ describe('isQuotationDeletable', () => {
   });
 });
 
-describe('canEditSentOrderDetails', () => {
-  it.each<QuotationStatus>(['pending', 'expired', 'accepted'])(
-    'edits order details on %s',
-    (status) => {
-      expect(canEditSentOrderDetails({ status })).toBe(true);
-    },
-  );
+describe('canEditOrderDetails', () => {
+  it('edits order details on a draft', () => {
+    expect(canEditOrderDetails({ status: 'draft' })).toBe(true);
+  });
 
   it.each<QuotationStatus>([
-    'draft',
     'requested',
     'requestDraft',
+    'pending',
+    'expired',
+    'accepted',
     'confirmed',
     'finalized',
     'rejected',
     'canceled',
-  ])('leaves %s alone', (status) => {
-    expect(canEditSentOrderDetails({ status })).toBe(false);
+  ])('locks them on %s', (status) => {
+    expect(canEditOrderDetails({ status })).toBe(false);
   });
 
-  it('leaves an external quotation alone', () => {
+  it('locks them on a draft that carries a request', () => {
     expect(
-      canEditSentOrderDetails({ status: 'pending', externalReference }),
+      canEditOrderDetails({ status: 'draft', request: { goodsLabel: 'A' } }),
     ).toBe(false);
+  });
+
+  it('locks them on an external draft', () => {
+    expect(canEditOrderDetails({ status: 'draft', externalReference })).toBe(
+      false,
+    );
   });
 });
 
@@ -140,7 +145,6 @@ describe('order details', () => {
         goodsLabel: '',
         customerOrderNumber: '',
         desiredDeliveryDate: '',
-        customerReference: '',
       });
     });
 
