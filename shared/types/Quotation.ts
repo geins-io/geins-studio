@@ -123,7 +123,6 @@ export interface QuotationOrderDetailsForm {
   goodsLabel: string;
   customerOrderNumber: string;
   desiredDeliveryDate: string;
-  customerReference: string;
 }
 
 /**

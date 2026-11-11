@@ -23,7 +23,6 @@ export function createOrderDetailsSchema(
       goodsLabel: z.string().optional(),
       customerOrderNumber: z.string().optional(),
       desiredDeliveryDate: z.string().optional(),
-      customerReference: z.string().optional(),
     })
     .superRefine((values, ctx) => {
       const saved = stored();

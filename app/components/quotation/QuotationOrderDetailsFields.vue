@@ -65,25 +65,6 @@ const toPickedDay = (value?: string) =>
           <FormMessage />
         </FormItem>
       </FormField>
-      <FormField
-        v-slot="{ componentField }"
-        name="orderDetails.customerReference"
-        :validate-on-model-update="true"
-      >
-        <FormItem>
-          <FormLabel>{{ $t('orders.customer_reference') }}</FormLabel>
-          <FormControl>
-            <Input
-              v-bind="componentField"
-              :placeholder="$t('orders.customer_reference')"
-            />
-          </FormControl>
-          <FormDescription>
-            {{ $t('orders.customer_reference_hint') }}
-          </FormDescription>
-          <FormMessage />
-        </FormItem>
-      </FormField>
     </FormGrid>
   </FormGridWrap>
 </template>

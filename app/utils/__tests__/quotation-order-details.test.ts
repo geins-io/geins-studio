@@ -8,7 +8,6 @@ const empty = {
   goodsLabel: '',
   customerOrderNumber: '',
   desiredDeliveryDate: '',
-  customerReference: '',
 };
 
 function errors(
@@ -50,18 +49,15 @@ describe('createOrderDetailsSchema', () => {
       errors({
         goodsLabel: 'x'.repeat(501),
         customerOrderNumber: 'x'.repeat(31),
-        customerReference: 'x'.repeat(201),
       }),
     ).toEqual({
       goodsLabel: 'form.max_characters',
       customerOrderNumber: 'form.max_characters',
-      customerReference: 'form.max_characters',
     });
     expect(
       errors({
         goodsLabel: 'x'.repeat(500),
         customerOrderNumber: 'x'.repeat(30),
-        customerReference: 'x'.repeat(200),
       }),
     ).toEqual({});
   });

@@ -19,9 +19,6 @@ const deliveryDate = computed(() => {
     :title="$t('orders.order_details')"
     :description="$t('orders.order_details_description')"
   >
-    <template v-if="$slots.action" #header-action>
-      <slot name="action" />
-    </template>
     <div class="space-y-4">
       <div class="grid grid-cols-2 gap-4">
         <div>
@@ -41,21 +38,11 @@ const deliveryDate = computed(() => {
           </p>
         </div>
       </div>
-      <div class="grid grid-cols-2 gap-4 border-t pt-4">
-        <div>
-          <p class="text-muted-foreground mb-1 text-xs font-medium">
-            {{ $t('orders.desired_delivery_date') }}
-          </p>
-          <p class="text-sm">{{ deliveryDate }}</p>
-        </div>
-        <div>
-          <p class="text-muted-foreground mb-1 text-xs font-medium">
-            {{ $t('orders.customer_reference') }}
-          </p>
-          <p class="text-sm">
-            {{ orderDetails?.customerReference || '-' }}
-          </p>
-        </div>
+      <div class="border-t pt-4">
+        <p class="text-muted-foreground mb-1 text-xs font-medium">
+          {{ $t('orders.desired_delivery_date') }}
+        </p>
+        <p class="text-sm">{{ deliveryDate }}</p>
       </div>
     </div>
   </ContentEditCard>
