@@ -24,6 +24,14 @@ pnpm test:changed
 
 Runs only the tests affected by the branch's changes. This preflight is the only local gate (there is no pre-push hook), so run it once, before committing. The full suite and `pnpm build` run in CI (`.github/workflows/ci-quality-gate.yml`), which `next` requires before merging. Run `pnpm build` locally too when i18n messages or template syntax changed.
 
+## Dependencies changed
+
+```bash
+pnpm audit --prod --audit-level=critical
+```
+
+CI fails on any critical advisory in prod dependencies. Never lower the level to get green: a proven false positive goes in `package.json` → `pnpm.auditConfig.ignoreGhsas`, with the reason in the PR.
+
 ## If lint fails
 
 Fix locally using `pnpm lint` (auto-fix), then re-run `pnpm lint:check`.
