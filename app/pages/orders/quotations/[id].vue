@@ -78,8 +78,8 @@ const { getFallbackSelection, transformProductsToSelectorEntities } =
 // =====================================================================================
 // FORM VALIDATION SCHEMA
 // =====================================================================================
-// Only the create step requires an owner. A draft or request blocks Send without
-// one instead, so a request that arrives ownerless doesn't open with a field error.
+// Only the create step requires an owner. A draft blocks Send without one
+// instead, so a draft saved ownerless (e.g. through the API) opens with no field error.
 // (useEntityEdit's createMode, same rule, doesn't exist yet at this point.)
 const requireOwner = useRoute().params.id === NEW_ENTITY_URL_SEGMENT;
 const formSchema = toTypedSchema(
@@ -124,7 +124,6 @@ const entityBase: QuotationCreate = {
 // =====================================================================================
 // Sent mode = the read-only layout — set from API response in parseEntityData
 const sentMode = ref(false);
-const currentStatus = ref<QuotationStatus>('draft');
 // Owned by an external system (e.g. Monitor): read-only in any status
 const externallyManaged = ref(false);
 const canDelete = ref(false);
@@ -681,7 +680,6 @@ const {
     quotationTotal.value = quotation.total || null;
     previewTotal.value = null;
 
-    currentStatus.value = quotation.status;
     externallyManaged.value = isQuotationExternal(quotation);
     sentMode.value = !isQuotationEditable(quotation);
     canDelete.value = isQuotationDeletable(quotation);
@@ -716,8 +714,8 @@ const {
     billingAddress.value = quotation.billingAddress;
     shippingAddress.value = quotation.shippingAddress;
 
-    // No fallback: a buyer's request arrives without terms, and a default shown
-    // here but never saved would let Send go out with no terms.
+    // No fallback: a default shown here but never saved would let Send go out
+    // with no terms. Left empty, Send stays blocked until the seller sets them.
     const paymentTerms = quotation.terms || '';
 
     // Set items from API response as the source of truth
@@ -1259,8 +1257,8 @@ if (!createMode.value) {
 // =====================================================================================
 // SAVE HANDLER
 // =====================================================================================
-// Only the order details: a buyer's request may lack fields the rest of the
-// schema requires, and the seller must still be able to save it as it is.
+// Only the order details: a draft may be saved incomplete, and
+// sendBlockReasons checks the rest before it can be sent.
 const orderDetailsValid = async () => {
   const results = await Promise.all(
     ORDER_DETAILS_FIELDS.map((field) =>
@@ -1376,8 +1374,8 @@ const statusActions = computed<StatusActionLayout>(() => {
     case 'requested':
       return {
         placeOrder: false,
-        groupActions: [],
-        dropdownActions: [cancelAction],
+        groupActions: [cancelAction],
+        dropdownActions: [],
       };
 
     case 'pending':
@@ -1911,11 +1909,7 @@ definePageMeta({
               :disabled="!hasUnsavedChanges || loading || fetchingData"
               @click="handleSave"
             >
-              {{
-                $t('save_entity', {
-                  entityKey: currentStatus === 'draft' ? 'draft' : entityKey,
-                })
-              }}
+              {{ $t('save_entity', { entityKey: 'draft' }) }}
             </ButtonIcon>
             <ButtonGroup>
               <ButtonIcon
@@ -1947,20 +1941,6 @@ definePageMeta({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <template v-if="statusActions.dropdownActions.length">
-                    <DropdownMenuItem
-                      v-for="action in statusActions.dropdownActions"
-                      :key="action.action"
-                      @click="openTransitionDialog(action)"
-                    >
-                      <LucideBan
-                        v-if="action.icon === 'ban'"
-                        class="mr-2 size-4"
-                      />
-                      {{ action.label }}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                  </template>
                   <DropdownMenuItem as-child>
                     <NuxtLink :to="newEntityUrl">
                       <LucidePlus class="mr-2 size-4" />
@@ -2609,17 +2589,6 @@ definePageMeta({
                             allow-clear
                           />
                         </FormControl>
-                        <FormDescription
-                          v-if="entityData?.request?.requestedValidTo"
-                        >
-                          {{
-                            $t('orders.requested_valid_to_hint', {
-                              date: formatDate(
-                                entityData.request.requestedValidTo,
-                              ),
-                            })
-                          }}
-                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     </FormField>
@@ -2701,7 +2670,6 @@ definePageMeta({
                         <template #after-label>
                           <QuotationWorkflowInfo
                             :require-confirmation="value"
-                            :start-status="workflowStartStatus"
                             edit-mode
                             @update:require-confirmation="handleChange"
                           />
