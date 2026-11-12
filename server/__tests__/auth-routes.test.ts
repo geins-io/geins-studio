@@ -2,31 +2,31 @@
 /* eslint-disable import/order, import/first */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { geinsAuth } = vi.hoisted(() => ({
+const { geinsAuth, logger } = vi.hoisted(() => ({
   geinsAuth: {
     login: vi.fn(),
     verify: vi.fn(),
     refresh: vi.fn(),
-    shouldRefresh: () => false,
+    revoke: vi.fn(),
+    shouldRefresh: vi.fn(() => false),
+  },
+  logger: {
+    geinsLog: vi.fn(),
+    geinsLogWarn: vi.fn(),
+    geinsLogError: vi.fn(),
   },
 }));
 vi.mock('nuxt/server', () => ({ deriveSecret: async () => 'a'.repeat(64) }));
 vi.mock('nitropack/runtime', () => ({
   useRuntimeConfig: () => ({ private: { authSecret: '' } }),
 }));
-vi.mock('#shared/utils/log', () => ({
-  log: () => ({
-    geinsLog: vi.fn(),
-    geinsLogWarn: vi.fn(),
-    geinsLogError: vi.fn(),
-  }),
-}));
+vi.mock('#shared/utils/log', () => ({ log: () => logger }));
 vi.mock('../utils/auth', () => ({ auth: () => geinsAuth }));
 
 import { AuthApiError } from '#shared/utils/auth-session';
 import account from '../api/auth/account.post';
 import login from '../api/auth/login.post';
-import logout from '../api/auth/logout.post';
+import logout, { REVOKE_WAIT_MS } from '../api/auth/logout.post';
 import session from '../api/auth/session.get';
 import verify from '../api/auth/verify.post';
 import { createTestServer, fakeJwt, nowSeconds } from './session-test-utils';
@@ -57,6 +57,7 @@ const credentials = { username: 'user@example.com', password: 'secret' };
 
 beforeEach(() => {
   vi.clearAllMocks();
+  geinsAuth.shouldRefresh.mockReturnValue(false);
 });
 
 describe('POST /api/auth/login', () => {
@@ -255,15 +256,115 @@ describe('POST /api/auth/account', () => {
 });
 
 describe('POST /api/auth/logout', () => {
-  it('drops the session', async () => {
+  const signedIn = async () => {
     geinsAuth.login.mockResolvedValue(tokens(['account-1']));
-    const { request, jar } = server();
-    await request('/api/auth/login', { method: 'POST', body: credentials });
-    const response = await request('/api/auth/logout', { method: 'POST' });
-    expect(response.status).toBe(204);
+    const test = server();
+    await test.request('/api/auth/login', {
+      method: 'POST',
+      body: credentials,
+    });
+    return test;
+  };
+
+  const expectSignedOut = async ({
+    request,
+    jar,
+  }: Awaited<ReturnType<typeof signedIn>>) => {
     expect(jar.size).toBe(0);
     expect((await request('/api/auth/session')).body.isAuthenticated).toBe(
       false,
     );
+  };
+
+  const logged = () =>
+    JSON.stringify(Object.values(logger).map((spy) => spy.mock.calls));
+
+  it('revokes the refresh token and drops the session', async () => {
+    geinsAuth.revoke.mockResolvedValue(undefined);
+    const test = await signedIn();
+    const response = await test.request('/api/auth/logout', { method: 'POST' });
+    expect(response.status).toBe(204);
+    expect(geinsAuth.revoke).toHaveBeenCalledExactlyOnceWith('refresh-1');
+    expect(logger.geinsLogWarn).not.toHaveBeenCalled();
+    await expectSignedOut(test);
+  });
+
+  it('revokes the latest refresh token, without refreshing first', async () => {
+    geinsAuth.revoke.mockResolvedValue(undefined);
+    geinsAuth.refresh.mockResolvedValue({
+      accessToken: token(['account-1']),
+      refreshToken: 'refresh-2',
+    });
+    const test = await signedIn();
+    geinsAuth.shouldRefresh.mockReturnValueOnce(true);
+    await test.request('/api/auth/session');
+    expect(geinsAuth.refresh).toHaveBeenCalledOnce();
+
+    geinsAuth.shouldRefresh.mockReturnValue(true);
+    await test.request('/api/auth/logout', { method: 'POST' });
+    expect(geinsAuth.refresh).toHaveBeenCalledOnce();
+    expect(geinsAuth.revoke).toHaveBeenCalledExactlyOnceWith('refresh-2');
+    await expectSignedOut(test);
+  });
+
+  it.each([
+    [
+      'the endpoint is missing',
+      new AuthApiError(404, 'Resource not found'),
+      /404/,
+    ],
+    ['Geins fails', new AuthApiError(500, 'Request failed'), /500/],
+    ['Geins is unavailable', new AuthApiError(503, 'Request failed'), /503/],
+    [
+      'the request times out',
+      new AuthApiError(0, 'Request to auth/revoke failed'),
+      /network error or timeout/,
+    ],
+    [
+      'something unexpected throws',
+      new TypeError('boom'),
+      /unexpected TypeError/,
+    ],
+  ])(
+    'still drops the session when %s, and never logs the token',
+    async (_, error, warning) => {
+      geinsAuth.revoke.mockRejectedValue(error);
+      const test = await signedIn();
+      const response = await test.request('/api/auth/logout', {
+        method: 'POST',
+      });
+      expect(response.status).toBe(204);
+      expect(logger.geinsLogWarn).toHaveBeenCalledWith(
+        expect.stringMatching(warning),
+      );
+      expect(logged()).not.toContain('refresh-1');
+      await expectSignedOut(test);
+    },
+  );
+
+  it(`stops waiting for Geins after ${REVOKE_WAIT_MS} ms`, async () => {
+    geinsAuth.revoke.mockReturnValue(new Promise(() => {}));
+    const test = await signedIn();
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      const pending = test.request('/api/auth/logout', { method: 'POST' });
+      await vi.waitFor(() => expect(geinsAuth.revoke).toHaveBeenCalled());
+      await vi.advanceTimersByTimeAsync(REVOKE_WAIT_MS);
+      expect((await pending).status).toBe(204);
+    } finally {
+      vi.useRealTimers();
+    }
+    expect(logger.geinsLogWarn).toHaveBeenCalledWith(
+      expect.stringContaining('not answered'),
+    );
+    expect(logged()).not.toContain('refresh-1');
+    await expectSignedOut(test);
+  });
+
+  it('skips the revoke without a refresh token', async () => {
+    const { request } = server();
+    const response = await request('/api/auth/logout', { method: 'POST' });
+    expect(response.status).toBe(204);
+    expect(geinsAuth.revoke).not.toHaveBeenCalled();
   });
 });

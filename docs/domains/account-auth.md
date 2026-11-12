@@ -106,4 +106,4 @@ What follows from it:
 - Account switching goes through a server route that checks the key against the token's own account claims.
 - The proxy refreshes at most once per instance and never writes a failed refresh into the cookie.
 - At most 3 cookie chunks (~11.4 KB), to stay well under Node's 16 KB request-header limit with the other cookies and headers. A server-side session store is the next step if tokens outgrow that.
-- Logout only drops the cookie: Geins has no endpoint to revoke a refresh token yet.
+- Logout revokes the refresh token with Geins (best-effort, waits at most 3 s), then drops the cookie. An access token already issued stays valid until its `exp` (60 min today). See [Authentication](/concepts/authentication#authentication-flow).

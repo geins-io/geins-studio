@@ -107,7 +107,7 @@ Picks the account through `POST /api/auth/account`, at login and from the sideba
 logout(): Promise<void>
 ```
 
-Drops the session cookies (`POST /api/auth/logout`), then does a full load of `/auth/logout`, where the auth middleware signals the other tabs (`signed-out`) to go to the login page. Throws if the logout request fails, so a caller can try again. Geins has no endpoint to revoke a refresh token yet: it stays valid until it expires.
+Drops the session cookies (`POST /api/auth/logout`), then does a full load of `/auth/logout`, where the auth middleware signals the other tabs (`signed-out`) to go to the login page. Throws if the logout request fails, so a caller can try again. The route also revokes the Geins refresh token, best-effort: a failed revoke never fails the logout.
 
 ### `refresh`
 

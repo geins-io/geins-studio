@@ -1,3 +1,4 @@
+import { useRuntimeConfig } from 'nitropack/runtime';
 import type {
   AuthTokens,
   LoginCredentials,
@@ -8,6 +9,7 @@ import type {
 import { buildQueryString } from '#shared/utils/api-query';
 import { resolveAppId } from '#shared/utils/app';
 import { AuthApiError } from '#shared/utils/auth-session';
+import { log } from '#shared/utils/log';
 
 const config = useRuntimeConfig();
 const API_URL = config.public.apiUrl;
@@ -17,6 +19,7 @@ const { geinsLog } = log('server/utils/auth.ts');
 const ENDPOINTS = {
   LOGIN: 'auth',
   REFRESH: 'auth/refresh',
+  REVOKE: 'auth/revoke',
   VERIFY: 'auth/verify',
 };
 // A hung refresh must fail as a retryable network error, not run into the
@@ -73,6 +76,9 @@ export const auth = () => {
       throw new AuthApiError(0, `Request to ${url} failed`, { cause: error });
     }
 
+    if (response.status === 204) {
+      return undefined as T;
+    }
     if (response.ok) {
       return response.json();
     }
@@ -113,6 +119,18 @@ export const auth = () => {
       throw new AuthApiError(401, 'Missing refresh token');
     }
     return callAPI<AuthResponse>(ENDPOINTS.REFRESH, 'POST', { refreshToken });
+  };
+
+  /**
+   * Revokes a refresh token, so it can't be refreshed again. Geins answers
+   * `204` whether the token was valid, unknown, revoked or expired. Access
+   * tokens it already issued stay valid until their `exp`.
+   *
+   * @param {string} refreshToken - The session's latest refresh token: revoking one that was already exchanged doesn't touch the token it was exchanged for.
+   * @throws {AuthApiError} As `callAPI`: `400` for a blank token, `503` when Geins couldn't revoke it, `404` where the endpoint isn't deployed.
+   */
+  const revoke = async (refreshToken: string): Promise<void> => {
+    await callAPI<undefined>(ENDPOINTS.REVOKE, 'POST', { refreshToken });
   };
 
   /**
@@ -175,6 +193,7 @@ export const auth = () => {
   return {
     login,
     refresh,
+    revoke,
     verify,
     isExpired,
     expiresSoon,

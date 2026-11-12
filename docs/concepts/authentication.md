@@ -9,7 +9,7 @@ Geins Studio keeps the Geins tokens on the server. After login, the access and r
 - `server/utils/geins-session.ts` - The Geins session on top of it: storing a login response, refreshing when due, what the browser may see (`toClientSession`)
 - `server/utils/geins-token.ts` - Reads an access token's claims: its expiry, and whether it allows an account (`tokenAllowsAccount`)
 - `server/utils/legacy-session.ts` - `cutover:` moves a next-auth session cookie into the sealed session (see [Migrating next-auth sessions](#migrating-next-auth-sessions))
-- `server/utils/auth.ts` - Calls the Geins auth endpoints (`auth`, `auth/verify`, `auth/refresh`)
+- `server/utils/auth.ts` - Calls the Geins auth endpoints (`auth`, `auth/verify`, `auth/refresh`, `auth/revoke`)
 - `server/utils/auth-route-error.ts` - The status an auth route answers for a failed Geins call: `429` passes through, any other `4xx` becomes `401`, the rest `502`
 - `shared/utils/auth-session.ts` - Pure refresh decisions: the one retry of a refresh answered `403`, whether a forced refresh runs, the token after a refresh succeeds or fails
 - `server/middleware/csrf.ts` - Refuses a state-changing `/api` call that Studio itself didn't send (see [CSRF](#csrf)); the decision is `csrfRejection` in `shared/utils/csrf.ts`
@@ -45,7 +45,15 @@ Read the full documentation of the `useGeinsAuth` composable here: [useGeinsAuth
 
 The browser only ever sees the client session from `GET /api/auth/session`: `{ isAuthenticated, accountKey, tokenExpires, mfaActive, mfaMethod, error }`. `isAuthenticated` in `useGeinsAuth` also requires an account. The user's name, email and accounts live in `useUserStore`, which loads them from `user/me`.
 
-`POST /api/auth/logout` drops the session cookies. Geins has no endpoint to revoke a refresh token yet, so the token itself stays valid until it expires.
+`POST /api/auth/logout` revokes the session's refresh token with Geins (`POST auth/revoke`), then drops the session cookies:
+
+- It sends the refresh token the cookie holds now, without refreshing first. A refresh rotates the token, and revoking one that was already exchanged doesn't touch the token it was exchanged for.
+- The revoke is best-effort. Logout waits at most 3 s for it (`REVOKE_WAIT_MS`), so a slow Geins can't hold the user. A failure, a timeout or a `404` (where the endpoint isn't deployed yet) is logged with `geinsLogWarn`: the status only, never the token. The cookies are dropped either way, and the route always answers `204`.
+- It waits rather than revoking after it has answered: a serverless function may be frozen once it has answered, and the revoke would never be sent.
+
+Geins answers `204` for a valid, unknown, revoked or expired token alike, so a `204` says nothing about the token.
+
+**Residual risk.** Revoking a refresh token doesn't touch access tokens: they have no `jti`, so one already issued stays valid until its `exp` (60 min today; the backend plans to cut it to 15). The access token never leaves the server, so only a stolen session cookie could still use it, and only until then. "Sign out everywhere" (`auth/revoke-all`) isn't built.
 
 ## Login redirect
 
