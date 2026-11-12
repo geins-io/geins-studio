@@ -10,11 +10,11 @@
 - Formats the delivery date as a calendar day (its local midnight through [`useDate`](/composables/useDate)`().formatDate`), so it shows the requested day in any time zone
 - Keeps the buyer's line breaks in the message (`whitespace-pre-line`)
 - Renders `'-'` for missing values
-- Leaves out `requestedValidTo` (shown as a hint under the Expiration date field instead) and `customerReference` (not used in Studio)
+- Leaves out `requestedValidTo` (only the buyer's wish; it never sets `validTo`) and `customerReference` (not used in Studio)
 
 ## Usage
 
-The API omits `request` on quotations the seller started, so render it only when it's there. The quotation page shows it in both the editable and the read-only General layout, right after the quotation details card, in place of the order details card, so nothing shows twice.
+The API omits `request` on quotations the seller started, so render it only when it's there. The quotation page shows it in the General layout, right after the quotation details card, in place of the order details card, so nothing shows twice.
 
 ```vue
 <template>

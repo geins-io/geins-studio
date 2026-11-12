@@ -8,20 +8,20 @@ import type {
 import { calendarDayToLocalIso, toCalendarDayIso } from './calendar-day';
 
 /**
- * Statuses the seller edits like a draft: their own draft, or a request the
- * buyer has sent. Every other status renders the read-only (sent) layout.
+ * Statuses the seller edits: only their own draft. Every other status renders
+ * the read-only (sent) layout, a buyer's request included: the API refuses
+ * PATCH and send on it, and the seller answers it with a new revision instead.
  */
 export const EDITABLE_QUOTATION_STATUSES: readonly QuotationStatus[] = [
   'draft',
-  'requested',
 ];
 
 /**
- * Statuses the API lets the seller delete in.
+ * Statuses the API lets the seller delete in. A buyer's request isn't one:
+ * the seller cancels it instead.
  */
 export const DELETABLE_QUOTATION_STATUSES: readonly QuotationStatus[] = [
   'draft',
-  'requested',
   'rejected',
   'expired',
   'canceled',
