@@ -124,7 +124,7 @@ JWT-based auth with credential providers, token refresh, and session management.
 Zod schemas define validation rules in TypeScript; VeeValidate bridges them to Vue form components via `toTypedSchema()`.
 
 **2026-11-03: Hand-written security headers, CSP hashed from the served HTML**
-Frame protection and the basic headers are route rules, so Vercel's edge and the Node server both send them on every response. The CSP is report-only until its reports are clean. Its inline-script hashes are computed from each response (or each prerendered page at build time), because the shell's config script and importmap change per build and per runtime env. The `nuxt-security` module was not used: with `ssr: false` it only hashes prerendered pages, and its default rate limiter and XSS validator would break the API proxy. See [docs/concepts/security-headers.md](docs/concepts/security-headers.md).
+Frame protection and the basic headers are route rules, so Vercel's edge and the Node server both send them on every response. The CSP is report-only until its reports are clean. Its inline-script hashes are computed from each response, because the shell's config script and importmap change per build and per runtime env. The `nuxt-security` module was not used: with `ssr: false` it only hashes prerendered pages, and its default rate limiter and XSS validator would break the API proxy. See [docs/concepts/security-headers.md](docs/concepts/security-headers.md).
 
 **2026-03-19: Trimmed to ~1 page overview**
 Detailed sections (auth flow, plugins, state management, page patterns, component architecture, styling, logging, i18n, path aliases) relocated to APP.md, CLAUDE.md, and domain docs. ARCHITECTURE.md now serves the 10,000ft altitude only.
