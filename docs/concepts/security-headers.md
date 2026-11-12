@@ -4,7 +4,7 @@ Studio sends a fixed set of security headers on every response and a report-only
 
 ## Every response
 
-`SECURITY_HEADERS`, set as `routeRules['/**'].headers` under `$production` in `nuxt.config.ts`. Nitro's Vercel preset writes route-rule headers into `.vercel/output/config.json`, so Vercel's edge adds them to static `/_nuxt/` assets and prerendered pages as well as function responses. The Node server's route-rules middleware runs before its static handler, so it does the same.
+`SECURITY_HEADERS`, set as `routeRules['/**'].headers` under `$production` in `nuxt.config.ts`. Nitro's Vercel preset writes route-rule headers into `.vercel/output/config.json`, so Vercel's edge adds them to static `/_nuxt/` assets as well as function responses. The Node server's route-rules middleware runs before its static handler, so it does the same.
 
 | Header                    | Value                                      | Why                                                                      |
 | ------------------------- | ------------------------------------------ | ------------------------------------------------------------------------ |
@@ -36,10 +36,9 @@ A new external host goes into the constants at the top of `security-headers.ts`,
 
 ### Inline script hashes
 
-The SPA shell has five inline scripts: the importmap, Nuxt's `window.__NUXT__.config`, the color-mode script and the two in `app/app-skeleton.html`. The importmap and the config script change on every build, and the config also changes with runtime env vars (Azure sets them per slot), so hard-coded hashes would go stale. The hashes are computed from the HTML that is actually served:
+The SPA shell has five inline scripts: the importmap, Nuxt's `window.__NUXT__.config`, the color-mode script and the two in `app/app-skeleton.html`. The importmap and the config script change on every build, and the config also changes with runtime env vars (Azure sets them per slot), so hard-coded hashes would go stale. The hashes are computed from the HTML that is actually served: `server/plugins/csp.ts` hooks Nitro's `render:response`, hashes the inline scripts of the outgoing HTML with `inlineScriptHashes` and sets the header.
 
-- **Rendered shells** (every route except `/auth/*`): `server/plugins/csp.ts` hooks Nitro's `render:response`, hashes the inline scripts of the outgoing HTML with `inlineScriptHashes` and sets the header.
-- **Prerendered pages** (`/auth/*`): they are served as static files, which the plugin never sees. The `prerender:generate` hook in `nuxt.config.ts` hashes each page's HTML and adds a route rule with the header for that path. Prerender runs before the Vercel config and the server bundle are written, so both hosts pick it up.
+No page is prerendered. A prerendered page would carry the build's runtime config, and the Azure image only gets `NUXT_PUBLIC_BASE_URL` at runtime: v0.7.0 prerendered `/auth/*`, so litium.studio sent forgot password links to `localhost`.
 
 `inlineScriptHashes` hashes classic, `module`, `importmap` and `speculationrules` scripts. It skips external (`src`) scripts and JSON blocks (`__NUXT_DATA__`), and turns CRLF into LF before hashing, as the HTML parser does.
 

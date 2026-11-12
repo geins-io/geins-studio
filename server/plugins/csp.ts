@@ -3,8 +3,7 @@ import { reportOnlyCspHeaders } from '#shared/utils/security-headers';
 
 // The SPA shell is rendered per request, and its inline scripts change with
 // every build (importmap, buildId) and with runtime config, so the policy is
-// hashed from the HTML being sent. Prerendered pages get theirs at build time
-// (nuxt.config.ts → prerender:generate).
+// hashed from the HTML being sent.
 export default defineNitroPlugin((nitroApp) => {
   if (import.meta.dev) return;
   const vercelPreview = process.env.VERCEL_ENV === 'preview';
