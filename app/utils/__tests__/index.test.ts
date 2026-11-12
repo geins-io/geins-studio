@@ -2,7 +2,9 @@
 import { describe, it, expect } from 'vitest';
 import {
   cn,
+  findEntityByName,
   getEntityNameById,
+  isNewEntityName,
   generateInternalId,
   flagClass,
   languageToCountryCode,
@@ -62,6 +64,62 @@ describe('getEntityNameById', () => {
 
   it('returns the id when list is empty', () => {
     expect(getEntityNameById('1', [])).toBe('1');
+  });
+});
+
+describe('findEntityByName', () => {
+  const reps = [
+    { _id: '1', name: 'Anna Berg' },
+    { _id: '2', name: 'Annika Ek' },
+    { _id: '3', name: 'anna berg' },
+  ];
+
+  it('returns the entity whose name matches exactly', () => {
+    expect(findEntityByName('Annika Ek', reps)?._id).toBe('2');
+  });
+
+  it('ignores case and surrounding whitespace', () => {
+    expect(findEntityByName('  ANNIKA ek ', reps)?._id).toBe('2');
+  });
+
+  it('returns the first entity when names are duplicated', () => {
+    expect(findEntityByName('Anna Berg', reps)?._id).toBe('1');
+  });
+
+  it('returns undefined for a prefix or unknown name', () => {
+    expect(findEntityByName('Ann', reps)).toBeUndefined();
+    expect(findEntityByName('Bo Ek', reps)).toBeUndefined();
+  });
+
+  it('returns undefined for blank text or no entities', () => {
+    expect(findEntityByName('', reps)).toBeUndefined();
+    expect(findEntityByName('   ', reps)).toBeUndefined();
+    expect(findEntityByName(undefined, reps)).toBeUndefined();
+    expect(findEntityByName('Anna Berg', undefined)).toBeUndefined();
+  });
+});
+
+describe('isNewEntityName', () => {
+  const reps = [{ _id: '1', name: 'Anna Berg' }];
+
+  it('is false for blank text', () => {
+    expect(isNewEntityName('', reps)).toBe(false);
+    expect(isNewEntityName('  ', reps)).toBe(false);
+    expect(isNewEntityName(undefined, reps)).toBe(false);
+  });
+
+  it('is false for an exact, case-insensitive match', () => {
+    expect(isNewEntityName('anna berg ', reps)).toBe(false);
+  });
+
+  it('is true for a prefix of a name', () => {
+    expect(isNewEntityName('Anna', reps)).toBe(true);
+  });
+
+  it('is true for unknown text, with or without entities', () => {
+    expect(isNewEntityName('Bo Ek', reps)).toBe(true);
+    expect(isNewEntityName('Bo Ek', [])).toBe(true);
+    expect(isNewEntityName('Bo Ek', undefined)).toBe(true);
   });
 });
 

@@ -454,6 +454,10 @@ export default defineConfig({
                     link: '/components/form/input/FormInputColor.md',
                   },
                   {
+                    text: 'FormInputCombobox',
+                    link: '/components/form/input/FormInputCombobox.md',
+                  },
+                  {
                     text: 'FormInputCountrySelect',
                     link: '/components/form/input/FormInputCountrySelect.md',
                   },
