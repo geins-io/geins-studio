@@ -169,3 +169,29 @@ export function getEntityNameById(
   const entity = all.find((pl) => pl._id === id);
   return entity?.displayName || entity?.name || id;
 }
+
+/**
+ * Returns the entity whose `name` equals `text`, trimmed and case-insensitive,
+ * or `undefined` when nothing matches. With duplicate names the first wins.
+ */
+export function findEntityByName<T extends EntityBaseWithName>(
+  text: string | undefined,
+  all: readonly T[] | undefined,
+): T | undefined {
+  const query = text?.trim().toLocaleLowerCase();
+  if (!query) return undefined;
+  return all?.find(
+    (entity) => entity.name.trim().toLocaleLowerCase() === query,
+  );
+}
+
+/**
+ * Whether `text` is a new name: non-blank and not an exact (trimmed,
+ * case-insensitive) match of any entity's `name`. A prefix still counts as new.
+ */
+export function isNewEntityName(
+  text: string | undefined,
+  all: readonly EntityBaseWithName[] | undefined,
+): boolean {
+  return !!text?.trim() && !findEntityByName(text, all);
+}

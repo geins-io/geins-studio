@@ -8,7 +8,6 @@ withDefaults(
     billingAddress?: Address | null;
     shippingAddress?: Address | null;
     buyerName?: string;
-    ownerName?: string;
     loading?: boolean;
   }>(),
   {
@@ -17,7 +16,6 @@ withDefaults(
     billingAddress: null,
     shippingAddress: null,
     buyerName: '',
-    ownerName: '',
     loading: false,
   },
 );
@@ -74,7 +72,7 @@ withDefaults(
       </div>
     </div>
 
-    <!-- Owner & Buyer -->
+    <!-- Buyer -->
     <div class="grid grid-cols-2 gap-4 border-t pt-4">
       <div>
         <p class="text-muted-foreground mb-1 text-xs font-medium">
@@ -84,17 +82,6 @@ withDefaults(
           <Skeleton v-if="loading" class="h-5 w-32" />
           <template v-else>
             {{ buyerName || '-' }}
-          </template>
-        </p>
-      </div>
-      <div>
-        <p class="text-muted-foreground mb-1 text-xs font-medium">
-          {{ $t('orders.quotation_owner') }}
-        </p>
-        <p class="text-sm">
-          <Skeleton v-if="loading" class="h-5 w-32" />
-          <template v-else>
-            {{ ownerName || '-' }}
           </template>
         </p>
       </div>

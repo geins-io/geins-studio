@@ -10,6 +10,7 @@
 - Currently-selected flow gets a `positive` border + check badge in the corner
 - `editMode` makes the cards clickable and toggles `requireConfirmation` accordingly (default flow = `false`, strict flow = `true`)
 - Two-way `v-model:require-confirmation` for the chosen flow
+- `startStatus` sets the first step: a buyer's request starts at **Requested** instead of **Draft**
 
 ## Usage
 
@@ -35,6 +36,7 @@
     <template #after-label>
       <QuotationWorkflowInfo
         v-model:require-confirmation="form.values.requireConfirmation"
+        :start-status="quotation.status === 'requested' ? 'requested' : 'draft'"
         edit-mode
       />
     </template>
@@ -53,6 +55,16 @@ editMode?: boolean
 When `true`, flow cards are clickable and `requireConfirmation` updates on click. When `false`, the sheet is read-only.
 
 - **Default:** `false`
+
+### `startStatus`
+
+```ts
+startStatus?: 'draft' | 'requested'
+```
+
+The status both flows start at. Pass `'requested'` for a quotation the buyer requested, so the first step reads Requested instead of Draft.
+
+- **Default:** `'draft'`
 
 ## v-model
 

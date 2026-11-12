@@ -7,6 +7,7 @@ import type {
   StringKeyOf,
 } from '#shared/types';
 import { ENTITIES, entityNewUrl, entityEditUrl } from '#shared/utils/entities';
+import { isQuotationDeletable } from '#shared/utils/quotation';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 
@@ -115,6 +116,10 @@ onMounted(() => {
       'modifiedAt',
       'discount',
       'settings',
+      'request',
+      'orderDetails',
+      'externalReference',
+      'orderPublicId',
     ],
   };
   // GET AND SET COLUMNS
@@ -140,11 +145,7 @@ onMounted(() => {
       },
       onDelete: async (item: EntityList) => await openDeleteDialog(item._id),
       disabledActions: (item: EntityList) =>
-        !['draft', 'rejected', 'expired', 'canceled'].includes(
-          item.status as string,
-        )
-          ? (['delete'] as TableRowAction[])
-          : [],
+        !isQuotationDeletable(item) ? (['delete'] as TableRowAction[]) : [],
     },
     'actions',
     ['edit', 'copy', 'delete'],

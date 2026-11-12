@@ -2,10 +2,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import { getBaseUrl, includeDevPages } from './shared/utils/deployment';
-import {
-  SECURITY_HEADERS,
-  reportOnlyCspHeaders,
-} from './shared/utils/security-headers';
+import { SECURITY_HEADERS } from './shared/utils/security-headers';
 
 const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
 
@@ -47,8 +44,10 @@ export default defineNuxtConfig({
 
   spaLoadingTemplate: 'app-skeleton.html',
 
+  // No `prerender` rules: a prerendered page bakes the build's public runtime
+  // config into its HTML, and the Azure image only gets NUXT_PUBLIC_BASE_URL
+  // at runtime. Guarded by test/nuxt-config.test.ts.
   routeRules: {
-    '/auth/*': { prerender: true },
     // Orchestrator variables + kits moved under Settings (Settings › Orchestrator).
     // Keep old links working.
     '/orchestrator/kits/list': {
@@ -148,23 +147,6 @@ export default defineNuxtConfig({
     publicAssets: [
       { baseURL: '/_blockly', dir: `${rootDir}node_modules/blockly/media` },
     ],
-    hooks: {
-      // Prerendered pages (/auth/*) are served as static files, which the
-      // runtime CSP plugin never sees. Hash their HTML here and attach the
-      // policy as a route rule: prerender runs before the Vercel config and
-      // the server bundle are written, so both pick it up.
-      async 'prerender:generate'(route, nitro) {
-        if (!route.contents || !route.fileName?.endsWith('.html')) return;
-        const rule = (nitro.options.routeRules[route.route] ??= {});
-        rule.headers = {
-          ...rule.headers,
-          ...(await reportOnlyCspHeaders(
-            route.contents,
-            process.env.VERCEL_ENV === 'preview',
-          )),
-        };
-      },
-    },
     ...(process.env.NITRO_PRESET && { preset: process.env.NITRO_PRESET }),
   },
 

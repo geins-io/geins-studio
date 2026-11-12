@@ -25,6 +25,7 @@ import type {
   QuotationDiscountRequest,
   QuotationMessage,
   QuotationMessageType,
+  QuotationOrderDetails,
   QuotationStatus,
   StatusTransitionRequest,
   ExtendTransitionRequest,
@@ -34,7 +35,20 @@ import type {
   ProductApiOptions,
   ChangelogEntry,
 } from '#shared/types';
-import { ENTITIES, entityEditUrl } from '#shared/utils/entities';
+import {
+  ENTITIES,
+  entityEditUrl,
+  NEW_ENTITY_URL_SEGMENT,
+} from '#shared/utils/entities';
+import {
+  canEditOrderDetails,
+  isQuotationDeletable,
+  isQuotationEditable,
+  isQuotationExternal,
+  ORDER_DETAILS_FIELDS,
+  orderDetailsFormValues,
+  orderDetailsRequest,
+} from '#shared/utils/quotation';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, Row } from '@tanstack/vue-table';
 
@@ -64,6 +78,10 @@ const { getFallbackSelection, transformProductsToSelectorEntities } =
 // =====================================================================================
 // FORM VALIDATION SCHEMA
 // =====================================================================================
+// Only the create step requires an owner. A draft or request blocks Send without
+// one instead, so a request that arrives ownerless doesn't open with a field error.
+// (useEntityEdit's createMode, same rule, doesn't exist yet at this point.)
+const requireOwner = useRoute().params.id === NEW_ENTITY_URL_SEGMENT;
 const formSchema = toTypedSchema(
   z.object({
     details: z.object({
@@ -71,7 +89,9 @@ const formSchema = toTypedSchema(
       accountId: z
         .string()
         .min(1, t('entity_required', { entityKey: 'company' })),
-      ownerId: z.string().min(1, t('entity_required', { entityKey: 'owner' })),
+      ownerId: requireOwner
+        ? z.string().min(1, t('entity_required', { entityKey: 'owner' }))
+        : z.string(),
       buyerId: z.string().optional(),
       channelId: z
         .string()
@@ -83,6 +103,10 @@ const formSchema = toTypedSchema(
       paymentTerms: z.string().optional(),
       requireConfirmation: z.boolean().optional(),
     }),
+    // Only a draft mounts these fields; elsewhere they stay empty and pass
+    orderDetails: createOrderDetailsSchema(t, () =>
+      orderDetailsEditable.value ? storedOrderDetails.value : undefined,
+    ),
   }),
 );
 
@@ -98,15 +122,16 @@ const entityBase: QuotationCreate = {
 // =====================================================================================
 // UI STATE MANAGEMENT
 // =====================================================================================
-// Sent mode — set from API response in parseEntityData
+// Sent mode = the read-only layout — set from API response in parseEntityData
 const sentMode = ref(false);
 const currentStatus = ref<QuotationStatus>('draft');
-const canDeleteInSentMode = computed(() =>
-  (['rejected', 'expired', 'canceled'] as QuotationStatus[]).includes(
-    currentStatus.value,
-  ),
-);
+// Owned by an external system (e.g. Monitor): read-only in any status
+const externallyManaged = ref(false);
+const canDelete = ref(false);
 const communications = ref<QuotationMessage[]>([]);
+// What the API holds; edits are sent as changes against it
+const storedOrderDetails = ref<QuotationOrderDetails | null>(null);
+const orderDetailsEditable = ref(false);
 
 // Discount & shipping (standalone refs, not form fields)
 const discountType = ref<'percent' | 'fixedAmount'>('percent');
@@ -452,6 +477,8 @@ const availableBuyers = computed(() => {
 
 // Resolved display names for current owner and buyer
 const currentOwnerName = computed(() => {
+  // Sent mode unmounts the owner field, which clears it on the form
+  if (sentMode.value) return fullName(entityData.value?.owner);
   const ownerId = form.values.details?.ownerId;
   if (!ownerId) return '';
   const owner = availableSalesReps.value.find((u) => u._id === ownerId);
@@ -621,6 +648,8 @@ const {
     })),
     discount: entityData.discount?.value ? entityData.discount : undefined,
     settings: entityData.settings ?? { requireConfirmation: false },
+    // Only the seller's pending changes go here, so a fresh load has none
+    orderDetails: undefined,
     validPaymentMethods:
       entityData.validPaymentMethods?.map((pm) => ({
         paymentId: String(pm.paymentId),
@@ -643,6 +672,7 @@ const {
       paymentTerms: 'Net 30',
       requireConfirmation: false,
     },
+    orderDetails: orderDetailsFormValues(),
   }),
   parseEntityData: (quotation: Quotation) => {
     breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
@@ -651,10 +681,13 @@ const {
     quotationTotal.value = quotation.total || null;
     previewTotal.value = null;
 
-    // Sent mode: any non-draft status
     currentStatus.value = quotation.status;
-    sentMode.value = quotation.status !== 'draft';
+    externallyManaged.value = isQuotationExternal(quotation);
+    sentMode.value = !isQuotationEditable(quotation);
+    canDelete.value = isQuotationDeletable(quotation);
     communications.value = quotation.communication || [];
+    storedOrderDetails.value = quotation.orderDetails ?? null;
+    orderDetailsEditable.value = canEditOrderDetails(quotation);
 
     // Discount & shipping fee from API response
     if (quotation.discount) {
@@ -683,8 +716,9 @@ const {
     billingAddress.value = quotation.billingAddress;
     shippingAddress.value = quotation.shippingAddress;
 
-    // Resolve payment terms from validPaymentMethods
-    const paymentTerms = quotation.terms || 'Net 30';
+    // No fallback: a buyer's request arrives without terms, and a default shown
+    // here but never saved would let Send go out with no terms.
+    const paymentTerms = quotation.terms || '';
 
     // Set items from API response as the source of truth
     displayItems.value = quotation.items || [];
@@ -701,6 +735,10 @@ const {
         paymentTerms,
         requireConfirmation: quotation.settings?.requireConfirmation ?? false,
       },
+      // Left empty where they're locked, so nothing is validated or sent
+      orderDetails: orderDetailsFormValues(
+        orderDetailsEditable.value ? quotation.orderDetails : undefined,
+      ),
     });
   },
   prepareCreateData: (formData) => {
@@ -737,6 +775,10 @@ const {
         ? Number(shippingFeeInput.value)
         : undefined,
     settings: { requireConfirmation: formData.details.requireConfirmation },
+    orderDetails: orderDetailsRequest(
+      formData.orderDetails,
+      storedOrderDetails.value,
+    ),
   }),
   onFormValuesChange: (values) => {
     if (createMode.value) {
@@ -776,6 +818,10 @@ const {
         settings: {
           requireConfirmation: values.details.requireConfirmation ?? false,
         },
+        orderDetails: orderDetailsRequest(
+          values.orderDetails,
+          storedOrderDetails.value,
+        ),
       };
     }
   },
@@ -784,7 +830,7 @@ const {
 // =====================================================================================
 // ERROR HANDLING SETUP
 // =====================================================================================
-const { handleFetchResult } = usePageError({
+const { handleFetchResult, throwPageError } = usePageError({
   entity: ENTITIES.quotation,
   entityId: entityId.value,
   scope,
@@ -977,13 +1023,10 @@ watch([discountType, discountValue, shippingFeeInput], () => {
 // =====================================================================================
 
 const handleCustomerPanelSave = (data: {
-  ownerId: string;
   buyerId: string;
   billingAddressId: string;
   shippingAddressId: string;
 }) => {
-  // Update form values for owner and buyer
-  form.setFieldValue('details.ownerId', data.ownerId);
   form.setFieldValue('details.buyerId', data.buyerId);
 
   // Store address IDs for update payload
@@ -1137,6 +1180,8 @@ if (!createMode.value) {
   onMounted(async () => {
     // Validate entity data
     const quotation = handleFetchResult<Quotation>(error.value, data.value);
+    // A request the buyer hasn't sent is never shown, even from an old link
+    if (quotation.status === 'requestDraft') throwPageError(404);
 
     // Fetch only the selected company (instead of all companies)
     const companyId = quotation.company?._id || '';
@@ -1214,10 +1259,22 @@ if (!createMode.value) {
 // =====================================================================================
 // SAVE HANDLER
 // =====================================================================================
+// Only the order details: a buyer's request may lack fields the rest of the
+// schema requires, and the seller must still be able to save it as it is.
+const orderDetailsValid = async () => {
+  const results = await Promise.all(
+    ORDER_DETAILS_FIELDS.map((field) =>
+      form.validateField(`orderDetails.${field}`),
+    ),
+  );
+  return results.every((result) => result.valid);
+};
+
 // Custom save handler that delays the unsaved-changes snapshot until all
 // reactive side effects (quotationItems watcher, debounced onFormValuesChange)
 // have settled — matching the pattern used during initial data loading.
 const handleSave = async () => {
+  if (!(await orderDetailsValid())) return;
   const result = await updateEntity(undefined, undefined, false);
   if (result) {
     cancelPendingFormSync();
@@ -1289,6 +1346,11 @@ const statusActions = computed<StatusActionLayout>(() => {
   const status = entityData.value?.status;
   const strict = entityData.value?.settings?.requireConfirmation ?? false;
 
+  // The API refuses every transition on an external quotation
+  if (externallyManaged.value) {
+    return { placeOrder: false, groupActions: [], dropdownActions: [] };
+  }
+
   const en = { entityKey };
 
   const extendAction = (description: string): StatusAction => ({
@@ -1300,7 +1362,24 @@ const statusActions = computed<StatusActionLayout>(() => {
     showDatePicker: true,
   });
 
+  const cancelAction: StatusAction = {
+    action: 'cancel',
+    label: t('cancel_entity', en),
+    title: t('cancel_entity', en),
+    description: t('orders.cancel_quotation_description'),
+    icon: 'ban',
+  };
+
   switch (status) {
+    // Cancel declines the buyer's request. The API's reject from requested is
+    // the buyer withdrawing it, so Studio doesn't offer it.
+    case 'requested':
+      return {
+        placeOrder: false,
+        groupActions: [],
+        dropdownActions: [cancelAction],
+      };
+
     case 'pending':
       if (strict) {
         return {
@@ -1323,27 +1402,13 @@ const statusActions = computed<StatusActionLayout>(() => {
           ],
           dropdownActions: [
             extendAction(t('orders.extend_quotation_description_pending')),
-            {
-              action: 'cancel',
-              label: t('cancel_entity', en),
-              title: t('cancel_entity', en),
-              description: t('orders.cancel_quotation_description'),
-              icon: 'ban',
-            },
+            cancelAction,
           ],
         };
       }
       return {
         placeOrder: true,
-        groupActions: [
-          {
-            action: 'cancel',
-            label: t('cancel_entity', en),
-            title: t('cancel_entity', en),
-            description: t('orders.cancel_quotation_description'),
-            icon: 'ban',
-          },
-        ],
+        groupActions: [cancelAction],
         dropdownActions: [
           extendAction(t('orders.extend_quotation_description_pending')),
         ],
@@ -1371,29 +1436,13 @@ const statusActions = computed<StatusActionLayout>(() => {
             messageType: 'toCustomer',
           },
         ],
-        dropdownActions: [
-          {
-            action: 'cancel',
-            label: t('cancel_entity', en),
-            title: t('cancel_entity', en),
-            description: t('orders.cancel_quotation_description'),
-            icon: 'ban',
-          },
-        ],
+        dropdownActions: [cancelAction],
       };
 
     case 'confirmed':
       return {
         placeOrder: true,
-        groupActions: [
-          {
-            action: 'cancel',
-            label: t('cancel_entity', en),
-            title: t('cancel_entity', en),
-            description: t('orders.cancel_quotation_description'),
-            icon: 'ban',
-          },
-        ],
+        groupActions: [cancelAction],
         dropdownActions: [],
       };
 
@@ -1701,6 +1750,21 @@ const summary = computed<DataItem[]>(() => {
       value: entityData.value.quotationNumber,
       displayType: DataItemDisplayType.Copy,
     });
+    const externalReference = entityData.value.externalReference;
+    if (externalReference?.number) {
+      dataList.push({
+        label: t('orders.external_quotation_number'),
+        value: externalReference.number,
+        displayType: DataItemDisplayType.Copy,
+      });
+    }
+    if (externalReference?.orderNumber) {
+      dataList.push({
+        label: t('orders.external_order_number'),
+        value: externalReference.orderNumber,
+        displayType: DataItemDisplayType.Copy,
+      });
+    }
     dataList.push({
       label: t('orders.require_confirmation'),
       value: entityData.value.settings?.requireConfirmation
@@ -1775,6 +1839,10 @@ const quotationStatus = computed<QuotationStatus>(
   () => entityData.value?.status || 'draft',
 );
 
+const workflowStartStatus = computed(() =>
+  quotationStatus.value === 'requested' ? 'requested' : 'draft',
+);
+
 const { summaryProps } = useEntityEditSummary({
   createMode,
   formTouched,
@@ -1843,7 +1911,11 @@ definePageMeta({
               :disabled="!hasUnsavedChanges || loading || fetchingData"
               @click="handleSave"
             >
-              {{ $t('save_entity', { entityKey: 'draft' }) }}
+              {{
+                $t('save_entity', {
+                  entityKey: currentStatus === 'draft' ? 'draft' : entityKey,
+                })
+              }}
             </ButtonIcon>
             <ButtonGroup>
               <ButtonIcon
@@ -1875,6 +1947,20 @@ definePageMeta({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
+                  <template v-if="statusActions.dropdownActions.length">
+                    <DropdownMenuItem
+                      v-for="action in statusActions.dropdownActions"
+                      :key="action.action"
+                      @click="openTransitionDialog(action)"
+                    >
+                      <LucideBan
+                        v-if="action.icon === 'ban'"
+                        class="mr-2 size-4"
+                      />
+                      {{ action.label }}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </template>
                   <DropdownMenuItem as-child>
                     <NuxtLink :to="newEntityUrl">
                       <LucidePlus class="mr-2 size-4" />
@@ -1973,7 +2059,7 @@ definePageMeta({
                     <LucideCopy class="mr-2 size-4" />
                     <span>{{ $t('orders.copy_as_new_draft') }}</span>
                   </DropdownMenuItem>
-                  <template v-if="canDeleteInSentMode">
+                  <template v-if="canDelete">
                     <DropdownMenuSeparator />
                     <DropdownMenuItem @click="openDeleteDialog">
                       <LucideTrash class="mr-2 size-4" />
@@ -1998,7 +2084,7 @@ definePageMeta({
                   {{ $t('orders.copy_as_new_draft') }}
                 </Button>
                 <Button
-                  v-if="canDeleteInSentMode"
+                  v-if="canDelete"
                   variant="secondary"
                   @click="openDeleteDialog"
                 >
@@ -2255,12 +2341,13 @@ definePageMeta({
 
             <!-- ========== SENT MODE (read-only) ========== -->
             <template v-else-if="sentMode">
-              <!-- Card 1: Quotation Details (read-only) -->
+              <!-- Quotation Details (read-only) -->
               <ContentEditCard
                 :create-mode="false"
                 :title="$t('entity_details', { entityKey })"
               >
                 <div class="space-y-4">
+                  <!-- Same 2×2 as the draft card; the empty expiration cell keeps owner and terms in their columns -->
                   <div class="grid grid-cols-2 gap-4">
                     <div>
                       <p class="text-muted-foreground mb-1 text-xs font-medium">
@@ -2271,31 +2358,17 @@ definePageMeta({
                       </p>
                     </div>
                     <div>
-                      <p class="text-muted-foreground mb-1 text-xs font-medium">
-                        {{ $t('ref_number') }}
-                      </p>
-                      <p class="text-sm">
-                        {{ entityData?.quotationNumber || '-' }}
-                      </p>
-                    </div>
-                  </div>
-                  <div class="grid grid-cols-2 gap-4 border-t pt-4">
-                    <div>
-                      <p class="text-muted-foreground mb-1 text-xs font-medium">
-                        {{ $t('status') }}
-                      </p>
-                      <StatusBadge :status="quotationStatus" />
-                    </div>
-                    <div
-                      v-if="
-                        quotationStatus === 'pending' ||
-                        quotationStatus === 'expired'
-                      "
-                    >
-                      <p class="text-muted-foreground mb-1 text-xs font-medium">
-                        {{ $t('expiration_date') }}
-                      </p>
-                      <div class="flex items-center gap-2">
+                      <template
+                        v-if="
+                          quotationStatus === 'pending' ||
+                          quotationStatus === 'expired'
+                        "
+                      >
+                        <p
+                          class="text-muted-foreground mb-1 text-xs font-medium"
+                        >
+                          {{ $t('expiration_date') }}
+                        </p>
                         <p
                           :class="
                             cn(
@@ -2313,7 +2386,45 @@ definePageMeta({
                               : $t('orders.no_expiration_date')
                           }}
                         </p>
-                      </div>
+                      </template>
+                    </div>
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('orders.quotation_owner') }}
+                      </p>
+                      <p class="text-sm">
+                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                        <template v-else>
+                          {{ currentOwnerName || '-' }}
+                        </template>
+                      </p>
+                    </div>
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('orders.payment_terms') }}
+                      </p>
+                      <p class="text-sm">
+                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                        <template v-else>
+                          {{ entityData?.terms || '-' }}
+                        </template>
+                      </p>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-4 border-t pt-4">
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('ref_number') }}
+                      </p>
+                      <p class="text-sm">
+                        {{ entityData?.quotationNumber || '-' }}
+                      </p>
+                    </div>
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('status') }}
+                      </p>
+                      <StatusBadge :status="quotationStatus" />
                     </div>
                   </div>
                   <div class="grid grid-cols-2 gap-4 border-t pt-4">
@@ -2363,6 +2474,7 @@ definePageMeta({
                           :require-confirmation="
                             entityData?.settings?.requireConfirmation
                           "
+                          :start-status="workflowStartStatus"
                         />
                       </div>
                       <p class="text-sm">
@@ -2377,7 +2489,16 @@ definePageMeta({
                 </div>
               </ContentEditCard>
 
-              <!-- Card 2: Customer (read-only, no Change button) -->
+              <QuotationRequestDetails
+                v-if="entityData?.request"
+                :request="entityData.request"
+              />
+              <QuotationOrderDetailsCard
+                v-else
+                :order-details="storedOrderDetails"
+              />
+
+              <!-- Customer (read-only, no Change button) -->
               <ContentEditCard :create-mode="false" :title="$t('customer')">
                 <QuotationCustomerDisplay
                   :company-name="selectedCompany?.name"
@@ -2385,30 +2506,11 @@ definePageMeta({
                   :billing-address="billingAddress"
                   :shipping-address="shippingAddress"
                   :buyer-name="currentBuyerName"
-                  :owner-name="currentOwnerName"
                   :loading="fetchingData"
                 />
               </ContentEditCard>
 
-              <!-- Card 3: Payment Terms (read-only) -->
-              <ContentEditCard
-                :create-mode="false"
-                :title="$t('orders.payment_settings')"
-              >
-                <div>
-                  <p class="text-muted-foreground mb-1 text-xs font-medium">
-                    {{ $t('orders.payment_terms') }}
-                  </p>
-                  <p class="text-sm">
-                    <Skeleton v-if="fetchingData" class="h-5 w-32" />
-                    <template v-else>
-                      {{ entityData?.terms || '-' }}
-                    </template>
-                  </p>
-                </div>
-              </ContentEditCard>
-
-              <!-- Card 4: Items & Summary -->
+              <!-- Items & Summary -->
               <ContentEditCard
                 :create-mode="false"
                 :title="$t('orders.items_and_summary')"
@@ -2471,7 +2573,7 @@ definePageMeta({
 
             <!-- ========== EDIT MODE (draft) ========== -->
             <template v-else>
-              <!-- Card 1: Quotation Details -->
+              <!-- Quotation Details -->
               <ContentEditCard
                 :create-mode="false"
                 :title="$t('entity_details', { entityKey })"
@@ -2507,6 +2609,77 @@ definePageMeta({
                             allow-clear
                           />
                         </FormControl>
+                        <FormDescription
+                          v-if="entityData?.request?.requestedValidTo"
+                        >
+                          {{
+                            $t('orders.requested_valid_to_hint', {
+                              date: formatDate(
+                                entityData.request.requestedValidTo,
+                              ),
+                            })
+                          }}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                  </FormGrid>
+                  <FormGrid design="1+1">
+                    <FormField
+                      v-slot="{ componentField }"
+                      name="details.ownerId"
+                    >
+                      <FormItem>
+                        <FormLabel>
+                          {{ $t('orders.quotation_owner') }}
+                        </FormLabel>
+                        <FormControl>
+                          <Select v-bind="componentField">
+                            <SelectTrigger>
+                              <SelectValue
+                                :placeholder="
+                                  $t('select_entity', { entityKey: 'owner' })
+                                "
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem
+                                v-for="salesRep in availableSalesReps"
+                                :key="salesRep._id"
+                                :value="salesRep._id"
+                              >
+                                {{ fullName(salesRep) }}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                    <FormField
+                      v-slot="{ componentField }"
+                      name="details.paymentTerms"
+                    >
+                      <FormItem>
+                        <FormLabel>{{ $t('orders.payment_terms') }}</FormLabel>
+                        <FormControl>
+                          <Select v-bind="componentField">
+                            <SelectTrigger>
+                              <SelectValue
+                                :placeholder="$t('orders.payment_terms')"
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem
+                                v-for="term in paymentTermsOptions"
+                                :key="term"
+                                :value="term"
+                              >
+                                {{ term }}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     </FormField>
@@ -2528,6 +2701,7 @@ definePageMeta({
                         <template #after-label>
                           <QuotationWorkflowInfo
                             :require-confirmation="value"
+                            :start-status="workflowStartStatus"
                             edit-mode
                             @update:require-confirmation="handleChange"
                           />
@@ -2538,14 +2712,25 @@ definePageMeta({
                 </FormGridWrap>
               </ContentEditCard>
 
-              <!-- Card 2: Customer -->
+              <QuotationRequestDetails
+                v-if="entityData?.request"
+                :request="entityData.request"
+              />
+              <ContentEditCard
+                v-else-if="orderDetailsEditable"
+                :create-mode="false"
+                :title="$t('orders.order_details')"
+                :description="$t('orders.order_details_description')"
+              >
+                <QuotationOrderDetailsFields />
+              </ContentEditCard>
+
+              <!-- Customer -->
               <ContentEditCard :create-mode="false" :title="$t('customer')">
                 <template #header-action>
                   <ContentEditCustomerPanel
                     :company="selectedCompany"
-                    :available-sales-reps="availableSalesReps"
                     :available-buyers="availableBuyers"
-                    :current-owner-id="form.values.details?.ownerId || ''"
                     :current-buyer-id="form.values.details?.buyerId || ''"
                     :current-billing-address-id="selectedBillingAddressId"
                     :current-shipping-address-id="selectedShippingAddressId"
@@ -2563,45 +2748,8 @@ definePageMeta({
                   :billing-address="billingAddress"
                   :shipping-address="shippingAddress"
                   :buyer-name="currentBuyerName"
-                  :owner-name="currentOwnerName"
                   :loading="fetchingData"
                 />
-              </ContentEditCard>
-
-              <!-- Card 3: Payment Settings -->
-              <ContentEditCard
-                :create-mode="false"
-                :title="$t('orders.payment_settings')"
-              >
-                <FormGridWrap>
-                  <FormGrid design="1+1">
-                    <FormField
-                      v-slot="{ componentField }"
-                      name="details.paymentTerms"
-                    >
-                      <FormItem>
-                        <FormLabel>{{ $t('orders.payment_terms') }}</FormLabel>
-                        <FormControl>
-                          <Select v-bind="componentField">
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem
-                                v-for="term in paymentTermsOptions"
-                                :key="term"
-                                :value="term"
-                              >
-                                {{ term }}
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    </FormField>
-                  </FormGrid>
-                </FormGridWrap>
               </ContentEditCard>
             </template>
           </ContentEditMainContent>
@@ -2740,6 +2888,21 @@ definePageMeta({
 
         <template #sidebar>
           <ContentEditSummary v-bind="summaryProps">
+            <template v-if="externallyManaged" #before-summary>
+              <Item variant="outline">
+                <ItemMedia variant="icon">
+                  <LucideLock class="text-muted-foreground" />
+                </ItemMedia>
+                <ItemContent>
+                  <ItemTitle>
+                    {{ $t('orders.quotation_read_only_title') }}
+                  </ItemTitle>
+                  <ItemDescription>
+                    {{ $t('managed_externally') }}
+                  </ItemDescription>
+                </ItemContent>
+              </Item>
+            </template>
             <template #after-summary>
               <ContentDataList
                 v-if="!createMode && companySummary.length"

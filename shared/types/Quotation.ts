@@ -16,9 +16,13 @@ import type {
 // =============================================================================
 
 /**
- * Status values for quotations
+ * Status values for quotations.
+ * `requestDraft` is a buyer request still being written — Studio never lists it.
+ * `requested` is a submitted buyer request, the seller's turn.
  */
 export type QuotationStatus =
+  | 'requestDraft'
+  | 'requested'
   | 'draft'
   | 'pending'
   | 'expired'
@@ -75,6 +79,63 @@ export interface QuotationCustomer extends EntitySnapshot {
   phone: string;
   approvedAt?: string | null;
   rejectedAt?: string | null;
+}
+
+/**
+ * What the buyer sent with their request (response). Missing on quotations
+ * the seller started.
+ */
+export interface QuotationRequest {
+  comment?: string | null;
+  requestedValidTo?: string | null;
+  desiredDeliveryDate?: string | null;
+  customerReference?: string | null;
+  customerOrderNumber?: string | null;
+  goodsLabel?: string | null;
+}
+
+/**
+ * Details that go onto the order on finalize (response)
+ */
+export interface QuotationOrderDetails {
+  desiredDeliveryDate?: string | null;
+  goodsLabel?: string | null;
+  customerOrderNumber?: string | null;
+  customerReference?: string | null;
+}
+
+/**
+ * Order details to set (request). A field left out keeps its stored value; a
+ * stored value can't be cleared, only replaced. The API refuses an empty object.
+ */
+export interface QuotationOrderDetailsRequest {
+  /** A calendar day at UTC midnight, `YYYY-MM-DDT00:00:00Z` */
+  desiredDeliveryDate?: string;
+  goodsLabel?: string;
+  customerOrderNumber?: string;
+  customerReference?: string;
+}
+
+/**
+ * Order details as form values: `''` for a field with no value
+ */
+export interface QuotationOrderDetailsForm {
+  goodsLabel: string;
+  customerOrderNumber: string;
+  desiredDeliveryDate: string;
+}
+
+/**
+ * Link to the quote in an external system that owns the quotation, e.g. Monitor (response)
+ */
+export interface QuotationExternalReference {
+  system: string;
+  id: string;
+  number?: string | null;
+  orderNumber?: string | null;
+  status?: string | null;
+  syncedAt?: string | null;
+  version: number;
 }
 
 /**
@@ -274,6 +335,7 @@ export interface QuotationCreate extends CreateEntity<QuotationBase> {
   items?: QuotationItemCreate[];
   discount?: QuotationDiscountRequest | null;
   settings?: QuotationSettings;
+  orderDetails?: QuotationOrderDetailsRequest;
 }
 
 /**
@@ -291,6 +353,7 @@ export interface QuotationUpdate extends UpdateEntity<QuotationBase> {
   items?: QuotationItemCreate[];
   discount?: QuotationDiscountRequest | null;
   settings?: QuotationSettings;
+  orderDetails?: QuotationOrderDetailsRequest;
 }
 
 /**
@@ -315,6 +378,10 @@ export interface Quotation extends ResponseEntity<QuotationBase> {
   items?: QuotationItem[];
   discount?: QuotationDiscountRequest;
   settings?: QuotationSettings;
+  request?: QuotationRequest;
+  orderDetails?: QuotationOrderDetails;
+  externalReference?: QuotationExternalReference;
+  orderPublicId?: string | null;
 }
 
 /**
@@ -442,6 +509,8 @@ export interface QuotationSelectionQuery {
   statuses?: QuotationStatus[];
   validFrom?: string;
   validTo?: string;
+  hasExternalReference?: boolean;
+  externalSystems?: string[];
 }
 
 /**

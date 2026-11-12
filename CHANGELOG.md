@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.7.1 - 2026-11-12
+
+### 🐛 Bug Fixes
+
+- Login — the link in the forgot password email opens the live site again instead of `localhost` ([#513](https://github.com/geins-io/geins-studio/pull/513))
+
+### ❤️ Contributors
+
+- Olivia Axelsson ([@olivia-geins](https://github.com/olivia-geins))
+
 ## v0.7.0 - 2026-11-09
 
 ### 🚀 Enhancements
