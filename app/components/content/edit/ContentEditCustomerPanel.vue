@@ -1,17 +1,10 @@
 <script setup lang="ts">
 import { VisuallyHidden } from 'reka-ui';
-import type {
-  Address,
-  CustomerCompany,
-  CompanyBuyer,
-  CustomerSalesRep,
-} from '#shared/types';
+import type { Address, CustomerCompany, CompanyBuyer } from '#shared/types';
 
 const props = defineProps<{
   company: CustomerCompany | undefined;
-  availableSalesReps: CustomerSalesRep[];
   availableBuyers: CompanyBuyer[];
-  currentOwnerId: string;
   currentBuyerId: string;
   currentBillingAddressId?: string;
   currentShippingAddressId?: string;
@@ -21,7 +14,6 @@ const emit = defineEmits<{
   (
     event: 'save',
     data: {
-      ownerId: string;
       buyerId: string;
       billingAddressId: string;
       shippingAddressId: string;
@@ -33,7 +25,6 @@ const { getCountryNameById } = useAccountStore();
 const open = ref(false);
 
 // Local selections
-const selectedOwnerId = ref('');
 const selectedBuyerId = ref('');
 const selectedBillingAddressId = ref('');
 const selectedShippingAddressId = ref('');
@@ -69,7 +60,6 @@ const formatAddressOneLine = (address: Address) => {
 // Sync current values when panel opens
 watch(open, (value) => {
   if (value) {
-    selectedOwnerId.value = props.currentOwnerId || '';
     selectedBuyerId.value = props.currentBuyerId || '';
     selectedBillingAddressId.value = props.currentBillingAddressId || '';
     selectedShippingAddressId.value = props.currentShippingAddressId || '';
@@ -78,7 +68,6 @@ watch(open, (value) => {
 
 const handleSave = () => {
   emit('save', {
-    ownerId: selectedOwnerId.value,
     buyerId: selectedBuyerId.value,
     billingAddressId: selectedBillingAddressId.value,
     shippingAddressId: selectedShippingAddressId.value,
@@ -107,31 +96,6 @@ const handleCancel = () => {
       </SheetHeader>
       <SheetBody class="h-full">
         <div class="space-y-6">
-          <!-- Quotation Owner -->
-          <div class="space-y-2">
-            <Label>{{ $t('orders.quotation_owner') }}</Label>
-            <Select v-model="selectedOwnerId">
-              <SelectTrigger>
-                <SelectValue
-                  :placeholder="
-                    $t('select_entity', {
-                      entityKey: 'owner',
-                    })
-                  "
-                />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem
-                  v-for="salesRep in availableSalesReps"
-                  :key="salesRep._id"
-                  :value="salesRep._id"
-                >
-                  {{ fullName(salesRep) }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           <!-- Buyer -->
           <div class="space-y-2">
             <Label>{{ $t('buyer') }}</Label>

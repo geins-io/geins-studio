@@ -35,7 +35,11 @@ import type {
   ProductApiOptions,
   ChangelogEntry,
 } from '#shared/types';
-import { ENTITIES, entityEditUrl } from '#shared/utils/entities';
+import {
+  ENTITIES,
+  entityEditUrl,
+  NEW_ENTITY_URL_SEGMENT,
+} from '#shared/utils/entities';
 import {
   canEditOrderDetails,
   isQuotationDeletable,
@@ -74,6 +78,10 @@ const { getFallbackSelection, transformProductsToSelectorEntities } =
 // =====================================================================================
 // FORM VALIDATION SCHEMA
 // =====================================================================================
+// Only the create step requires an owner. A draft or request blocks Send without
+// one instead, so a request that arrives ownerless doesn't open with a field error.
+// (useEntityEdit's createMode, same rule, doesn't exist yet at this point.)
+const requireOwner = useRoute().params.id === NEW_ENTITY_URL_SEGMENT;
 const formSchema = toTypedSchema(
   z.object({
     details: z.object({
@@ -81,7 +89,9 @@ const formSchema = toTypedSchema(
       accountId: z
         .string()
         .min(1, t('entity_required', { entityKey: 'company' })),
-      ownerId: z.string().min(1, t('entity_required', { entityKey: 'owner' })),
+      ownerId: requireOwner
+        ? z.string().min(1, t('entity_required', { entityKey: 'owner' }))
+        : z.string(),
       buyerId: z.string().optional(),
       channelId: z
         .string()
@@ -467,6 +477,8 @@ const availableBuyers = computed(() => {
 
 // Resolved display names for current owner and buyer
 const currentOwnerName = computed(() => {
+  // Sent mode unmounts the owner field, which clears it on the form
+  if (sentMode.value) return fullName(entityData.value?.owner);
   const ownerId = form.values.details?.ownerId;
   if (!ownerId) return '';
   const owner = availableSalesReps.value.find((u) => u._id === ownerId);
@@ -1011,13 +1023,10 @@ watch([discountType, discountValue, shippingFeeInput], () => {
 // =====================================================================================
 
 const handleCustomerPanelSave = (data: {
-  ownerId: string;
   buyerId: string;
   billingAddressId: string;
   shippingAddressId: string;
 }) => {
-  // Update form values for owner and buyer
-  form.setFieldValue('details.ownerId', data.ownerId);
   form.setFieldValue('details.buyerId', data.buyerId);
 
   // Store address IDs for update payload
@@ -2332,12 +2341,13 @@ definePageMeta({
 
             <!-- ========== SENT MODE (read-only) ========== -->
             <template v-else-if="sentMode">
-              <!-- Card 1: Quotation Details (read-only) -->
+              <!-- Quotation Details (read-only) -->
               <ContentEditCard
                 :create-mode="false"
                 :title="$t('entity_details', { entityKey })"
               >
                 <div class="space-y-4">
+                  <!-- Same 2×2 as the draft card; the empty expiration cell keeps owner and terms in their columns -->
                   <div class="grid grid-cols-2 gap-4">
                     <div>
                       <p class="text-muted-foreground mb-1 text-xs font-medium">
@@ -2348,31 +2358,17 @@ definePageMeta({
                       </p>
                     </div>
                     <div>
-                      <p class="text-muted-foreground mb-1 text-xs font-medium">
-                        {{ $t('ref_number') }}
-                      </p>
-                      <p class="text-sm">
-                        {{ entityData?.quotationNumber || '-' }}
-                      </p>
-                    </div>
-                  </div>
-                  <div class="grid grid-cols-2 gap-4 border-t pt-4">
-                    <div>
-                      <p class="text-muted-foreground mb-1 text-xs font-medium">
-                        {{ $t('status') }}
-                      </p>
-                      <StatusBadge :status="quotationStatus" />
-                    </div>
-                    <div
-                      v-if="
-                        quotationStatus === 'pending' ||
-                        quotationStatus === 'expired'
-                      "
-                    >
-                      <p class="text-muted-foreground mb-1 text-xs font-medium">
-                        {{ $t('expiration_date') }}
-                      </p>
-                      <div class="flex items-center gap-2">
+                      <template
+                        v-if="
+                          quotationStatus === 'pending' ||
+                          quotationStatus === 'expired'
+                        "
+                      >
+                        <p
+                          class="text-muted-foreground mb-1 text-xs font-medium"
+                        >
+                          {{ $t('expiration_date') }}
+                        </p>
                         <p
                           :class="
                             cn(
@@ -2390,7 +2386,45 @@ definePageMeta({
                               : $t('orders.no_expiration_date')
                           }}
                         </p>
-                      </div>
+                      </template>
+                    </div>
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('orders.quotation_owner') }}
+                      </p>
+                      <p class="text-sm">
+                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                        <template v-else>
+                          {{ currentOwnerName || '-' }}
+                        </template>
+                      </p>
+                    </div>
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('orders.payment_terms') }}
+                      </p>
+                      <p class="text-sm">
+                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                        <template v-else>
+                          {{ entityData?.terms || '-' }}
+                        </template>
+                      </p>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-4 border-t pt-4">
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('ref_number') }}
+                      </p>
+                      <p class="text-sm">
+                        {{ entityData?.quotationNumber || '-' }}
+                      </p>
+                    </div>
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('status') }}
+                      </p>
+                      <StatusBadge :status="quotationStatus" />
                     </div>
                   </div>
                   <div class="grid grid-cols-2 gap-4 border-t pt-4">
@@ -2464,7 +2498,7 @@ definePageMeta({
                 :order-details="storedOrderDetails"
               />
 
-              <!-- Card 2: Customer (read-only, no Change button) -->
+              <!-- Customer (read-only, no Change button) -->
               <ContentEditCard :create-mode="false" :title="$t('customer')">
                 <QuotationCustomerDisplay
                   :company-name="selectedCompany?.name"
@@ -2472,30 +2506,11 @@ definePageMeta({
                   :billing-address="billingAddress"
                   :shipping-address="shippingAddress"
                   :buyer-name="currentBuyerName"
-                  :owner-name="currentOwnerName"
                   :loading="fetchingData"
                 />
               </ContentEditCard>
 
-              <!-- Card 3: Payment Terms (read-only) -->
-              <ContentEditCard
-                :create-mode="false"
-                :title="$t('orders.payment_settings')"
-              >
-                <div>
-                  <p class="text-muted-foreground mb-1 text-xs font-medium">
-                    {{ $t('orders.payment_terms') }}
-                  </p>
-                  <p class="text-sm">
-                    <Skeleton v-if="fetchingData" class="h-5 w-32" />
-                    <template v-else>
-                      {{ entityData?.terms || '-' }}
-                    </template>
-                  </p>
-                </div>
-              </ContentEditCard>
-
-              <!-- Card 4: Items & Summary -->
+              <!-- Items & Summary -->
               <ContentEditCard
                 :create-mode="false"
                 :title="$t('orders.items_and_summary')"
@@ -2558,7 +2573,7 @@ definePageMeta({
 
             <!-- ========== EDIT MODE (draft) ========== -->
             <template v-else>
-              <!-- Card 1: Quotation Details -->
+              <!-- Quotation Details -->
               <ContentEditCard
                 :create-mode="false"
                 :title="$t('entity_details', { entityKey })"
@@ -2609,6 +2624,66 @@ definePageMeta({
                       </FormItem>
                     </FormField>
                   </FormGrid>
+                  <FormGrid design="1+1">
+                    <FormField
+                      v-slot="{ componentField }"
+                      name="details.ownerId"
+                    >
+                      <FormItem>
+                        <FormLabel>
+                          {{ $t('orders.quotation_owner') }}
+                        </FormLabel>
+                        <FormControl>
+                          <Select v-bind="componentField">
+                            <SelectTrigger>
+                              <SelectValue
+                                :placeholder="
+                                  $t('select_entity', { entityKey: 'owner' })
+                                "
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem
+                                v-for="salesRep in availableSalesReps"
+                                :key="salesRep._id"
+                                :value="salesRep._id"
+                              >
+                                {{ fullName(salesRep) }}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                    <FormField
+                      v-slot="{ componentField }"
+                      name="details.paymentTerms"
+                    >
+                      <FormItem>
+                        <FormLabel>{{ $t('orders.payment_terms') }}</FormLabel>
+                        <FormControl>
+                          <Select v-bind="componentField">
+                            <SelectTrigger>
+                              <SelectValue
+                                :placeholder="$t('orders.payment_terms')"
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem
+                                v-for="term in paymentTermsOptions"
+                                :key="term"
+                                :value="term"
+                              >
+                                {{ term }}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                  </FormGrid>
                   <FormGrid design="1">
                     <FormField
                       v-slot="{ value, handleChange }"
@@ -2650,14 +2725,12 @@ definePageMeta({
                 <QuotationOrderDetailsFields />
               </ContentEditCard>
 
-              <!-- Card 2: Customer -->
+              <!-- Customer -->
               <ContentEditCard :create-mode="false" :title="$t('customer')">
                 <template #header-action>
                   <ContentEditCustomerPanel
                     :company="selectedCompany"
-                    :available-sales-reps="availableSalesReps"
                     :available-buyers="availableBuyers"
-                    :current-owner-id="form.values.details?.ownerId || ''"
                     :current-buyer-id="form.values.details?.buyerId || ''"
                     :current-billing-address-id="selectedBillingAddressId"
                     :current-shipping-address-id="selectedShippingAddressId"
@@ -2675,47 +2748,8 @@ definePageMeta({
                   :billing-address="billingAddress"
                   :shipping-address="shippingAddress"
                   :buyer-name="currentBuyerName"
-                  :owner-name="currentOwnerName"
                   :loading="fetchingData"
                 />
-              </ContentEditCard>
-
-              <!-- Card 3: Payment Settings -->
-              <ContentEditCard
-                :create-mode="false"
-                :title="$t('orders.payment_settings')"
-              >
-                <FormGridWrap>
-                  <FormGrid design="1+1">
-                    <FormField
-                      v-slot="{ componentField }"
-                      name="details.paymentTerms"
-                    >
-                      <FormItem>
-                        <FormLabel>{{ $t('orders.payment_terms') }}</FormLabel>
-                        <FormControl>
-                          <Select v-bind="componentField">
-                            <SelectTrigger>
-                              <SelectValue
-                                :placeholder="$t('orders.payment_terms')"
-                              />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem
-                                v-for="term in paymentTermsOptions"
-                                :key="term"
-                                :value="term"
-                              >
-                                {{ term }}
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    </FormField>
-                  </FormGrid>
-                </FormGridWrap>
               </ContentEditCard>
             </template>
           </ContentEditMainContent>

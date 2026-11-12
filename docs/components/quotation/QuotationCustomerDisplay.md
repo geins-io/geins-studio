@@ -1,10 +1,10 @@
 # `QuotationCustomerDisplay`
 
-`QuotationCustomerDisplay` is the read-only customer summary block on a quotation — company name + VAT, billing + shipping addresses, buyer + owner, and currency, all in a 2-column grid with skeleton loading.
+`QuotationCustomerDisplay` is the read-only customer summary block on a quotation — company name + VAT, billing + shipping addresses, and buyer, in a 2-column grid with skeleton loading. The quotation owner isn't part of it: it shows in the Quotation details card.
 
 ## Features
 
-- Five sections in a stacked 2-column grid — company / addresses / owner+buyer / currency
+- Three sections in a stacked 2-column grid — company / addresses / buyer
 - Skeleton placeholders for every value when `loading` is `true`
 - Renders `'-'` for missing values
 - Routes addresses through [`ContentAddressDisplay`](/components/content/ContentAddressDisplay) with `address-only` so the company line isn't duplicated
@@ -19,8 +19,6 @@
     :billing-address="quotation.billingAddress"
     :shipping-address="quotation.shippingAddress"
     :buyer-name="quotation.buyerName"
-    :owner-name="quotation.ownerName"
-    :currency="quotation.currency"
     :loading="loading"
   />
 </template>
@@ -59,24 +57,13 @@ Addresses rendered through [`ContentAddressDisplay`](/components/content/Content
 
 - **Default:** `null`
 
-### `buyerName` / `ownerName`
+### `buyerName`
 
 ```ts
 buyerName?: string
-ownerName?: string
 ```
 
-Names already resolved to display strings — typically via `fullName(...)`.
-
-- **Default:** `''`
-
-### `currency`
-
-```ts
-currency?: string
-```
-
-Currency code or label.
+Buyer name already resolved to a display string — typically via `fullName(...)`.
 
 - **Default:** `''`
 
