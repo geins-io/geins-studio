@@ -44,7 +44,15 @@ function getExampleJson(fieldName: string): string {
 function getArrayItemShape(fieldName: string): Record<string, string> | null {
   const value = getExampleForField(fieldName);
   if (!Array.isArray(value) || value.length === 0) return null;
-  return extractShape(value[0]);
+  const shape = extractShape(value[0]);
+  return Object.keys(shape).length > 0 ? shape : null;
+}
+
+// For a field whose example has no shape to draw, such as an expression or a
+// list of plain values, the value itself is the useful hint.
+function getExampleValueJson(fieldName: string): string {
+  const value = getExampleForField(fieldName);
+  return value == null ? '' : JSON.stringify(value, null, 2);
 }
 
 function getObjectShape(fieldName: string): Record<string, string> | null {
@@ -232,6 +240,18 @@ function toggleExample(idx: number) {
               </span>
             </div>
           </div>
+        </template>
+
+        <template v-else-if="getExampleValueJson(field.name)">
+          <div
+            class="text-muted-foreground mb-2 text-[10px] font-medium tracking-wider uppercase"
+          >
+            {{ $t('node.settings.schema.example_value') }}
+          </div>
+          <pre
+            class="bg-muted/50 overflow-x-auto rounded px-2 py-1 font-mono text-[11px] whitespace-pre-wrap"
+            >{{ getExampleValueJson(field.name) }}</pre
+          >
         </template>
 
         <div v-else class="text-muted-foreground text-xs italic">
