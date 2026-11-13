@@ -61,14 +61,20 @@ export function useUnsavedChanges<T extends Record<string, unknown>>(
   const leavingTo = ref<string | null>(null);
   const confirmedLeave = ref(false);
 
-  onBeforeRouteLeave((to) => {
+  const guard = (to: { fullPath: string }) => {
     if (!confirmedLeave.value && hasUnsavedChanges.value) {
       unsavedChangesDialogOpen.value = true;
       leavingTo.value = to.fullPath;
       return false;
     }
     return true;
-  });
+  };
+
+  onBeforeRouteLeave(guard);
+  // Opening another entity on the same route (another version of a quotation)
+  // keeps the route record, so vue-router runs only update guards. A query or
+  // hash change on the same page isn't leaving it.
+  onBeforeRouteUpdate((to, from) => to.path === from.path || guard(to));
 
   const confirmLeave = () => {
     unsavedChangesDialogOpen.value = false;

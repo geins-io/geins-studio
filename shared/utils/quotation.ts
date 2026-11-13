@@ -7,6 +7,7 @@ import type {
   QuotationOrderDetailsRequest,
   QuotationRevision,
   QuotationStatus,
+  QuotationVersionRef,
 } from '#shared/types';
 import { calendarDayToLocalIso, toCalendarDayIso } from './calendar-day';
 
@@ -92,7 +93,7 @@ export const QUOTATION_OWNER_NAME_MAX_LENGTH = 200;
  * real offer.
  */
 export function isAnsweredRequest(
-  quotation: Pick<Quotation, 'status' | 'validFrom'>,
+  quotation: Pick<QuotationRevision, 'status' | 'validFrom'>,
 ): boolean {
   return quotation.status === 'revised' && !quotation.validFrom;
 }
@@ -277,4 +278,47 @@ export function quotationBuyerDecision(
   }
   if (approvedAt) return { decision: 'accepted', at: approvedAt };
   return null;
+}
+
+/**
+ * The chain's live version: the newest one that isn't a draft. The API stores
+ * new messages on it, and the version picker reads "Latest" on it.
+ */
+export function liveRevision(
+  quotation: Pick<Quotation, 'revisions'>,
+): QuotationRevision | undefined {
+  return quotation.revisions?.find((version) => version.status !== 'draft');
+}
+
+/**
+ * Whether a later version replaced the quotation. It stays as history: the
+ * chain's one thread is read and written on the live version instead.
+ */
+export function isReplacedVersion(
+  quotation: Pick<Quotation, '_id' | 'status' | 'revisedBy' | 'revisions'>,
+): boolean {
+  if (quotation.status === 'draft') return false;
+  if (quotation.status === 'revised' || quotation.revisedBy) return true;
+  const live = liveRevision(quotation);
+  return !!live && live.quotationId !== quotation._id;
+}
+
+/**
+ * The version that replaces the quotation: the chain's live version, or the
+ * one that revised it when the response lists no chain.
+ */
+export function replacingVersion(
+  quotation: Pick<Quotation, '_id' | 'status' | 'revisedBy' | 'revisions'>,
+): QuotationVersionRef | undefined {
+  if (!isReplacedVersion(quotation)) return undefined;
+  const live = liveRevision(quotation);
+  if (live && live.quotationId !== quotation._id) return live;
+  return quotation.revisedBy ?? undefined;
+}
+
+/**
+ * The revision as the quotation number's two-digit suffix: 3 → "03"
+ */
+export function revisionSuffix(revision: number): string {
+  return String(revision).padStart(2, '0');
 }

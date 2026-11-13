@@ -57,7 +57,9 @@ import {
   orderDetailsFormValues,
   orderDetailsRequest,
   QUOTATION_OWNER_NAME_MAX_LENGTH,
+  replacingVersion,
   revisionSendBlock,
+  revisionSuffix,
 } from '#shared/utils/quotation';
 import type { RevisionSendBlock } from '#shared/utils/quotation';
 import { ToastAction } from '@/components/ui/toast';
@@ -1788,7 +1790,12 @@ const confirmDiscard = async () => {
   const discarded = await deleteEntity();
   discarding.value = false;
   discardDialogOpen.value = false;
-  if (discarded && sourceId) await openQuotation(sourceId);
+  if (!discarded || !sourceId) return;
+  // The draft is gone, so its unsaved edits are too: the same-route guard
+  // mustn't ask about them on the way to the source
+  cancelPendingFormSync();
+  setOriginalSavedData();
+  await openQuotation(sourceId);
 };
 
 // =====================================================================================
@@ -1980,6 +1987,22 @@ const summary = computed<DataItem[]>(() => {
         displayType: DataItemDisplayType.Copy,
       });
     }
+    const revision = entityData.value.revision;
+    if (revision !== undefined) {
+      dataList.push({
+        label: t('version'),
+        value: t('orders.version_tag', { version: revisionSuffix(revision) }),
+      });
+    }
+    const revisionOf = entityData.value.revisionOf;
+    if (revisionOf) {
+      dataList.push({
+        label: t('orders.revision_of'),
+        value: revisionOf.quotationNumber,
+        displayType: DataItemDisplayType.Link,
+        href: entityEditUrl('quotation', revisionOf.quotationId),
+      });
+    }
     dataList.push({
       label: t('orders.require_confirmation'),
       value: entityData.value.settings?.requireConfirmation
@@ -2063,6 +2086,12 @@ const statusLabel = computed(() =>
   answeredRequest.value ? t('orders.answered_request') : undefined,
 );
 
+// Every version in the chain, newest first; each one is its own quotation
+const versionChain = computed(() => entityData.value?.revisions ?? []);
+const replacedBy = computed(() =>
+  entityData.value ? replacingVersion(entityData.value) : undefined,
+);
+
 const workflowStartStatus = computed(() =>
   quotationStatus.value === 'requested' || answeredRequest.value
     ? 'requested'
@@ -2139,6 +2168,11 @@ definePageMeta({
     <template #header>
       <ContentHeader :title="entityPageTitle" :entity-key="entityKey">
         <ContentActionBar>
+          <QuotationVersionSelect
+            v-if="versionChain.length > 1"
+            :revisions="versionChain"
+            :quotation-id="entityId"
+          />
           <!-- DRAFT MODE actions -->
           <template v-if="!createMode && !sentMode">
             <ButtonIcon
@@ -2575,6 +2609,12 @@ definePageMeta({
 
             <!-- ========== SENT MODE (read-only) ========== -->
             <template v-else-if="sentMode">
+              <QuotationReplacedNotice
+                v-if="replacedBy"
+                :quotation-number="entityData.quotationNumber"
+                :replaced-by="replacedBy"
+                :request="answeredRequest"
+              />
               <!-- Quotation Details (read-only) -->
               <ContentEditCard
                 :create-mode="false"
@@ -3093,6 +3133,12 @@ definePageMeta({
             v-if="currentTab === 2 && !createMode"
             :key="`tab-changelog`"
           >
+            <QuotationReplacedNotice
+              v-if="replacedBy"
+              :quotation-number="entityData.quotationNumber"
+              :replaced-by="replacedBy"
+              :request="answeredRequest"
+            />
             <ContentEditCard
               :create-mode="false"
               :title="$t('changelog.tab_title')"
