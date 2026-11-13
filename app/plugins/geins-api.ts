@@ -1,6 +1,11 @@
 import type { GeinsApiError, GeinsApiFetch } from '#shared/types';
+import {
+  API_RETRY_STATUS_CODES,
+  shouldRetryTransient,
+} from '#shared/utils/api-retry';
 import { resolveAppId } from '#shared/utils/app';
 import { createUnauthorizedRecovery } from '#shared/utils/auth-recovery';
+import { CSRF_HEADER } from '#shared/utils/csrf';
 import { tunnelIfMatch } from '#shared/utils/proxy-headers';
 /**
  * Nuxt plugin for handling Geins API requests.
@@ -15,9 +20,10 @@ import { tunnelIfMatch } from '#shared/utils/proxy-headers';
  * The plugin uses the `useGeinsAuth` composable to manage authentication state and token refresh.
  * It intercepts API requests to check token expiration and refresh the token if necessary, through
  * `useGeinsAuth().refresh` (one refresh in flight per tab, one at a time across tabs).
- * A 401 to a token the tab still holds forces a refresh (`useGeinsAuth().forceRefresh`) and
- * retries the request once; `onRequest` re-runs and picks up the new token. A 401 to that retry
- * logs out (`createUnauthorizedRecovery`).
+ * The browser holds no token: the API proxy attaches the session's. A 401 to the token the tab
+ * still holds (known by its `tokenExpires`) forces a refresh (`useGeinsAuth().forceRefresh`) and
+ * retries the request once. A 401 to that retry logs out (`createUnauthorizedRecovery`).
+ * A 502, 503 or 504 to a GET or HEAD is retried once after a second (`shouldRetryTransient`).
  */
 
 export default defineNuxtPlugin(() => {
@@ -31,8 +37,7 @@ export default defineNuxtPlugin(() => {
   // GeinsApiFetch note below).
   const { showGlobalErrorToast } = useApiErrorToast();
   const {
-    accessToken,
-    accountKey,
+    session,
     isAuthenticated,
     refresh,
     forceRefresh,
@@ -56,9 +61,10 @@ export default defineNuxtPlugin(() => {
    * The `$fetch` instance for the Geins API.
    *
    * This instance is created using the nuxt `$fetch.create` method.
-   * It intercepts requests to add the authentication token to the headers.
-   * If the token has expired, it refreshes the token before retrying the request.
-   * If a request fails with a 401 status, it attempts to refresh the token and retry the request.
+   * It refreshes a token that is due before the request, so the proxy rarely
+   * has to. If a request fails with a 401 status, it forces a refresh and
+   * retries the request once. A read that fails with a 502, 503 or 504 is
+   * retried once.
    *
    * @example
    * ```ts
@@ -70,15 +76,18 @@ export default defineNuxtPlugin(() => {
    * */
   const geinsApiFetchInstance = $fetch.create({
     baseURL: '/api',
-    // 500 deliberately excluded — it is often a non-idempotent server fault and
-    // a blind retry just doubles the failure count
-    retryStatusCodes: [401, 502, 503, 504],
+    // ofetch retries only when `onResponseError` returns without throwing, so
+    // that hook decides which status and method retry (`shouldRetryTransient`,
+    // `createUnauthorizedRecovery`). This list only has to contain them.
+    retryStatusCodes: [...API_RETRY_STATUS_CODES],
     retry: 1,
     retryDelay: 1000,
     async onRequest({ options }) {
       // Outside the try: a failed token refresh must not let a raw `If-Match`
       // reach Vercel's edge, which would answer it with its own 412.
       tunnelIfMatch(options.headers);
+      // The server's CSRF guard refuses a mutation without it.
+      options.headers.set(CSRF_HEADER, '1');
       try {
         if (isExpired() || expiresSoon()) {
           await refresh();
@@ -90,21 +99,12 @@ export default defineNuxtPlugin(() => {
         ) {
           options.headers.set('content-type', 'application/json');
         }
-        // Add the token to the request. Not gated on `isAuthenticated`: the
-        // login page loads the user (for account selection) before an account
-        // is picked.
-        if (accessToken.value) {
-          options.headers.set('x-access-token', `${accessToken.value}`);
-        }
-        // Add the account key to the request
-        if (accountKey.value) {
-          options.headers.set('x-account-key', accountKey.value);
-        }
         options.headers.set('x-app', appId);
       } catch (error) {
         const errorMessage = getErrorMessage(error);
         geinsLogError('error during request setup', errorMessage);
       }
+      options.sentTokenExpires = session.value?.tokenExpires;
     },
     async onRequestError({ error, options, request }) {
       const timestamp = new Date().toISOString();
@@ -194,33 +194,42 @@ export default defineNuxtPlugin(() => {
         originalError: errorData,
       };
 
-      // Flag responses that $fetch will auto-retry (matches retryStatusCodes
-      // above) so a retried call is visible in the logs rather than looking
-      // like two unrelated failures.
-      const willRetry = [401, 502, 503, 504].includes(response.status);
+      const retryTransient = shouldRetryTransient({
+        status: response.status,
+        method,
+        retry: options.retry,
+        retryStatusCodes: options.retryStatusCodes,
+      });
+      const retryUnauthorized =
+        response.status === 401 &&
+        (await recoverFromUnauthorized({
+          status: response.status,
+          sentTokenExpires: options.sentTokenExpires,
+          currentTokenExpires: session.value?.tokenExpires,
+          isAuthenticated: isAuthenticated.value,
+          onAuthPage: router.currentRoute.value.path.startsWith('/auth'),
+          retried: !!options.authRetried,
+        }));
+
+      // Flag an attempt ofetch retries, so a retried call doesn't look like
+      // two unrelated failures in the logs.
       geinsLogError(
         `[${method}] ${url} ::: response error ::: ${response.status}${
-          willRetry ? ' (retryable)' : ''
+          retryTransient || retryUnauthorized ? ' (retrying)' : ''
         } ::: `,
         geinsApiError,
       );
 
-      if (
-        response.status === 401 &&
-        (await recoverFromUnauthorized({
-          status: response.status,
-          sentToken: options.headers.get('x-access-token') ?? undefined,
-          currentToken: accessToken.value,
-          isAuthenticated: isAuthenticated.value,
-          onAuthPage: router.currentRoute.value.path.startsWith('/auth'),
-          retried: !!options.authRetried,
-        }))
-      ) {
-        // Returning without a throw hands the 401 to ofetch's retry (it's in
-        // `retryStatusCodes`), which re-runs `onRequest` with the new token.
+      // Returning without a throw hands the response to ofetch's retry, which
+      // re-runs `onRequest` (after a 401: with the new token). Throwing on the
+      // last attempt keeps ofetch's own FetchError from reaching the caller.
+      if (retryUnauthorized) {
         options.retry = 1;
         options.retryDelay = 0;
         options.authRetried = true;
+        return;
+      }
+      if (retryTransient) {
         return;
       }
 

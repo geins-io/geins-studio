@@ -1,11 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
-import {
-  getBaseUrl,
-  getAuthBaseUrl,
-  includeDevPages,
-} from './shared/utils/deployment';
+import { getBaseUrl, includeDevPages } from './shared/utils/deployment';
 import { SECURITY_HEADERS } from './shared/utils/security-headers';
 
 const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
@@ -90,7 +86,6 @@ export default defineNuxtConfig({
   ],
 
   modules: [
-    '@sidebase/nuxt-auth',
     '@nuxt/test-utils/module',
     '@nuxtjs/color-mode',
     '@nuxtjs/i18n',
@@ -181,21 +176,6 @@ export default defineNuxtConfig({
     storageKey: 'geins-color-mode',
   },
 
-  auth: {
-    isEnabled: true,
-    baseURL: getAuthBaseUrl(),
-    provider: {
-      type: 'authjs',
-    },
-    // nuxt-auth's own refetches would read the session outside the
-    // `geins-auth-refresh` lock; auth-state.ts refreshes on focus and on a
-    // timer through the locked path instead.
-    sessionRefresh: {
-      enableOnWindowFocus: false,
-      enablePeriodically: false,
-    },
-  },
-
   i18n: {
     defaultLocale: 'en',
     langDir: 'locales',
@@ -206,6 +186,9 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    // NUXT_APP_SECRET, at least 32 characters (`openssl rand -base64 32`).
+    // Seals the session cookie via `deriveSecret`; builds don't generate one.
+    appSecret: '',
     public: {
       appVersion: pkg.version,
       gitSha: process.env.GIT_SHA || 'dev',
@@ -222,6 +205,7 @@ export default defineNuxtConfig({
       isVercel: !!process.env.VERCEL,
     },
     private: {
+      // cutover: only to migrate next-auth session cookies (legacy-session.ts).
       authSecret: process.env.AUTH_SECRET,
       // HOTFIX STU-216 — remove when BE handles config-refresh natively (STU-217)
       salesPortalWebhookSecret: process.env.SALES_PORTAL_WEBHOOK_SECRET,

@@ -43,9 +43,14 @@ param tags object = {}
 @description('Geins API URL')
 param geinsApiUrl string
 
-@description('NextAuth secret')
+@description('Old NextAuth secret: only migrates next-auth session cookies into the sealed session (cutover)')
 @secure()
 param authSecret string
+
+@description('Seals the session cookie (NUXT_APP_SECRET, at least 32 characters)')
+@secure()
+@minLength(32)
+param appSecret string
 
 @description('Base URL of the application')
 param baseUrl string
@@ -131,6 +136,10 @@ var appSettings = [
   {
     name: 'NUXT_PRIVATE_AUTH_SECRET'
     value: authSecret
+  }
+  {
+    name: 'NUXT_APP_SECRET'
+    value: appSecret
   }
   {
     name: 'BASE_URL'
@@ -229,6 +238,10 @@ var stagingAppSettings = [
   {
     name: 'NUXT_PRIVATE_AUTH_SECRET'
     value: authSecret
+  }
+  {
+    name: 'NUXT_APP_SECRET'
+    value: appSecret
   }
   {
     name: 'BASE_URL'

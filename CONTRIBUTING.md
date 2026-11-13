@@ -16,7 +16,7 @@ pnpm test              # Run Vitest tests
 
 ```bash
 GEINS_API_URL=https://mgmtapi.geins.services/v2
-AUTH_SECRET=<random-secret>    # generate at https://auth-secret-generator.vercel.app
+NUXT_APP_SECRET=<random-secret>  # openssl rand -base64 32 (min 32 chars)
 GEINS_DEBUG=true               # enable useGeinsLog output
 ```
 

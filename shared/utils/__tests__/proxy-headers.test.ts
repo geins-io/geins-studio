@@ -2,6 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   IF_MATCH_PROXY_HEADER,
+  isGeinsAuthPath,
   pickUpstreamHeaders,
   restoreIfMatch,
   tunnelIfMatch,
@@ -62,11 +63,12 @@ describe('pickUpstreamHeaders', () => {
     'accept-language': 'sv-SE',
     'content-type': 'application/json',
     'idempotency-key': 'run-1',
-    'x-account-key': 'acc-1',
+    'x-account-key': 'forged-account',
     'x-app': 'geins',
-    'x-access-token': 'tok-1',
+    'x-access-token': 'forged-token',
+    'x-geins-csrf': '1',
     'x-custom': '1',
-    cookie: '__Secure-next-auth.session-token=jwt; studio-pref=1',
+    cookie: 'geins-session.0=sealed; studio-pref=1',
     host: 'studio.geins.io',
     'x-forwarded-for': '203.0.113.7',
     'x-forwarded-host': 'studio.geins.io',
@@ -78,16 +80,28 @@ describe('pickUpstreamHeaders', () => {
     'user-agent': 'Mozilla/5.0',
   };
 
-  it('keeps the allowlisted headers and maps the token to authorization', () => {
-    expect(pickUpstreamHeaders(browser)).toEqual({
+  const session = { accessToken: 'tok-1', accountKey: 'acc-1' };
+
+  it("keeps the allowlisted headers and sends the session's token and account", () => {
+    expect(pickUpstreamHeaders(browser, session)).toEqual({
       accept: 'application/json',
       'accept-language': 'sv-SE',
       'content-type': 'application/json',
       'idempotency-key': 'run-1',
-      'x-account-key': 'acc-1',
       'x-app': 'geins',
       authorization: 'Bearer tok-1',
+      'x-account-key': 'acc-1',
     });
+  });
+
+  it('never takes the token or account from the browser', () => {
+    const upstream = pickUpstreamHeaders(browser);
+    expect(upstream).not.toHaveProperty('authorization');
+    expect(upstream).not.toHaveProperty('x-account-key');
+  });
+
+  it('sends no account without a token', () => {
+    expect(pickUpstreamHeaders({}, { accountKey: 'acc-1' })).toEqual({});
   });
 
   it('never forwards the session cookie or host', () => {
@@ -104,10 +118,10 @@ describe('pickUpstreamHeaders', () => {
   it('ignores an inbound authorization header', () => {
     expect(pickUpstreamHeaders({ authorization: 'Bearer forged' })).toEqual({});
     expect(
-      pickUpstreamHeaders({
-        authorization: 'Bearer forged',
-        'x-access-token': 'tok-1',
-      }),
+      pickUpstreamHeaders(
+        { authorization: 'Bearer forged' },
+        { accessToken: 'tok-1' },
+      ),
     ).toEqual({ authorization: 'Bearer tok-1' });
   });
 
@@ -131,4 +145,28 @@ describe('pickUpstreamHeaders', () => {
     pickUpstreamHeaders(headers);
     expect(headers).toEqual({ [IF_MATCH_PROXY_HEADER]: '"e1"', cookie: 'a=b' });
   });
+});
+
+describe('isGeinsAuthPath', () => {
+  it.each([
+    'auth',
+    'auth/',
+    'auth/refresh',
+    'AUTH/verify',
+    '/auth',
+    'auth?x=1',
+    'x/../auth',
+    '%61uth/refresh',
+    'x%2F..%2Fauth',
+    '%E0%A4%A',
+  ])('blocks %s', (path) => {
+    expect(isGeinsAuthPath(path)).toBe(true);
+  });
+
+  it.each(['account/channel/1', 'authors', 'user/auth', 'product/auth'])(
+    'lets %s through',
+    (path) => {
+      expect(isGeinsAuthPath(path)).toBe(false);
+    },
+  );
 });

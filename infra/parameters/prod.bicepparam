@@ -15,6 +15,10 @@ param containerImage = 'ghcr.io/geins-io/geins-studio:latest'
 param ghcrUsername = ''
 param ghcrToken = ''
 
+// Seals the session cookie (at least 32 characters). Required: export
+// NUXT_APP_SECRET before a manual deploy or what-if, or validation fails.
+param appSecret = readEnvironmentVariable('NUXT_APP_SECRET', '')
+
 // Application settings - Production configuration
 param geinsApiUrl = ''
 param geinsDebug = 'false'

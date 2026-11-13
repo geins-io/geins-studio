@@ -14,18 +14,17 @@ const nextTick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 const rejected: FailedApiRequest = {
   status: 401,
-  sentToken: 'token-1',
-  currentToken: 'token-1',
+  sentTokenExpires: 1001,
+  currentTokenExpires: 1001,
   isAuthenticated: true,
   onAuthPage: false,
   retried: false,
 };
 
-const signedIn = (accessToken: string): Session => ({
+const signedIn = (tokenExpires: number): Session => ({
   isAuthenticated: true,
-  accessToken,
-  refreshToken: 'refresh',
   accountKey: 'account-1',
+  tokenExpires,
 });
 
 describe('unauthorizedAction', () => {
@@ -34,7 +33,7 @@ describe('unauthorizedAction', () => {
   });
 
   it('retries without a refresh when the token was replaced meanwhile', () => {
-    expect(unauthorizedAction({ ...rejected, currentToken: 'token-2' })).toBe(
+    expect(unauthorizedAction({ ...rejected, currentTokenExpires: 1002 })).toBe(
       'retry',
     );
   });
@@ -44,7 +43,7 @@ describe('unauthorizedAction', () => {
   });
 
   it.each([
-    ['no token was sent', { sentToken: undefined }],
+    ['no token was sent', { sentTokenExpires: undefined }],
     ['on an auth page', { onAuthPage: true }],
     ['before sign-in', { isAuthenticated: false }],
     ['on a 403', { status: 403 }],
@@ -59,15 +58,12 @@ describe('unauthorizedAction', () => {
 
 describe('forcedRefreshOutcome', () => {
   it('retries with a new token', () => {
-    expect(forcedRefreshOutcome(signedIn('token-2'), 'token-1')).toBe('retry');
+    expect(forcedRefreshOutcome(signedIn(1002), 1001)).toBe('retry');
   });
 
   it('fails without a logout when the refresh failed and kept the token', () => {
     expect(
-      forcedRefreshOutcome(
-        { ...signedIn('token-1'), error: 'RefreshFailed' },
-        'token-1',
-      ),
+      forcedRefreshOutcome({ ...signedIn(1001), error: 'RefreshFailed' }, 1001),
     ).toBe('fail');
   });
 
@@ -75,7 +71,7 @@ describe('forcedRefreshOutcome', () => {
     expect(
       forcedRefreshOutcome(
         { isAuthenticated: false, error: 'RefreshTokenInvalid' },
-        'token-1',
+        1001,
       ),
     ).toBe('fail');
   });
@@ -83,7 +79,7 @@ describe('forcedRefreshOutcome', () => {
   it.each([null, undefined, { isAuthenticated: false }])(
     'logs out when no session is left (%o)',
     (session) => {
-      expect(forcedRefreshOutcome(session, 'token-1')).toBe('logout');
+      expect(forcedRefreshOutcome(session, 1001)).toBe('logout');
     },
   );
 });
@@ -91,8 +87,8 @@ describe('forcedRefreshOutcome', () => {
 describe('createUnauthorizedRecovery', () => {
   const setup = (
     refresh: (
-      rejectedToken?: string,
-    ) => Promise<Session | null | undefined> = async () => signedIn('token-2'),
+      rejectedTokenExpires?: number,
+    ) => Promise<Session | null | undefined> = async () => signedIn(1002),
   ) => {
     const run = vi.fn(refresh);
     const logout = vi.fn(async () => {});
@@ -110,7 +106,7 @@ describe('createUnauthorizedRecovery', () => {
 
     await expect(recover(rejected)).resolves.toBe(true);
     expect(run).toHaveBeenCalledTimes(1);
-    expect(run).toHaveBeenCalledWith('token-1');
+    expect(run).toHaveBeenCalledWith(1001);
     expect(logout).not.toHaveBeenCalled();
   });
 
@@ -120,8 +116,8 @@ describe('createUnauthorizedRecovery', () => {
     await expect(recover(rejected)).resolves.toBe(true);
     const retry = {
       ...rejected,
-      sentToken: 'token-2',
-      currentToken: 'token-2',
+      sentTokenExpires: 1002,
+      currentTokenExpires: 1002,
     };
     await expect(recover({ ...retry, retried: true })).resolves.toBe(false);
     await expect(recover({ ...retry, retried: true })).resolves.toBe(false);
@@ -142,7 +138,7 @@ describe('createUnauthorizedRecovery', () => {
 
   it('keeps the session when the forced refresh fails transiently', async () => {
     const { recover, logout } = setup(async () => ({
-      ...signedIn('token-1'),
+      ...signedIn(1001),
       error: 'RefreshFailed',
     }));
 
@@ -169,7 +165,7 @@ describe('createUnauthorizedRecovery', () => {
   });
 
   it.each([
-    ['no token was sent', { sentToken: undefined }],
+    ['no token was sent', { sentTokenExpires: undefined }],
     ['on the login page', { onAuthPage: true }],
   ])('neither refreshes nor logs out when %s', async (_, change) => {
     const { recover, run, logout } = setup();
@@ -190,20 +186,20 @@ describe('createUnauthorizedRecovery', () => {
 
     const first = Array.from({ length: 5 }, () => recover(rejected));
     await nextTick();
-    finish(signedIn('token-2'));
+    finish(signedIn(1002));
     expect(await Promise.all(first)).toEqual([true, true, true, true, true]);
     expect(run).toHaveBeenCalledTimes(1);
 
     // A 401 to the old token that lands after the refresh retries with the new one.
     await expect(
-      recover({ ...rejected, currentToken: 'token-2' }),
+      recover({ ...rejected, currentTokenExpires: 1002 }),
     ).resolves.toBe(true);
     expect(run).toHaveBeenCalledTimes(1);
 
     const retried = {
       ...rejected,
-      sentToken: 'token-2',
-      currentToken: 'token-2',
+      sentTokenExpires: 1002,
+      currentTokenExpires: 1002,
       retried: true,
     };
     const second = Array.from({ length: 6 }, () => recover(retried));

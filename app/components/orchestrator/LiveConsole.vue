@@ -11,7 +11,6 @@ interface Props {
   seedLines?: LiveConsoleLine[];
   title?: string;
   liveTitle?: string;
-  requestHeaders?: Record<string, string>;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -20,7 +19,6 @@ const props = withDefaults(defineProps<Props>(), {
   seedLines: () => [],
   title: undefined,
   liveTitle: undefined,
-  requestHeaders: () => ({}),
 });
 
 const resolvedTitle = computed(
@@ -134,7 +132,6 @@ const startLiveStream = async () => {
   try {
     const res = await fetch(props.streamUrl, {
       signal: controller.signal,
-      headers: props.requestHeaders,
     });
 
     streamOpened = true;

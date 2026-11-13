@@ -5,10 +5,14 @@ import type { Session } from '#shared/types';
  */
 export interface FailedApiRequest {
   status: number;
-  /** The access token the request carried, if it carried one. */
-  sentToken?: string;
-  /** The access token this tab holds now. */
-  currentToken?: string;
+  /**
+   * The `tokenExpires` of the session the tab held when the request went out:
+   * the browser never sees the token itself, so its expiry identifies it.
+   * `undefined` if the tab had no token.
+   */
+  sentTokenExpires?: number;
+  /** The `tokenExpires` of the session this tab holds now. */
+  currentTokenExpires?: number;
   isAuthenticated: boolean;
   onAuthPage: boolean;
   /** The request is already the one retry after a 401. */
@@ -40,19 +44,19 @@ export type UnauthorizedAction =
  */
 export const unauthorizedAction = ({
   status,
-  sentToken,
-  currentToken,
+  sentTokenExpires,
+  currentTokenExpires,
   isAuthenticated,
   onAuthPage,
   retried,
 }: FailedApiRequest): UnauthorizedAction => {
-  if (status !== 401 || !sentToken || !isAuthenticated || onAuthPage) {
+  if (status !== 401 || !sentTokenExpires || !isAuthenticated || onAuthPage) {
     return 'ignore';
   }
   if (retried) {
     return 'logout';
   }
-  return sentToken === currentToken ? 'force-refresh' : 'retry';
+  return sentTokenExpires === currentTokenExpires ? 'force-refresh' : 'retry';
 };
 
 /**
@@ -64,13 +68,13 @@ export const unauthorizedAction = ({
  */
 export type ForcedRefreshOutcome = 'retry' | 'logout' | 'fail';
 
-/** What to do with the session a forced refresh of `rejectedToken` left. */
+/** What to do with the session a forced refresh of the rejected token left. */
 export const forcedRefreshOutcome = (
   session: Session | null | undefined,
-  rejectedToken: string | undefined,
+  rejectedTokenExpires: number | undefined,
 ): ForcedRefreshOutcome => {
   if (session?.isAuthenticated) {
-    return session.accessToken && session.accessToken !== rejectedToken
+    return session.tokenExpires && session.tokenExpires !== rejectedTokenExpires
       ? 'retry'
       : 'fail';
   }
@@ -79,11 +83,11 @@ export const forcedRefreshOutcome = (
 
 export interface UnauthorizedRecoveryOptions {
   /**
-   * Refreshes `rejectedToken` now and resolves with the session after it.
+   * Refreshes the rejected token now and resolves with the session after it.
    * Concurrent callers must share one call (`useGeinsAuth().forceRefresh`).
    */
   forceRefresh: (
-    rejectedToken: string | undefined,
+    rejectedTokenExpires: number | undefined,
   ) => Promise<Session | null | undefined>;
   logout: () => Promise<void>;
   onError?: (error: unknown) => void;
@@ -122,14 +126,14 @@ export const createUnauthorizedRecovery = ({
     }
     let session: Session | null | undefined;
     try {
-      session = await forceRefresh(request.sentToken);
+      session = await forceRefresh(request.sentTokenExpires);
     } catch (error) {
       // Couldn't reach our own session endpoint: as transient as a Geins 5xx,
       // so the session stays and the next 401 tries again.
       onError?.(error);
       return false;
     }
-    const outcome = forcedRefreshOutcome(session, request.sentToken);
+    const outcome = forcedRefreshOutcome(session, request.sentTokenExpires);
     if (outcome === 'logout') {
       logoutOnce();
     }

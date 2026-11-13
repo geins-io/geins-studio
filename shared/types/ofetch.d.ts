@@ -30,5 +30,11 @@ declare module 'ofetch' {
      * refresh, so a 401 to the retry logs out instead of refreshing again.
      */
     authRetried?: boolean;
+    /**
+     * Internal to `$geinsApi`: the session's `tokenExpires` when the request
+     * went out, which tells a 401 to the token the tab still holds from one
+     * to a token since replaced.
+     */
+    sentTokenExpires?: number;
   }
 }

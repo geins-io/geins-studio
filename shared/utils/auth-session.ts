@@ -1,5 +1,9 @@
 import { jwtDecode } from 'jwt-decode';
-import type { AuthResponse, ForceRefreshRequest, Session } from '#shared/types';
+import type {
+  AuthResponse,
+  ForceRefreshRequest,
+  TokenSession,
+} from '#shared/types';
 
 /**
  * Error from a server-side call to a Geins auth endpoint. `status` is the HTTP
@@ -32,9 +36,9 @@ const getErrorStatus = (error: unknown): number | undefined => {
  * carries no usable access token.
  */
 export const tokenAfterRefresh = (
-  token: Session,
+  token: TokenSession,
   response: AuthResponse,
-): Session => {
+): TokenSession => {
   if (!response.accessToken) {
     throw new AuthApiError(502, 'Refresh response has no access token');
   }
@@ -60,22 +64,21 @@ const isRefreshRejected = (status: number | undefined): boolean =>
   !RETRYABLE_CLIENT_STATUSES.has(status);
 
 /**
- * The token to keep after a failed refresh. Never throws: next-auth 4 wipes the
- * session cookie when the jwt callback throws, which logged users out on any
- * Geins hiccup.
+ * The token to keep after a failed refresh. Never throws: a throw while reading
+ * the session must never turn a Geins hiccup into a logout.
  *
  * - Any 4xx but 408 and 429: Geins rejected the refresh token. Drop the tokens
  *   and flag `RefreshTokenInvalid`; the client re-checks once, then logs out.
- *   Geins answers an expired refresh token with 403, not 401. In the jwt
- *   callback a 403 here is the second in a row: `refreshWithRetry` retries
- *   the first, since Geins can't yet tell a blip from a dead token.
+ *   Geins answers an expired refresh token with 403, not 401. A 403 here is
+ *   the second in a row: `refreshWithRetry` retries the first, since Geins
+ *   can't yet tell a blip from a dead token.
  * - Anything else (5xx, 408, 429, network, timeout): keep the token, flag
  *   `RefreshFailed`, and let the next session fetch retry.
  */
-export const tokenAfterRefreshError = <T extends Session>(
+export const tokenAfterRefreshError = <T extends TokenSession>(
   token: T,
   error: unknown,
-): Session => {
+): TokenSession => {
   if (isRefreshRejected(getErrorStatus(error))) {
     return { isAuthenticated: false, error: 'RefreshTokenInvalid' };
   }
@@ -133,61 +136,24 @@ export const refreshWithRetry = async (
   }
 };
 
-const isForceRefreshRequest = (
-  update: unknown,
-): update is ForceRefreshRequest =>
-  !!update &&
-  typeof update === 'object' &&
-  'forceRefresh' in update &&
-  update.forceRefresh === true;
+const isForceRefreshRequest = (body: unknown): body is ForceRefreshRequest =>
+  !!body &&
+  typeof body === 'object' &&
+  'rejectedTokenExpires' in body &&
+  typeof body.rejectedTokenExpires === 'number';
 
 /**
- * Whether a session update forces a refresh of `token` now. The client sends
- * one after the API answered 401 to a token that hasn't expired, which a
- * plain session read wouldn't refresh. Only while the stored token is still
- * the rejected one: if another tab already rotated it, refreshing again would
- * revoke that tab's new token.
+ * Whether a forced refresh of `token` should run now. The client asks for one
+ * after the API answered 401 to a token that hasn't expired, which a plain
+ * session read wouldn't refresh. Only while the stored token is still the
+ * rejected one (the client knows it by its `tokenExpires`): if another tab
+ * already rotated it, refreshing again would revoke that tab's new token.
  */
-export const shouldForceRefresh = (token: Session, update: unknown): boolean =>
-  isForceRefreshRequest(update) &&
+export const shouldForceRefresh = (
+  token: TokenSession,
+  request: unknown,
+): boolean =>
+  isForceRefreshRequest(request) &&
   !!token.isAuthenticated &&
   !!token.accessToken &&
-  update.rejectedToken === token.accessToken;
-
-/**
- * Builds the client session from the stored token. Pure — no network calls and
- * no throws — so `/api/auth/session` never wipes the cookie; a session without
- * a usable token comes back `isAuthenticated: false` and the client decides.
- */
-export const sessionFromToken = (
-  token: Session,
-  expires: string,
-): Session & { expires: string } => {
-  if (token.isAuthenticated && token.accessToken) {
-    return {
-      expires,
-      isAuthenticated: true,
-      accessToken: token.accessToken,
-      refreshToken: token.refreshToken,
-      accountKey: token.accountKey,
-      tokenExpires: token.tokenExpires,
-      refreshedAt: token.refreshedAt,
-      mfaActive: false,
-      ...(token.error && { error: token.error }),
-    };
-  }
-  if (token.mfaActive) {
-    return {
-      expires,
-      isAuthenticated: false,
-      mfaActive: true,
-      mfaMethod: token.mfaMethod,
-      loginToken: token.loginToken,
-    };
-  }
-  return {
-    expires,
-    isAuthenticated: false,
-    ...(token.error && { error: token.error }),
-  };
-};
+  request.rejectedTokenExpires === token.tokenExpires;

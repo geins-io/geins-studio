@@ -321,18 +321,11 @@ const handleReplay = async () => {
 };
 
 // ─── Live console ──────────────────────────────────────────────────
-const { accessToken, accountKey } = useGeinsAuth();
-
 const consoleStreamUrl = computed(() =>
   executionId.value
     ? `/api/orchestrator/executions/${encodeURIComponent(executionId.value)}/stream`
     : null,
 );
-
-const consoleStreamHeaders = computed<Record<string, string>>(() => ({
-  ...(accessToken.value ? { 'x-access-token': accessToken.value } : {}),
-  ...(accountKey.value ? { 'x-account-key': accountKey.value } : {}),
-}));
 
 const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
   const lines: LiveConsoleLine[] = [];
@@ -725,7 +718,6 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
         :stream-url="consoleStreamUrl"
         :active="isRunning"
         :seed-lines="consoleSeedLines"
-        :request-headers="consoleStreamHeaders"
       />
     </div>
   </div>

@@ -1,6 +1,6 @@
 # `useGeinsAuth`
 
-The `useGeinsAuth` composable provides Geins specific authentication and session management features. It build on top of NuxtAuth's composable `useAuth` to handle tasks like login, logout, token parsing, and session refresh.
+The `useGeinsAuth` composable provides Geins specific authentication and session management: login (password, MFA, account), logout, session reads and token refresh. The browser never holds a Geins token: the tokens live in a sealed, httpOnly session cookie, and the API proxy attaches them. This composable reads the session the server lets the browser see (`GET /api/auth/session`) and posts to Studio's auth routes.
 
 ::: tip
 Read more about the full authentication flow in Geins MC here: [Authentication](/concepts/authentication)
@@ -8,20 +8,17 @@ Read more about the full authentication flow in Geins MC here: [Authentication](
 
 ## Features
 
-- Retrieve the current session and access token.
-- Check if the user is authenticated.
-- Log in and log out users.
-- Refresh tokens and manage token expiration.
-- Decode and parse JWT tokens.
+- Read the current session (no tokens) and whether the user is signed in.
+- Log in with password, MFA code and account, and log out.
+- Refresh the token, one refresh at a time across tabs.
+- Tell when the access token expires.
+- Keep tabs in sync with signals on a BroadcastChannel.
 
 ## Usage
 
 ```ts
-import { useGeinsAuth } from '@/composables/useGeinsAuth';
-
 const {
   session,
-  accessToken,
   isAuthenticated,
   sessionError,
   authStateDiffers,
@@ -35,7 +32,6 @@ const {
   refresh,
   forceRefresh,
   syncSession,
-  parseToken,
   isExpired,
   expiresSoon,
 } = useGeinsAuth();
@@ -45,31 +41,27 @@ const {
 
 ### `session`
 
-A `computed` reference to the current session data.
-
-### `accessToken`
-
-A `computed` reference to the access token from the session.
+A `useState('geins-session')` ref holding the client session: whether Geins issued tokens, the account, the access token's expiry, the MFA step and the last refresh error. Never a token. `null` until the first read; the `auth-state` plugin reads it before the route middleware runs.
 
 ### `isAuthenticated`
 
-A `computed` reference that returns `true` if the user is authenticated.
+`true` once the session has tokens **and** an account is picked.
 
 ### `sessionError`
 
-A `computed` reference to `session.error`: why the last token refresh failed, if it did. `'RefreshTokenInvalid'` means Geins rejected the refresh token with a `4xx` other than `408`/`429` (an expired one gets a `403`), and the session is `isAuthenticated: false`; `'RefreshFailed'` means a transient failure (5xx, 408, 429, network, timeout) — the session is kept and the next session fetch retries. See [When a refresh fails](/concepts/authentication#when-a-refresh-fails).
+Why the last token refresh failed, if it did: `RefreshTokenInvalid` (Geins rejected the refresh token) or `RefreshFailed` (transient; the token is kept). See [When a refresh fails](/concepts/authentication#when-a-refresh-fails).
 
 ### `authStateDiffers`
 
-A `computed` reference that returns `true` if the auth state indicates the user is authenticated but the session data does not.
+`true` when `sessionError` is `RefreshTokenInvalid`: the server dropped the tokens. The `auth-state` plugin re-checks once, then logs out.
 
 ### `accountKey`
 
-A `computed` reference to the current account key from the session.
+The account picked for this session.
 
 ### `authSignal`
 
-A `computed` reference to the last auth signal received from another tab on the `geins-auth` BroadcastChannel: `{ type: 'session-changed' }` or `{ type: 'signed-out' }`. The `auth-state.ts` plugin reacts to it. Tabs share the session cookie, so signals never carry tokens or sessions — a receiving tab re-reads its own session with `syncSession`.
+The last auth signal another tab posted on the `geins-auth` BroadcastChannel (`session-changed` or `signed-out`).
 
 ### `broadcastAuthSignal`
 
@@ -82,38 +74,32 @@ Posts an auth signal to the other tabs (a tab never receives its own). `login`, 
 ### `login`
 
 ```ts
-login(credentials: LoginCredentials): Promise<any>
+login(credentials: LoginCredentials): Promise<SignInResponse>
 ```
 
-Logs in the user using the provided credentials.
+Posts the username and password to `POST /api/auth/login`, then reads the session the route wrote: either the MFA step (`session.mfaActive`) or tokens, with the account picked if the user has only one.
 
-- **Parameters:**
-  - `credentials`: An object containing `username` and `password`
-- **Returns:** A promise that resolves to the login response
+- **Returns:** `{ ok, status }`. `status` is `401` for wrong credentials, `429` for too many attempts, `502` when Geins can't be reached.
 
 ### `verify`
 
 ```ts
-verify(tokens: AuthTokens): Promise<any>
+verify(mfaCode: string): Promise<SignInResponse>
 ```
 
-Verifies the user's tokens for MFA authentication.
+Posts the MFA code to `POST /api/auth/verify`. The login token stays in the sealed session on the server; the browser never sees it.
 
-- **Parameters:**
-  - `tokens`: An object containing `loginToken` and `mfaCode`
-- **Returns:** A promise that resolves to the verification response
+- **Returns:** `{ ok, status }`, as `login`. A wrong code keeps the MFA step; after 5 minutes the login token expires and the session is empty again.
 
 ### `setAccount`
 
 ```ts
-setAccount(accountKey: string): Promise<any>
+setAccount(accountKey: string): Promise<SignInResponse>
 ```
 
-Sets the account context for the current session, then signals the other tabs (`session-changed`).
+Picks the account through `POST /api/auth/account`, at login and from the sidebar switcher. The server checks the key against the token's own account claims and answers `403` for an account the user isn't a member of (a Super Admin may use any account).
 
-- **Parameters:**
-  - `accountKey`: The account key to set for the session
-- **Returns:** A promise that resolves to the updated session
+- **Returns:** `{ ok, status }`
 
 ### `logout`
 
@@ -121,9 +107,7 @@ Sets the account context for the current session, then signals the other tabs (`
 logout(): Promise<void>
 ```
 
-Logs out the user and clears the session. It lands on `/auth/logout`, where the auth middleware signals the other tabs (`signed-out`) to go to the login page.
-
-- **Returns:** A promise that resolves when the logout process is complete
+Drops the session cookies (`POST /api/auth/logout`), then does a full load of `/auth/logout`, where the auth middleware signals the other tabs (`signed-out`) to go to the login page. Throws if the logout request fails, so a caller can try again. The route also revokes the Geins refresh token, best-effort: a failed revoke never fails the logout.
 
 ### `refresh`
 
@@ -133,19 +117,19 @@ refresh(): Promise<Session>
 
 Re-reads the session from the server, which refreshes the access token if it is expired or expires within 5 minutes. Concurrent calls in a tab share one request, and calls across tabs run one at a time under the Web Lock `geins-auth-refresh` — so after one tab rotates the token, the others read it from the shared cookie instead of refreshing again. See [Refresh Flow](/concepts/authentication#refresh-flow).
 
-- **Returns:** A promise that resolves to the updated session
+A failed read throws and keeps the last session: a failed read is never a logout. When the access token changed, `refresh` signals the other tabs (`session-changed`).
 
-When the access token changed, `refresh` signals the other tabs (`session-changed`).
+- **Returns:** A promise that resolves to the updated session
 
 ### `forceRefresh`
 
 ```ts
-forceRefresh(rejectedToken: string | undefined): Promise<Session>
+forceRefresh(rejectedTokenExpires: number | undefined): Promise<Session>
 ```
 
-Refreshes the access token now, even though it hasn't expired, and resolves with the session after it. `rejectedToken` is the token the API answered `401` to; it's taken before the wait for the lock, so a token the tab adopted meanwhile isn't mistaken for it. `$geinsApi` calls it when the API answers `401` to the token this tab holds (see [When the API rejects a token](/concepts/authentication#when-the-api-rejects-a-token)). It posts `{ forceRefresh: true, rejectedToken }` to the session endpoint, which runs the `jwt` callback with `trigger: 'update'`, then re-reads the session so nuxt-auth's state holds it. The server refreshes only while the cookie still holds the rejected token, so a token another tab already rotated isn't revoked again.
+Refreshes the access token now, even though it hasn't expired, and resolves with the session after it. The browser never sees the token, so `rejectedTokenExpires` identifies it: the `tokenExpires` of the session the tab held when the API answered `401`. `$geinsApi` calls it when the API answers `401` to the token this tab holds (see [When the API rejects a token](/concepts/authentication#when-the-api-rejects-a-token)). It posts `{ rejectedTokenExpires }` to `POST /api/auth/refresh`, which refreshes only while the cookie still holds that token, so a token another tab already rotated isn't revoked again.
 
-Single-flight like `refresh`: concurrent calls in a tab share one call (the first caller's `rejectedToken` counts), and calls across tabs run one at a time under the same Web Lock. A failed refresh comes back as `sessionError`, as with `refresh`. When the access token changed, it signals the other tabs (`session-changed`).
+Single-flight like `refresh`: concurrent calls in a tab share one call (the first caller's argument counts), and calls across tabs run one at a time under the same Web Lock. A failed refresh comes back as `sessionError`, as with `refresh`. When the access token changed, it signals the other tabs (`session-changed`).
 
 - **Returns:** A promise that resolves to the updated session
 
@@ -159,85 +143,42 @@ Re-reads the session like `refresh` (same lock), but never signals the other tab
 
 - **Returns:** A promise that resolves to the updated session
 
-### `parseToken`
-
-```ts
-parseToken(token?: string | null): any | null
-```
-
-Decodes the given JWT token and returns its payload.
-
-- **Parameters:**
-  - `token`: Optional. The token to decode. If not provided, the current `accessToken` from the session will be used
-- **Returns:** The parsed token payload or `null` if decoding fails
-
 ### `isExpired`
 
 ```ts
-isExpired(token?: string | null): boolean
+isExpired(): boolean
 ```
 
-Checks if a given token (or the current `accessToken`) is expired.
-
-- **Parameters:**
-  - `token`: Optional. The token to check
-- **Returns:** `true` if the token is expired, otherwise `false`
+Whether the access token has expired, from `session.tokenExpires`.
 
 ### `expiresSoon`
 
 ```ts
-expiresSoon(token?: string | null, threshold?: number): boolean
+expiresSoon(threshold?: number): boolean
 ```
 
-Checks if a token (or the current `accessToken`) is close to expiration.
-
-- **Parameters:**
-  - `token`: Optional. The token to check
-  - `threshold`: Optional. Time (in milliseconds) before expiration to consider as "soon". Default is `300000`
-- **Returns:** `true` if the token expires within the threshold, otherwise `false`
+Whether the access token expires within `threshold` milliseconds (default 5 minutes).
 
 ## Example
 
-Here is an example of how you can use the `useGeinsAuth` composable:
-
 ```vue
 <script setup lang="ts">
-const {
-  isAuthenticated,
-  accountKey,
-  login,
-  verify,
-  setAccount,
-  logout,
-  refresh,
-  isExpired,
-  expiresSoon,
-} = useGeinsAuth();
+const { login, verify, setAccount, session, logout } = useGeinsAuth();
 
-const handleLogin = async () => {
-  const credentials = { username: 'user', password: 'password' };
-  await login(credentials);
-};
-
-const handleVerify = async () => {
-  const tokens = { loginToken: 'token', mfaCode: 'code' };
-  await verify(tokens);
-  if (isAuthenticated.value) {
-    console.log('User is authenticated!');
+const signIn = async () => {
+  const { ok, status } = await login({
+    username: 'user@example.com',
+    password: 'password',
+  });
+  if (!ok) {
+    // 401: wrong credentials, 429: too many attempts
+    return;
   }
-};
-
-const handleSetAccount = async (accountKey: string) => {
-  await setAccount(accountKey);
-};
-
-const handleLogout = async () => {
-  await logout();
-};
-
-const handleRefresh = async () => {
-  if (isExpired() || expiresSoon()) {
-    await refresh();
+  if (session.value?.mfaActive) {
+    await verify('123456');
+  }
+  if (!session.value?.accountKey) {
+    await setAccount('account-key');
   }
 };
 </script>
@@ -246,57 +187,38 @@ const handleRefresh = async () => {
 ## Type Definitions
 
 ```ts
-function useGeinsAuth(): UseGeinsAuthReturnType;
-
 interface UseGeinsAuthReturnType {
-  session: ComputedRef<Session | null>;
-  accessToken: ComputedRef<string | undefined>;
+  session: Ref<Session | null>;
   isAuthenticated: ComputedRef<boolean>;
   sessionError: ComputedRef<AuthSessionError | undefined>;
   authStateDiffers: ComputedRef<boolean>;
   accountKey: ComputedRef<string | undefined>;
   authSignal: ComputedRef<AuthBroadcastMessage | undefined>;
   broadcastAuthSignal: (message: AuthBroadcastMessage) => void;
-  login: (credentials: LoginCredentials) => Promise<any>;
-  verify: (tokens: AuthTokens) => Promise<any>;
-  setAccount: (accountKey: string) => Promise<any>;
+  login: (credentials: LoginCredentials) => Promise<SignInResponse>;
+  verify: (mfaCode: string) => Promise<SignInResponse>;
+  setAccount: (accountKey: string) => Promise<SignInResponse>;
   logout: () => Promise<void>;
   refresh: () => Promise<Session>;
-  forceRefresh: (rejectedToken: string | undefined) => Promise<Session>;
+  forceRefresh: (rejectedTokenExpires: number | undefined) => Promise<Session>;
   syncSession: () => Promise<Session>;
-  parseToken: (token?: string | null) => any | null;
-  isExpired: (token?: string | null) => boolean;
-  expiresSoon: (token?: string | null, threshold?: number) => boolean;
+  isExpired: () => boolean;
+  expiresSoon: (threshold?: number) => boolean;
 }
 
-interface AuthTokens {
-  accessToken?: string;
-  refreshToken?: string;
-  loginToken?: string;
-  mfaCode?: string;
+// What GET /api/auth/session returns: never a token.
+interface Session {
+  isAuthenticated: boolean;
   accountKey?: string;
-}
-
-interface AuthResponse extends AuthTokens {
-  mfaRequired?: boolean;
-  mfaMethod?: string;
-  accounts?: AuthAccounts[];
-}
-
-type AuthSessionError = 'RefreshTokenInvalid' | 'RefreshFailed';
-
-type AuthBroadcastMessage =
-  | { type: 'session-changed' }
-  | { type: 'signed-out' };
-
-interface Session extends AuthTokens {
-  isAuthenticated?: boolean;
   tokenExpires?: number;
-  refreshedAt?: number;
   mfaActive?: boolean;
   mfaMethod?: string;
-  expires?: string;
   error?: AuthSessionError;
+}
+
+interface SignInResponse {
+  ok: boolean;
+  status: number;
 }
 
 interface LoginCredentials {
@@ -304,17 +226,12 @@ interface LoginCredentials {
   password?: string;
   rememberMe?: boolean;
 }
-
-interface AuthAccounts {
-  accountKey: string;
-  displayName: string;
-  roles: string[];
-}
 ```
 
 ## Dependencies
 
 This composable depends on:
 
-1. **NuxtAuth**: Ensure the `NuxtAuth` function is correctly set up.
-2. **jwt-decode**: The `jwt-decode` plugin is used to parse JWT tokens.
+1. **Studio's auth routes** in `server/api/auth/` (`login`, `verify`, `account`, `logout`, `session`, `refresh`), which keep the tokens in the sealed session.
+2. **`createSingleFlight`** (`shared/utils/single-flight.ts`) and the Web Locks API for the cross-tab refresh lock.
+3. **`CSRF_HEADER`** (`shared/utils/csrf.ts`): every auth `POST` sends it, or the CSRF guard answers `403`.
