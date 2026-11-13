@@ -130,6 +130,14 @@ status?: StatusBadgeStatus
 
 Explicit badge status (overrides `entityLiveStatus`). Use for entities with non-boolean lifecycle (e.g. quotations).
 
+### `statusLabel`
+
+```ts
+statusLabel?: string
+```
+
+Translated badge text, passed to `StatusBadge`'s `label`, in place of the sentence-cased `status`. The quotation page uses it for a buyer's request answered by an offer, which keeps the `revised` status but reads "Answered".
+
 ## v-model
 
 ### `active`

@@ -44,6 +44,7 @@ import {
 } from '#shared/utils/entities';
 import {
   canEditOrderDetails,
+  isAnsweredRequest,
   isQuotationDeletable,
   isQuotationEditable,
   isQuotationExternal,
@@ -1500,6 +1501,10 @@ const statusActions = computed<StatusActionLayout>(() => {
         dropdownActions: [],
       };
 
+    // Terminal: a later version replaced it. The action bar is hidden too.
+    case 'revised':
+      return { placeOrder: false, groupActions: [], dropdownActions: [] };
+
     default:
       return { placeOrder: false, groupActions: [], dropdownActions: [] };
   }
@@ -1893,8 +1898,19 @@ const quotationStatus = computed<QuotationStatus>(
   () => entityData.value?.status || 'draft',
 );
 
+const answeredRequest = computed(
+  () => !!entityData.value && isAnsweredRequest(entityData.value),
+);
+
+// A buyer's request answered by an offer keeps `revised`, under its own label
+const statusLabel = computed(() =>
+  answeredRequest.value ? t('orders.answered_request') : undefined,
+);
+
 const workflowStartStatus = computed(() =>
-  quotationStatus.value === 'requested' ? 'requested' : 'draft',
+  quotationStatus.value === 'requested' || answeredRequest.value
+    ? 'requested'
+    : 'draft',
 );
 
 const { summaryProps } = useEntityEditSummary({
@@ -1906,6 +1922,7 @@ const { summaryProps } = useEntityEditSummary({
   entityLiveStatus,
   showActiveStatus: false,
   status: quotationStatus,
+  statusLabel,
 });
 
 definePageMeta({
@@ -2017,8 +2034,8 @@ definePageMeta({
             </ButtonGroup>
           </template>
 
-          <!-- SENT MODE actions -->
-          <template v-if="sentMode">
+          <!-- SENT MODE actions; a revised version has none at all -->
+          <template v-if="sentMode && quotationStatus !== 'revised'">
             <Button
               v-if="statusActions.placeOrder"
               @click="
@@ -2449,7 +2466,10 @@ definePageMeta({
                       <p class="text-muted-foreground mb-1 text-xs font-medium">
                         {{ $t('status') }}
                       </p>
-                      <StatusBadge :status="quotationStatus" />
+                      <StatusBadge
+                        :status="quotationStatus"
+                        :label="statusLabel"
+                      />
                     </div>
                   </div>
                   <div class="grid grid-cols-2 gap-4 border-t pt-4">

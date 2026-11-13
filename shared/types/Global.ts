@@ -24,6 +24,7 @@ export type StatusBadgeKnownStatus =
   | 'canceled'
   | 'draft'
   | 'expired'
+  | 'revised'
   | 'healthy'
   | 'degraded'
   | 'unhealthy'

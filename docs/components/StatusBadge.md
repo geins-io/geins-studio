@@ -74,6 +74,7 @@ type StatusBadgeStatus =
   | 'healthy'
   | 'enabled'
   | 'requested' // amber outline
+  | 'revised' // outline, like expired
   | 'accepted'
   | 'completed'
   | 'confirmed'

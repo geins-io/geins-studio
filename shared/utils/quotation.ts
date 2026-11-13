@@ -5,6 +5,7 @@ import type {
   QuotationOrderDetails,
   QuotationOrderDetailsForm,
   QuotationOrderDetailsRequest,
+  QuotationRevision,
   QuotationStatus,
 } from '#shared/types';
 import { calendarDayToLocalIso, toCalendarDayIso } from './calendar-day';
@@ -82,6 +83,58 @@ export function isQuotationDeletable(
 
 /** The most characters the API accepts for a free-text owner name */
 export const QUOTATION_OWNER_NAME_MAX_LENGTH = 200;
+
+/**
+ * Whether a `revised` version is a buyer's request answered by an offer: it
+ * was never sent, so it has no `validFrom`. Platform's rule, shared with the
+ * sales portal. Not "has a request and no revisionOf": a request the Monitor
+ * sync priced in place and that was revised later matches that, and it was a
+ * real offer.
+ */
+export function isAnsweredRequest(
+  quotation: Pick<Quotation, 'status' | 'validFrom'>,
+): boolean {
+  return quotation.status === 'revised' && !quotation.validFrom;
+}
+
+/**
+ * Whether the quotation is a revision the seller hasn't sent yet. The list
+ * shows it as a link on its live version's row, not as a row of its own.
+ */
+export function isRevisionDraft(
+  quotation: Pick<Quotation, 'status' | 'revisionOf'>,
+): boolean {
+  return quotation.status === 'draft' && !!quotation.revisionOf;
+}
+
+/**
+ * The chain's open revision draft, when it isn't the quotation itself
+ */
+export function openRevisionDraft(
+  quotation: Pick<Quotation, '_id' | 'revisions'>,
+): QuotationRevision | undefined {
+  return quotation.revisions?.find(
+    (version) =>
+      version.status === 'draft' && version.quotationId !== quotation._id,
+  );
+}
+
+/**
+ * The quotations the list shows as rows. A revision draft is its own quotation,
+ * and the query can't leave it out, so the draft a listed row links to is
+ * dropped here. A draft no row links to (its source was deleted, or the API
+ * sent no `revisions`) stays a row, so it never vanishes from the list.
+ */
+export function withoutLinkedRevisionDrafts<
+  T extends Pick<Quotation, '_id' | 'status' | 'revisionOf' | 'revisions'>,
+>(quotations: T[]): T[] {
+  const linked = new Set(
+    quotations.map((quotation) => openRevisionDraft(quotation)?.quotationId),
+  );
+  return quotations.filter(
+    (quotation) => !(isRevisionDraft(quotation) && linked.has(quotation._id)),
+  );
+}
 
 /**
  * The order-detail text fields, with the most characters the API accepts
