@@ -34,12 +34,13 @@ describe('isQuotationExternal', () => {
 });
 
 describe('isQuotationEditable', () => {
-  it.each<QuotationStatus>(['draft', 'requested'])('edits %s', (status) => {
-    expect(isQuotationEditable({ status })).toBe(true);
+  it('edits a draft', () => {
+    expect(isQuotationEditable({ status: 'draft' })).toBe(true);
   });
 
   it.each<QuotationStatus>([
     'requestDraft',
+    'requested',
     'pending',
     'accepted',
     'confirmed',
@@ -51,27 +52,24 @@ describe('isQuotationEditable', () => {
     expect(isQuotationEditable({ status })).toBe(false);
   });
 
-  it.each<QuotationStatus>(['draft', 'requested'])(
-    'locks an external %s',
-    (status) => {
-      expect(isQuotationEditable({ status, externalReference })).toBe(false);
-    },
-  );
+  it('locks an external draft', () => {
+    expect(isQuotationEditable({ status: 'draft', externalReference })).toBe(
+      false,
+    );
+  });
 });
 
 describe('isQuotationDeletable', () => {
-  it.each<QuotationStatus>([
-    'draft',
-    'requested',
-    'rejected',
-    'expired',
-    'canceled',
-  ])('deletes %s', (status) => {
-    expect(isQuotationDeletable({ status })).toBe(true);
-  });
+  it.each<QuotationStatus>(['draft', 'rejected', 'expired', 'canceled'])(
+    'deletes %s',
+    (status) => {
+      expect(isQuotationDeletable({ status })).toBe(true);
+    },
+  );
 
   it.each<QuotationStatus>([
     'requestDraft',
+    'requested',
     'pending',
     'accepted',
     'confirmed',
