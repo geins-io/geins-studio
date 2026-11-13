@@ -19,6 +19,7 @@ import type {
  * Status values for quotations.
  * `requestDraft` is a buyer request still being written — Studio never lists it.
  * `requested` is a submitted buyer request, the seller's turn.
+ * `revised` is terminal: a later version of the quotation was sent in its place.
  */
 export type QuotationStatus =
   | 'requestDraft'
@@ -30,7 +31,8 @@ export type QuotationStatus =
   | 'accepted'
   | 'confirmed'
   | 'finalized'
-  | 'canceled';
+  | 'canceled'
+  | 'revised';
 
 /**
  * Communication message type
@@ -102,6 +104,27 @@ export interface QuotationRequest {
   customerReference?: string | null;
   customerOrderNumber?: string | null;
   goodsLabel?: string | null;
+  /** When the request reached the seller. A revision keeps its source's. */
+  releasedAt?: string | null;
+}
+
+/**
+ * Another version in the quotation's revision chain (response)
+ */
+export interface QuotationVersionRef {
+  quotationId: string;
+  quotationNumber: string;
+}
+
+/**
+ * One version in the quotation's revision chain, as listed in `revisions` (response)
+ */
+export interface QuotationRevision extends QuotationVersionRef {
+  revision: number;
+  status: QuotationStatus;
+  /** When the version was sent; null on a draft and on the buyer's request */
+  validFrom?: string | null;
+  validTo?: string | null;
 }
 
 /**
@@ -398,6 +421,12 @@ export interface Quotation extends ResponseEntity<QuotationBase> {
   orderDetails?: QuotationOrderDetails;
   externalReference?: QuotationExternalReference;
   orderPublicId?: string | null;
+  /** The last part of the quotation number. A copy takes the next one too. */
+  revision?: number;
+  revisionOf?: QuotationVersionRef | null;
+  revisedBy?: QuotationVersionRef | null;
+  /** Every version in the chain, newest first, the open draft included */
+  revisions?: QuotationRevision[] | null;
 }
 
 /**
@@ -416,6 +445,10 @@ export interface QuotationList extends Omit<
   owner: string;
   buyer: string;
   requireConfirmation: string;
+  /** The revision number as shown, e.g. "v 03" */
+  version: string;
+  /** The chain's open revision draft, linked from the version cell */
+  revisionDraft?: QuotationRevision;
 }
 
 // =============================================================================
@@ -494,7 +527,8 @@ export type QuotationFieldsFilter =
   | 'communication'
   | 'terms'
   | 'validShipping'
-  | 'validPayment';
+  | 'validPayment'
+  | 'revisions';
 
 /**
  * API options type with field filtering

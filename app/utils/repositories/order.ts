@@ -25,10 +25,12 @@ import type { NitroFetchRequest, $Fetch } from 'nitropack';
 const BASE_ENDPOINT = '/order';
 const QUOTATION_ENDPOINT = ENTITIES.quotation.endpoint;
 
-// Request drafts belong to the buyer until submitted, so Studio never shows them.
-// The API ignores `exclude` next to `all: true` and only subtracts it from an
-// `include`, so the include is a match-all on hasExternalReference. Excluding,
-// rather than listing allowed statuses, keeps statuses the API adds later visible.
+// Request drafts belong to the buyer until submitted, and a revised version is
+// replaced by a later one (a chain lists once, as its live version), so Studio
+// never shows either. The API ignores `exclude` next to `all: true` and only
+// subtracts it from an `include`, so the include is a match-all on
+// hasExternalReference. Excluding, rather than listing allowed statuses, keeps
+// statuses the API adds later visible.
 const VISIBLE_QUOTATIONS_QUERY: QuotationBatchQuery = {
   include: [
     {
@@ -39,7 +41,7 @@ const VISIBLE_QUOTATIONS_QUERY: QuotationBatchQuery = {
       ],
     },
   ],
-  exclude: [{ selections: [{ statuses: ['requestDraft'] }] }],
+  exclude: [{ selections: [{ statuses: ['requestDraft', 'revised'] }] }],
 };
 
 /**
@@ -110,7 +112,7 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       },
 
       /**
-       * Every quotation Studio may show — request drafts excluded
+       * Every quotation Studio may show — request drafts and revised versions excluded
        */
       async list(
         batchQuery: QuotationBatchQuery = VISIBLE_QUOTATIONS_QUERY,

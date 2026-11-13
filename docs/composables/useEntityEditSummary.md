@@ -117,6 +117,14 @@ status?: StatusBadgeStatus;
 
 Optional explicit status value (e.g., `'draft'`, `'pending'`, `'accepted'`, `true`/`false`). When provided, overrides the default active/inactive badge with a `StatusBadge` supporting all status variants. See `StatusBadgeStatus` in `shared/types/Global.ts` for the full union type.
 
+#### `statusLabel`
+
+```ts
+statusLabel?: Ref<string | undefined> | ComputedRef<string | undefined>;
+```
+
+Optional translated text for the status badge, in place of the sentence-cased `status`. `undefined` keeps the default text.
+
 ## Properties and Methods
 
 ### `summaryProps`
@@ -131,10 +139,11 @@ summaryProps: ComputedRef<{
   entityLiveStatus: boolean;
   showActiveStatus?: boolean;
   status?: StatusBadgeStatus;
+  statusLabel?: string;
 }>;
 ```
 
-A computed property that unwraps all reactive inputs and returns a plain object with the current values. This is perfect for passing to components that expect non-reactive props. The `showActiveStatus` and `status` fields are only included when explicitly set, so they don't override the component defaults when omitted.
+A computed property that unwraps all reactive inputs and returns a plain object with the current values. This is perfect for passing to components that expect non-reactive props. The `showActiveStatus`, `status` and `statusLabel` fields are only included when explicitly set, so they don't override the component defaults when omitted.
 
 ## Type Definitions
 
@@ -148,6 +157,7 @@ function useEntityEditSummary(props: {
   entityLiveStatus: Ref<boolean> | ComputedRef<boolean>;
   showActiveStatus?: boolean;
   status?: StatusBadgeStatus;
+  statusLabel?: Ref<string | undefined> | ComputedRef<string | undefined>;
 }): UseEntityEditSummaryReturnType;
 
 interface UseEntityEditSummaryReturnType {
@@ -160,6 +170,7 @@ interface UseEntityEditSummaryReturnType {
     entityLiveStatus: boolean;
     showActiveStatus?: boolean;
     status?: StatusBadgeStatus;
+    statusLabel?: string;
   }>;
 }
 

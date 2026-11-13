@@ -15,15 +15,26 @@ The Orders domain manages the quotation-to-order workflow. Currently it covers q
 
 ```
 requestDraft → requested → canceled    (buyer requests; read-only, the seller can only cancel)
+                         ↘ revised     (answered by an offer, labelled "Answered")
 
                draft → pending → accepted → confirmed → finalized
                                ↘ expired      ↘ canceled
                                ↘ rejected
+               pending / expired → revised    (a later version was sent in its place)
 ```
 
 All status transitions are one-way (no revert to draft). Each transition is a `POST /quotation/{id}/{action}` with a `StatusTransitionRequest` body. The `expire` transition is automatic (never triggered manually).
 
 **Buyer requests** — A buyer can ask for a quotation from the sales portal. While they write it, the quotation is `requestDraft` and only the buyer edits it. Once they send it, it becomes `requested` and it is the seller's turn. With Platform's quotation revisions the API refuses `PATCH`, `send` and `DELETE` on a requested quotation (`422`, pointing to `POST quotation/{id}/revision`); `cancel` still works. What the buyer sent is on `quotation.request`, shown read-only by `QuotationRequestDetails`; its `requestedValidTo` is only a wish (it never sets `validTo`), and Studio doesn't show it.
+
+**Revisions** — Platform's quotation revisions answer a quotation with a new version rather than a copy. `POST quotation/{id}/revision` makes a draft with the same number and the next revision, linked through `revisionOf`; sending it moves the source (`requested`, `pending` or `expired`) to `revised`, with `revisedBy` pointing at the new version. `revised` is terminal: read-only, not deletable, and the page shows no actions on it at all (`statusActions` has an empty `revised` case and the sent-mode action bar is hidden), not even New quotation or Copy as new draft. The response fields:
+
+- `revision` — the last part of the quotation number, as an int. A copy made in the same month takes the next one too, so it numbers versions but doesn't count them.
+- `revisionOf` / `revisedBy` — `QuotationVersionRef` (`{ quotationId, quotationNumber }`, named as the API names them, no `_id`/`_type`), or null.
+- `request.releasedAt` — when the request reached the seller; a revision keeps its source's.
+- `revisions` — only with `fields=revisions`: every version in the chain as `QuotationRevision`, newest first, the open draft included. Empty on a quotation outside a chain.
+
+**Answered requests** — A buyer's request answered by an offer is `revised` like any replaced version: Platform keeps one status and leaves the label to clients. The rule is `isAnsweredRequest()` (`shared/utils/quotation.ts`), the same as the sales portal's: a `revised` version with no `validFrom` was never sent, so it was the buyer's request. Its badge in the summary and in the Quotation details card reads **Answered** (`orders.answered_request`, passed as `statusLabel` / `label`). Don't test "has a `request` and no `revisionOf`": a request the Monitor sync priced in place and later revised matches that too, and it was a real offer. `QuotationWorkflowInfo` starts an answered request's flow at Requested.
 
 **Order details** — `quotation.orderDetails` holds what goes onto the order when the quotation is finalized: `goodsLabel`, `customerOrderNumber` (the buyer's PO number or reference, labelled **PO number / reference** as in the Sales Portal) and `desiredDeliveryDate`. The API also has `customerReference`, kept on the quotation only; Studio doesn't use it, and `customerOrderNumber` is the one field for the buyer's reference. At checkout the buyer can't change them, and copy doesn't carry them over: a PO number belongs to one order. Where they come from decides how Studio shows them (`canEditOrderDetails()` in `shared/utils/quotation.ts`):
 
@@ -44,7 +55,9 @@ Editing them on a draft:
 - **Send** is blocked only with no owner (`orders.send_requires_owner`). The stale-snapshot sync compares only a user owner with the company's live reps; a free-text owner has no `_id` and is never stale.
 - **Copy and revise** keep a free-text owner.
 
-**`requestDraft` is never shown in Studio** — `orderApi.quotation.list()` excludes it server-side by default (`VISIBLE_QUOTATIONS_QUERY` in `app/utils/repositories/order.ts`). The API ignores `exclude` when `all: true` is set and only subtracts `exclude` from an `include`. So the query includes every quotation with `hasExternalReference: true OR false` and excludes `statuses: ['requestDraft']`. It doesn't list the allowed statuses, so statuses the API adds later still show up. A caller that passes its own batch query to `list()` or `query()` must exclude request drafts the same way.
+**`requestDraft` and `revised` are never listed** — `orderApi.quotation.list()` excludes them server-side by default (`VISIBLE_QUOTATIONS_QUERY` in `app/utils/repositories/order.ts`): a request draft belongs to the buyer until they submit it, and a revised version has a later one in its place. The API ignores `exclude` when `all: true` is set and only subtracts `exclude` from an `include`. So the query includes every quotation with `hasExternalReference: true OR false` and excludes `statuses: ['requestDraft', 'revised']`. It doesn't list the allowed statuses, so statuses the API adds later still show up. A caller that passes its own batch query to `list()` or `query()` must exclude them the same way.
+
+**One row per quotation** — The list shows each revision chain once, as its live version. A **Version** column shows `revision` as "v 03" (`orders.version_tag`), and when the chain has an open revision draft, a **Draft (v 04)** link beside it opens the draft. The draft comes from the row's `revisions` (`openRevisionDraft()`), so the list asks for `fields: company, owner, customer, items, revisions` (the API's default set plus `revisions`). The draft is its own quotation and would show as a row of its own: the query has no filter for revision drafts yet, so the page drops the drafts a listed row links to (`withoutLinkedRevisionDrafts()`) before mapping the rows. A draft no row links to (its source was deleted, or the response had no `revisions`) keeps its own row, so it can't vanish from the list.
 
 **Snapshots** — When a quotation is created, the API captures point-in-time snapshots of the company (`QuotationCompany`), owner/sales rep (`QuotationOwner`), and buyer (`QuotationCustomer`). Each snapshot extends `EntitySnapshot` with `_id`, `_type`, `_snapshotAt`. Read IDs via `company._id`, `owner._id`, `customer._id` (not `companyId`/`ownerId`). Owner and customer use `firstName`/`lastName` (no `email`); only the owner has a combined `name`, which is also the free-text owner's only field. Addresses use the standard `Address` type.
 
@@ -62,7 +75,7 @@ Editing them on a draft:
 
 **Currency default in create mode** — When a company is selected, the currency auto-defaults to the channel's default market currency (via `channel.defaultMarket` → market lookup → `market.currency._id`), falling back to `availableCurrencies[0]`.
 
-**Deletable statuses** — Delete is available for `draft`, `rejected`, `expired`, and `canceled` quotations, unless the quotation is external (below). `requested` (the seller cancels it instead), `pending`, `accepted`, `confirmed`, and `finalized` do not allow deletion. `isQuotationDeletable()` (`shared/utils/quotation.ts`) is the one rule for the list row action and the edit page.
+**Deletable statuses** — Delete is available for `draft`, `rejected`, `expired`, and `canceled` quotations, unless the quotation is external (below). `requested` (the seller cancels it instead), `pending`, `accepted`, `confirmed`, `finalized` and `revised` (a chain never loses a version it has shown) do not allow deletion. `isQuotationDeletable()` (`shared/utils/quotation.ts`) is the one rule for the list row action and the edit page.
 
 **External (read-only) quotations** — A quotation with an `externalReference` (e.g. `system: 'monitor-erp'`) is owned by that system. The API refuses update, delete, extend and every status change with "Quotation is managed by … and cannot be modified in Geins", so Studio renders it in the read-only layout in **any** status (draft included) and leaves those actions out: `isQuotationEditable()` and `isQuotationDeletable()` both return `false`, and `statusActions` is empty. The summary sidebar shows a lock `Item` ("Read-only quotation" + the shared `managed_externally` copy) and the external quotation and order numbers (`externalReference.number` / `orderNumber`; `system` is a raw id, so the copy stays generic). Kept: New quotation, Copy as new draft (a copy is a new draft with no reference — the user's way to edit), and messages (the API accepts `POST quotation/{id}/message`). **Check on every load:** a Studio quotation gains the reference once it's exported, so `parseEntityData` re-derives it from each response — never cache it from create.
 
@@ -88,9 +101,9 @@ Editing them on a draft:
 
 **`QuotationCompany.vatNumber`** — The company snapshot uses `vatNumber` (not `orgNr`).
 
-**`QuotationStatus` casing** — Status values are camelCase as the API sends them: single words are lowercase (`'draft'`, `'pending'`, `'requested'`), and the one compound is `'requestDraft'`.
+**`QuotationStatus` casing** — Status values are camelCase as the API sends them: single words are lowercase (`'draft'`, `'pending'`, `'requested'`, `'revised'`), and the one compound is `'requestDraft'`.
 
-**`request`, `orderDetails`, `externalReference`, `orderPublicId`** — Omitted from the response when empty. `QuotationRequest`, `QuotationOrderDetails` and `QuotationExternalReference` are value objects with no `_id`/`_type`. The list page keeps them on the row data but excludes them as columns.
+**`request`, `orderDetails`, `externalReference`, `orderPublicId`** — Omitted from the response when empty. `QuotationRequest`, `QuotationOrderDetails`, `QuotationExternalReference`, `QuotationVersionRef` and `QuotationRevision` are value objects with no `_id`/`_type`. The list page keeps them (and the revision fields) on the row data but excludes them as columns.
 
 **`prepareUpdateData` must NOT spread** — `entityDataUpdate` contains response-only fields (`billingAddress`, `shippingAddress`, `total`, `company`, `owner`, `customer`, `communication`, `changelog`). Only include OpenAPI update schema fields: `name`, `validTo`, `companyId`, `ownerId` or `ownerName`, `customerId`, `validPaymentMethods`, `validShippingMethods`, `suggestedShippingFee`, `terms`, `billingAddressId`, `shippingAddressId`, `items`, `orderDetails`.
 
