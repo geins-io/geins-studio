@@ -191,6 +191,20 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
           errorContext: { action: 'copying', entity: 'quotation' },
         });
       },
+      /**
+       * The next version of a requested, pending or expired quotation, as a
+       * draft linked through `revisionOf`. Sending it moves the source to `revised`.
+       */
+      async revise(
+        id: string,
+        fetchOptions?: RepoFetchOptions,
+      ): Promise<Quotation> {
+        return await fetch<Quotation>(`${QUOTATION_ENDPOINT}/${id}/revision`, {
+          method: 'POST',
+          errorContext: { action: 'revising', entity: 'quotation' },
+          ...fetchOptions,
+        });
+      },
       async preview(
         id: string,
         data: QuotationPreviewRequest,

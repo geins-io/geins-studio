@@ -65,6 +65,14 @@ currentShippingAddressId?: string
 
 Pre-selected values populated when the sheet opens.
 
+### `buyerDisabledReason`
+
+```ts
+buyerDisabledReason?: string
+```
+
+Locks the buyer select and shows this text under it, already translated. The addresses stay editable. The quotation page passes it on a revision draft, since a revision keeps its buyer (the API answers `422` to a change).
+
 ## Events
 
 ### `save`

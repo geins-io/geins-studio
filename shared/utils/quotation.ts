@@ -137,6 +137,70 @@ export function withoutLinkedRevisionDrafts<
 }
 
 /**
+ * Statuses the seller answers with a new version: Create offer on a request,
+ * Revise on an offer the buyer hasn't answered.
+ */
+export const REVISABLE_QUOTATION_STATUSES: readonly QuotationStatus[] = [
+  'requested',
+  'pending',
+  'expired',
+];
+
+/**
+ * Whether the seller can make the quotation's next version. The API refuses it
+ * on an external quotation.
+ */
+export function canReviseQuotation(
+  quotation: Pick<Quotation, 'status' | 'externalReference'>,
+): boolean {
+  return (
+    REVISABLE_QUOTATION_STATUSES.includes(quotation.status) &&
+    !isQuotationExternal(quotation)
+  );
+}
+
+// The buyer answered the version, or it was canceled: a revision can no longer
+// replace it, and sending one answers 409.
+const CLOSED_TO_REVISION: readonly QuotationStatus[] = [
+  'accepted',
+  'confirmed',
+  'finalized',
+  'rejected',
+  'canceled',
+];
+
+export interface RevisionSendBlock {
+  reason:
+    | 'requestCanceled'
+    | 'requestWithdrawn'
+    | 'versionCanceled'
+    | 'versionAnswered';
+  /** The version the draft would replace */
+  source: QuotationRevision;
+}
+
+/**
+ * Why a revision draft can't be sent: the version it replaces was answered or
+ * canceled in the meantime. A source with no `validFrom` was never sent, so
+ * it's the buyer's request, and a rejected request is the buyer withdrawing it.
+ */
+export function revisionSendBlock(
+  quotation: Pick<Quotation, 'status' | 'revisionOf' | 'revisions'>,
+): RevisionSendBlock | undefined {
+  if (!isRevisionDraft(quotation)) return undefined;
+  const source = quotation.revisions?.find(
+    (version) => version.quotationId === quotation.revisionOf?.quotationId,
+  );
+  if (!source || !CLOSED_TO_REVISION.includes(source.status)) return undefined;
+
+  const request = !source.validFrom;
+  if (source.status === 'canceled') {
+    return { reason: request ? 'requestCanceled' : 'versionCanceled', source };
+  }
+  return { reason: request ? 'requestWithdrawn' : 'versionAnswered', source };
+}
+
+/**
  * The order-detail text fields, with the most characters the API accepts
  */
 export const ORDER_DETAILS_MAX_LENGTH = {
