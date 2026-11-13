@@ -846,6 +846,8 @@
     "no_custom_price": "Inget anpassat pris",
     "products_tab_placeholder": "Använd SKU-väljaren för att lägga till produkter i denna offert.",
     "quotation_owner": "Offertägare",
+    "quotation_owner_description": "Skriv ett namn eller välj en befintlig säljare",
+    "existing_sales_reps": "Befintliga säljare",
     "change_customer_details": "Ändra kunduppgifter",
     "price_lists_applied": "Tillämpade prislistor",
     "price_summary": "Prissammanställning",

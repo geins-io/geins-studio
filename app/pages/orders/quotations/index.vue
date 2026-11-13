@@ -46,7 +46,7 @@ const mapToListData = (list: Entity[]): EntityList[] => {
         entityKey: 'product',
         count: items?.length ?? 0,
       }),
-      owner: fullName(item.owner),
+      owner: item.owner?.name || '',
       sum: {
         price: item.total.grandTotalExVat.toString(),
         currency: item.currency,

@@ -849,6 +849,8 @@
     "no_custom_price": "No custom price",
     "products_tab_placeholder": "Use the SKU selector to add products to this quotation.",
     "quotation_owner": "Quotation owner",
+    "quotation_owner_description": "Type a name, or pick an existing sales rep",
+    "existing_sales_reps": "Existing sales reps",
     "change_customer_details": "Change customer details",
     "price_lists_applied": "Price lists applied",
     "price_summary": "Price summary",
