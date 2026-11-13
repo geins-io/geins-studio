@@ -1016,6 +1016,14 @@ export default defineConfig({
                 link: '/components/quotation/QuotationWorkflowInfo.md',
               },
               {
+                text: 'QuotationVersionSelect',
+                link: '/components/quotation/QuotationVersionSelect.md',
+              },
+              {
+                text: 'QuotationReplacedNotice',
+                link: '/components/quotation/QuotationReplacedNotice.md',
+              },
+              {
                 text: 'QuotationCommunications',
                 link: '/components/quotation/QuotationCommunications.md',
               },

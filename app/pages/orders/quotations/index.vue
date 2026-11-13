@@ -10,6 +10,7 @@ import { ENTITIES, entityNewUrl, entityEditUrl } from '#shared/utils/entities';
 import {
   isQuotationDeletable,
   openRevisionDraft,
+  revisionSuffix,
   withoutLinkedRevisionDrafts,
 } from '#shared/utils/quotation';
 import { useToast } from '@/components/ui/toast/use-toast';
@@ -43,7 +44,7 @@ const fetchError = ref(false);
 const versionTag = (revision?: number) =>
   revision === undefined
     ? ''
-    : t('orders.version_tag', { version: String(revision).padStart(2, '0') });
+    : t('orders.version_tag', { version: revisionSuffix(revision) });
 
 // Transform raw API quotation data to list view format
 const mapToListData = (list: Entity[]): EntityList[] => {

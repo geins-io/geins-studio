@@ -13,8 +13,12 @@ import {
   isQuotationDeletable,
   isQuotationEditable,
   isQuotationExternal,
+  isReplacedVersion,
   isRevisionDraft,
+  liveRevision,
   openRevisionDraft,
+  replacingVersion,
+  revisionSuffix,
   withoutLinkedRevisionDrafts,
   orderDetailsFormValues,
   orderDetailsRequest,
@@ -476,5 +480,97 @@ describe('quotationBuyerDecision', () => {
         rejectedAt: approvedAt,
       }),
     ).toEqual({ decision: 'accepted', at: rejectedAt });
+  });
+});
+
+describe('versions', () => {
+  const version = (
+    quotationId: string,
+    revision: number,
+    status: QuotationStatus,
+  ): QuotationRevision => ({
+    quotationId,
+    quotationNumber: `2611-3-0018-0${revision}`,
+    revision,
+    status,
+  });
+  // The request, two offers and an open draft, newest first
+  const revisions = [
+    version('q-03', 3, 'draft'),
+    version('q-02', 2, 'pending'),
+    version('q-01', 1, 'revised'),
+    version('q-00', 0, 'revised'),
+  ];
+
+  describe('liveRevision', () => {
+    it('is the newest version that is not a draft', () => {
+      expect(liveRevision({ revisions })?.quotationId).toBe('q-02');
+    });
+
+    it('is none outside a chain', () => {
+      expect(liveRevision({})).toBeUndefined();
+      expect(liveRevision({ revisions: [] })).toBeUndefined();
+    });
+  });
+
+  describe('isReplacedVersion', () => {
+    it('is replaced when revised, or not the live version', () => {
+      expect(isReplacedVersion({ _id: 'q-01', status: 'revised' })).toBe(true);
+      expect(
+        isReplacedVersion({
+          _id: 'q-01',
+          status: 'pending',
+          revisedBy: { quotationId: 'q-02', quotationNumber: '2611-3-0018-02' },
+        }),
+      ).toBe(true);
+      expect(
+        isReplacedVersion({ _id: 'q-01', status: 'pending', revisions }),
+      ).toBe(true);
+    });
+
+    it('is not replaced as the live version, a draft, or outside a chain', () => {
+      expect(
+        isReplacedVersion({ _id: 'q-02', status: 'pending', revisions }),
+      ).toBe(false);
+      expect(
+        isReplacedVersion({ _id: 'q-03', status: 'draft', revisions }),
+      ).toBe(false);
+      expect(isReplacedVersion({ _id: 'q-09', status: 'pending' })).toBe(false);
+    });
+  });
+
+  describe('replacingVersion', () => {
+    it('is the live version, not the one that revised it', () => {
+      expect(
+        replacingVersion({
+          _id: 'q-00',
+          status: 'revised',
+          revisedBy: { quotationId: 'q-01', quotationNumber: '2611-3-0018-01' },
+          revisions,
+        })?.quotationId,
+      ).toBe('q-02');
+    });
+
+    it('falls back to the one that revised it without a chain', () => {
+      const revisedBy = {
+        quotationId: 'q-01',
+        quotationNumber: '2611-3-0018-01',
+      };
+      expect(
+        replacingVersion({ _id: 'q-00', status: 'revised', revisedBy }),
+      ).toEqual(revisedBy);
+    });
+
+    it('is none on the live version', () => {
+      expect(
+        replacingVersion({ _id: 'q-02', status: 'pending', revisions }),
+      ).toBeUndefined();
+    });
+  });
+
+  it('formats the revision as a two-digit suffix', () => {
+    expect(revisionSuffix(0)).toBe('00');
+    expect(revisionSuffix(3)).toBe('03');
+    expect(revisionSuffix(12)).toBe('12');
   });
 });
