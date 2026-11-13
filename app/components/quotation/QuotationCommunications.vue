@@ -8,12 +8,15 @@ const props = withDefaults(
     loading?: boolean;
     editLoading?: boolean;
     messageSendSuccessCount?: number;
+    /** Each version's revision by its quotation number, for the messages' version tags */
+    revisionsByNumber?: Record<string, number>;
   }>(),
   {
     currentUserEmail: '',
     loading: false,
     editLoading: false,
     messageSendSuccessCount: 0,
+    revisionsByNumber: () => ({}),
   },
 );
 
@@ -98,6 +101,7 @@ const handleInternalSend = (message: string) => {
         :all-communications="communications"
         :current-user-email="currentUserEmail"
         :edit-loading="editLoading"
+        :revisions-by-number="revisionsByNumber"
         @reply="(msg) => (externalReplyTo = msg)"
         @edit="(id, text) => emit('editMessage', id, text)"
         @delete="(id) => emit('deleteMessage', id)"
@@ -118,6 +122,7 @@ const handleInternalSend = (message: string) => {
         :all-communications="communications"
         :current-user-email="currentUserEmail"
         :edit-loading="editLoading"
+        :revisions-by-number="revisionsByNumber"
         @reply="(msg) => (internalReplyTo = msg)"
         @edit="(id, text) => emit('editMessage', id, text)"
         @delete="(id) => emit('deleteMessage', id)"

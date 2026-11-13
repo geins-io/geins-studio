@@ -206,6 +206,8 @@ export interface QuotationMessage {
   timestamp: string;
   answerRef?: string | null;
   tags?: QuotationMessageTag[] | null;
+  /** The version it was written on: a chain's thread spans every version */
+  quotationNumber?: string;
 }
 
 /**

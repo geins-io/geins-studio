@@ -322,3 +322,21 @@ export function replacingVersion(
 export function revisionSuffix(revision: number): string {
   return String(revision).padStart(2, '0');
 }
+
+/**
+ * Each version's revision by its quotation number. A message names only the
+ * number it was written on, and the API sends the revision so no client has
+ * to parse it out of the number.
+ */
+export function revisionsByNumber(
+  quotation: Pick<Quotation, 'quotationNumber' | 'revision' | 'revisions'>,
+): Record<string, number> {
+  const revisions: Record<string, number> = {};
+  if (quotation.revision !== undefined) {
+    revisions[quotation.quotationNumber] = quotation.revision;
+  }
+  for (const version of quotation.revisions ?? []) {
+    revisions[version.quotationNumber] = version.revision;
+  }
+  return revisions;
+}

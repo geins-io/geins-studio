@@ -18,6 +18,7 @@ import {
   liveRevision,
   openRevisionDraft,
   replacingVersion,
+  revisionsByNumber,
   revisionSuffix,
   withoutLinkedRevisionDrafts,
   orderDetailsFormValues,
@@ -572,5 +573,31 @@ describe('versions', () => {
     expect(revisionSuffix(0)).toBe('00');
     expect(revisionSuffix(3)).toBe('03');
     expect(revisionSuffix(12)).toBe('12');
+  });
+
+  describe('revisionsByNumber', () => {
+    it("maps every version's number to its revision", () => {
+      expect(
+        revisionsByNumber({
+          quotationNumber: '2611-3-0018-02',
+          revision: 2,
+          revisions,
+        }),
+      ).toEqual({
+        '2611-3-0018-03': 3,
+        '2611-3-0018-02': 2,
+        '2611-3-0018-01': 1,
+        '2611-3-0018-00': 0,
+      });
+    });
+
+    it('maps the quotation itself outside a chain', () => {
+      expect(
+        revisionsByNumber({ quotationNumber: '2611-3-0020-00', revision: 0 }),
+      ).toEqual({ '2611-3-0020-00': 0 });
+      expect(revisionsByNumber({ quotationNumber: '2611-3-0020-00' })).toEqual(
+        {},
+      );
+    });
   });
 });
