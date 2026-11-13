@@ -897,6 +897,8 @@
     "edit_message": "Redigera",
     "delete_message": "Ta bort",
     "sent_on": "Skickad den",
+    "accepted_on": "Accepterad {date}",
+    "rejected_on": "Avvisad {date}",
     "modified_at": "Ändrad",
     "send_blocked_title": "Innan du kan skicka",
     "send_requires_name": "Lägg till ett offertnamn",

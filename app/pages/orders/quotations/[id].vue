@@ -2506,6 +2506,8 @@ definePageMeta({
                   :billing-address="billingAddress"
                   :shipping-address="shippingAddress"
                   :buyer-name="currentBuyerName"
+                  :approved-at="entityData?.customer?.approvedAt"
+                  :rejected-at="entityData?.customer?.rejectedAt"
                   :loading="fetchingData"
                 />
               </ContentEditCard>

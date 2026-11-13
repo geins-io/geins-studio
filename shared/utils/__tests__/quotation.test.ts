@@ -12,6 +12,7 @@ import {
   isQuotationExternal,
   orderDetailsFormValues,
   orderDetailsRequest,
+  quotationBuyerDecision,
 } from '../quotation';
 
 const externalReference: QuotationExternalReference = {
@@ -197,5 +198,44 @@ describe('order details', () => {
         ),
       ).toBeUndefined();
     });
+  });
+});
+
+describe('quotationBuyerDecision', () => {
+  const approvedAt = '2026-11-10T09:00:00Z';
+  const rejectedAt = '2026-11-12T09:00:00Z';
+
+  it('is null until the buyer acts', () => {
+    expect(quotationBuyerDecision(undefined)).toBeNull();
+    expect(
+      quotationBuyerDecision({ approvedAt: null, rejectedAt: null }),
+    ).toBeNull();
+  });
+
+  it('is accepted with only an approvedAt', () => {
+    expect(quotationBuyerDecision({ approvedAt })).toEqual({
+      decision: 'accepted',
+      at: approvedAt,
+    });
+  });
+
+  it('is rejected with only a rejectedAt', () => {
+    expect(quotationBuyerDecision({ rejectedAt })).toEqual({
+      decision: 'rejected',
+      at: rejectedAt,
+    });
+  });
+
+  it('takes the later date when both are set', () => {
+    expect(quotationBuyerDecision({ approvedAt, rejectedAt })).toEqual({
+      decision: 'rejected',
+      at: rejectedAt,
+    });
+    expect(
+      quotationBuyerDecision({
+        approvedAt: rejectedAt,
+        rejectedAt: approvedAt,
+      }),
+    ).toEqual({ decision: 'accepted', at: rejectedAt });
   });
 });

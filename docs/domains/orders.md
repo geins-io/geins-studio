@@ -61,6 +61,8 @@ Editing them on a draft:
 
 **Changelog** — `changelogApi.getForEntity('quotation', id)` fetches changelog entries. `ChangelogEntry.id` is a `number` from the API (typed as `string | number`). Entries with `subEntity === 'message'` are filtered out (messages are shown separately). The `changes` field is a JSON string of `[{ p: string, c: string[] }]`.
 
+**Buyer decision** — `customer.approvedAt` / `customer.rejectedAt` stay null until the buyer accepts or rejects. Once one is set, the sent-mode Customer card shows "Accepted {date}" or "Rejected {date}" under the buyer's name, via `quotationBuyerDecision()` (`shared/utils/quotation.ts`); if both are ever set, the later one wins. The changelog has the same events — this is the at-a-glance answer.
+
 ## API Shape Quirks
 
 **`validPaymentMethods`** — Response: `{ paymentId: number, name: string }`. Request: `{ paymentId: string }` (string, no `name`).
