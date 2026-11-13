@@ -26,6 +26,7 @@ import type {
   QuotationMessage,
   QuotationMessageType,
   QuotationOrderDetails,
+  QuotationRevision,
   QuotationStatus,
   StatusTransitionRequest,
   ExtendTransitionRequest,
@@ -36,6 +37,7 @@ import type {
   ChangelogEntry,
   EntityBaseWithName,
   QuotationOwner,
+  GeinsApiError,
 } from '#shared/types';
 import {
   ENTITIES,
@@ -44,15 +46,21 @@ import {
 } from '#shared/utils/entities';
 import {
   canEditOrderDetails,
+  canReviseQuotation,
   isAnsweredRequest,
   isQuotationDeletable,
   isQuotationEditable,
   isQuotationExternal,
+  isRevisionDraft,
+  openRevisionDraft,
   ORDER_DETAILS_FIELDS,
   orderDetailsFormValues,
   orderDetailsRequest,
   QUOTATION_OWNER_NAME_MAX_LENGTH,
+  revisionSendBlock,
 } from '#shared/utils/quotation';
+import type { RevisionSendBlock } from '#shared/utils/quotation';
+import { ToastAction } from '@/components/ui/toast';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { QuotationOwnerRequest } from '@/utils/quotation-owner';
 import type { ColumnDef, Row } from '@tanstack/vue-table';
@@ -63,6 +71,7 @@ import type { ColumnDef, Row } from '@tanstack/vue-table';
 const scope = 'pages/orders/quotations/[id].vue';
 const { t } = useI18n();
 const { toast } = useToast();
+const { showGlobalErrorToast } = useApiErrorToast();
 const { formatDate } = useDate();
 const { geinsLogError } = useGeinsLog(scope);
 const router = useRouter();
@@ -1273,7 +1282,7 @@ if (!createMode.value) {
     const snapshotsDrifted = syncCompanySnapshots();
     const pricesDrifted = hasItemPriceDrift(savedItems, displayItems.value);
     if (snapshotsDrifted || pricesDrifted) {
-      await updateEntity(undefined, undefined, false, true);
+      await updateEntity(undefined, { fields: ['all'] }, false, true);
       cancelPendingFormSync();
       await nextTick();
       setOriginalSavedData();
@@ -1330,7 +1339,9 @@ const handleSave = async () => {
     orderDetailsValid(),
   ]);
   if (!owner.valid || !orderDetailsOk) return;
-  const result = await updateEntity(undefined, undefined, false);
+  // The PATCH answers with the default fields unless asked; `revisions` (the
+  // send block, Discard draft) isn't one of them
+  const result = await updateEntity(undefined, { fields: ['all'] }, false);
   if (result) {
     cancelPendingFormSync();
     await nextTick();
@@ -1342,8 +1353,31 @@ const handleSave = async () => {
 // =====================================================================================
 // SEND READINESS
 // =====================================================================================
+const revisionBlockMessage = ({ reason, source }: RevisionSendBlock) => {
+  switch (reason) {
+    case 'requestCanceled':
+      return t('orders.send_blocked_request_canceled');
+    case 'requestWithdrawn':
+      return t('orders.send_blocked_request_withdrawn');
+    case 'versionCanceled':
+      return t('orders.send_blocked_version_canceled', {
+        version: source.revision,
+      });
+    case 'versionAnswered':
+      // Sentence-cased like StatusBadge's default text
+      return t('orders.send_blocked_version_answered', {
+        version: source.revision,
+        status: source.status.charAt(0).toUpperCase() + source.status.slice(1),
+      });
+  }
+};
+
 const sendBlockReasons = computed<string[]>(() => {
   const reasons: string[] = [];
+  const revisionBlock = entityData.value && revisionSendBlock(entityData.value);
+  if (revisionBlock) {
+    reasons.push(revisionBlockMessage(revisionBlock));
+  }
   const details = form.values.details;
   if (!details?.name) {
     reasons.push(t('orders.send_requires_name'));
@@ -1431,8 +1465,8 @@ const statusActions = computed<StatusActionLayout>(() => {
     case 'requested':
       return {
         placeOrder: false,
-        groupActions: [cancelAction],
-        dropdownActions: [],
+        groupActions: [],
+        dropdownActions: [cancelAction],
       };
 
     case 'pending':
@@ -1612,6 +1646,11 @@ const handleStatusTransition = async (
     });
   } catch (error) {
     geinsLogError(`Failed to ${action} quotation:`, error);
+    // A revision whose source was answered meanwhile answers 409. Reload, so
+    // the send dialog says why; sending again stays safe.
+    if (action === 'send' && isRevision.value) {
+      await refreshEntityData.value?.();
+    }
   } finally {
     transitionLoading.value = false;
     transitionDialogOpen.value = false;
@@ -1633,6 +1672,123 @@ const handleCopy = async () => {
   } finally {
     copyLoading.value = false;
   }
+};
+
+// =====================================================================================
+// REVISIONS
+// =====================================================================================
+const isRevision = computed(
+  () => !!entityData.value && isRevisionDraft(entityData.value),
+);
+
+// Create offer on a request (the main button), Revise in the ⋯ menu on an
+// offer. While the chain has a draft, both open it instead.
+const reviseAction = computed(() => {
+  const quotation = entityData.value;
+  if (!quotation || !canReviseQuotation(quotation)) return null;
+  const draft = openRevisionDraft(quotation);
+  const primary = quotation.status === 'requested';
+  if (draft) {
+    return {
+      primary,
+      label: t('orders.open_revision_draft', { version: draft.revision }),
+    };
+  }
+  return {
+    primary,
+    label: primary
+      ? t('orders.create_offer')
+      : t('revise_entity', { entityKey }),
+  };
+});
+
+// The sent layout's ⋯ menu; without it, its items show as buttons
+const hasActionMenu = computed(
+  () =>
+    statusActions.value.groupActions.length > 0 ||
+    statusActions.value.dropdownActions.length > 0 ||
+    (!!reviseAction.value && !reviseAction.value.primary),
+);
+
+const openQuotation = (id: string) =>
+  router.push(entityEditUrl('quotation', id));
+
+const reviseLoading = ref(false);
+const handleRevise = async () => {
+  const quotation = entityData.value;
+  if (!quotation) return;
+  const draft = openRevisionDraft(quotation);
+  if (draft) {
+    await openQuotation(draft.quotationId);
+    return;
+  }
+
+  reviseLoading.value = true;
+  try {
+    // Toast suppressed: a draft started since this page loaded isn't an
+    // error (the route refuses a second one), and a 404 gets a Copy action.
+    const revision = await orderApi.quotation.revise(entityId.value, {
+      suppressErrorToast: true,
+    });
+    toast({
+      title: t('entity_created', { entityKey: 'draft' }),
+      variant: 'positive',
+    });
+    await openQuotation(revision._id);
+  } catch (error) {
+    geinsLogError('Failed to revise quotation:', error);
+    const latest = await orderApi.quotation
+      .get(entityId.value, { fields: ['revisions'] })
+      .catch(() => undefined);
+    const started = latest && openRevisionDraft(latest);
+    if (started) {
+      await openQuotation(started.quotationId);
+      return;
+    }
+    const apiError = error as GeinsApiError;
+    // 404: the buyer has left the company, so only a copy can answer
+    const copyAction =
+      apiError.status === 404
+        ? () =>
+            h(
+              ToastAction,
+              { altText: t('orders.copy_as_new_draft'), onClick: handleCopy },
+              () => t('orders.copy_as_new_draft'),
+            )
+        : undefined;
+    void showGlobalErrorToast(
+      apiError,
+      {},
+      { action: 'revising', entity: 'quotation' },
+      copyAction,
+    );
+  } finally {
+    reviseLoading.value = false;
+  }
+};
+
+// Discard draft: deletes a revision draft and returns to the version it
+// would have replaced, which isn't changed
+const discardDialogOpen = ref(false);
+const discarding = ref(false);
+const discardDescription = computed(() => {
+  const quotation = entityData.value;
+  const source = quotation?.revisions?.find(
+    (version: QuotationRevision) =>
+      version.quotationId === quotation.revisionOf?.quotationId,
+  );
+  return t('orders.discard_draft_description', {
+    version: quotation?.revision ?? '',
+    source: source?.revision ?? '',
+  });
+});
+const confirmDiscard = async () => {
+  const sourceId = entityData.value?.revisionOf?.quotationId;
+  discarding.value = true;
+  const discarded = await deleteEntity();
+  discarding.value = false;
+  discardDialogOpen.value = false;
+  if (discarded && sourceId) await openQuotation(sourceId);
 };
 
 // =====================================================================================
@@ -1943,6 +2099,15 @@ definePageMeta({
     :loading="deleting"
     @confirm="confirmDelete"
   />
+  <DialogDelete
+    v-model:open="discardDialogOpen"
+    :entity-key="entityKey"
+    :loading="discarding"
+    :title="$t('orders.discard_draft')"
+    :description="discardDescription"
+    :confirm-label="$t('orders.discard_draft')"
+    @confirm="confirmDiscard"
+  />
   <QuotationDialogStatusTransition
     v-if="transitionAction"
     v-model:open="transitionDialogOpen"
@@ -2025,7 +2190,14 @@ definePageMeta({
                     <span>{{ $t('orders.copy_as_new_draft') }}</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem @click="openDeleteDialog">
+                  <DropdownMenuItem
+                    v-if="isRevision"
+                    @click="discardDialogOpen = true"
+                  >
+                    <LucideTrash class="mr-2 size-4" />
+                    <span>{{ $t('orders.discard_draft') }}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem v-else @click="openDeleteDialog">
                     <LucideTrash class="mr-2 size-4" />
                     <span>{{ $t('delete_entity', { entityKey }) }}</span>
                   </DropdownMenuItem>
@@ -2051,6 +2223,14 @@ definePageMeta({
               <LucideShoppingCart class="mr-2 size-4" />
               {{ $t('orders.place_order') }}
             </Button>
+            <ButtonIcon
+              v-if="reviseAction?.primary"
+              icon="FilePen"
+              :loading="reviseLoading"
+              @click="handleRevise"
+            >
+              {{ reviseAction.label }}
+            </ButtonIcon>
             <ButtonGroup>
               <Button
                 v-for="action in statusActions.groupActions"
@@ -2070,38 +2250,50 @@ definePageMeta({
                 />
                 {{ action.label }}
               </Button>
-              <DropdownMenu v-if="statusActions.groupActions.length">
+              <DropdownMenu v-if="hasActionMenu">
                 <DropdownMenuTrigger as-child>
                   <Button size="icon" variant="secondary">
-                    <LucideMoreHorizontal
-                      v-if="statusActions.groupActions.length"
-                      class="size-3.5"
+                    <LucideLoaderCircle
+                      v-if="reviseLoading"
+                      class="size-3.5 animate-spin"
                     />
+                    <LucideMoreHorizontal v-else class="size-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <template v-if="statusActions.dropdownActions.length">
-                    <DropdownMenuItem
-                      v-for="action in statusActions.dropdownActions"
-                      :key="action.action"
-                      @click="openTransitionDialog(action)"
-                    >
-                      <LucideCheck
-                        v-if="action.icon === 'check'"
-                        class="mr-2 size-4"
-                      />
-                      <LucideBan
-                        v-if="action.icon === 'ban'"
-                        class="mr-2 size-4"
-                      />
-                      <LucideCalendarPlus
-                        v-if="action.icon === 'calendar-plus'"
-                        class="mr-2 size-4"
-                      />
-                      {{ action.label }}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                  </template>
+                  <DropdownMenuItem
+                    v-if="reviseAction && !reviseAction.primary"
+                    :disabled="reviseLoading"
+                    @click="handleRevise"
+                  >
+                    <LucideFilePen class="mr-2 size-4" />
+                    {{ reviseAction.label }}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    v-for="action in statusActions.dropdownActions"
+                    :key="action.action"
+                    @click="openTransitionDialog(action)"
+                  >
+                    <LucideCheck
+                      v-if="action.icon === 'check'"
+                      class="mr-2 size-4"
+                    />
+                    <LucideBan
+                      v-if="action.icon === 'ban'"
+                      class="mr-2 size-4"
+                    />
+                    <LucideCalendarPlus
+                      v-if="action.icon === 'calendar-plus'"
+                      class="mr-2 size-4"
+                    />
+                    {{ action.label }}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator
+                    v-if="
+                      (reviseAction && !reviseAction.primary) ||
+                      statusActions.dropdownActions.length
+                    "
+                  />
                   <DropdownMenuItem as-child>
                     <NuxtLink :to="newEntityUrl">
                       <LucidePlus class="mr-2 size-4" />
@@ -2757,6 +2949,9 @@ definePageMeta({
                   <ContentEditCustomerPanel
                     :company="selectedCompany"
                     :available-buyers="availableBuyers"
+                    :buyer-disabled-reason="
+                      isRevision ? $t('orders.revision_keeps_buyer') : undefined
+                    "
                     :current-buyer-id="form.values.details?.buyerId || ''"
                     :current-billing-address-id="selectedBillingAddressId"
                     :current-shipping-address-id="selectedShippingAddressId"

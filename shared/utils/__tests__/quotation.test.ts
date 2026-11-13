@@ -8,6 +8,7 @@ import type {
 } from '#shared/types';
 import {
   canEditOrderDetails,
+  canReviseQuotation,
   isAnsweredRequest,
   isQuotationDeletable,
   isQuotationEditable,
@@ -18,6 +19,7 @@ import {
   orderDetailsFormValues,
   orderDetailsRequest,
   quotationBuyerDecision,
+  revisionSendBlock,
 } from '../quotation';
 
 const externalReference: QuotationExternalReference = {
@@ -224,6 +226,105 @@ describe('withoutLinkedRevisionDrafts', () => {
         { ...live, revisions: undefined },
       ]),
     ).toHaveLength(2);
+  });
+});
+
+describe('canReviseQuotation', () => {
+  it.each<QuotationStatus>(['requested', 'pending', 'expired'])(
+    'revises %s',
+    (status) => {
+      expect(canReviseQuotation({ status })).toBe(true);
+    },
+  );
+
+  it.each<QuotationStatus>([
+    'requestDraft',
+    'draft',
+    'accepted',
+    'confirmed',
+    'finalized',
+    'rejected',
+    'canceled',
+    'revised',
+  ])('keeps %s', (status) => {
+    expect(canReviseQuotation({ status })).toBe(false);
+  });
+
+  it('keeps an external quotation', () => {
+    expect(canReviseQuotation({ status: 'pending', externalReference })).toBe(
+      false,
+    );
+  });
+});
+
+describe('revisionSendBlock', () => {
+  const sent = '2026-11-02T09:00:00Z';
+  const draftOf = (
+    status: QuotationStatus,
+    validFrom: string | null,
+    revision = 1,
+  ) => ({
+    status: 'draft' as const,
+    revisionOf: { quotationId: 'src', quotationNumber: '2611-3-0018-01' },
+    revisions: [
+      {
+        quotationId: 'draft',
+        quotationNumber: '2611-3-0018-02',
+        revision: revision + 1,
+        status: 'draft' as const,
+      },
+      {
+        quotationId: 'src',
+        quotationNumber: '2611-3-0018-01',
+        revision,
+        status,
+        validFrom,
+      },
+    ],
+  });
+
+  it.each<QuotationStatus>(['requested', 'pending', 'expired'])(
+    'lets the draft be sent while its source is %s',
+    (status) => {
+      expect(revisionSendBlock(draftOf(status, sent))).toBeUndefined();
+    },
+  );
+
+  it.each<QuotationStatus>(['accepted', 'confirmed', 'finalized', 'rejected'])(
+    'blocks it when the buyer answered the offer (%s)',
+    (status) => {
+      expect(revisionSendBlock(draftOf(status, sent))?.reason).toBe(
+        'versionAnswered',
+      );
+    },
+  );
+
+  it('blocks it when the offer was canceled', () => {
+    const block = revisionSendBlock(draftOf('canceled', sent));
+    expect(block?.reason).toBe('versionCanceled');
+    expect(block?.source.revision).toBe(1);
+  });
+
+  it('tells a request apart by its missing validFrom', () => {
+    expect(revisionSendBlock(draftOf('rejected', null, 0))?.reason).toBe(
+      'requestWithdrawn',
+    );
+    expect(revisionSendBlock(draftOf('canceled', null, 0))?.reason).toBe(
+      'requestCanceled',
+    );
+  });
+
+  it('never blocks a quotation that is not a revision draft', () => {
+    expect(
+      revisionSendBlock({ ...draftOf('accepted', sent), status: 'pending' }),
+    ).toBeUndefined();
+    expect(revisionSendBlock({ status: 'draft' })).toBeUndefined();
+  });
+
+  it('leaves it to the API when the source is not in revisions', () => {
+    expect(
+      revisionSendBlock({ ...draftOf('accepted', sent), revisions: undefined }),
+    ).toBeUndefined();
   });
 });
 
