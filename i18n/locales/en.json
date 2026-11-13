@@ -900,6 +900,8 @@
     "edit_message": "Edit",
     "delete_message": "Delete",
     "sent_on": "Sent on",
+    "accepted_on": "Accepted {date}",
+    "rejected_on": "Rejected {date}",
     "modified_at": "Modified",
     "send_blocked_title": "Before you can send",
     "send_requires_name": "Add a quotation name",

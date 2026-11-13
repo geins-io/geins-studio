@@ -1,5 +1,7 @@
 import type {
   Quotation,
+  QuotationBuyerDecision,
+  QuotationCustomer,
   QuotationOrderDetails,
   QuotationOrderDetailsForm,
   QuotationOrderDetailsRequest,
@@ -135,4 +137,24 @@ export function orderDetailsRequest(
   if (day && day !== storedDay) request.desiredDeliveryDate = day;
 
   return Object.keys(request).length ? request : undefined;
+}
+
+/**
+ * Whether and when the buyer accepted or rejected the quotation, from the
+ * customer snapshot. Both dates stay null until the buyer acts; should both
+ * ever be set, the later one is the decision that stands.
+ */
+export function quotationBuyerDecision(
+  customer?: Pick<QuotationCustomer, 'approvedAt' | 'rejectedAt'> | null,
+): QuotationBuyerDecision | null {
+  const approvedAt = customer?.approvedAt;
+  const rejectedAt = customer?.rejectedAt;
+  if (
+    rejectedAt &&
+    (!approvedAt || Date.parse(rejectedAt) > Date.parse(approvedAt))
+  ) {
+    return { decision: 'rejected', at: rejectedAt };
+  }
+  if (approvedAt) return { decision: 'accepted', at: approvedAt };
+  return null;
 }

@@ -82,6 +82,14 @@ export interface QuotationCustomer extends EntitySnapshot {
 }
 
 /**
+ * The buyer's accept/reject decision and when they made it
+ */
+export interface QuotationBuyerDecision {
+  decision: 'accepted' | 'rejected';
+  at: string;
+}
+
+/**
  * What the buyer sent with their request (response). Missing on quotations
  * the seller started.
  */
