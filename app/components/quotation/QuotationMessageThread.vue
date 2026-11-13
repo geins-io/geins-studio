@@ -4,6 +4,7 @@ import type {
   StatusBadgeStatus,
   QuotationAction,
 } from '#shared/types';
+import { revisionSuffix } from '#shared/utils/quotation';
 
 const props = withDefaults(
   defineProps<{
@@ -12,12 +13,15 @@ const props = withDefaults(
     currentUserEmail?: string;
     mode?: 'external' | 'internal';
     editLoading?: boolean;
+    /** Each version's revision by its quotation number (`revisionsByNumber()`) */
+    revisionsByNumber?: Record<string, number>;
   }>(),
   {
     allCommunications: () => [],
     currentUserEmail: '',
     mode: 'internal',
     editLoading: false,
+    revisionsByNumber: () => ({}),
   },
 );
 
@@ -73,6 +77,16 @@ const parentMessagesMap = computed<Map<string, QuotationMessage>>(() => {
     : props.messages;
   return new Map(source.map((m) => [m._id, m]));
 });
+
+// The version a message was written on, as the list's Version column shows it.
+// A number the chain doesn't list still shows, as it is.
+const versionTag = (msg: QuotationMessage): string | undefined => {
+  if (!msg.quotationNumber) return undefined;
+  const revision = props.revisionsByNumber[msg.quotationNumber];
+  return revision === undefined
+    ? msg.quotationNumber
+    : t('orders.version_tag', { version: revisionSuffix(revision) });
+};
 
 const isOwnMessage = (msg: QuotationMessage): boolean => {
   return !!props.currentUserEmail && msg.authorId === props.currentUserEmail;
@@ -204,6 +218,9 @@ const statusTransitionsMap = computed<
               <StatusBadge :status="statusTransitionsMap.get(msg._id)!.to" />
             </div>
             <span class="text-muted-foreground text-xs">
+              <span v-if="versionTag(msg)" class="tabular-nums">
+                {{ versionTag(msg) }} ·
+              </span>
               {{ msg.timestamp ? formatDate(msg.timestamp) : '' }}
             </span>
             <!-- Actions dropdown -->

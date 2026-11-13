@@ -51,6 +51,7 @@ import {
   isQuotationDeletable,
   isQuotationEditable,
   isQuotationExternal,
+  isReplacedVersion,
   isRevisionDraft,
   openRevisionDraft,
   ORDER_DETAILS_FIELDS,
@@ -59,6 +60,7 @@ import {
   QUOTATION_OWNER_NAME_MAX_LENGTH,
   replacingVersion,
   revisionSendBlock,
+  revisionsByNumber,
   revisionSuffix,
 } from '#shared/utils/quotation';
 import type { RevisionSendBlock } from '#shared/utils/quotation';
@@ -180,11 +182,21 @@ const previewLoading = ref(false);
 const isInitialLoadComplete = ref(false);
 
 // Tabs & Steps
+// A replaced version has no Communication tab: the chain's one thread is
+// read and written on the live version
+const showCommunication = computed(
+  () => sentMode.value && !replacedVersion.value,
+);
+const changelogTab = computed(() => (showCommunication.value ? 2 : 1));
 const tabs = computed(() =>
   createMode.value
     ? [t('general'), t('product', 2)]
     : sentMode.value
-      ? [t('general'), t('communication'), t('changelog.tab_title')]
+      ? [
+          t('general'),
+          ...(showCommunication.value ? [t('communication')] : []),
+          t('changelog.tab_title'),
+        ]
       : [t('general'), t('product', 2)],
 );
 
@@ -2088,8 +2100,15 @@ const statusLabel = computed(() =>
 
 // Every version in the chain, newest first; each one is its own quotation
 const versionChain = computed(() => entityData.value?.revisions ?? []);
+const replacedVersion = computed(
+  () => !!entityData.value && isReplacedVersion(entityData.value),
+);
 const replacedBy = computed(() =>
   entityData.value ? replacingVersion(entityData.value) : undefined,
+);
+// The thread spans the chain; each message names the version it was written on
+const messageRevisions = computed(() =>
+  entityData.value ? revisionsByNumber(entityData.value) : {},
 );
 
 const workflowStartStatus = computed(() =>
@@ -3106,10 +3125,10 @@ definePageMeta({
           </ContentEditMainContent>
         </KeepAlive>
 
-        <!-- TAB 1: COMMUNICATION (sent mode) -->
+        <!-- TAB 1: COMMUNICATION (sent mode, not on a replaced version) -->
         <KeepAlive>
           <ContentEditMainContent
-            v-if="currentTab === 1 && sentMode"
+            v-if="currentTab === 1 && showCommunication"
             :key="`tab-communications`"
           >
             <ContentEditCard :create-mode="false" :title="$t('communication')">
@@ -3119,6 +3138,7 @@ definePageMeta({
                 :loading="messageLoading"
                 :edit-loading="messageEditLoading"
                 :message-send-success-count="messageSendSuccessCount"
+                :revisions-by-number="messageRevisions"
                 @send-message="handleSendMessage"
                 @edit-message="handleEditMessage"
                 @delete-message="handleDeleteMessage"
@@ -3127,10 +3147,10 @@ definePageMeta({
           </ContentEditMainContent>
         </KeepAlive>
 
-        <!-- TAB 2: CHANGELOG (all non-create modes) -->
+        <!-- CHANGELOG TAB (sent mode): 2, or 1 without Communication -->
         <KeepAlive>
           <ContentEditMainContent
-            v-if="currentTab === 2 && !createMode"
+            v-if="currentTab === changelogTab && sentMode"
             :key="`tab-changelog`"
           >
             <QuotationReplacedNotice
