@@ -62,9 +62,11 @@ export interface QuotationCompany extends EntitySnapshot {
 }
 
 /**
- * Owner (sales rep) snapshot
+ * Owner snapshot: a linked user (`_id` is the username) or a free-text name
+ * (`_id` is `''`, only `name` is set). No owner has both empty.
  */
 export interface QuotationOwner extends EntitySnapshot {
+  name: string;
   firstName: string;
   lastName: string;
   phone: string;
@@ -333,7 +335,10 @@ export interface QuotationBase {
  */
 export interface QuotationCreate extends CreateEntity<QuotationBase> {
   companyId?: string;
+  /** A user as owner. Never sent with `ownerName`; sending one clears the other. */
   ownerId?: string;
+  /** A free-text owner name, 1–200 characters. Never sent with `ownerId`. */
+  ownerName?: string;
   customerId?: string;
   terms?: string;
   billingAddressId?: string;
@@ -351,7 +356,10 @@ export interface QuotationCreate extends CreateEntity<QuotationBase> {
  */
 export interface QuotationUpdate extends UpdateEntity<QuotationBase> {
   companyId?: string;
+  /** A user as owner. Never sent with `ownerName`; sending one clears the other. */
   ownerId?: string;
+  /** A free-text owner name, 1–200 characters. Never sent with `ownerId`. */
+  ownerName?: string;
   customerId?: string;
   billingAddressId?: string;
   shippingAddressId?: string;

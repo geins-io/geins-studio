@@ -34,6 +34,8 @@ import type {
   Address,
   ProductApiOptions,
   ChangelogEntry,
+  EntityBaseWithName,
+  QuotationOwner,
 } from '#shared/types';
 import {
   ENTITIES,
@@ -48,8 +50,10 @@ import {
   ORDER_DETAILS_FIELDS,
   orderDetailsFormValues,
   orderDetailsRequest,
+  QUOTATION_OWNER_NAME_MAX_LENGTH,
 } from '#shared/utils/quotation';
 import { useToast } from '@/components/ui/toast/use-toast';
+import type { QuotationOwnerRequest } from '@/utils/quotation-owner';
 import type { ColumnDef, Row } from '@tanstack/vue-table';
 
 // =====================================================================================
@@ -80,6 +84,7 @@ const { getFallbackSelection, transformProductsToSelectorEntities } =
 // =====================================================================================
 // Only the create step requires an owner. A draft blocks Send without one
 // instead, so a draft saved ownerless (e.g. through the API) opens with no field error.
+// One that has an owner can't empty the field: the API can't remove an owner.
 // (useEntityEdit's createMode, same rule, doesn't exist yet at this point.)
 const requireOwner = useRoute().params.id === NEW_ENTITY_URL_SEGMENT;
 const formSchema = toTypedSchema(
@@ -89,9 +94,23 @@ const formSchema = toTypedSchema(
       accountId: z
         .string()
         .min(1, t('entity_required', { entityKey: 'company' })),
-      ownerId: requireOwner
-        ? z.string().min(1, t('entity_required', { entityKey: 'owner' }))
-        : z.string(),
+      // A sales rep's name or a free-text name
+      owner: z
+        .string()
+        .trim()
+        .max(
+          QUOTATION_OWNER_NAME_MAX_LENGTH,
+          t('form.max_characters', { max: QUOTATION_OWNER_NAME_MAX_LENGTH }),
+        )
+        .refine(
+          (value) => !!value || !requireOwner,
+          t('entity_required', { entityKey: 'owner' }),
+        )
+        // Sent mode unmounts the field, which empties it
+        .refine(
+          (value) => !!value || sentMode.value || !savedOwner.value?.name,
+          t('orders.order_details_cannot_clear'),
+        ),
       buyerId: z.string().optional(),
       channelId: z
         .string()
@@ -131,6 +150,10 @@ const communications = ref<QuotationMessage[]>([]);
 // What the API holds; edits are sent as changes against it
 const storedOrderDetails = ref<QuotationOrderDetails | null>(null);
 const orderDetailsEditable = ref(false);
+const savedOwner = ref<QuotationOwner | null>(null);
+// A picked suggestion beats matching its name: reps can share a name, and a
+// free-text owner can be named like a rep
+const pickedOwner = ref<EntityBaseWithName | null>(null);
 
 // Discount & shipping (standalone refs, not form fields)
 const discountType = ref<'percent' | 'fixedAmount'>('percent');
@@ -474,14 +497,41 @@ const availableBuyers = computed(() => {
   return selectedCompany.value?.buyers?.filter((b) => b.active) || [];
 });
 
+const ownerOptions = computed<EntityBaseWithName[]>(() =>
+  quotationOwnerOptions(
+    availableSalesReps.value.map((rep) => ({
+      _id: rep._id,
+      name: fullName(rep),
+    })),
+    savedOwner.value,
+  ),
+);
+
+const ownerRequest = (text: string | null | undefined): QuotationOwnerRequest =>
+  quotationOwnerRequest(
+    text,
+    ownerOptions.value,
+    savedOwner.value,
+    pickedOwner.value,
+  );
+
+// Picking the rep a free-text owner is named after leaves the text, and so the
+// form, unchanged: carry the switch to the update data here
+const selectOwner = (rep: EntityBaseWithName) => {
+  pickedOwner.value = rep;
+  if (createMode.value || !isInitialLoadComplete.value) return;
+  entityDataUpdate.value = {
+    ...entityDataUpdate.value,
+    ...ownerRequest(rep.name),
+  };
+};
+
 // Resolved display names for current owner and buyer
 const currentOwnerName = computed(() => {
   // Sent mode unmounts the owner field, which clears it on the form
-  if (sentMode.value) return fullName(entityData.value?.owner);
-  const ownerId = form.values.details?.ownerId;
-  if (!ownerId) return '';
-  const owner = availableSalesReps.value.find((u) => u._id === ownerId);
-  return fullName(owner);
+  if (sentMode.value) return savedOwner.value?.name || '';
+  const text = form.values.details?.owner?.trim() || '';
+  return findEntityByName(text, ownerOptions.value)?.name ?? text;
 });
 
 const currentBuyerName = computed(() => {
@@ -633,7 +683,7 @@ const {
   reshapeEntityData: (entityData) => ({
     ...entityData,
     // Normalize update-relevant fields to match onFormValuesChange shape
-    ownerId: entityData.owner?._id || undefined,
+    ...savedQuotationOwnerRequest(entityData.owner),
     customerId: entityData.customer?._id || undefined,
     companyId: entityData.company?._id || undefined,
     billingAddressId: entityData.billingAddress?._id || undefined,
@@ -663,7 +713,7 @@ const {
     details: {
       name: '',
       accountId: '',
-      ownerId: '',
+      owner: '',
       buyerId: '',
       channelId: '',
       marketId: '',
@@ -704,8 +754,9 @@ const {
     selectedCompanyId.value = companyId;
     selectedAccountName.value = quotation.company?.name || '';
 
-    // Resolve owner and buyer IDs directly from API response
-    const ownerId = quotation.owner?._id || '';
+    savedOwner.value = quotation.owner ?? null;
+    pickedOwner.value = null;
+    const owner = quotationOwnerText(quotation.owner, ownerOptions.value);
     const buyerId = quotation.customer?._id || '';
 
     // Set address data from API response
@@ -725,7 +776,7 @@ const {
       details: {
         name: quotation.name || '',
         accountId: companyId,
-        ownerId,
+        owner,
         buyerId,
         channelId: quotation.channelId || '',
         marketId: quotation.marketId || '',
@@ -745,7 +796,7 @@ const {
       marketId: formData.details.marketId,
       name: formData.details.name,
       companyId: formData.details.accountId || undefined,
-      ownerId: formData.details.ownerId || undefined,
+      ...ownerRequest(formData.details.owner),
       customerId: formData.details.buyerId || undefined,
       terms: formData.details.paymentTerms || undefined,
       items: quotationItems.value.length > 0 ? quotationItems.value : undefined,
@@ -760,7 +811,7 @@ const {
   prepareUpdateData: (formData, _entity) => ({
     name: formData.details.name,
     validTo: formData.details.expirationDate || null,
-    ownerId: formData.details.ownerId || undefined,
+    ...ownerRequest(formData.details.owner),
     customerId: formData.details.buyerId || undefined,
     companyId: formData.details.accountId || undefined,
     billingAddressId: selectedBillingAddressId.value || undefined,
@@ -785,7 +836,7 @@ const {
         marketId: values.details.marketId,
         name: values.details.name,
         companyId: values.details.accountId || undefined,
-        ownerId: values.details.ownerId || undefined,
+        ...ownerRequest(values.details.owner),
         customerId: values.details.buyerId || undefined,
         items:
           quotationItems.value.length > 0 ? quotationItems.value : undefined,
@@ -801,7 +852,7 @@ const {
         ...entityDataUpdate.value,
         name: values.details.name,
         validTo: values.details.expirationDate || null,
-        ownerId: values.details.ownerId || undefined,
+        ...ownerRequest(values.details.owner),
         customerId: values.details.buyerId || undefined,
         companyId: values.details.accountId || undefined,
         billingAddressId: selectedBillingAddressId.value || undefined,
@@ -909,7 +960,8 @@ watch(
       selectedAccountName.value = company?.name || '';
 
       // Clear sales rep and buyer when company changes
-      form.setFieldValue('details.ownerId', '', false);
+      form.setFieldValue('details.owner', '', false);
+      pickedOwner.value = null;
       form.setFieldValue('details.buyerId', '', false);
 
       // Auto-pick the only channel when company has exactly one;
@@ -1272,7 +1324,11 @@ const orderDetailsValid = async () => {
 // reactive side effects (quotationItems watcher, debounced onFormValuesChange)
 // have settled — matching the pattern used during initial data loading.
 const handleSave = async () => {
-  if (!(await orderDetailsValid())) return;
+  const [owner, orderDetailsOk] = await Promise.all([
+    form.validateField('details.owner'),
+    orderDetailsValid(),
+  ]);
+  if (!owner.valid || !orderDetailsOk) return;
   const result = await updateEntity(undefined, undefined, false);
   if (result) {
     cancelPendingFormSync();
@@ -1294,7 +1350,7 @@ const sendBlockReasons = computed<string[]>(() => {
   if (!details?.accountId) {
     reasons.push(t('orders.send_requires_customer'));
   }
-  if (!details?.ownerId) {
+  if (!details?.owner?.trim()) {
     reasons.push(t('orders.send_requires_owner'));
   }
   if (!details?.buyerId) {
@@ -2170,37 +2226,26 @@ definePageMeta({
                     </FormField>
                   </FormGrid>
                   <FormGrid design="1+1">
-                    <FormField
-                      v-slot="{ componentField }"
-                      name="details.ownerId"
-                    >
+                    <FormField v-slot="{ componentField }" name="details.owner">
                       <FormItem>
                         <FormLabel>
                           {{ $t('orders.quotation_owner') }}
                         </FormLabel>
                         <FormControl>
-                          <Select
+                          <FormInputCombobox
                             v-bind="componentField"
+                            :data-set="ownerOptions"
+                            entity-key="owner"
+                            :heading="$t('orders.existing_sales_reps')"
+                            :placeholder="$t('orders.quotation_owner')"
+                            :maxlength="QUOTATION_OWNER_NAME_MAX_LENGTH"
                             :disabled="!selectedCompanyId"
-                          >
-                            <SelectTrigger>
-                              <SelectValue
-                                :placeholder="
-                                  $t('select_entity', { entityKey: 'owner' })
-                                "
-                              />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem
-                                v-for="salesRep in availableSalesReps"
-                                :key="salesRep._id"
-                                :value="salesRep._id"
-                              >
-                                {{ fullName(salesRep) }}
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
+                            @select="selectOwner"
+                          />
                         </FormControl>
+                        <FormDescription>
+                          {{ $t('orders.quotation_owner_description') }}
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     </FormField>
@@ -2596,34 +2641,25 @@ definePageMeta({
                     </FormField>
                   </FormGrid>
                   <FormGrid design="1+1">
-                    <FormField
-                      v-slot="{ componentField }"
-                      name="details.ownerId"
-                    >
+                    <FormField v-slot="{ componentField }" name="details.owner">
                       <FormItem>
                         <FormLabel>
                           {{ $t('orders.quotation_owner') }}
                         </FormLabel>
                         <FormControl>
-                          <Select v-bind="componentField">
-                            <SelectTrigger>
-                              <SelectValue
-                                :placeholder="
-                                  $t('select_entity', { entityKey: 'owner' })
-                                "
-                              />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem
-                                v-for="salesRep in availableSalesReps"
-                                :key="salesRep._id"
-                                :value="salesRep._id"
-                              >
-                                {{ fullName(salesRep) }}
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <FormInputCombobox
+                            v-bind="componentField"
+                            :data-set="ownerOptions"
+                            entity-key="owner"
+                            :heading="$t('orders.existing_sales_reps')"
+                            :placeholder="$t('orders.quotation_owner')"
+                            :maxlength="QUOTATION_OWNER_NAME_MAX_LENGTH"
+                            @select="selectOwner"
+                          />
                         </FormControl>
+                        <FormDescription>
+                          {{ $t('orders.quotation_owner_description') }}
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     </FormField>

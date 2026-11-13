@@ -80,6 +80,9 @@ export function isQuotationDeletable(
   );
 }
 
+/** The most characters the API accepts for a free-text owner name */
+export const QUOTATION_OWNER_NAME_MAX_LENGTH = 200;
+
 /**
  * The order-detail text fields, with the most characters the API accepts
  */
