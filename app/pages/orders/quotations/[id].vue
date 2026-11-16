@@ -1993,7 +1993,7 @@ const summary = computed<DataItem[]>(() => {
   // Use entityData (from reshapeEntityData) as the primary source to stay correct in all modes.
   const summaryName = quotation.name || formValues?.name;
   const summaryExpirationDate = quotation.validTo || formValues?.expirationDate;
-  const { externalReference, revision, revisionOf, validFrom, orderPublicId } =
+  const { externalReference, revision, revisionOf, validFrom, orderId } =
     quotation;
 
   if (summaryName) {
@@ -2062,9 +2062,10 @@ const summary = computed<DataItem[]>(() => {
       value: formatDate(summaryExpirationDate),
     });
   }
-  // Plain text until Studio has an order page to link to
-  if (!createMode.value && orderPublicId) {
-    dataList.push({ label: t('orders.order_number'), value: orderPublicId });
+  // `orderId` is the customer-facing order number; `orderPublicId` is a lookup
+  // UUID for the portal, never shown. Plain text until Studio has an order page.
+  if (!createMode.value && orderId) {
+    dataList.push({ label: t('orders.order_number'), value: orderId });
   }
   if (!createMode.value && externalReference?.orderNumber) {
     dataList.push({
