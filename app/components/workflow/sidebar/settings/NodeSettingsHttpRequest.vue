@@ -40,6 +40,15 @@ const validateCertificates = computed({
     props.updateInput('validateCertificates', v ? undefined : false),
 });
 
+type ResponseType = 'json' | 'file';
+const RESPONSE_TYPES: ResponseType[] = ['json', 'file'];
+
+const responseType = computed<ResponseType>({
+  get: () => (props.nodeInput.responseType === 'file' ? 'file' : 'json'),
+  set: (v: ResponseType) =>
+    props.updateInput('responseType', v === 'file' ? 'file' : undefined),
+});
+
 // --- Declarative auth (manifest `auth` object) ---
 
 type AuthMode = 'none' | 'basic' | 'bearer' | 'apiKey' | 'monitor';
@@ -160,7 +169,7 @@ const showRequest = ref(true);
 const showHeaders = ref(Object.keys(headersRaw.value).length > 0);
 const showBody = ref(props.nodeInput.body != null);
 const showAuth = ref(props.nodeInput.auth != null);
-const showOptions = ref(false);
+const showOptions = ref(props.nodeInput.responseType != null);
 
 const needsBody = computed(() =>
   ['POST', 'PUT', 'PATCH'].includes(method.value),
@@ -373,6 +382,28 @@ const methodBadgeColor = computed(() => {
         {{ $t('node.settings.http.options') }}
       </button>
       <div v-if="showOptions" class="mt-3 space-y-3">
+        <div class="space-y-1">
+          <label class="text-muted-foreground text-xs">
+            {{ $t('node.settings.http.response_type') }}
+          </label>
+          <Select
+            :model-value="responseType"
+            @update:model-value="responseType = $event as ResponseType"
+          >
+            <SelectTrigger size="sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="r in RESPONSE_TYPES" :key="r" :value="r">
+                {{ $t(`node.settings.http.response_type_${r}`) }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <p class="text-muted-foreground text-[10px]">
+            {{ $t(`node.settings.http.response_type_${responseType}_help`) }}
+          </p>
+        </div>
+
         <!-- Timeout -->
         <div class="space-y-1">
           <label class="text-muted-foreground text-xs">
