@@ -45,8 +45,10 @@ If a feature branch is in flight and its local and remote tips differ, push a ba
 ## 2. Bump version + CHANGELOG on `next`
 
 ```bash
-git checkout next && git pull --ff-only
+git checkout next && git fetch origin && git merge --ff-only origin/next
 ```
+
+Not `git pull --ff-only`: with `pull.rebase` set, it refuses while the checkout has any uncommitted change (`cannot pull with rebase`).
 
 - `package.json` → `"version": "X.Y.Z"`. It feeds the `app-version` meta tag (`nuxt.config.ts`), so it must be bumped.
 - Prepend a section to `CHANGELOG.md` right under `# Changelog`, matching the existing format:
@@ -167,22 +169,34 @@ If the diff isn't empty, stop and ask the developer — those changes must be me
 ```bash
 NEXT_SHA=$(git rev-parse origin/next)
 git push --force-with-lease=next:"$NEXT_SHA" origin origin/main:refs/heads/next
-git checkout next && git reset --hard origin/main
+git checkout next && git reset --keep origin/main
 ```
 
-The lease refuses the push if anyone pushed to `next` since the fetch. Open PRs into `next` stay open (unlike deleting the branch, which closes them); their diffs look noisy until step 8. Other checkouts and worktrees on `next` need `git fetch && git reset --hard origin/next`.
+The lease refuses the push if anyone pushed to `next` since the fetch. Open PRs into `next` stay open (unlike deleting the branch, which closes them); their diffs look noisy until step 8. Other checkouts and worktrees on `next` need `git fetch && git reset --keep origin/next`.
+
+`--keep`, not `--hard`: the main checkout is shared with other sessions and may hold someone's uncommitted work (v0.8.0's `--hard` wiped a local `.nuxtrc` change). `--keep` carries uncommitted changes over (staged ones come back unstaged), and refuses instead of discarding when one touches a file the reset changes.
 
 ## 8. Retarget feature branches
 
-For each in-flight feature branch:
+For each in-flight feature branch, merge the release PR's last head (the pre-squash `next`), record the squash commit with `-s ours`, then merge anything newer on `next`. Run it as **one** shell command: variables don't survive between tool calls, and the `&&` chain stops at the first failure.
 
 ```bash
-git checkout <branch>
-git merge next                    # merge, NOT rebase
-git push
+git fetch origin &&
+OLD_NEXT=$(gh pr view <release-pr> --json headRefOid -q .headRefOid) &&
+SQUASH=$(gh pr view <release-pr> --json mergeCommit -q .mergeCommit.oid) &&
+git diff --quiet "$OLD_NEXT" "$SQUASH" &&     # same tree, or stop
+git checkout <branch> &&
+git merge "$OLD_NEXT" -m "chore: merge next (vX.Y.Z release) into <branch>" &&
+git merge -s ours "$SQUASH" -m "chore: record the vX.Y.Z squash as merged into <branch>" &&
+git merge origin/next -m "chore: merge next into <branch>" &&
+git diff --stat origin/next                   # must be only the branch's own changes
 ```
 
-Rebase replays every `chore: wip` commit against the squashed history and conflicts repeatedly; a 3-way merge collapses the duplicates in one pass. The feature PR is squash-merged later, so the merge commit never lands on `next`. Once merged, the open PR's diff against `next` shows only the feature's own changes again.
+Read that diff, then `git push` as its own step. If the first merge stops on a real conflict, resolve it, commit, and run the rest of the chain from the `-s ours` line.
+
+**Not a plain `git merge next`.** The squash commit's only parent is the previous `main`, so that becomes the merge base, and every file the branch already got from `next` shows as an add/add conflict (v0.8.0: 13 files on the auth branch). The release PR's head shares real history with the branch, so its merge has only the branch's real conflicts. It includes any review fixes pushed during step 3, so its tree equals the squash (the `diff --quiet` checks that). That makes `-s ours` on the squash commit record it without changing a file. Never `-s ours` on `origin/next` itself: anything merged into `next` after the reset would be marked merged without its changes, and the feature PR would revert it.
+
+Never rebase: it replays every `chore: wip` commit against the squashed history and conflicts repeatedly. The feature PR is squash-merged later, so the merge commits never land on `next`. Once pushed, the open PR's diff against `next` shows only the feature's own changes again.
 
 ## 9. Close out
 
