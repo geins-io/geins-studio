@@ -909,6 +909,8 @@
     "modified_at": "Modified",
     "latest_version": "Latest",
     "revision_of": "Revision of",
+    "replaced_by_label": "Replaced by",
+    "order_number": "Order number",
     "replaced_request": "The customer's request, as they sent it.",
     "replaced_version": "{number} is revised.",
     "replaced_by": "{number} replaces it.",
