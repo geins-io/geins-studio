@@ -99,6 +99,22 @@ export function isAnsweredRequest(
 }
 
 /**
+ * How the version picker labels a version instead of its status, given the
+ * chain's live version (`liveRevision`). The request is live until an offer
+ * is sent, but it was never sent itself, so it reads "Request", not "Latest".
+ * `undefined`: the version reads as its status.
+ */
+export function versionLabel(
+  version: Pick<QuotationRevision, 'quotationId' | 'status' | 'validFrom'>,
+  liveId?: string,
+): 'request' | 'latest' | 'answered' | undefined {
+  if (version.status === 'requested') return 'request';
+  if (version.quotationId === liveId) return 'latest';
+  if (isAnsweredRequest(version)) return 'answered';
+  return undefined;
+}
+
+/**
  * Whether the quotation is a revision the seller hasn't sent yet. The list
  * shows it as a link on its live version's row, not as a row of its own.
  */
@@ -282,7 +298,8 @@ export function quotationBuyerDecision(
 
 /**
  * The chain's live version: the newest one that isn't a draft. The API stores
- * new messages on it, and the version picker reads "Latest" on it.
+ * new messages on it, and the version picker reads "Latest" on it once an
+ * offer was sent (`versionLabel`).
  */
 export function liveRevision(
   quotation: Pick<Quotation, 'revisions'>,

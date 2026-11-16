@@ -905,6 +905,7 @@
     "rejected_on": "Avvisad {date}",
     "modified_at": "Ändrad",
     "latest_version": "Senaste",
+    "request_version": "Förfrågan",
     "revision_of": "Revision av",
     "replaced_by_label": "Ersatt av",
     "order_number": "Ordernummer",

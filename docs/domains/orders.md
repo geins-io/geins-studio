@@ -51,7 +51,7 @@ All status transitions are one-way (no revert to draft). Each transition is a `P
 
 **Versions** — Every version is its own quotation, so it opens on its own page (`entityEditUrl('quotation', quotationId)`); the quotation page fetches `fields: ['all']`, which includes `revisions`. The chain's **live** version is the newest that isn't a draft (`liveRevision()`): the one the buyer can answer. How the page shows the chain:
 
-- **Version picker** — `QuotationVersionSelect`, first in the header's action bar, when `revisions` has more than one entry. It lists them newest first as "number · status · sent date"; the live version reads **Latest**, an answered request **Answered**.
+- **Version picker** — `QuotationVersionSelect`, first in the header's action bar, when `revisions` has more than one entry. It lists them newest first as "number · status · sent date"; the buyer's request still `requested` reads **Request** (it's live until an offer is sent, but was never sent itself), the live version **Latest**, an answered request **Answered** (`versionLabel()`).
 - **Replaced versions** — `isReplacedVersion()`: `revised`, `revisedBy` set, or not the live version (a draft never is). `QuotationReplacedNotice` tops the General and Changelog tabs with the prototype's copy and **View latest version**, linking to the live version (`replacingVersion()`, which falls back to `revisedBy` when no chain is listed).
 - **Summary** — a **Version** row with `revision` as "v 03" (`orders.version_tag`, as the list shows it), on a revision a **Revision of** row linking to `revisionOf`, and on a replaced version a **Replaced by** row linking to `replacingVersion()`.
 
