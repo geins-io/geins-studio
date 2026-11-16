@@ -58,6 +58,16 @@ export const useUserStore = defineStore('user', () => {
     return load();
   }
 
+  /**
+   * The signed-in user, loading it once more when it isn't there (`user/me`
+   * may still be failing after the background retries). Undefined when that
+   * load fails too; it doesn't wait for the retries it starts.
+   */
+  async function ensureUser(): Promise<User | undefined> {
+    if (!user.value) await init();
+    return user.value;
+  }
+
   function reset(): void {
     clearTimeout(retryTimer);
     failedLoads = 0;
@@ -153,6 +163,7 @@ export const useUserStore = defineStore('user', () => {
     currentAccountName,
     hasMultipleAccounts,
     init,
+    ensureUser,
     reset,
     updateUser,
     hasAnyRole,

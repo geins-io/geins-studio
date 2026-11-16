@@ -1568,15 +1568,28 @@ const openTransitionDialog = (action: StatusAction) => {
   transitionDialogOpen.value = true;
 };
 
+type QuotationAuthor = Pick<StatusTransitionRequest, 'authorId' | 'authorName'>;
+
+// Without a loaded user a message or status change would go out with no
+// author, so it isn't sent. No request is made, so the toast is ours.
+const resolveAuthor = async (): Promise<QuotationAuthor | undefined> => {
+  if (await userStore.ensureUser()) {
+    return { authorId: userStore.userEmail, authorName: userStore.userName };
+  }
+  toast({
+    title: t('error_loading_entity', { entityKey: 'user' }),
+    description: t('feedback_error_description'),
+    variant: 'negative',
+  });
+  return undefined;
+};
+
 const buildTransitionRequest = (
+  author: QuotationAuthor,
   message?: string,
   messageType: QuotationMessageType = 'internal',
 ): StatusTransitionRequest => {
-  const { userName, userEmail } = storeToRefs(userStore);
-  const request: StatusTransitionRequest = {
-    authorId: userEmail.value,
-    authorName: userName.value,
-  };
+  const request: StatusTransitionRequest = { ...author };
   if (message) {
     request.message = { type: messageType, message };
   }
@@ -1604,13 +1617,19 @@ const handleStatusTransition = async (
   messageType: QuotationMessageType = 'internal',
   validTo?: string,
 ) => {
+  transitionLoading.value = true;
+  const author = await resolveAuthor();
+  transitionLoading.value = false;
+  // The dialog stays open, so its message survives another try
+  if (!author) return;
+
   // Extend uses a dedicated endpoint with validTo in the request body
   if (action === 'extend') {
     if (!validTo) return;
     transitionLoading.value = true;
     try {
       const request: ExtendTransitionRequest = {
-        ...buildTransitionRequest(message, messageType),
+        ...buildTransitionRequest(author, message, messageType),
         validTo,
       };
       await orderApi.quotation.extend(entityId.value, request);
@@ -1633,7 +1652,7 @@ const handleStatusTransition = async (
 
   transitionLoading.value = true;
   try {
-    const request = buildTransitionRequest(message, messageType);
+    const request = buildTransitionRequest(author, message, messageType);
 
     // Auto-confirm before finalize when requireConfirmation is enabled and status is accepted.
     // Send confirm without a message to avoid duplicate entries in the communications tab.
@@ -1642,7 +1661,11 @@ const handleStatusTransition = async (
       entityData.value?.settings?.requireConfirmation &&
       entityData.value?.status === 'accepted'
     ) {
-      const confirmRequest = buildTransitionRequest(undefined, messageType);
+      const confirmRequest = buildTransitionRequest(
+        author,
+        undefined,
+        messageType,
+      );
       const confirmMethod = transitionMethods.confirm;
       if (confirmMethod) {
         await confirmMethod(entityId.value, confirmRequest);
@@ -1822,13 +1845,14 @@ const handleSendMessage = async (
   message: string,
   answerRef?: string,
 ) => {
-  const { userName, userEmail } = storeToRefs(userStore);
   messageLoading.value = true;
   try {
+    // The compose box keeps its text, since only a sent message clears it
+    const author = await resolveAuthor();
+    if (!author) return;
     await orderApi.quotation.createMessage(entityId.value, {
       type,
-      authorId: userEmail.value,
-      authorName: userName.value,
+      ...author,
       message,
       ...(answerRef ? { answerRef } : {}),
     });
