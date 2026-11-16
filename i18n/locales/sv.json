@@ -465,8 +465,11 @@
         "refunded": "Order återbetald",
         "shipped": "Order skickad",
         "returned": "Order returnerad",
-        "paid": "Order paid",
-        "unpaid": "Order unpaid"
+        "paid": "Order betald",
+        "unpaid": "Order obetald",
+        "complete": {
+          "*": "Order slutförd (valfri)"
+        }
       },
       "product": {
         "*": {
@@ -928,10 +931,10 @@
     "calculating": "Beräknar…",
     "place_order": "Lägg order",
     "require_confirmation": "Kräv bekräftelse",
+    "require_confirmation_description": "Kräver att kunden accepterar och att du bekräftar innan ordern kan läggas.",
     "workflow_info_title": "Offertflöde",
     "workflow_info_description": "En visuell förklaring av offertflödet och dess olika steg.",
     "workflow_default_title": "Standardflöde",
-    "workflow_default_description": "Kund (eller du) kan lägga ordern direkt efter acceptans.",
     "workflow_strict_title": "Bekräftelse krävs",
     "workflow_step_draft": "Du kan göra ändringar",
     "workflow_step_requested": "Du kan granska förfrågan",
