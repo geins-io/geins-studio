@@ -26,6 +26,7 @@ import type {
   QuotationMessage,
   QuotationMessageType,
   QuotationOrderDetails,
+  QuotationRevision,
   QuotationStatus,
   StatusTransitionRequest,
   ExtendTransitionRequest,
@@ -34,6 +35,9 @@ import type {
   Address,
   ProductApiOptions,
   ChangelogEntry,
+  EntityBaseWithName,
+  QuotationOwner,
+  GeinsApiError,
 } from '#shared/types';
 import {
   ENTITIES,
@@ -42,14 +46,27 @@ import {
 } from '#shared/utils/entities';
 import {
   canEditOrderDetails,
+  canReviseQuotation,
+  isAnsweredRequest,
   isQuotationDeletable,
   isQuotationEditable,
   isQuotationExternal,
+  isReplacedVersion,
+  isRevisionDraft,
+  openRevisionDraft,
   ORDER_DETAILS_FIELDS,
   orderDetailsFormValues,
   orderDetailsRequest,
+  QUOTATION_OWNER_NAME_MAX_LENGTH,
+  replacingVersion,
+  revisionSendBlock,
+  revisionsByNumber,
+  revisionSuffix,
 } from '#shared/utils/quotation';
+import type { RevisionSendBlock } from '#shared/utils/quotation';
+import { ToastAction } from '@/components/ui/toast';
 import { useToast } from '@/components/ui/toast/use-toast';
+import type { QuotationOwnerRequest } from '@/utils/quotation-owner';
 import type { ColumnDef, Row } from '@tanstack/vue-table';
 
 // =====================================================================================
@@ -58,6 +75,7 @@ import type { ColumnDef, Row } from '@tanstack/vue-table';
 const scope = 'pages/orders/quotations/[id].vue';
 const { t } = useI18n();
 const { toast } = useToast();
+const { showGlobalErrorToast } = useApiErrorToast();
 const { formatDate } = useDate();
 const { geinsLogError } = useGeinsLog(scope);
 const router = useRouter();
@@ -78,8 +96,9 @@ const { getFallbackSelection, transformProductsToSelectorEntities } =
 // =====================================================================================
 // FORM VALIDATION SCHEMA
 // =====================================================================================
-// Only the create step requires an owner. A draft or request blocks Send without
-// one instead, so a request that arrives ownerless doesn't open with a field error.
+// Only the create step requires an owner. A draft blocks Send without one
+// instead, so a draft saved ownerless (e.g. through the API) opens with no field error.
+// One that has an owner can't empty the field: the API can't remove an owner.
 // (useEntityEdit's createMode, same rule, doesn't exist yet at this point.)
 const requireOwner = useRoute().params.id === NEW_ENTITY_URL_SEGMENT;
 const formSchema = toTypedSchema(
@@ -89,9 +108,23 @@ const formSchema = toTypedSchema(
       accountId: z
         .string()
         .min(1, t('entity_required', { entityKey: 'company' })),
-      ownerId: requireOwner
-        ? z.string().min(1, t('entity_required', { entityKey: 'owner' }))
-        : z.string(),
+      // A sales rep's name or a free-text name
+      owner: z
+        .string()
+        .trim()
+        .max(
+          QUOTATION_OWNER_NAME_MAX_LENGTH,
+          t('form.max_characters', { max: QUOTATION_OWNER_NAME_MAX_LENGTH }),
+        )
+        .refine(
+          (value) => !!value || !requireOwner,
+          t('entity_required', { entityKey: 'owner' }),
+        )
+        // Sent mode unmounts the field, which empties it
+        .refine(
+          (value) => !!value || sentMode.value || !savedOwner.value?.name,
+          t('orders.order_details_cannot_clear'),
+        ),
       buyerId: z.string().optional(),
       channelId: z
         .string()
@@ -124,7 +157,6 @@ const entityBase: QuotationCreate = {
 // =====================================================================================
 // Sent mode = the read-only layout — set from API response in parseEntityData
 const sentMode = ref(false);
-const currentStatus = ref<QuotationStatus>('draft');
 // Owned by an external system (e.g. Monitor): read-only in any status
 const externallyManaged = ref(false);
 const canDelete = ref(false);
@@ -132,6 +164,10 @@ const communications = ref<QuotationMessage[]>([]);
 // What the API holds; edits are sent as changes against it
 const storedOrderDetails = ref<QuotationOrderDetails | null>(null);
 const orderDetailsEditable = ref(false);
+const savedOwner = ref<QuotationOwner | null>(null);
+// A picked suggestion beats matching its name: reps can share a name, and a
+// free-text owner can be named like a rep
+const pickedOwner = ref<EntityBaseWithName | null>(null);
 
 // Discount & shipping (standalone refs, not form fields)
 const discountType = ref<'percent' | 'fixedAmount'>('percent');
@@ -146,11 +182,21 @@ const previewLoading = ref(false);
 const isInitialLoadComplete = ref(false);
 
 // Tabs & Steps
+// A replaced version has no Communication tab: the chain's one thread is
+// read and written on the live version
+const showCommunication = computed(
+  () => sentMode.value && !replacedVersion.value,
+);
+const changelogTab = computed(() => (showCommunication.value ? 2 : 1));
 const tabs = computed(() =>
   createMode.value
     ? [t('general'), t('product', 2)]
     : sentMode.value
-      ? [t('general'), t('communication'), t('changelog.tab_title')]
+      ? [
+          t('general'),
+          ...(showCommunication.value ? [t('communication')] : []),
+          t('changelog.tab_title'),
+        ]
       : [t('general'), t('product', 2)],
 );
 
@@ -475,14 +521,41 @@ const availableBuyers = computed(() => {
   return selectedCompany.value?.buyers?.filter((b) => b.active) || [];
 });
 
+const ownerOptions = computed<EntityBaseWithName[]>(() =>
+  quotationOwnerOptions(
+    availableSalesReps.value.map((rep) => ({
+      _id: rep._id,
+      name: fullName(rep),
+    })),
+    savedOwner.value,
+  ),
+);
+
+const ownerRequest = (text: string | null | undefined): QuotationOwnerRequest =>
+  quotationOwnerRequest(
+    text,
+    ownerOptions.value,
+    savedOwner.value,
+    pickedOwner.value,
+  );
+
+// Picking the rep a free-text owner is named after leaves the text, and so the
+// form, unchanged: carry the switch to the update data here
+const selectOwner = (rep: EntityBaseWithName) => {
+  pickedOwner.value = rep;
+  if (createMode.value || !isInitialLoadComplete.value) return;
+  entityDataUpdate.value = {
+    ...entityDataUpdate.value,
+    ...ownerRequest(rep.name),
+  };
+};
+
 // Resolved display names for current owner and buyer
 const currentOwnerName = computed(() => {
   // Sent mode unmounts the owner field, which clears it on the form
-  if (sentMode.value) return fullName(entityData.value?.owner);
-  const ownerId = form.values.details?.ownerId;
-  if (!ownerId) return '';
-  const owner = availableSalesReps.value.find((u) => u._id === ownerId);
-  return fullName(owner);
+  if (sentMode.value) return savedOwner.value?.name || '';
+  const text = form.values.details?.owner?.trim() || '';
+  return findEntityByName(text, ownerOptions.value)?.name ?? text;
 });
 
 const currentBuyerName = computed(() => {
@@ -634,7 +707,7 @@ const {
   reshapeEntityData: (entityData) => ({
     ...entityData,
     // Normalize update-relevant fields to match onFormValuesChange shape
-    ownerId: entityData.owner?._id || undefined,
+    ...savedQuotationOwnerRequest(entityData.owner),
     customerId: entityData.customer?._id || undefined,
     companyId: entityData.company?._id || undefined,
     billingAddressId: entityData.billingAddress?._id || undefined,
@@ -664,7 +737,7 @@ const {
     details: {
       name: '',
       accountId: '',
-      ownerId: '',
+      owner: '',
       buyerId: '',
       channelId: '',
       marketId: '',
@@ -681,7 +754,6 @@ const {
     quotationTotal.value = quotation.total || null;
     previewTotal.value = null;
 
-    currentStatus.value = quotation.status;
     externallyManaged.value = isQuotationExternal(quotation);
     sentMode.value = !isQuotationEditable(quotation);
     canDelete.value = isQuotationDeletable(quotation);
@@ -706,8 +778,9 @@ const {
     selectedCompanyId.value = companyId;
     selectedAccountName.value = quotation.company?.name || '';
 
-    // Resolve owner and buyer IDs directly from API response
-    const ownerId = quotation.owner?._id || '';
+    savedOwner.value = quotation.owner ?? null;
+    pickedOwner.value = null;
+    const owner = quotationOwnerText(quotation.owner, ownerOptions.value);
     const buyerId = quotation.customer?._id || '';
 
     // Set address data from API response
@@ -716,8 +789,8 @@ const {
     billingAddress.value = quotation.billingAddress;
     shippingAddress.value = quotation.shippingAddress;
 
-    // No fallback: a buyer's request arrives without terms, and a default shown
-    // here but never saved would let Send go out with no terms.
+    // No fallback: a default shown here but never saved would let Send go out
+    // with no terms. Left empty, Send stays blocked until the seller sets them.
     const paymentTerms = quotation.terms || '';
 
     // Set items from API response as the source of truth
@@ -727,7 +800,7 @@ const {
       details: {
         name: quotation.name || '',
         accountId: companyId,
-        ownerId,
+        owner,
         buyerId,
         channelId: quotation.channelId || '',
         marketId: quotation.marketId || '',
@@ -747,7 +820,7 @@ const {
       marketId: formData.details.marketId,
       name: formData.details.name,
       companyId: formData.details.accountId || undefined,
-      ownerId: formData.details.ownerId || undefined,
+      ...ownerRequest(formData.details.owner),
       customerId: formData.details.buyerId || undefined,
       terms: formData.details.paymentTerms || undefined,
       items: quotationItems.value.length > 0 ? quotationItems.value : undefined,
@@ -762,7 +835,7 @@ const {
   prepareUpdateData: (formData, _entity) => ({
     name: formData.details.name,
     validTo: formData.details.expirationDate || null,
-    ownerId: formData.details.ownerId || undefined,
+    ...ownerRequest(formData.details.owner),
     customerId: formData.details.buyerId || undefined,
     companyId: formData.details.accountId || undefined,
     billingAddressId: selectedBillingAddressId.value || undefined,
@@ -787,7 +860,7 @@ const {
         marketId: values.details.marketId,
         name: values.details.name,
         companyId: values.details.accountId || undefined,
-        ownerId: values.details.ownerId || undefined,
+        ...ownerRequest(values.details.owner),
         customerId: values.details.buyerId || undefined,
         items:
           quotationItems.value.length > 0 ? quotationItems.value : undefined,
@@ -803,7 +876,7 @@ const {
         ...entityDataUpdate.value,
         name: values.details.name,
         validTo: values.details.expirationDate || null,
-        ownerId: values.details.ownerId || undefined,
+        ...ownerRequest(values.details.owner),
         customerId: values.details.buyerId || undefined,
         companyId: values.details.accountId || undefined,
         billingAddressId: selectedBillingAddressId.value || undefined,
@@ -911,7 +984,8 @@ watch(
       selectedAccountName.value = company?.name || '';
 
       // Clear sales rep and buyer when company changes
-      form.setFieldValue('details.ownerId', '', false);
+      form.setFieldValue('details.owner', '', false);
+      pickedOwner.value = null;
       form.setFieldValue('details.buyerId', '', false);
 
       // Auto-pick the only channel when company has exactly one;
@@ -1222,7 +1296,7 @@ if (!createMode.value) {
     const snapshotsDrifted = syncCompanySnapshots();
     const pricesDrifted = hasItemPriceDrift(savedItems, displayItems.value);
     if (snapshotsDrifted || pricesDrifted) {
-      await updateEntity(undefined, undefined, false, true);
+      await updateEntity(undefined, { fields: ['all'] }, false, true);
       cancelPendingFormSync();
       await nextTick();
       setOriginalSavedData();
@@ -1259,8 +1333,8 @@ if (!createMode.value) {
 // =====================================================================================
 // SAVE HANDLER
 // =====================================================================================
-// Only the order details: a buyer's request may lack fields the rest of the
-// schema requires, and the seller must still be able to save it as it is.
+// Only the order details: a draft may be saved incomplete, and
+// sendBlockReasons checks the rest before it can be sent.
 const orderDetailsValid = async () => {
   const results = await Promise.all(
     ORDER_DETAILS_FIELDS.map((field) =>
@@ -1274,8 +1348,14 @@ const orderDetailsValid = async () => {
 // reactive side effects (quotationItems watcher, debounced onFormValuesChange)
 // have settled — matching the pattern used during initial data loading.
 const handleSave = async () => {
-  if (!(await orderDetailsValid())) return;
-  const result = await updateEntity(undefined, undefined, false);
+  const [owner, orderDetailsOk] = await Promise.all([
+    form.validateField('details.owner'),
+    orderDetailsValid(),
+  ]);
+  if (!owner.valid || !orderDetailsOk) return;
+  // The PATCH answers with the default fields unless asked; `revisions` (the
+  // send block, Discard draft) isn't one of them
+  const result = await updateEntity(undefined, { fields: ['all'] }, false);
   if (result) {
     cancelPendingFormSync();
     await nextTick();
@@ -1287,8 +1367,31 @@ const handleSave = async () => {
 // =====================================================================================
 // SEND READINESS
 // =====================================================================================
+const revisionBlockMessage = ({ reason, source }: RevisionSendBlock) => {
+  switch (reason) {
+    case 'requestCanceled':
+      return t('orders.send_blocked_request_canceled');
+    case 'requestWithdrawn':
+      return t('orders.send_blocked_request_withdrawn');
+    case 'versionCanceled':
+      return t('orders.send_blocked_version_canceled', {
+        version: source.revision,
+      });
+    case 'versionAnswered':
+      // Sentence-cased like StatusBadge's default text
+      return t('orders.send_blocked_version_answered', {
+        version: source.revision,
+        status: source.status.charAt(0).toUpperCase() + source.status.slice(1),
+      });
+  }
+};
+
 const sendBlockReasons = computed<string[]>(() => {
   const reasons: string[] = [];
+  const revisionBlock = entityData.value && revisionSendBlock(entityData.value);
+  if (revisionBlock) {
+    reasons.push(revisionBlockMessage(revisionBlock));
+  }
   const details = form.values.details;
   if (!details?.name) {
     reasons.push(t('orders.send_requires_name'));
@@ -1296,7 +1399,7 @@ const sendBlockReasons = computed<string[]>(() => {
   if (!details?.accountId) {
     reasons.push(t('orders.send_requires_customer'));
   }
-  if (!details?.ownerId) {
+  if (!details?.owner?.trim()) {
     reasons.push(t('orders.send_requires_owner'));
   }
   if (!details?.buyerId) {
@@ -1446,6 +1549,10 @@ const statusActions = computed<StatusActionLayout>(() => {
         dropdownActions: [],
       };
 
+    // Terminal: a later version replaced it. The action bar is hidden too.
+    case 'revised':
+      return { placeOrder: false, groupActions: [], dropdownActions: [] };
+
     default:
       return { placeOrder: false, groupActions: [], dropdownActions: [] };
   }
@@ -1461,15 +1568,28 @@ const openTransitionDialog = (action: StatusAction) => {
   transitionDialogOpen.value = true;
 };
 
+type QuotationAuthor = Pick<StatusTransitionRequest, 'authorId' | 'authorName'>;
+
+// Without a loaded user a message or status change would go out with no
+// author, so it isn't sent. No request is made, so the toast is ours.
+const resolveAuthor = async (): Promise<QuotationAuthor | undefined> => {
+  if (await userStore.ensureUser()) {
+    return { authorId: userStore.userEmail, authorName: userStore.userName };
+  }
+  toast({
+    title: t('error_loading_entity', { entityKey: 'user' }),
+    description: t('feedback_error_description'),
+    variant: 'negative',
+  });
+  return undefined;
+};
+
 const buildTransitionRequest = (
+  author: QuotationAuthor,
   message?: string,
   messageType: QuotationMessageType = 'internal',
 ): StatusTransitionRequest => {
-  const { userName, userEmail } = storeToRefs(userStore);
-  const request: StatusTransitionRequest = {
-    authorId: userEmail.value,
-    authorName: userName.value,
-  };
+  const request: StatusTransitionRequest = { ...author };
   if (message) {
     request.message = { type: messageType, message };
   }
@@ -1497,13 +1617,19 @@ const handleStatusTransition = async (
   messageType: QuotationMessageType = 'internal',
   validTo?: string,
 ) => {
+  transitionLoading.value = true;
+  const author = await resolveAuthor();
+  transitionLoading.value = false;
+  // The dialog stays open, so its message survives another try
+  if (!author) return;
+
   // Extend uses a dedicated endpoint with validTo in the request body
   if (action === 'extend') {
     if (!validTo) return;
     transitionLoading.value = true;
     try {
       const request: ExtendTransitionRequest = {
-        ...buildTransitionRequest(message, messageType),
+        ...buildTransitionRequest(author, message, messageType),
         validTo,
       };
       await orderApi.quotation.extend(entityId.value, request);
@@ -1526,7 +1652,7 @@ const handleStatusTransition = async (
 
   transitionLoading.value = true;
   try {
-    const request = buildTransitionRequest(message, messageType);
+    const request = buildTransitionRequest(author, message, messageType);
 
     // Auto-confirm before finalize when requireConfirmation is enabled and status is accepted.
     // Send confirm without a message to avoid duplicate entries in the communications tab.
@@ -1535,7 +1661,11 @@ const handleStatusTransition = async (
       entityData.value?.settings?.requireConfirmation &&
       entityData.value?.status === 'accepted'
     ) {
-      const confirmRequest = buildTransitionRequest(undefined, messageType);
+      const confirmRequest = buildTransitionRequest(
+        author,
+        undefined,
+        messageType,
+      );
       const confirmMethod = transitionMethods.confirm;
       if (confirmMethod) {
         await confirmMethod(entityId.value, confirmRequest);
@@ -1553,6 +1683,11 @@ const handleStatusTransition = async (
     });
   } catch (error) {
     geinsLogError(`Failed to ${action} quotation:`, error);
+    // A revision whose source was answered meanwhile answers 409. Reload, so
+    // the send dialog says why; sending again stays safe.
+    if (action === 'send' && isRevision.value) {
+      await refreshEntityData.value?.();
+    }
   } finally {
     transitionLoading.value = false;
     transitionDialogOpen.value = false;
@@ -1577,6 +1712,128 @@ const handleCopy = async () => {
 };
 
 // =====================================================================================
+// REVISIONS
+// =====================================================================================
+const isRevision = computed(
+  () => !!entityData.value && isRevisionDraft(entityData.value),
+);
+
+// Create offer on a request (the main button), Revise in the ⋯ menu on an
+// offer. While the chain has a draft, both open it instead.
+const reviseAction = computed(() => {
+  const quotation = entityData.value;
+  if (!quotation || !canReviseQuotation(quotation)) return null;
+  const draft = openRevisionDraft(quotation);
+  const primary = quotation.status === 'requested';
+  if (draft) {
+    return {
+      primary,
+      label: t('orders.open_revision_draft', { version: draft.revision }),
+    };
+  }
+  return {
+    primary,
+    label: primary
+      ? t('orders.create_offer')
+      : t('revise_entity', { entityKey }),
+  };
+});
+
+// The sent layout's ⋯ menu; without it, its items show as buttons
+const hasActionMenu = computed(
+  () =>
+    statusActions.value.groupActions.length > 0 ||
+    statusActions.value.dropdownActions.length > 0 ||
+    (!!reviseAction.value && !reviseAction.value.primary),
+);
+
+const openQuotation = (id: string) =>
+  router.push(entityEditUrl('quotation', id));
+
+const reviseLoading = ref(false);
+const handleRevise = async () => {
+  const quotation = entityData.value;
+  if (!quotation) return;
+  const draft = openRevisionDraft(quotation);
+  if (draft) {
+    await openQuotation(draft.quotationId);
+    return;
+  }
+
+  reviseLoading.value = true;
+  try {
+    // Toast suppressed: a draft started since this page loaded isn't an
+    // error (the route refuses a second one), and a 404 gets a Copy action.
+    const revision = await orderApi.quotation.revise(entityId.value, {
+      suppressErrorToast: true,
+    });
+    toast({
+      title: t('entity_created', { entityKey: 'draft' }),
+      variant: 'positive',
+    });
+    await openQuotation(revision._id);
+  } catch (error) {
+    geinsLogError('Failed to revise quotation:', error);
+    const latest = await orderApi.quotation
+      .get(entityId.value, { fields: ['revisions'] })
+      .catch(() => undefined);
+    const started = latest && openRevisionDraft(latest);
+    if (started) {
+      await openQuotation(started.quotationId);
+      return;
+    }
+    const apiError = error as GeinsApiError;
+    // 404: the buyer has left the company, so only a copy can answer
+    const copyAction =
+      apiError.status === 404
+        ? () =>
+            h(
+              ToastAction,
+              { altText: t('orders.copy_as_new_draft'), onClick: handleCopy },
+              () => t('orders.copy_as_new_draft'),
+            )
+        : undefined;
+    void showGlobalErrorToast(
+      apiError,
+      {},
+      { action: 'revising', entity: 'quotation' },
+      copyAction,
+    );
+  } finally {
+    reviseLoading.value = false;
+  }
+};
+
+// Discard draft: deletes a revision draft and returns to the version it
+// would have replaced, which isn't changed
+const discardDialogOpen = ref(false);
+const discarding = ref(false);
+const discardDescription = computed(() => {
+  const quotation = entityData.value;
+  const source = quotation?.revisions?.find(
+    (version: QuotationRevision) =>
+      version.quotationId === quotation.revisionOf?.quotationId,
+  );
+  return t('orders.discard_draft_description', {
+    version: quotation?.revision ?? '',
+    source: source?.revision ?? '',
+  });
+});
+const confirmDiscard = async () => {
+  const sourceId = entityData.value?.revisionOf?.quotationId;
+  discarding.value = true;
+  const discarded = await deleteEntity();
+  discarding.value = false;
+  discardDialogOpen.value = false;
+  if (!discarded || !sourceId) return;
+  // The draft is gone, so its unsaved edits are too: the same-route guard
+  // mustn't ask about them on the way to the source
+  cancelPendingFormSync();
+  setOriginalSavedData();
+  await openQuotation(sourceId);
+};
+
+// =====================================================================================
 // MESSAGE CRUD
 // =====================================================================================
 const messageLoading = ref(false);
@@ -1588,13 +1845,14 @@ const handleSendMessage = async (
   message: string,
   answerRef?: string,
 ) => {
-  const { userName, userEmail } = storeToRefs(userStore);
   messageLoading.value = true;
   try {
+    // The compose box keeps its text, since only a sent message clears it
+    const author = await resolveAuthor();
+    if (!author) return;
     await orderApi.quotation.createMessage(entityId.value, {
       type,
-      authorId: userEmail.value,
-      authorName: userName.value,
+      ...author,
       message,
       ...(answerRef ? { answerRef } : {}),
     });
@@ -1708,7 +1966,8 @@ const companySummary = computed<DataItem[]>(() => {
     });
   }
 
-  if (currentOwnerName.value) {
+  // The edit view lists the owner with the quotation; the create step keeps it here
+  if (createMode.value && currentOwnerName.value) {
     dataList.push({
       label: t('owner'),
       value: currentOwnerName.value,
@@ -1724,33 +1983,30 @@ const companySummary = computed<DataItem[]>(() => {
   return dataList;
 });
 
-const priceListSummary = computed<DataItem[]>(() => {
-  return [];
-});
-
 const summary = computed<DataItem[]>(() => {
   const dataList: DataItem[] = [];
-  if (!entityData.value) return dataList;
+  const quotation = entityData.value;
+  if (!quotation) return dataList;
 
   const formValues = form.values.details;
   // In sent mode, VeeValidate clears form values when fields unmount.
   // Use entityData (from reshapeEntityData) as the primary source to stay correct in all modes.
-  const summaryName = entityData.value?.name || formValues?.name;
-  const summaryExpirationDate =
-    entityData.value?.validTo || formValues?.expirationDate;
-  const summaryPaymentTerms =
-    entityData.value?.terms || formValues?.paymentTerms;
+  const summaryName = quotation.name || formValues?.name;
+  const summaryExpirationDate = quotation.validTo || formValues?.expirationDate;
+  const { externalReference, revision, revisionOf, validFrom, orderId } =
+    quotation;
 
   if (summaryName) {
     dataList.push({ label: t('name'), value: summaryName });
   }
-  if (!createMode.value) {
+  if (createMode.value) {
+    dataList.push(...companySummary.value);
+  } else {
     dataList.push({
       label: t('ref_number'),
-      value: entityData.value.quotationNumber,
+      value: quotation.quotationNumber,
       displayType: DataItemDisplayType.Copy,
     });
-    const externalReference = entityData.value.externalReference;
     if (externalReference?.number) {
       dataList.push({
         label: t('orders.external_quotation_number'),
@@ -1758,22 +2014,31 @@ const summary = computed<DataItem[]>(() => {
         displayType: DataItemDisplayType.Copy,
       });
     }
-    if (externalReference?.orderNumber) {
+    if (revision !== undefined) {
       dataList.push({
-        label: t('orders.external_order_number'),
-        value: externalReference.orderNumber,
-        displayType: DataItemDisplayType.Copy,
+        label: t('version'),
+        value: t('orders.version_tag', { version: revisionSuffix(revision) }),
       });
     }
-    dataList.push({
-      label: t('orders.require_confirmation'),
-      value: entityData.value.settings?.requireConfirmation
-        ? t('yes')
-        : t('no'),
-    });
-  }
-  if (createMode.value && companySummary.value.length) {
-    dataList.push(...companySummary.value);
+    if (revisionOf) {
+      dataList.push({
+        label: t('orders.revision_of'),
+        value: revisionOf.quotationNumber,
+        displayType: DataItemDisplayType.Link,
+        href: entityEditUrl('quotation', revisionOf.quotationId),
+      });
+    }
+    if (replacedBy.value) {
+      dataList.push({
+        label: t('orders.replaced_by_label'),
+        value: replacedBy.value.quotationNumber,
+        displayType: DataItemDisplayType.Link,
+        href: entityEditUrl('quotation', replacedBy.value.quotationId),
+      });
+    }
+    if (currentOwnerName.value) {
+      dataList.push({ label: t('owner'), value: currentOwnerName.value });
+    }
   }
   if (availableChannels.value.length > 1 && displayChannel.value) {
     dataList.push({
@@ -1787,16 +2052,26 @@ const summary = computed<DataItem[]>(() => {
       value: displayMarketLabel.value,
     });
   }
+  // Only a sent quotation has `validFrom`: a buyer's request never was
+  if (sentMode.value && validFrom) {
+    dataList.push({ label: t('orders.sent_on'), value: formatDate(validFrom) });
+  }
   if (summaryExpirationDate) {
     dataList.push({
       label: t('expiration_date'),
       value: formatDate(summaryExpirationDate),
     });
   }
-  if (!createMode.value && summaryPaymentTerms) {
+  // `orderId` is the customer-facing order number; `orderPublicId` is a lookup
+  // UUID for the portal, never shown. Plain text until Studio has an order page.
+  if (!createMode.value && orderId) {
+    dataList.push({ label: t('orders.order_number'), value: orderId });
+  }
+  if (!createMode.value && externalReference?.orderNumber) {
     dataList.push({
-      label: t('orders.payment_terms'),
-      value: summaryPaymentTerms,
+      label: t('orders.external_order_number'),
+      value: externalReference.orderNumber,
+      displayType: DataItemDisplayType.Copy,
     });
   }
 
@@ -1839,8 +2114,32 @@ const quotationStatus = computed<QuotationStatus>(
   () => entityData.value?.status || 'draft',
 );
 
+const answeredRequest = computed(
+  () => !!entityData.value && isAnsweredRequest(entityData.value),
+);
+
+// A buyer's request answered by an offer keeps `revised`, under its own label
+const statusLabel = computed(() =>
+  answeredRequest.value ? t('orders.answered_request') : undefined,
+);
+
+// Every version in the chain, newest first; each one is its own quotation
+const versionChain = computed(() => entityData.value?.revisions ?? []);
+const replacedVersion = computed(
+  () => !!entityData.value && isReplacedVersion(entityData.value),
+);
+const replacedBy = computed(() =>
+  entityData.value ? replacingVersion(entityData.value) : undefined,
+);
+// The thread spans the chain; each message names the version it was written on
+const messageRevisions = computed(() =>
+  entityData.value ? revisionsByNumber(entityData.value) : {},
+);
+
 const workflowStartStatus = computed(() =>
-  quotationStatus.value === 'requested' ? 'requested' : 'draft',
+  quotationStatus.value === 'requested' || answeredRequest.value
+    ? 'requested'
+    : 'draft',
 );
 
 const { summaryProps } = useEntityEditSummary({
@@ -1852,6 +2151,7 @@ const { summaryProps } = useEntityEditSummary({
   entityLiveStatus,
   showActiveStatus: false,
   status: quotationStatus,
+  statusLabel,
 });
 
 definePageMeta({
@@ -1871,6 +2171,15 @@ definePageMeta({
     :entity-key="entityKey"
     :loading="deleting"
     @confirm="confirmDelete"
+  />
+  <DialogDelete
+    v-model:open="discardDialogOpen"
+    :entity-key="entityKey"
+    :loading="discarding"
+    :title="$t('orders.discard_draft')"
+    :description="discardDescription"
+    :confirm-label="$t('orders.discard_draft')"
+    @confirm="confirmDiscard"
   />
   <QuotationDialogStatusTransition
     v-if="transitionAction"
@@ -1903,6 +2212,11 @@ definePageMeta({
     <template #header>
       <ContentHeader :title="entityPageTitle" :entity-key="entityKey">
         <ContentActionBar>
+          <QuotationVersionSelect
+            v-if="versionChain.length > 1"
+            :revisions="versionChain"
+            :quotation-id="entityId"
+          />
           <!-- DRAFT MODE actions -->
           <template v-if="!createMode && !sentMode">
             <ButtonIcon
@@ -1911,11 +2225,7 @@ definePageMeta({
               :disabled="!hasUnsavedChanges || loading || fetchingData"
               @click="handleSave"
             >
-              {{
-                $t('save_entity', {
-                  entityKey: currentStatus === 'draft' ? 'draft' : entityKey,
-                })
-              }}
+              {{ $t('save_entity', { entityKey: 'draft' }) }}
             </ButtonIcon>
             <ButtonGroup>
               <ButtonIcon
@@ -1947,20 +2257,6 @@ definePageMeta({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <template v-if="statusActions.dropdownActions.length">
-                    <DropdownMenuItem
-                      v-for="action in statusActions.dropdownActions"
-                      :key="action.action"
-                      @click="openTransitionDialog(action)"
-                    >
-                      <LucideBan
-                        v-if="action.icon === 'ban'"
-                        class="mr-2 size-4"
-                      />
-                      {{ action.label }}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                  </template>
                   <DropdownMenuItem as-child>
                     <NuxtLink :to="newEntityUrl">
                       <LucidePlus class="mr-2 size-4" />
@@ -1972,7 +2268,14 @@ definePageMeta({
                     <span>{{ $t('orders.copy_as_new_draft') }}</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem @click="openDeleteDialog">
+                  <DropdownMenuItem
+                    v-if="isRevision"
+                    @click="discardDialogOpen = true"
+                  >
+                    <LucideTrash class="mr-2 size-4" />
+                    <span>{{ $t('orders.discard_draft') }}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem v-else @click="openDeleteDialog">
                     <LucideTrash class="mr-2 size-4" />
                     <span>{{ $t('delete_entity', { entityKey }) }}</span>
                   </DropdownMenuItem>
@@ -1981,8 +2284,8 @@ definePageMeta({
             </ButtonGroup>
           </template>
 
-          <!-- SENT MODE actions -->
-          <template v-if="sentMode">
+          <!-- SENT MODE actions; a revised version has none at all -->
+          <template v-if="sentMode && quotationStatus !== 'revised'">
             <Button
               v-if="statusActions.placeOrder"
               @click="
@@ -1998,6 +2301,14 @@ definePageMeta({
               <LucideShoppingCart class="mr-2 size-4" />
               {{ $t('orders.place_order') }}
             </Button>
+            <ButtonIcon
+              v-if="reviseAction?.primary"
+              icon="FilePen"
+              :loading="reviseLoading"
+              @click="handleRevise"
+            >
+              {{ reviseAction.label }}
+            </ButtonIcon>
             <ButtonGroup>
               <Button
                 v-for="action in statusActions.groupActions"
@@ -2017,38 +2328,50 @@ definePageMeta({
                 />
                 {{ action.label }}
               </Button>
-              <DropdownMenu v-if="statusActions.groupActions.length">
+              <DropdownMenu v-if="hasActionMenu">
                 <DropdownMenuTrigger as-child>
                   <Button size="icon" variant="secondary">
-                    <LucideMoreHorizontal
-                      v-if="statusActions.groupActions.length"
-                      class="size-3.5"
+                    <LucideLoaderCircle
+                      v-if="reviseLoading"
+                      class="size-3.5 animate-spin"
                     />
+                    <LucideMoreHorizontal v-else class="size-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <template v-if="statusActions.dropdownActions.length">
-                    <DropdownMenuItem
-                      v-for="action in statusActions.dropdownActions"
-                      :key="action.action"
-                      @click="openTransitionDialog(action)"
-                    >
-                      <LucideCheck
-                        v-if="action.icon === 'check'"
-                        class="mr-2 size-4"
-                      />
-                      <LucideBan
-                        v-if="action.icon === 'ban'"
-                        class="mr-2 size-4"
-                      />
-                      <LucideCalendarPlus
-                        v-if="action.icon === 'calendar-plus'"
-                        class="mr-2 size-4"
-                      />
-                      {{ action.label }}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                  </template>
+                  <DropdownMenuItem
+                    v-if="reviseAction && !reviseAction.primary"
+                    :disabled="reviseLoading"
+                    @click="handleRevise"
+                  >
+                    <LucideFilePen class="mr-2 size-4" />
+                    {{ reviseAction.label }}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    v-for="action in statusActions.dropdownActions"
+                    :key="action.action"
+                    @click="openTransitionDialog(action)"
+                  >
+                    <LucideCheck
+                      v-if="action.icon === 'check'"
+                      class="mr-2 size-4"
+                    />
+                    <LucideBan
+                      v-if="action.icon === 'ban'"
+                      class="mr-2 size-4"
+                    />
+                    <LucideCalendarPlus
+                      v-if="action.icon === 'calendar-plus'"
+                      class="mr-2 size-4"
+                    />
+                    {{ action.label }}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator
+                    v-if="
+                      (reviseAction && !reviseAction.primary) ||
+                      statusActions.dropdownActions.length
+                    "
+                  />
                   <DropdownMenuItem as-child>
                     <NuxtLink :to="newEntityUrl">
                       <LucidePlus class="mr-2 size-4" />
@@ -2190,37 +2513,26 @@ definePageMeta({
                     </FormField>
                   </FormGrid>
                   <FormGrid design="1+1">
-                    <FormField
-                      v-slot="{ componentField }"
-                      name="details.ownerId"
-                    >
+                    <FormField v-slot="{ componentField }" name="details.owner">
                       <FormItem>
                         <FormLabel>
                           {{ $t('orders.quotation_owner') }}
                         </FormLabel>
                         <FormControl>
-                          <Select
+                          <FormInputCombobox
                             v-bind="componentField"
+                            :data-set="ownerOptions"
+                            entity-key="owner"
+                            :heading="$t('orders.existing_sales_reps')"
+                            :placeholder="$t('orders.quotation_owner')"
+                            :maxlength="QUOTATION_OWNER_NAME_MAX_LENGTH"
                             :disabled="!selectedCompanyId"
-                          >
-                            <SelectTrigger>
-                              <SelectValue
-                                :placeholder="
-                                  $t('select_entity', { entityKey: 'owner' })
-                                "
-                              />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem
-                                v-for="salesRep in availableSalesReps"
-                                :key="salesRep._id"
-                                :value="salesRep._id"
-                              >
-                                {{ fullName(salesRep) }}
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
+                            @select="selectOwner"
+                          />
                         </FormControl>
+                        <FormDescription>
+                          {{ $t('orders.quotation_owner_description') }}
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     </FormField>
@@ -2341,13 +2653,18 @@ definePageMeta({
 
             <!-- ========== SENT MODE (read-only) ========== -->
             <template v-else-if="sentMode">
+              <QuotationReplacedNotice
+                v-if="replacedBy"
+                :quotation-number="entityData.quotationNumber"
+                :replaced-by="replacedBy"
+                :request="answeredRequest"
+              />
               <!-- Quotation Details (read-only) -->
               <ContentEditCard
                 :create-mode="false"
                 :title="$t('entity_details', { entityKey })"
               >
                 <div class="space-y-4">
-                  <!-- Same 2×2 as the draft card; the empty expiration cell keeps owner and terms in their columns -->
                   <div class="grid grid-cols-2 gap-4">
                     <div>
                       <p class="text-muted-foreground mb-1 text-xs font-medium">
@@ -2388,6 +2705,8 @@ definePageMeta({
                         </p>
                       </template>
                     </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-4 border-t pt-4">
                     <div>
                       <p class="text-muted-foreground mb-1 text-xs font-medium">
                         {{ $t('orders.quotation_owner') }}
@@ -2424,7 +2743,10 @@ definePageMeta({
                       <p class="text-muted-foreground mb-1 text-xs font-medium">
                         {{ $t('status') }}
                       </p>
-                      <StatusBadge :status="quotationStatus" />
+                      <StatusBadge
+                        :status="quotationStatus"
+                        :label="statusLabel"
+                      />
                     </div>
                   </div>
                   <div class="grid grid-cols-2 gap-4 border-t pt-4">
@@ -2506,6 +2828,8 @@ definePageMeta({
                   :billing-address="billingAddress"
                   :shipping-address="shippingAddress"
                   :buyer-name="currentBuyerName"
+                  :approved-at="entityData?.customer?.approvedAt"
+                  :rejected-at="entityData?.customer?.rejectedAt"
                   :loading="fetchingData"
                 />
               </ContentEditCard>
@@ -2609,50 +2933,30 @@ definePageMeta({
                             allow-clear
                           />
                         </FormControl>
-                        <FormDescription
-                          v-if="entityData?.request?.requestedValidTo"
-                        >
-                          {{
-                            $t('orders.requested_valid_to_hint', {
-                              date: formatDate(
-                                entityData.request.requestedValidTo,
-                              ),
-                            })
-                          }}
-                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     </FormField>
                   </FormGrid>
                   <FormGrid design="1+1">
-                    <FormField
-                      v-slot="{ componentField }"
-                      name="details.ownerId"
-                    >
+                    <FormField v-slot="{ componentField }" name="details.owner">
                       <FormItem>
                         <FormLabel>
                           {{ $t('orders.quotation_owner') }}
                         </FormLabel>
                         <FormControl>
-                          <Select v-bind="componentField">
-                            <SelectTrigger>
-                              <SelectValue
-                                :placeholder="
-                                  $t('select_entity', { entityKey: 'owner' })
-                                "
-                              />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem
-                                v-for="salesRep in availableSalesReps"
-                                :key="salesRep._id"
-                                :value="salesRep._id"
-                              >
-                                {{ fullName(salesRep) }}
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <FormInputCombobox
+                            v-bind="componentField"
+                            :data-set="ownerOptions"
+                            entity-key="owner"
+                            :heading="$t('orders.existing_sales_reps')"
+                            :placeholder="$t('orders.quotation_owner')"
+                            :maxlength="QUOTATION_OWNER_NAME_MAX_LENGTH"
+                            @select="selectOwner"
+                          />
                         </FormControl>
+                        <FormDescription>
+                          {{ $t('orders.quotation_owner_description') }}
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     </FormField>
@@ -2701,7 +3005,6 @@ definePageMeta({
                         <template #after-label>
                           <QuotationWorkflowInfo
                             :require-confirmation="value"
-                            :start-status="workflowStartStatus"
                             edit-mode
                             @update:require-confirmation="handleChange"
                           />
@@ -2731,6 +3034,9 @@ definePageMeta({
                   <ContentEditCustomerPanel
                     :company="selectedCompany"
                     :available-buyers="availableBuyers"
+                    :buyer-disabled-reason="
+                      isRevision ? $t('orders.revision_keeps_buyer') : undefined
+                    "
                     :current-buyer-id="form.values.details?.buyerId || ''"
                     :current-billing-address-id="selectedBillingAddressId"
                     :current-shipping-address-id="selectedShippingAddressId"
@@ -2845,10 +3151,10 @@ definePageMeta({
           </ContentEditMainContent>
         </KeepAlive>
 
-        <!-- TAB 1: COMMUNICATION (sent mode) -->
+        <!-- TAB 1: COMMUNICATION (sent mode, not on a replaced version) -->
         <KeepAlive>
           <ContentEditMainContent
-            v-if="currentTab === 1 && sentMode"
+            v-if="currentTab === 1 && showCommunication"
             :key="`tab-communications`"
           >
             <ContentEditCard :create-mode="false" :title="$t('communication')">
@@ -2858,6 +3164,7 @@ definePageMeta({
                 :loading="messageLoading"
                 :edit-loading="messageEditLoading"
                 :message-send-success-count="messageSendSuccessCount"
+                :revisions-by-number="messageRevisions"
                 @send-message="handleSendMessage"
                 @edit-message="handleEditMessage"
                 @delete-message="handleDeleteMessage"
@@ -2866,12 +3173,18 @@ definePageMeta({
           </ContentEditMainContent>
         </KeepAlive>
 
-        <!-- TAB 2: CHANGELOG (all non-create modes) -->
+        <!-- CHANGELOG TAB (sent mode): 2, or 1 without Communication -->
         <KeepAlive>
           <ContentEditMainContent
-            v-if="currentTab === 2 && !createMode"
+            v-if="currentTab === changelogTab && sentMode"
             :key="`tab-changelog`"
           >
+            <QuotationReplacedNotice
+              v-if="replacedBy"
+              :quotation-number="entityData.quotationNumber"
+              :replaced-by="replacedBy"
+              :request="answeredRequest"
+            />
             <ContentEditCard
               :create-mode="false"
               :title="$t('changelog.tab_title')"
@@ -2908,11 +3221,6 @@ definePageMeta({
                 v-if="!createMode && companySummary.length"
                 :data-list="companySummary"
                 :label="$t('customer')"
-              />
-              <ContentDataList
-                v-if="!createMode && priceListSummary.length"
-                :data-list="priceListSummary"
-                :label="$t('price_list', 2)"
               />
               <ContentDataList
                 v-if="!createMode && productsSummary.length"

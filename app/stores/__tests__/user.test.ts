@@ -127,3 +127,47 @@ describe('user store init', () => {
     expect(store.userInitials).toBe('');
   });
 });
+
+describe('user store ensureUser', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    me.get.mockReset();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('returns a loaded user without loading it again', async () => {
+    me.get.mockResolvedValue(user);
+    const store = useUserStore();
+    await store.init();
+
+    expect(await store.ensureUser()).toEqual(user);
+    expect(me.get).toHaveBeenCalledTimes(1);
+  });
+
+  it('loads a missing user once before answering', async () => {
+    me.get.mockRejectedValueOnce({ status: 503 }).mockResolvedValue(user);
+    const store = useUserStore();
+    await store.init();
+    expect(store.user).toBeUndefined();
+
+    expect(await store.ensureUser()).toEqual(user);
+    expect(me.get).toHaveBeenCalledTimes(2);
+  });
+
+  it('returns undefined when the user still fails to load', async () => {
+    me.get.mockRejectedValue({ status: 503 });
+    const store = useUserStore();
+    await store.init();
+    await vi.advanceTimersByTimeAsync(60_000);
+    me.get.mockClear();
+
+    expect(await store.ensureUser()).toBeUndefined();
+    // One more attempt, without waiting for the retries it starts
+    expect(me.get).toHaveBeenCalledTimes(1);
+    expect(store.userEmail).toBe('');
+  });
+});

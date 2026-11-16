@@ -13,6 +13,7 @@ interface EntityEditSummaryProps {
     | Ref<StatusBadgeStatus>
     | ComputedRef<StatusBadgeStatus>
     | StatusBadgeStatus;
+  statusLabel?: Ref<string | undefined> | ComputedRef<string | undefined>;
 }
 
 /** Return type for {@link useEntityEditSummary}. */
@@ -26,6 +27,7 @@ interface UseEntityEditSummaryReturnType {
     entityLiveStatus: boolean;
     showActiveStatus?: boolean;
     status?: StatusBadgeStatus;
+    statusLabel?: string;
   }>;
 }
 
@@ -53,6 +55,9 @@ export const useEntityEditSummary = (
       showActiveStatus: props.showActiveStatus,
     }),
     ...(props.status !== undefined && { status: unref(props.status) }),
+    ...(props.statusLabel !== undefined && {
+      statusLabel: unref(props.statusLabel),
+    }),
   }));
 
   return { summaryProps };

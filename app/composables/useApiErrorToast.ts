@@ -7,13 +7,18 @@
  * `shared/types/ofetch.d.ts`), checked in the plugin — not here.
  */
 import type { GeinsApiError, GeinsErrorContext } from '#shared/types';
+import type { Component } from 'vue';
 
 interface UseApiErrorToastReturnType {
-  /** Emit the single, global API error toast. Owned by `$geinsApi`. */
+  /**
+   * Emit the single, global API error toast. Owned by `$geinsApi`; a page that
+   * suppresses it for one call may raise it itself, e.g. with an `action`.
+   */
   showGlobalErrorToast: (
     error: GeinsApiError,
     data: Record<string, unknown>,
     context?: GeinsErrorContext,
+    action?: Component,
   ) => Promise<void>;
 }
 
@@ -26,6 +31,7 @@ export function useApiErrorToast(): UseApiErrorToastReturnType {
     error: GeinsApiError,
     data: Record<string, unknown>,
     context?: GeinsErrorContext,
+    action?: Component,
   ): Promise<void> => {
     const nuxtApp = useNuxtApp();
     const i18n = nuxtApp.$i18n as {
@@ -48,6 +54,7 @@ export function useApiErrorToast(): UseApiErrorToastReturnType {
           getApiErrorDetail(error),
         ) || getFallbackErrorMessage(error.status, data),
       variant: 'negative',
+      action,
     });
   };
 

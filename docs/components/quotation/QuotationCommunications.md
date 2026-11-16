@@ -8,6 +8,7 @@
 - Tab badges show message counts
 - Per-tab reply state — clicking Reply on a message threads through to the compose box
 - Clears the compose box only after a successful send via the `messageSendSuccessCount` counter pattern (parent increments after each successful save)
+- Passes `revisionsByNumber` to both threads, so each message shows the version it was written on
 
 ## Usage
 
@@ -90,6 +91,16 @@ messageSendSuccessCount?: number
 Increment on the parent after a successful `sendMessage` resolves — triggers the compose box to clear.
 
 - **Default:** `0`
+
+### `revisionsByNumber`
+
+```ts
+revisionsByNumber?: Record<string, number>
+```
+
+Each version's revision by its quotation number (`revisionsByNumber()` in `shared/utils/quotation.ts`), passed on to [`QuotationMessageThread`](/components/quotation/QuotationMessageThread) for the messages' version tags.
+
+- **Default:** `{}`
 
 ## Events
 

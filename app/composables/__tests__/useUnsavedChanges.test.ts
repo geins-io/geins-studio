@@ -8,6 +8,7 @@ const { onBeforeRouteLeave: mockOnBeforeRouteLeave } = vi.hoisted(() =>
   createOnBeforeRouteLeaveMock(),
 );
 const { useGeinsLog } = vi.hoisted(() => createLoggerMock());
+const mockOnBeforeRouteUpdate = vi.hoisted(() => vi.fn());
 
 vi.mock('../useGeinsLog', () => ({
   useGeinsLog,
@@ -19,6 +20,7 @@ vi.mock('#app/composables/router', () => ({
 
 vi.mock('vue-router', () => ({
   onBeforeRouteLeave: mockOnBeforeRouteLeave,
+  onBeforeRouteUpdate: mockOnBeforeRouteUpdate,
 }));
 // eslint-disable-next-line import/first
 import { useUnsavedChanges } from '../useUnsavedChanges';
@@ -27,6 +29,7 @@ describe('useUnsavedChanges', () => {
   beforeEach(() => {
     mockNavigateTo.mockClear();
     mockOnBeforeRouteLeave.mockClear();
+    mockOnBeforeRouteUpdate.mockClear();
   });
 
   function setup(
@@ -165,6 +168,56 @@ describe('useUnsavedChanges', () => {
       const guard = mockOnBeforeRouteLeave.mock.calls[0]![0];
       const result = guard({ fullPath: '/other' });
       expect(result).toBe(true);
+    });
+  });
+
+  describe('route update guard', () => {
+    it('blocks opening another entity on the same route with unsaved changes', () => {
+      const { currentData, unsavedChangesDialogOpen } = setup({ name: 'Test' });
+      currentData.value = { name: 'Changed' };
+
+      const guard = mockOnBeforeRouteUpdate.mock.calls[0]![0];
+      const result = guard(
+        { path: '/orders/quotations/b', fullPath: '/orders/quotations/b' },
+        { path: '/orders/quotations/a', fullPath: '/orders/quotations/a' },
+      );
+      expect(result).toBe(false);
+      expect(unsavedChangesDialogOpen.value).toBe(true);
+    });
+
+    it('allows a query or hash change on the same page', () => {
+      const { currentData, unsavedChangesDialogOpen } = setup({ name: 'Test' });
+      currentData.value = { name: 'Changed' };
+
+      const guard = mockOnBeforeRouteUpdate.mock.calls[0]![0];
+      const result = guard(
+        {
+          path: '/orders/quotations/a',
+          fullPath: '/orders/quotations/a#msg-1',
+        },
+        { path: '/orders/quotations/a', fullPath: '/orders/quotations/a' },
+      );
+      expect(result).toBe(true);
+      expect(unsavedChangesDialogOpen.value).toBe(false);
+    });
+
+    it('allows it once leaving is confirmed', () => {
+      const { currentData, confirmLeave } = setup({ name: 'Test' });
+      currentData.value = { name: 'Changed' };
+
+      const guard = mockOnBeforeRouteUpdate.mock.calls[0]![0];
+      const to = {
+        path: '/orders/quotations/b',
+        fullPath: '/orders/quotations/b',
+      };
+      const from = {
+        path: '/orders/quotations/a',
+        fullPath: '/orders/quotations/a',
+      };
+      guard(to, from);
+      confirmLeave();
+      expect(mockNavigateTo).toHaveBeenCalledWith('/orders/quotations/b');
+      expect(guard(to, from)).toBe(true);
     });
   });
 

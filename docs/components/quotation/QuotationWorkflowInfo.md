@@ -20,6 +20,7 @@
 <template>
   <QuotationWorkflowInfo
     :require-confirmation="quotation.requireConfirmation"
+    :start-status="quotation.status === 'requested' ? 'requested' : 'draft'"
   />
 </template>
 ```
@@ -36,7 +37,6 @@
     <template #after-label>
       <QuotationWorkflowInfo
         v-model:require-confirmation="form.values.requireConfirmation"
-        :start-status="quotation.status === 'requested' ? 'requested' : 'draft'"
         edit-mode
       />
     </template>

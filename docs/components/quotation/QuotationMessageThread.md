@@ -11,6 +11,7 @@
 - Inline edit: Edit action turns the message body into a `Textarea` with Cancel / Save
 - Status transition rendering: messages tagged with `statusFrom` / `statusTo` / `action` show the action label and a badge transition (`<from> → <to>`)
 - Owner-only Edit/Delete actions — gated by `currentUserEmail === msg.authorId`
+- Version tag: a message with `quotationNumber` shows the version it was written on before its timestamp, as "v 01 · …" (`orders.version_tag`, the list's Version column format), looked up in `revisionsByNumber`. A number the map doesn't hold shows as it is; a message without `quotationNumber` shows none
 - Empty state per mode — no external / no internal messages
 - Parent-driven edit-loading: `editLoading` toggles the Save button spinner; clearing it auto-exits edit mode
 
@@ -80,6 +81,16 @@ editLoading?: boolean
 Spinner state on the inline edit Save button. Setting back to `false` while in edit mode auto-exits edit.
 
 - **Default:** `false`
+
+### `revisionsByNumber`
+
+```ts
+revisionsByNumber?: Record<string, number>
+```
+
+Each version's revision by its quotation number (`revisionsByNumber()` in `shared/utils/quotation.ts`). A revision chain shares one thread, and a message names only the quotation number it was written on.
+
+- **Default:** `{}`
 
 ## Events
 

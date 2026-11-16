@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.8.0 - 2026-11-16
+
+### 🚀 Enhancements
+
+- **Quotation requests and revisions** — answer buyer requests with Create offer and revise sent quotations as linked versions, with a version picker and one message thread for all versions. Quotations also get order details, a free-text owner and a reorganized Summary ([#506](https://github.com/geins-io/geins-studio/pull/506), [#509](https://github.com/geins-io/geins-studio/pull/509), [#510](https://github.com/geins-io/geins-studio/pull/510), [#511](https://github.com/geins-io/geins-studio/pull/511), [#512](https://github.com/geins-io/geins-studio/pull/512), [#515](https://github.com/geins-io/geins-studio/pull/515), [#516](https://github.com/geins-io/geins-studio/pull/516), [#518](https://github.com/geins-io/geins-studio/pull/518), [#519](https://github.com/geins-io/geins-studio/pull/519), [#520](https://github.com/geins-io/geins-studio/pull/520), [#522](https://github.com/geins-io/geins-studio/pull/522), [#524](https://github.com/geins-io/geins-studio/pull/524), [#525](https://github.com/geins-io/geins-studio/pull/525))
+- Workflows — the HTTP Request step can save its response as a file, for a later step such as Upload Asset ([#517](https://github.com/geins-io/geins-studio/pull/517))
+
+### 🐛 Bug Fixes
+
+- Companies — the sales rep dropdown no longer offers API users ([#501](https://github.com/geins-io/geins-studio/pull/501))
+- Quotations — status changes and messages are no longer sent without an author when your user fails to load; you get an error and can try again ([#521](https://github.com/geins-io/geins-studio/pull/521))
+
+### ❤️ Contributors
+
+- Olivia Axelsson ([@olivia-geins](https://github.com/olivia-geins))
+- 🧙‍♂️mandery ([@jmandery](https://github.com/jmandery))
+
 ## v0.7.1 - 2026-11-12
 
 ### 🐛 Bug Fixes

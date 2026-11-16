@@ -8,6 +8,8 @@ const props = defineProps<{
   currentBuyerId: string;
   currentBillingAddressId?: string;
   currentShippingAddressId?: string;
+  /** Locks the buyer select and shows this hint under it. Already translated. */
+  buyerDisabledReason?: string;
 }>();
 
 const emit = defineEmits<{
@@ -99,7 +101,7 @@ const handleCancel = () => {
           <!-- Buyer -->
           <div class="space-y-2">
             <Label>{{ $t('buyer') }}</Label>
-            <Select v-model="selectedBuyerId">
+            <Select v-model="selectedBuyerId" :disabled="!!buyerDisabledReason">
               <SelectTrigger>
                 <SelectValue
                   :placeholder="
@@ -119,6 +121,9 @@ const handleCancel = () => {
                 </SelectItem>
               </SelectContent>
             </Select>
+            <p v-if="buyerDisabledReason" class="text-muted-foreground text-sm">
+              {{ buyerDisabledReason }}
+            </p>
           </div>
 
           <!-- Billing Address -->

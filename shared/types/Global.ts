@@ -24,6 +24,7 @@ export type StatusBadgeKnownStatus =
   | 'canceled'
   | 'draft'
   | 'expired'
+  | 'revised'
   | 'healthy'
   | 'degraded'
   | 'unhealthy'
@@ -153,7 +154,8 @@ export type GeinsErrorAction =
   | 'sending'
   | 'copying'
   | 'adding'
-  | 'running';
+  | 'running'
+  | 'revising';
 
 /**
  * Optional per-request context attached to a $geinsApi mutation call. When

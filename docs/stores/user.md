@@ -76,6 +76,14 @@ init(): Promise<void>
 
 Loads the signed-in user from `user/me` with accounts. Concurrent calls share one request; a transient failure is retried in the background (see [Loading](#loading)).
 
+### `ensureUser`
+
+```ts
+ensureUser(): Promise<User | undefined>
+```
+
+Returns the signed-in user, calling `init()` once first when it isn't loaded. Resolves `undefined` when that load fails too, without waiting for the background retries it starts. Use it before a call that needs the user, such as one that sends the user as a message's author: when it resolves `undefined`, don't send.
+
 ### `reset`
 
 ```ts
@@ -136,6 +144,7 @@ interface UserStoreReturnType {
   currentAccountName: ComputedRef<string>;
   hasMultipleAccounts: ComputedRef<boolean>;
   init: () => Promise<void>;
+  ensureUser: () => Promise<User | undefined>;
   reset: () => void;
   updateUser: (newUser: User) => void;
   hasAnyRole: (roles: string[]) => boolean;

@@ -14,6 +14,8 @@ const props = withDefaults(
     disabled?: boolean;
     disabledTooltip?: string;
     status?: StatusBadgeStatus;
+    /** Translated badge text in place of the sentence-cased `status` */
+    statusLabel?: string;
   }>(),
   {
     createMode: false,
@@ -26,6 +28,7 @@ const props = withDefaults(
     disabled: false,
     disabledTooltip: undefined,
     status: undefined,
+    statusLabel: undefined,
   },
 );
 
@@ -76,6 +79,7 @@ const activeDescription = computed(() => {
       <StatusBadge
         v-if="!createMode && (hasExplicitStatus || showActiveStatus)"
         :status="displayStatus"
+        :label="statusLabel"
       />
     </div>
     <slot name="before-active-switch" />

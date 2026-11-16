@@ -1,27 +1,31 @@
 import type {
   Quotation,
+  QuotationBuyerDecision,
+  QuotationCustomer,
   QuotationOrderDetails,
   QuotationOrderDetailsForm,
   QuotationOrderDetailsRequest,
+  QuotationRevision,
   QuotationStatus,
+  QuotationVersionRef,
 } from '#shared/types';
 import { calendarDayToLocalIso, toCalendarDayIso } from './calendar-day';
 
 /**
- * Statuses the seller edits like a draft: their own draft, or a request the
- * buyer has sent. Every other status renders the read-only (sent) layout.
+ * Statuses the seller edits: only their own draft. Every other status renders
+ * the read-only (sent) layout, a buyer's request included: the API refuses
+ * PATCH and send on it, and the seller answers it with a new revision instead.
  */
 export const EDITABLE_QUOTATION_STATUSES: readonly QuotationStatus[] = [
   'draft',
-  'requested',
 ];
 
 /**
- * Statuses the API lets the seller delete in.
+ * Statuses the API lets the seller delete in. A buyer's request isn't one:
+ * the seller cancels it instead.
  */
 export const DELETABLE_QUOTATION_STATUSES: readonly QuotationStatus[] = [
   'draft',
-  'requested',
   'rejected',
   'expired',
   'canceled',
@@ -76,6 +80,141 @@ export function isQuotationDeletable(
     DELETABLE_QUOTATION_STATUSES.includes(quotation.status) &&
     !isQuotationExternal(quotation)
   );
+}
+
+/** The most characters the API accepts for a free-text owner name */
+export const QUOTATION_OWNER_NAME_MAX_LENGTH = 200;
+
+/**
+ * Whether a `revised` version is a buyer's request answered by an offer: it
+ * was never sent, so it has no `validFrom`. Platform's rule, shared with the
+ * sales portal. Not "has a request and no revisionOf": a request the Monitor
+ * sync priced in place and that was revised later matches that, and it was a
+ * real offer.
+ */
+export function isAnsweredRequest(
+  quotation: Pick<QuotationRevision, 'status' | 'validFrom'>,
+): boolean {
+  return quotation.status === 'revised' && !quotation.validFrom;
+}
+
+/**
+ * How the version picker labels a version instead of its status, given the
+ * chain's live version (`liveRevision`). The request is live until an offer
+ * is sent, but it was never sent itself, so it reads "Request", not "Latest".
+ * `undefined`: the version reads as its status.
+ */
+export function versionLabel(
+  version: Pick<QuotationRevision, 'quotationId' | 'status' | 'validFrom'>,
+  liveId?: string,
+): 'request' | 'latest' | 'answered' | undefined {
+  if (version.status === 'requested') return 'request';
+  if (version.quotationId === liveId) return 'latest';
+  if (isAnsweredRequest(version)) return 'answered';
+  return undefined;
+}
+
+/**
+ * Whether the quotation is a revision the seller hasn't sent yet. The list
+ * shows it as a link on its live version's row, not as a row of its own.
+ */
+export function isRevisionDraft(
+  quotation: Pick<Quotation, 'status' | 'revisionOf'>,
+): boolean {
+  return quotation.status === 'draft' && !!quotation.revisionOf;
+}
+
+/**
+ * The chain's open revision draft, when it isn't the quotation itself
+ */
+export function openRevisionDraft(
+  quotation: Pick<Quotation, '_id' | 'revisions'>,
+): QuotationRevision | undefined {
+  return quotation.revisions?.find(
+    (version) =>
+      version.status === 'draft' && version.quotationId !== quotation._id,
+  );
+}
+
+/**
+ * The quotations the list shows as rows. A revision draft is its own quotation,
+ * and the query can't leave it out, so the draft a listed row links to is
+ * dropped here. A draft no row links to (its source was deleted, or the API
+ * sent no `revisions`) stays a row, so it never vanishes from the list.
+ */
+export function withoutLinkedRevisionDrafts<
+  T extends Pick<Quotation, '_id' | 'status' | 'revisionOf' | 'revisions'>,
+>(quotations: T[]): T[] {
+  const linked = new Set(
+    quotations.map((quotation) => openRevisionDraft(quotation)?.quotationId),
+  );
+  return quotations.filter(
+    (quotation) => !(isRevisionDraft(quotation) && linked.has(quotation._id)),
+  );
+}
+
+/**
+ * Statuses the seller answers with a new version: Create offer on a request,
+ * Revise on an offer the buyer hasn't answered.
+ */
+export const REVISABLE_QUOTATION_STATUSES: readonly QuotationStatus[] = [
+  'requested',
+  'pending',
+  'expired',
+];
+
+/**
+ * Whether the seller can make the quotation's next version. The API refuses it
+ * on an external quotation.
+ */
+export function canReviseQuotation(
+  quotation: Pick<Quotation, 'status' | 'externalReference'>,
+): boolean {
+  return (
+    REVISABLE_QUOTATION_STATUSES.includes(quotation.status) &&
+    !isQuotationExternal(quotation)
+  );
+}
+
+// The buyer answered the version, or it was canceled: a revision can no longer
+// replace it, and sending one answers 409.
+const CLOSED_TO_REVISION: readonly QuotationStatus[] = [
+  'accepted',
+  'confirmed',
+  'finalized',
+  'rejected',
+  'canceled',
+];
+
+export interface RevisionSendBlock {
+  reason:
+    | 'requestCanceled'
+    | 'requestWithdrawn'
+    | 'versionCanceled'
+    | 'versionAnswered';
+  /** The version the draft would replace */
+  source: QuotationRevision;
+}
+
+/**
+ * Why a revision draft can't be sent: the version it replaces was answered or
+ * canceled in the meantime. A source with no `validFrom` was never sent, so
+ * it's the buyer's request, and a rejected request is the buyer withdrawing it.
+ */
+export function revisionSendBlock(
+  quotation: Pick<Quotation, 'status' | 'revisionOf' | 'revisions'>,
+): RevisionSendBlock | undefined {
+  if (!isRevisionDraft(quotation)) return undefined;
+  const source = quotation.revisions?.find(
+    (version) => version.quotationId === quotation.revisionOf?.quotationId,
+  );
+  if (!source || !CLOSED_TO_REVISION.includes(source.status)) return undefined;
+
+  const request = !source.validFrom;
+  if (source.status === 'canceled') {
+    return { reason: request ? 'requestCanceled' : 'versionCanceled', source };
+  }
+  return { reason: request ? 'requestWithdrawn' : 'versionAnswered', source };
 }
 
 /**
@@ -135,4 +274,86 @@ export function orderDetailsRequest(
   if (day && day !== storedDay) request.desiredDeliveryDate = day;
 
   return Object.keys(request).length ? request : undefined;
+}
+
+/**
+ * Whether and when the buyer accepted or rejected the quotation, from the
+ * customer snapshot. Both dates stay null until the buyer acts; should both
+ * ever be set, the later one is the decision that stands.
+ */
+export function quotationBuyerDecision(
+  customer?: Pick<QuotationCustomer, 'approvedAt' | 'rejectedAt'> | null,
+): QuotationBuyerDecision | null {
+  const approvedAt = customer?.approvedAt;
+  const rejectedAt = customer?.rejectedAt;
+  if (
+    rejectedAt &&
+    (!approvedAt || Date.parse(rejectedAt) > Date.parse(approvedAt))
+  ) {
+    return { decision: 'rejected', at: rejectedAt };
+  }
+  if (approvedAt) return { decision: 'accepted', at: approvedAt };
+  return null;
+}
+
+/**
+ * The chain's live version: the newest one that isn't a draft. The API stores
+ * new messages on it, and the version picker reads "Latest" on it once an
+ * offer was sent (`versionLabel`).
+ */
+export function liveRevision(
+  quotation: Pick<Quotation, 'revisions'>,
+): QuotationRevision | undefined {
+  return quotation.revisions?.find((version) => version.status !== 'draft');
+}
+
+/**
+ * Whether a later version replaced the quotation. It stays as history: the
+ * chain's one thread is read and written on the live version instead.
+ */
+export function isReplacedVersion(
+  quotation: Pick<Quotation, '_id' | 'status' | 'revisedBy' | 'revisions'>,
+): boolean {
+  if (quotation.status === 'draft') return false;
+  if (quotation.status === 'revised' || quotation.revisedBy) return true;
+  const live = liveRevision(quotation);
+  return !!live && live.quotationId !== quotation._id;
+}
+
+/**
+ * The version that replaces the quotation: the chain's live version, or the
+ * one that revised it when the response lists no chain.
+ */
+export function replacingVersion(
+  quotation: Pick<Quotation, '_id' | 'status' | 'revisedBy' | 'revisions'>,
+): QuotationVersionRef | undefined {
+  if (!isReplacedVersion(quotation)) return undefined;
+  const live = liveRevision(quotation);
+  if (live && live.quotationId !== quotation._id) return live;
+  return quotation.revisedBy ?? undefined;
+}
+
+/**
+ * The revision as the quotation number's two-digit suffix: 3 → "03"
+ */
+export function revisionSuffix(revision: number): string {
+  return String(revision).padStart(2, '0');
+}
+
+/**
+ * Each version's revision by its quotation number. A message names only the
+ * number it was written on, and the API sends the revision so no client has
+ * to parse it out of the number.
+ */
+export function revisionsByNumber(
+  quotation: Pick<Quotation, 'quotationNumber' | 'revision' | 'revisions'>,
+): Record<string, number> {
+  const revisions: Record<string, number> = {};
+  if (quotation.revision !== undefined) {
+    revisions[quotation.quotationNumber] = quotation.revision;
+  }
+  for (const version of quotation.revisions ?? []) {
+    revisions[version.quotationNumber] = version.revision;
+  }
+  return revisions;
 }

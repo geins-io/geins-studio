@@ -42,6 +42,8 @@ const badgeVariant = computed(() => {
     case 'draft':
     case false:
       return 'secondary';
+    case 'revised':
+      return 'outline';
     case 'in-progress':
       return 'blue';
     default:
