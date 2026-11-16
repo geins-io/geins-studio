@@ -454,6 +454,10 @@ export default defineConfig({
                     link: '/components/form/input/FormInputColor.md',
                   },
                   {
+                    text: 'FormInputCombobox',
+                    link: '/components/form/input/FormInputCombobox.md',
+                  },
+                  {
                     text: 'FormInputCountrySelect',
                     link: '/components/form/input/FormInputCountrySelect.md',
                   },
@@ -996,8 +1000,28 @@ export default defineConfig({
                 link: '/components/quotation/QuotationCustomerDisplay.md',
               },
               {
+                text: 'QuotationRequestDetails',
+                link: '/components/quotation/QuotationRequestDetails.md',
+              },
+              {
+                text: 'QuotationOrderDetailsFields',
+                link: '/components/quotation/QuotationOrderDetailsFields.md',
+              },
+              {
+                text: 'QuotationOrderDetailsCard',
+                link: '/components/quotation/QuotationOrderDetailsCard.md',
+              },
+              {
                 text: 'QuotationWorkflowInfo',
                 link: '/components/quotation/QuotationWorkflowInfo.md',
+              },
+              {
+                text: 'QuotationVersionSelect',
+                link: '/components/quotation/QuotationVersionSelect.md',
+              },
+              {
+                text: 'QuotationReplacedNotice',
+                link: '/components/quotation/QuotationReplacedNotice.md',
               },
               {
                 text: 'QuotationCommunications',

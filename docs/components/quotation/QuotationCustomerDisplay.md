@@ -1,12 +1,13 @@
 # `QuotationCustomerDisplay`
 
-`QuotationCustomerDisplay` is the read-only customer summary block on a quotation — company name + VAT, billing + shipping addresses, buyer + owner, and currency, all in a 2-column grid with skeleton loading.
+`QuotationCustomerDisplay` is the read-only customer summary block on a quotation — company name + VAT, billing + shipping addresses, and buyer, in a 2-column grid with skeleton loading. Once the buyer accepts or rejects, a line under their name says which and when. The quotation owner isn't part of it: it shows in the Quotation details card.
 
 ## Features
 
-- Five sections in a stacked 2-column grid — company / addresses / owner+buyer / currency
+- Three sections in a stacked 2-column grid — company / addresses / buyer
 - Skeleton placeholders for every value when `loading` is `true`
 - Renders `'-'` for missing values
+- "Accepted {date}" or "Rejected {date}" under the buyer's name once the buyer has acted (via `quotationBuyerDecision` in `#shared/utils/quotation`; if both dates are set, the later one wins). Nothing shows while both are null
 - Routes addresses through [`ContentAddressDisplay`](/components/content/ContentAddressDisplay) with `address-only` so the company line isn't duplicated
 
 ## Usage
@@ -18,9 +19,9 @@
     :vat-number="quotation.company.vatNumber"
     :billing-address="quotation.billingAddress"
     :shipping-address="quotation.shippingAddress"
-    :buyer-name="quotation.buyerName"
-    :owner-name="quotation.ownerName"
-    :currency="quotation.currency"
+    :buyer-name="fullName(quotation.customer)"
+    :approved-at="quotation.customer?.approvedAt"
+    :rejected-at="quotation.customer?.rejectedAt"
     :loading="loading"
   />
 </template>
@@ -59,26 +60,26 @@ Addresses rendered through [`ContentAddressDisplay`](/components/content/Content
 
 - **Default:** `null`
 
-### `buyerName` / `ownerName`
+### `buyerName`
 
 ```ts
 buyerName?: string
-ownerName?: string
 ```
 
-Names already resolved to display strings — typically via `fullName(...)`.
+Buyer name already resolved to a display string — typically via `fullName(...)`.
 
 - **Default:** `''`
 
-### `currency`
+### `approvedAt` / `rejectedAt`
 
 ```ts
-currency?: string
+approvedAt?: string | null
+rejectedAt?: string | null
 ```
 
-Currency code or label.
+When the buyer accepted or rejected the quotation — `customer.approvedAt` / `customer.rejectedAt` from the quotation response. Formatted with `useDate().formatDate`; hidden while `loading`.
 
-- **Default:** `''`
+- **Default:** `null`
 
 ### `loading`
 
@@ -93,4 +94,5 @@ Renders `Skeleton` placeholders in place of values.
 ## Dependencies
 
 - shadcn-vue `Skeleton`
+- `useDate` — formats the accept/reject date
 - [`ContentAddressDisplay`](/components/content/ContentAddressDisplay) — both address blocks

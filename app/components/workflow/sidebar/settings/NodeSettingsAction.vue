@@ -102,7 +102,7 @@ const typeBadgeClass = (type: string): string => {
 </script>
 
 <template>
-  <div class="h-full">
+  <div class="min-h-full">
     <!-- Action-specific settings component -->
     <component
       :is="customComponent"
@@ -136,7 +136,7 @@ const typeBadgeClass = (type: string): string => {
               {{ field.type }}
             </span>
           </Label>
-          <div v-if="isJsonEditor(field)" class="h-40">
+          <div v-if="isJsonEditor(field)" class="flex h-40 flex-col">
             <JsonCodeEditor
               :model-value="fieldToJson(field)"
               :line-numbers="false"
@@ -230,7 +230,7 @@ const typeBadgeClass = (type: string): string => {
                   {{ field.type }}
                 </span>
               </Label>
-              <div v-if="isJsonEditor(field)" class="h-40">
+              <div v-if="isJsonEditor(field)" class="flex h-40 flex-col">
                 <JsonCodeEditor
                   :model-value="fieldToJson(field)"
                   :line-numbers="false"

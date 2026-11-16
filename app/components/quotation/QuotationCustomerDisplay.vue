@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import type { Address } from '#shared/types';
+import { quotationBuyerDecision } from '#shared/utils/quotation';
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     companyName?: string;
     vatNumber?: string;
     billingAddress?: Address | null;
     shippingAddress?: Address | null;
     buyerName?: string;
-    ownerName?: string;
+    approvedAt?: string | null;
+    rejectedAt?: string | null;
     loading?: boolean;
   }>(),
   {
@@ -17,9 +19,19 @@ withDefaults(
     billingAddress: null,
     shippingAddress: null,
     buyerName: '',
-    ownerName: '',
+    approvedAt: null,
+    rejectedAt: null,
     loading: false,
   },
+);
+
+const { formatDate } = useDate();
+
+const buyerDecision = computed(() =>
+  quotationBuyerDecision({
+    approvedAt: props.approvedAt,
+    rejectedAt: props.rejectedAt,
+  }),
 );
 </script>
 <template>
@@ -74,7 +86,7 @@ withDefaults(
       </div>
     </div>
 
-    <!-- Owner & Buyer -->
+    <!-- Buyer -->
     <div class="grid grid-cols-2 gap-4 border-t pt-4">
       <div>
         <p class="text-muted-foreground mb-1 text-xs font-medium">
@@ -86,16 +98,15 @@ withDefaults(
             {{ buyerName || '-' }}
           </template>
         </p>
-      </div>
-      <div>
-        <p class="text-muted-foreground mb-1 text-xs font-medium">
-          {{ $t('orders.quotation_owner') }}
-        </p>
-        <p class="text-sm">
-          <Skeleton v-if="loading" class="h-5 w-32" />
-          <template v-else>
-            {{ ownerName || '-' }}
-          </template>
+        <p
+          v-if="!loading && buyerDecision"
+          class="text-muted-foreground mt-1 text-xs"
+        >
+          {{
+            buyerDecision.decision === 'accepted'
+              ? $t('orders.accepted_on', { date: formatDate(buyerDecision.at) })
+              : $t('orders.rejected_on', { date: formatDate(buyerDecision.at) })
+          }}
         </p>
       </div>
     </div>

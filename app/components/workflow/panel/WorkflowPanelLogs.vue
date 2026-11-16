@@ -735,7 +735,7 @@ const bodyStyle = computed(() => ({
                               {{ $t('workflow_builder.logs.output') }}
                             </button>
                           </div>
-                          <div class="h-48">
+                          <div class="flex h-48 flex-col">
                             <JsonCodeEditor
                               v-if="
                                 expandedTab === 'input' && event.input != null
@@ -1027,7 +1027,7 @@ const bodyStyle = computed(() => ({
                             {{ $t('workflow_builder.logs.output') }}
                           </button>
                         </div>
-                        <div class="h-48">
+                        <div class="flex h-48 flex-col">
                           <JsonCodeEditor
                             v-if="
                               expandedTab === 'input' && event.input != null

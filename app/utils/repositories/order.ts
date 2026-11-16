@@ -15,6 +15,7 @@ import type {
   StatusTransitionRequest,
   ExtendTransitionRequest,
 } from '#shared/types';
+import { SelectorCondition } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
 import { ENTITIES } from '#shared/utils/entities';
 import { entityGetRepo } from './entity-base';
@@ -23,6 +24,25 @@ import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const BASE_ENDPOINT = '/order';
 const QUOTATION_ENDPOINT = ENTITIES.quotation.endpoint;
+
+// Request drafts belong to the buyer until submitted, and a revised version is
+// replaced by a later one (a chain lists once, as its live version), so Studio
+// never shows either. The API ignores `exclude` next to `all: true` and only
+// subtracts it from an `include`, so the include is a match-all on
+// hasExternalReference. Excluding, rather than listing allowed statuses, keeps
+// statuses the API adds later visible.
+const VISIBLE_QUOTATIONS_QUERY: QuotationBatchQuery = {
+  include: [
+    {
+      condition: SelectorCondition.Or,
+      selections: [
+        { hasExternalReference: true },
+        { hasExternalReference: false },
+      ],
+    },
+  ],
+  exclude: [{ selections: [{ statuses: ['requestDraft', 'revised'] }] }],
+};
 
 /**
  * Repository for managing order operations
@@ -91,8 +111,11 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         );
       },
 
+      /**
+       * Every quotation Studio may show — request drafts and revised versions excluded
+       */
       async list(
-        batchQuery: QuotationBatchQuery = { all: true },
+        batchQuery: QuotationBatchQuery = VISIBLE_QUOTATIONS_QUERY,
         options?: QuotationApiOptions,
       ): Promise<QuotationBatchQueryResult> {
         return await this.query(batchQuery, options);
@@ -166,6 +189,20 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         return await fetch<Quotation>(`${QUOTATION_ENDPOINT}/${id}/copy`, {
           method: 'POST',
           errorContext: { action: 'copying', entity: 'quotation' },
+        });
+      },
+      /**
+       * The next version of a requested, pending or expired quotation, as a
+       * draft linked through `revisionOf`. Sending it moves the source to `revised`.
+       */
+      async revise(
+        id: string,
+        fetchOptions?: RepoFetchOptions,
+      ): Promise<Quotation> {
+        return await fetch<Quotation>(`${QUOTATION_ENDPOINT}/${id}/revision`, {
+          method: 'POST',
+          errorContext: { action: 'revising', entity: 'quotation' },
+          ...fetchOptions,
         });
       },
       async preview(

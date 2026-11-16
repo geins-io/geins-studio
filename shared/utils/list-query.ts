@@ -4,6 +4,7 @@ import type {
   ListQueryState,
   ListSort,
 } from '#shared/types';
+import { localDay } from './calendar-day';
 
 /** Encodes one filter value to and from a URL query string. */
 export interface ListQueryParam<V> {
@@ -77,15 +78,6 @@ const DATE_RANGE_PRESETS: readonly ListDateRangePreset[] = [
   'week',
   'month',
 ];
-
-const pad = (n: number) => String(n).padStart(2, '0');
-
-/** Local calendar day of an ISO date-time, as `YYYY-MM-DD`. */
-function localDay(iso: string): string | undefined {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return undefined;
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
 
 /** Local midnight of a `YYYY-MM-DD` day; `undefined` for a non-existent date. */
 function parseLocalDay(raw: string): Date | undefined {

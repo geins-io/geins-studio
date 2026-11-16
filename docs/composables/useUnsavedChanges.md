@@ -9,7 +9,7 @@ This composable is used internally by the [`useEntityEdit`](./useEntityEdit.md) 
 ## Features
 
 - **Automatic change detection** by comparing current and original data
-- **Navigation guards with confirmation dialog** to prevent accidental data loss
+- **Navigation guards with confirmation dialog** to prevent accidental data loss: `onBeforeRouteLeave`, plus `onBeforeRouteUpdate` for opening another entity on the same route (e.g. another version of a quotation from `QuotationVersionSelect`), which vue-router doesn't count as leaving. A query or hash change on the same path passes
 - **Field exclusion** for ignoring specific fields in change detection
 
 ## Usage

@@ -654,7 +654,7 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
         class="px-5 py-4 shadow-xs"
       >
         <div class="text-muted-foreground text-xs">
-          {{ $t('executions.version') }}
+          {{ $t('version') }}
         </div>
         <div class="text-md font-mono">v{{ execution.workflowVersion }}</div>
       </Card>
