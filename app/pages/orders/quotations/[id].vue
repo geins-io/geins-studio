@@ -1966,7 +1966,8 @@ const companySummary = computed<DataItem[]>(() => {
     });
   }
 
-  if (currentOwnerName.value) {
+  // The edit view lists the owner with the quotation; the create step keeps it here
+  if (createMode.value && currentOwnerName.value) {
     dataList.push({
       label: t('owner'),
       value: currentOwnerName.value,
@@ -1982,33 +1983,30 @@ const companySummary = computed<DataItem[]>(() => {
   return dataList;
 });
 
-const priceListSummary = computed<DataItem[]>(() => {
-  return [];
-});
-
 const summary = computed<DataItem[]>(() => {
   const dataList: DataItem[] = [];
-  if (!entityData.value) return dataList;
+  const quotation = entityData.value;
+  if (!quotation) return dataList;
 
   const formValues = form.values.details;
   // In sent mode, VeeValidate clears form values when fields unmount.
   // Use entityData (from reshapeEntityData) as the primary source to stay correct in all modes.
-  const summaryName = entityData.value?.name || formValues?.name;
-  const summaryExpirationDate =
-    entityData.value?.validTo || formValues?.expirationDate;
-  const summaryPaymentTerms =
-    entityData.value?.terms || formValues?.paymentTerms;
+  const summaryName = quotation.name || formValues?.name;
+  const summaryExpirationDate = quotation.validTo || formValues?.expirationDate;
+  const { externalReference, revision, revisionOf, validFrom, orderPublicId } =
+    quotation;
 
   if (summaryName) {
     dataList.push({ label: t('name'), value: summaryName });
   }
-  if (!createMode.value) {
+  if (createMode.value) {
+    dataList.push(...companySummary.value);
+  } else {
     dataList.push({
       label: t('ref_number'),
-      value: entityData.value.quotationNumber,
+      value: quotation.quotationNumber,
       displayType: DataItemDisplayType.Copy,
     });
-    const externalReference = entityData.value.externalReference;
     if (externalReference?.number) {
       dataList.push({
         label: t('orders.external_quotation_number'),
@@ -2016,21 +2014,12 @@ const summary = computed<DataItem[]>(() => {
         displayType: DataItemDisplayType.Copy,
       });
     }
-    if (externalReference?.orderNumber) {
-      dataList.push({
-        label: t('orders.external_order_number'),
-        value: externalReference.orderNumber,
-        displayType: DataItemDisplayType.Copy,
-      });
-    }
-    const revision = entityData.value.revision;
     if (revision !== undefined) {
       dataList.push({
         label: t('version'),
         value: t('orders.version_tag', { version: revisionSuffix(revision) }),
       });
     }
-    const revisionOf = entityData.value.revisionOf;
     if (revisionOf) {
       dataList.push({
         label: t('orders.revision_of'),
@@ -2039,15 +2028,17 @@ const summary = computed<DataItem[]>(() => {
         href: entityEditUrl('quotation', revisionOf.quotationId),
       });
     }
-    dataList.push({
-      label: t('orders.require_confirmation'),
-      value: entityData.value.settings?.requireConfirmation
-        ? t('yes')
-        : t('no'),
-    });
-  }
-  if (createMode.value && companySummary.value.length) {
-    dataList.push(...companySummary.value);
+    if (replacedBy.value) {
+      dataList.push({
+        label: t('orders.replaced_by_label'),
+        value: replacedBy.value.quotationNumber,
+        displayType: DataItemDisplayType.Link,
+        href: entityEditUrl('quotation', replacedBy.value.quotationId),
+      });
+    }
+    if (currentOwnerName.value) {
+      dataList.push({ label: t('owner'), value: currentOwnerName.value });
+    }
   }
   if (availableChannels.value.length > 1 && displayChannel.value) {
     dataList.push({
@@ -2061,16 +2052,25 @@ const summary = computed<DataItem[]>(() => {
       value: displayMarketLabel.value,
     });
   }
+  // Only a sent quotation has `validFrom`: a buyer's request never was
+  if (sentMode.value && validFrom) {
+    dataList.push({ label: t('orders.sent_on'), value: formatDate(validFrom) });
+  }
   if (summaryExpirationDate) {
     dataList.push({
       label: t('expiration_date'),
       value: formatDate(summaryExpirationDate),
     });
   }
-  if (!createMode.value && summaryPaymentTerms) {
+  // Plain text until Studio has an order page to link to
+  if (!createMode.value && orderPublicId) {
+    dataList.push({ label: t('orders.order_number'), value: orderPublicId });
+  }
+  if (!createMode.value && externalReference?.orderNumber) {
     dataList.push({
-      label: t('orders.payment_terms'),
-      value: summaryPaymentTerms,
+      label: t('orders.external_order_number'),
+      value: externalReference.orderNumber,
+      displayType: DataItemDisplayType.Copy,
     });
   }
 
@@ -3219,11 +3219,6 @@ definePageMeta({
                 v-if="!createMode && companySummary.length"
                 :data-list="companySummary"
                 :label="$t('customer')"
-              />
-              <ContentDataList
-                v-if="!createMode && priceListSummary.length"
-                :data-list="priceListSummary"
-                :label="$t('price_list', 2)"
               />
               <ContentDataList
                 v-if="!createMode && productsSummary.length"
