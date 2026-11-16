@@ -2664,7 +2664,6 @@ definePageMeta({
                 :title="$t('entity_details', { entityKey })"
               >
                 <div class="space-y-4">
-                  <!-- Same 2×2 as the draft card; the empty expiration cell keeps owner and terms in their columns -->
                   <div class="grid grid-cols-2 gap-4">
                     <div>
                       <p class="text-muted-foreground mb-1 text-xs font-medium">
@@ -2705,6 +2704,8 @@ definePageMeta({
                         </p>
                       </template>
                     </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-4 border-t pt-4">
                     <div>
                       <p class="text-muted-foreground mb-1 text-xs font-medium">
                         {{ $t('orders.quotation_owner') }}
