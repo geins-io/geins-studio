@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { QuotationRevision } from '#shared/types';
 import { entityEditUrl } from '#shared/utils/entities';
-import { isAnsweredRequest, liveRevision } from '#shared/utils/quotation';
+import { liveRevision, versionLabel } from '#shared/utils/quotation';
 
 const props = defineProps<{
   /** Every version in the chain, newest first, as `revisions` lists them */
@@ -16,10 +16,17 @@ const { formatDate } = useDate();
 const liveId = computed(() => liveRevision(props)?.quotationId);
 
 const statusText = (version: QuotationRevision): string => {
-  if (version.quotationId === liveId.value) return t('orders.latest_version');
-  if (isAnsweredRequest(version)) return t('orders.answered_request');
-  // As StatusBadge shows it
-  return version.status.charAt(0).toUpperCase() + version.status.slice(1);
+  switch (versionLabel(version, liveId.value)) {
+    case 'request':
+      return t('orders.request_version');
+    case 'latest':
+      return t('orders.latest_version');
+    case 'answered':
+      return t('orders.answered_request');
+    default:
+      // As StatusBadge shows it
+      return version.status.charAt(0).toUpperCase() + version.status.slice(1);
+  }
 };
 
 const optionText = (version: QuotationRevision): string =>

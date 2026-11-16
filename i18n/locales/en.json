@@ -908,6 +908,7 @@
     "rejected_on": "Rejected {date}",
     "modified_at": "Modified",
     "latest_version": "Latest",
+    "request_version": "Request",
     "revision_of": "Revision of",
     "replaced_by_label": "Replaced by",
     "order_number": "Order number",

@@ -25,6 +25,7 @@ import {
   orderDetailsRequest,
   quotationBuyerDecision,
   revisionSendBlock,
+  versionLabel,
 } from '../quotation';
 
 const externalReference: QuotationExternalReference = {
@@ -566,6 +567,48 @@ describe('versions', () => {
       expect(
         replacingVersion({ _id: 'q-02', status: 'pending', revisions }),
       ).toBeUndefined();
+    });
+  });
+
+  describe('versionLabel', () => {
+    const sent = (
+      quotationId: string,
+      revision: number,
+      status: QuotationStatus,
+    ): QuotationRevision => ({
+      ...version(quotationId, revision, status),
+      validFrom: '2026-11-02T09:00:00Z',
+    });
+    const labels = (chain: QuotationRevision[]) => {
+      const liveId = liveRevision({ revisions: chain })?.quotationId;
+      return chain.map((v) => versionLabel(v, liveId));
+    };
+
+    it('labels a lone request "Request", not "Latest"', () => {
+      expect(labels([version('q-00', 0, 'requested')])).toEqual(['request']);
+    });
+
+    it('labels a request with a draft "Request", the draft by its status', () => {
+      expect(
+        labels([version('q-01', 1, 'draft'), version('q-00', 0, 'requested')]),
+      ).toEqual([undefined, 'request']);
+    });
+
+    it('labels the sent offer "Latest", the request it answered "Answered"', () => {
+      expect(
+        labels([sent('q-01', 1, 'pending'), version('q-00', 0, 'revised')]),
+      ).toEqual(['latest', 'answered']);
+    });
+
+    it('labels the live offer "Latest", a draft and a replaced offer by status', () => {
+      expect(
+        labels([
+          version('q-03', 3, 'draft'),
+          sent('q-02', 2, 'pending'),
+          sent('q-01', 1, 'revised'),
+          version('q-00', 0, 'revised'),
+        ]),
+      ).toEqual([undefined, 'latest', undefined, 'answered']);
     });
   });
 
