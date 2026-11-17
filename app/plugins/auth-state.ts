@@ -22,6 +22,28 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
     logout,
   } = useGeinsAuth();
 
+  // Refresh before the token expires instead of on the next API call, and as
+  // soon as a tab becomes visible again: timers don't run while a laptop sleeps.
+  const refreshIfDue = async () => {
+    if (!isAuthenticated.value || !(isExpired() || expiresSoon())) {
+      return;
+    }
+    try {
+      await refresh();
+    } catch (error) {
+      geinsLogWarn('proactive refresh failed:', error);
+    }
+  };
+  // Before the await below: code after it runs outside the app's effect scope,
+  // where `usePollWhile` can't register its cleanup. Neither does anything
+  // until `isAuthenticated`, so the session read still comes first.
+  usePollWhile(isAuthenticated, refreshIfDue, REFRESH_CHECK_INTERVAL_MS);
+  useEventListener(document, 'visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      void refreshIfDue();
+    }
+  });
+
   // Plugins run before the route middleware, which needs the session.
   try {
     await syncSession();
@@ -67,25 +89,6 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
     },
     { immediate: true },
   );
-
-  // Refresh before the token expires instead of on the next API call, and as
-  // soon as a tab becomes visible again: timers don't run while a laptop sleeps.
-  const refreshIfDue = async () => {
-    if (!isAuthenticated.value || !(isExpired() || expiresSoon())) {
-      return;
-    }
-    try {
-      await refresh();
-    } catch (error) {
-      geinsLogWarn('proactive refresh failed:', error);
-    }
-  };
-  usePollWhile(isAuthenticated, refreshIfDue, REFRESH_CHECK_INTERVAL_MS);
-  useEventListener(document, 'visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      void refreshIfDue();
-    }
-  });
 
   // Logging out is this tab's deliberate decision, never a side effect of a
   // failed fetch. A `RefreshTokenInvalid` session is re-read once first:
