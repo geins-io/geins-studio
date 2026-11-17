@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest';
-import { csrfRejection, type CsrfRequest } from '../csrf';
+import { csrfRejection, isGuardedPath, type CsrfRequest } from '../csrf';
 
 const HOST = 'studio.geins.io';
 const sameOrigin: CsrfRequest = {
@@ -106,4 +106,20 @@ describe('csrfRejection', () => {
       'missing csrf header',
     );
   });
+});
+
+describe('isGuardedPath', () => {
+  it.each(['/api', '/api/', '/api/auth/logout', '/api/v2/account'])(
+    'guards %s',
+    (path) => {
+      expect(isGuardedPath(path)).toBe(true);
+    },
+  );
+
+  it.each(['/api/csp-report', '/apix', '/', '/auth/login'])(
+    'skips %s',
+    (path) => {
+      expect(isGuardedPath(path)).toBe(false);
+    },
+  );
 });

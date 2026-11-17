@@ -3,6 +3,16 @@ export const CSRF_HEADER = 'x-geins-csrf';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
+// The browser posts CSP reports itself, without our header.
+const EXEMPT_PATHS = new Set(['/api/csp-report']);
+
+/**
+ * Whether the guard covers a path, lower-cased and without its query:
+ * `/api` itself and everything under it, bar the exemptions.
+ */
+export const isGuardedPath = (path: string): boolean =>
+  (path === '/api' || path.startsWith('/api/')) && !EXEMPT_PATHS.has(path);
+
 export interface CsrfRequest {
   method: string;
   /** Request host as the browser addressed it (honouring x-forwarded-host). */
