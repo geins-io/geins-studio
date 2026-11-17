@@ -71,7 +71,7 @@ const statusOf = (error: unknown): number => {
  * @property {function} broadcastAuthSignal - Posts an auth signal to the other tabs
  * @property {function} login - Password step
  * @property {function} verify - MFA step; the login token stays on the server
- * @property {function} setAccount - Picks the account; the server checks the token allows it
+ * @property {function} setAccount - Picks the account; the server checks the token allows it. Under the same lock as `refresh`
  * @property {function} logout - Drops the session and lands on /auth/logout
  * @property {function} refresh - Re-reads the session (the server refreshes the token if due); single-flight per tab, locked across tabs. Signals the other tabs when the token changed
  * @property {function} forceRefresh - Refreshes the token now, even if it hasn't expired, after the API rejected the one with `rejectedTokenExpires`; single-flight per tab, under the same lock as `refresh`. Signals the other tabs when the token changed
@@ -192,11 +192,15 @@ export const useGeinsAuth = (): UseGeinsAuthReturnType => {
       await fetchSession();
     });
 
+  // Under the refresh lock: the route rewrites the cookie it read, so a token
+  // rotated by a refresh in between would be overwritten with the spent one.
   const setAccount = (key: string) =>
     authStep(async () => {
-      session.value = await post<Session>('/api/auth/account', {
-        accountKey: key,
-      });
+      const write = () =>
+        post<Session>('/api/auth/account', { accountKey: key });
+      session.value = await (navigator.locks
+        ? navigator.locks.request(REFRESH_LOCK_NAME, write)
+        : write());
     });
 
   // A full load of /auth/logout drops every store; the auth middleware there

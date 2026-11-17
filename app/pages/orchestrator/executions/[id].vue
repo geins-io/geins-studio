@@ -323,7 +323,7 @@ const handleReplay = async () => {
 // ─── Live console ──────────────────────────────────────────────────
 const consoleStreamUrl = computed(() =>
   executionId.value
-    ? `/api/orchestrator/executions/${encodeURIComponent(executionId.value)}/stream`
+    ? `/orchestrator/executions/${encodeURIComponent(executionId.value)}/stream`
     : null,
 );
 

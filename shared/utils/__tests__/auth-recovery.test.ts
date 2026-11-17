@@ -32,6 +32,22 @@ describe('unauthorizedAction', () => {
     expect(unauthorizedAction(rejected)).toBe('force-refresh');
   });
 
+  // The proxy never refreshes, so an expired token reaches the API: its 401
+  // must force the refresh whether or not this tab's clock agrees.
+  it.each([
+    ['looks valid to a clock behind the server', 600],
+    ['has expired', -600],
+  ])('forces a refresh on a 401 to a token that %s', (_, expiresIn) => {
+    const expires = Math.floor(Date.now() / 1000) + expiresIn;
+    expect(
+      unauthorizedAction({
+        ...rejected,
+        sentTokenExpires: expires,
+        currentTokenExpires: expires,
+      }),
+    ).toBe('force-refresh');
+  });
+
   it('retries without a refresh when the token was replaced meanwhile', () => {
     expect(unauthorizedAction({ ...rejected, currentTokenExpires: 1002 })).toBe(
       'retry',

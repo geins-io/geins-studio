@@ -98,8 +98,8 @@ export interface AuthAccounts {
 }
 
 /**
- * Body of `POST /api/auth/refresh`, sent after the API answered 401 to a token
- * that hasn't expired. `rejectedTokenExpires` is the `tokenExpires` of the
+ * Body of `POST /api/auth/refresh`, sent after the API answered 401 to an
+ * expired or rejected token. `rejectedTokenExpires` is the `tokenExpires` of the
  * session the tab holds; the server refreshes only while the cookie still
  * holds that token, so a token another tab already rotated isn't revoked again.
  */

@@ -1,8 +1,8 @@
 import { promiseTimeout, useEventListener } from '@vueuse/core';
 
 const REFRESH_CHECK_INTERVAL_MS = 60_000;
-// Long enough for another tab's (or lambda's) token rotation to land in the
-// shared cookie before a `RefreshTokenInvalid` session is re-read.
+// Long enough for another tab's token rotation to land in the shared cookie
+// before a `RefreshTokenInvalid` session is re-read.
 const INVALID_RECHECK_DELAY_MS = 1_500;
 
 export default defineNuxtPlugin(async (_nuxtApp) => {
@@ -89,7 +89,7 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
 
   // Logging out is this tab's deliberate decision, never a side effect of a
   // failed fetch. A `RefreshTokenInvalid` session is re-read once first:
-  // another tab or lambda may have just rotated the token.
+  // another tab may have just rotated the token.
   const authStateHandler = async () => {
     if (session.value?.mfaActive || !authStateDiffers.value) {
       return;

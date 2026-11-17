@@ -105,8 +105,6 @@ declare module 'h3' {
     geinsSession?: GeinsSession;
     /** How many chunks the browser holds once this response lands. */
     geinsSessionChunks?: number;
-    /** A Geins refresh already ran in this request. */
-    geinsRefreshed?: boolean;
   }
 }
 

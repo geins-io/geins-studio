@@ -212,6 +212,17 @@ describe('POST /api/auth/account', () => {
     });
   });
 
+  it('stores the account on the tokens as they are, without refreshing', async () => {
+    const { request } = await signedIn(['account-1', 'account-2']);
+    geinsAuth.shouldRefresh.mockReturnValue(true);
+    const response = await request('/api/auth/account', {
+      method: 'POST',
+      body: { accountKey: 'account-2' },
+    });
+    expect(response.body.accountKey).toBe('account-2');
+    expect(geinsAuth.refresh).not.toHaveBeenCalled();
+  });
+
   it('refuses an account the user is not a member of', async () => {
     const { request } = await signedIn(['account-1', 'account-2']);
     await request('/api/auth/account', {

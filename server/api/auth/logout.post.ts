@@ -38,7 +38,7 @@ const revokeQuietly = async (refreshToken: string): Promise<void> => {
  * tokens can't be revoked: one already issued stays valid until its `exp`.
  */
 export default defineEventHandler(async (event) => {
-  // The cookie as it is, not `readGeinsSession`: a refresh first would only
+  // The cookie as it is, not `refreshSessionIfDue`: a refresh first would only
   // rotate the token this is about to revoke.
   const refreshToken = (await readSealedSession(event)).secure?.refreshToken;
   if (refreshToken) {

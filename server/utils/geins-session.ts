@@ -2,7 +2,6 @@ import { createError, type H3Event } from 'h3';
 import { useRuntimeConfig } from 'nitropack/runtime';
 import type { AuthResponse, Session, TokenSession } from '#shared/types';
 import {
-  refreshWithRetry,
   shouldForceRefresh,
   tokenAfterRefresh,
   tokenAfterRefreshError,
@@ -25,8 +24,8 @@ export const SESSION_MAX_AGE_S = 7 * 24 * 60 * 60;
 // The Geins MFA login token lives 5 minutes.
 export const MFA_MAX_AGE_S = 5 * 60;
 
-// One Geins refresh per refresh token per server instance: parallel proxy
-// calls in one lambda must not each rotate the same token.
+// One Geins refresh per refresh token per server instance, for tabs without
+// Web Locks, whose session reads aren't serialized.
 const inflight = new Map<string, Promise<AuthResponse>>();
 
 /** What the browser sees: never a token. */
@@ -110,29 +109,29 @@ export async function storeAuthResponse(
 const refreshOnce = (refreshToken: string): Promise<AuthResponse> => {
   let pending = inflight.get(refreshToken);
   if (!pending) {
-    pending = refreshWithRetry(geinsAuth.refresh, refreshToken, {
-      onRetry: (status, attempt) =>
-        geinsLogWarn(
-          `refresh answered ${status}, retrying (attempt ${attempt})`,
-        ),
-    }).finally(() => inflight.delete(refreshToken));
+    pending = geinsAuth
+      .refresh(refreshToken)
+      .finally(() => inflight.delete(refreshToken));
     inflight.set(refreshToken, pending);
   }
   return pending;
 };
 
 /**
- * Refreshes with Geins and rewrites the cookie on this response. Never throws:
- * a failure lands in `session.error`, by the same rules as `tokenAfterRefreshError`.
- * Only a `mayDowngrade` caller writes a failure; anyone else keeps the session.
+ * Refreshes with Geins and writes the outcome into the cookie on this response.
+ * Never throws: a failure lands in `session.error`, by the same rules as
+ * `tokenAfterRefreshError`.
+ *
+ * Only the session routes get here, and the client calls them under its
+ * `geins-auth-refresh` Web Lock. Geins refuses a second concurrent refresh
+ * with one token (403), so a refresh anywhere else, such as the API proxy on
+ * another instance, could race them and leave a dead session in the cookie.
  */
 async function refreshSession(
   event: H3Event,
   session: GeinsSession,
-  mayDowngrade: boolean,
 ): Promise<GeinsSession> {
   const token = toTokenSession(session);
-  event.context.geinsRefreshed = true;
   let next: TokenSession;
   try {
     next = tokenAfterRefresh(
@@ -145,11 +144,6 @@ async function refreshSession(
       `refresh failed (${next.error}):`,
       error instanceof Error ? error.message : error,
     );
-    // A proxy call never writes a failure: a parallel call on another
-    // instance may have just rotated the token, and the browser keeps the
-    // last cookie it gets. Only the session routes, under the client's Web
-    // Lock, decide.
-    if (!mayDowngrade) return session;
     if (next.error === 'RefreshTokenInvalid') {
       // Tokens dropped; the flag stays so the client re-checks, then logs out.
       return writeSealedSession(
@@ -199,47 +193,46 @@ async function migrateLegacySession(
   return writeSealedSession(event, legacy, SESSION_MAX_AGE_S);
 }
 
+/** The stored session; a next-auth cookie on its own is migrated first. */
+async function readStoredSession(event: H3Event): Promise<GeinsSession> {
+  const session = await readSealedSession(event);
+  if (Object.keys(session).length > 0) return session;
+  return (await migrateLegacySession(event)) ?? session;
+}
+
+const isDue = (session: GeinsSession): boolean =>
+  !!session.user &&
+  !!session.secure?.refreshToken &&
+  geinsAuth.shouldRefresh(toTokenSession(session));
+
 /**
- * The session, refreshed first when the access token is expired or close to
- * it. `mayDowngrade` only for the session routes, which run under the
- * client's Web Lock; the API proxy never writes a failed refresh.
+ * `GET /api/auth/session`: the session, refreshed first when the access token
+ * is expired or expires within 5 minutes.
  */
-export async function readGeinsSession(
+export async function refreshSessionIfDue(
   event: H3Event,
-  { mayDowngrade = false }: { mayDowngrade?: boolean } = {},
 ): Promise<GeinsSession> {
-  let session = await readSealedSession(event);
-  if (Object.keys(session).length === 0) {
-    session = (await migrateLegacySession(event)) ?? session;
-  }
-  if (
-    session.user &&
-    session.secure?.refreshToken &&
-    geinsAuth.shouldRefresh(toTokenSession(session))
-  ) {
-    return refreshSession(event, session, mayDowngrade);
-  }
-  return session;
+  const session = await readStoredSession(event);
+  return isDue(session) ? refreshSession(event, session) : session;
 }
 
 /**
- * Refreshes now, after the API answered 401 to a token that hasn't expired.
- * Only while the cookie still holds the rejected token: if another tab
- * already rotated it, that new token is returned instead.
+ * `POST /api/auth/refresh`, after the API answered 401: refreshes now, even
+ * before the token is due, but only while the cookie still holds the rejected
+ * token. If another tab already rotated it, that new token is returned
+ * instead. At most one Geins refresh either way.
  */
 export async function forceRefreshSession(
   event: H3Event,
   request: unknown,
 ): Promise<GeinsSession> {
-  const session = await readGeinsSession(event, { mayDowngrade: true });
-  // A due token was just refreshed by that read; if it failed transiently,
-  // the expiry still matches, and a second round would only add load.
-  if (
-    event.context.geinsRefreshed ||
-    !shouldForceRefresh(toTokenSession(session), request)
-  ) {
+  const session = await readStoredSession(event);
+  if (isDue(session)) {
+    return refreshSession(event, session);
+  }
+  if (!shouldForceRefresh(toTokenSession(session), request)) {
     return session;
   }
   geinsLogWarn('the API rejected the token, forcing a refresh');
-  return refreshSession(event, session, true);
+  return refreshSession(event, session);
 }

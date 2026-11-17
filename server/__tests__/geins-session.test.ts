@@ -35,22 +35,27 @@ import { AuthApiError } from '#shared/utils/auth-session';
 import {
   SESSION_MAX_AGE_S,
   forceRefreshSession,
-  readGeinsSession,
+  refreshSessionIfDue,
   toClientSession,
 } from '../utils/geins-session';
 import { tokenAllowsAccount } from '../utils/geins-token';
-import { writeSealedSession, type GeinsSession } from '../utils/sealed-session';
+import {
+  readSealedSession,
+  writeSealedSession,
+  type GeinsSession,
+} from '../utils/sealed-session';
 import { createTestServer, fakeJwt, nowSeconds } from './session-test-utils';
 
 const accessToken = (expiresIn: number, accounts: string[] = ['account-1']) =>
   fakeJwt({ exp: nowSeconds() + expiresIn, 'geins:accountkey': accounts });
 
+const expiryOf = (token: string): number =>
+  JSON.parse(Buffer.from(token.split('.')[1]!, 'base64url').toString()).exp;
+
 const signedIn = (token: string, accountKey = 'account-1'): GeinsSession => ({
   user: {},
   accountKey,
-  tokenExpires: JSON.parse(
-    Buffer.from(token.split('.')[1]!, 'base64url').toString(),
-  ).exp,
+  tokenExpires: expiryOf(token),
   secure: { accessToken: token, refreshToken: 'refresh-1' },
 });
 
@@ -60,16 +65,16 @@ const server = () =>
       await writeSealedSession(event, await readBody(event), SESSION_MAX_AGE_S);
       return { ok: true };
     }),
-    // What the API proxy does: never downgrades.
+    // What the API proxy reads: the cookie as it is.
     '/proxy': defineEventHandler(async (event) => {
-      const session = await readGeinsSession(event);
+      const session = await readSealedSession(event);
       return {
         accessToken: session.secure?.accessToken,
         accountKey: session.accountKey,
       };
     }),
     '/session': defineEventHandler(async (event) =>
-      toClientSession(await readGeinsSession(event, { mayDowngrade: true })),
+      toClientSession(await refreshSessionIfDue(event)),
     ),
     '/refresh': defineEventHandler(async (event) =>
       toClientSession(await forceRefreshSession(event, await readBody(event))),
@@ -148,10 +153,10 @@ describe('toClientSession', () => {
   });
 });
 
-describe('readGeinsSession', () => {
+describe('refreshSessionIfDue', () => {
   it("doesn't refresh a token that isn't due", async () => {
     const { request } = await seeded(signedIn(accessToken(3600)));
-    await request('/proxy');
+    await request('/session');
     expect(geinsAuth.refresh).not.toHaveBeenCalled();
   });
 
@@ -164,7 +169,7 @@ describe('readGeinsSession', () => {
       }),
     );
     const { request } = await seeded(signedIn(accessToken(60)));
-    const calls = Array.from({ length: 8 }, () => request('/proxy'));
+    const calls = Array.from({ length: 8 }, () => request('/session'));
     await new Promise((r) => setTimeout(r, 10));
     resolve({ accessToken: fresh, refreshToken: 'refresh-2' });
     const responses = await Promise.all(calls);
@@ -172,7 +177,7 @@ describe('readGeinsSession', () => {
     expect(geinsAuth.refresh).toHaveBeenCalledTimes(1);
     expect(geinsAuth.refresh).toHaveBeenCalledWith('refresh-1');
     for (const response of responses) {
-      expect(response.body.accessToken).toBe(fresh);
+      expect(response.body.tokenExpires).toBe(expiryOf(fresh));
       expect(
         response.setCookies.some((c) => c.startsWith('geins-session.0')),
       ).toBe(true);
@@ -182,7 +187,7 @@ describe('readGeinsSession', () => {
   it('keeps the account the new token still allows', async () => {
     geinsAuth.refresh.mockResolvedValue({ accessToken: accessToken(3600) });
     const { request } = await seeded(signedIn(accessToken(60)));
-    expect((await request('/proxy')).body.accountKey).toBe('account-1');
+    expect((await request('/session')).body.accountKey).toBe('account-1');
   });
 
   it('drops an account the refreshed token no longer allows', async () => {
@@ -191,22 +196,13 @@ describe('readGeinsSession', () => {
       refreshToken: 'refresh-2',
     });
     const { request } = await seeded(signedIn(accessToken(60)));
-    expect((await request('/proxy')).body.accountKey).toBeUndefined();
     const { body } = await request('/session');
     expect(body.isAuthenticated).toBe(true);
     expect(body.accountKey).toBeUndefined();
+    expect((await request('/proxy')).body.accountKey).toBeUndefined();
   });
 
   describe('when the refresh fails', () => {
-    it('never writes the failure from the proxy', async () => {
-      geinsAuth.refresh.mockRejectedValue(new AuthApiError(401, 'Rejected'));
-      const due = accessToken(60);
-      const { request } = await seeded(signedIn(due));
-      const response = await request('/proxy');
-      expect(response.body.accessToken).toBe(due);
-      expect(response.setCookies).toEqual([]);
-    });
-
     it('writes RefreshTokenInvalid from the session route and drops the tokens', async () => {
       geinsAuth.refresh.mockRejectedValue(new AuthApiError(401, 'Rejected'));
       const { request } = await seeded(signedIn(accessToken(60)));
@@ -219,6 +215,18 @@ describe('readGeinsSession', () => {
       const after = await request('/proxy');
       expect(after.body.accessToken).toBeUndefined();
       expect(geinsAuth.refresh).not.toHaveBeenCalled();
+    });
+
+    it('signs out on a 403 without retrying it', async () => {
+      geinsAuth.refresh.mockRejectedValue(
+        new AuthApiError(403, 'Insufficient permissions'),
+      );
+      const { request } = await seeded(signedIn(accessToken(60)));
+      expect((await request('/session')).body).toMatchObject({
+        isAuthenticated: false,
+        error: 'RefreshTokenInvalid',
+      });
+      expect(geinsAuth.refresh).toHaveBeenCalledOnce();
     });
 
     it('keeps the tokens on a transient failure', async () => {
@@ -388,7 +396,7 @@ describe('next-auth session migration', () => {
   it('ignores next-auth cookies once a sealed session exists', async () => {
     const token = accessToken(3600);
     const { request } = await seeded(signedIn(token));
-    const response = await request('/proxy', {
+    const response = await request('/session', {
       cookies: {
         ...Object.fromEntries((await seeded(signedIn(token))).jar),
         '__Secure-next-auth.session-token': await encryptLegacy(

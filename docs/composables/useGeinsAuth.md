@@ -97,7 +97,7 @@ Posts the MFA code to `POST /api/auth/verify`. The login token stays in the seal
 setAccount(accountKey: string): Promise<SignInResponse>
 ```
 
-Picks the account through `POST /api/auth/account`, at login and from the sidebar switcher. The server checks the key against the token's own account claims and answers `403` for an account the user isn't a member of (a Super Admin may use any account).
+Picks the account through `POST /api/auth/account`, at login and from the sidebar switcher. The server checks the key against the token's own account claims and answers `403` for an account the user isn't a member of (a Super Admin may use any account). It runs under the same Web Lock as `refresh`: the route rewrites the session cookie it read, and must not overwrite a token another tab rotates in between.
 
 - **Returns:** `{ ok, status }`
 
@@ -127,7 +127,7 @@ A failed read throws and keeps the last session: a failed read is never a logout
 forceRefresh(rejectedTokenExpires: number | undefined): Promise<Session>
 ```
 
-Refreshes the access token now, even though it hasn't expired, and resolves with the session after it. The browser never sees the token, so `rejectedTokenExpires` identifies it: the `tokenExpires` of the session the tab held when the API answered `401`. `$geinsApi` calls it when the API answers `401` to the token this tab holds (see [When the API rejects a token](/concepts/authentication#when-the-api-rejects-a-token)). It posts `{ rejectedTokenExpires }` to `POST /api/auth/refresh`, which refreshes only while the cookie still holds that token, so a token another tab already rotated isn't revoked again.
+Refreshes the access token now, expired or not, and resolves with the session after it. The browser never sees the token, so `rejectedTokenExpires` identifies it: the `tokenExpires` of the session the tab held when the API answered `401`. `$geinsApi` calls it when the API answers `401` to the token this tab holds (see [When the API rejects a token](/concepts/authentication#when-the-api-rejects-a-token)). It posts `{ rejectedTokenExpires }` to `POST /api/auth/refresh`, which refreshes only while the cookie still holds that token, so a token another tab already rotated isn't revoked again.
 
 Single-flight like `refresh`: concurrent calls in a tab share one call (the first caller's argument counts), and calls across tabs run one at a time under the same Web Lock. A failed refresh comes back as `sessionError`, as with `refresh`. When the access token changed, it signals the other tabs (`session-changed`).
 

@@ -23,7 +23,7 @@ The files you will find in the `app` directory that are handling authentication 
 - `app/pages/auth/login.vue` - The login page. It runs the login, MFA and account steps, then goes to the page the user asked for
 - `app/composables/auth/useGeinsAuth.ts` - Reads the session (`GET /api/auth/session`, no tokens) into `useState('geins-session')` and posts to the auth routes
 - `app/stores/user.ts` - A Pinia store that loads the signed-in user from `user/me`, retries a transient failure, and exposes computed properties related to the user
-- `app/plugins/geins-api.ts` - The `$geinsApi` fetch instance. It refreshes a due token before each request, and recovers from a token the API rejects (see [When the API rejects a token](#when-the-api-rejects-a-token))
+- `app/plugins/geins-api.ts` - The `$geinsApi` fetch instance. It refreshes a due token before each request, and recovers from a `401` to an expired or rejected token (see [When the API rejects a token](#when-the-api-rejects-a-token))
 - `shared/utils/auth-recovery.ts` - Pure decisions for a `401` from the API and for retrying the user load
 - `app/plugins/auth-state.ts` - Reads the session first (plugins run before the route middleware), keeps tabs in sync (see [Cross-tab sync](#cross-tab-sync)), refreshes the token proactively, and makes the deliberate decision to log out when the session has no usable token
 
@@ -53,7 +53,7 @@ The browser only ever sees the client session from `GET /api/auth/session`: `{ i
 
 Geins answers `204` for a valid, unknown, revoked or expired token alike, so a `204` says nothing about the token.
 
-**Residual risk.** Revoking a refresh token doesn't touch access tokens: they have no `jti`, so one already issued stays valid until its `exp` (60 min today; the backend plans to cut it to 15). The access token never leaves the server, so only a stolen session cookie could still use it, and only until then. "Sign out everywhere" (`auth/revoke-all`) isn't built.
+**Residual risk.** Revoking a refresh token doesn't touch access tokens: they have no `jti`, so one already issued stays valid until its `exp` (15 minutes in prod). The access token never leaves the server, so only a stolen session cookie could still use it, and only until then. "Sign out everywhere" (`auth/revoke-all`) isn't built.
 
 ## Login redirect
 
@@ -63,7 +63,7 @@ After login, the login page goes to `safeRedirect(route.query.redirect)`. It kee
 
 ## Refresh Flow
 
-The token is refreshed server-side. When a request reads the session and its access token is expired or expires within 5 minutes, the server calls the Geins `auth/refresh` endpoint and writes the new tokens into the session cookie on that response (`readGeinsSession` in `server/utils/geins-session.ts`). On the client, the `refresh` method in `useGeinsAuth.ts` triggers this by re-reading the session; it doesn't force a refresh.
+The token is refreshed server-side, by the session routes only. `GET /api/auth/session` calls the Geins `auth/refresh` endpoint when the access token is expired or expires within 5 minutes (`refreshSessionIfDue` in `server/utils/geins-session.ts`), and `POST /api/auth/refresh` forces a refresh after a `401` (`forceRefreshSession`). Each writes the outcome into the session cookie on its response. On the client, the `refresh` method in `useGeinsAuth.ts` triggers the first by re-reading the session; it doesn't force a refresh.
 
 `refresh` is single-flight, and locked across tabs (`createSingleFlight` in `shared/utils/single-flight.ts`):
 
@@ -76,12 +76,13 @@ A refresh is triggered:
 2. Every 60 seconds while authenticated (`auth-state.ts`, via `usePollWhile`), with the same check, so an idle tab refreshes before the token expires.
 3. When a tab becomes visible again, since timers don't run while a laptop sleeps.
 
-A `401` despite all this means the API rejected the token itself: see [When the API rejects a token](#when-the-api-rejects-a-token).
+A `401` despite all this means the token expired before the tab refreshed it, or the API rejected it: see [When the API rejects a token](#when-the-api-rejects-a-token).
 
-The API proxy refreshes a due token too, so a request never goes out with an expired token the client failed to refresh first. Two rules keep that safe:
+**The API proxy never refreshes.** It sends the token in the cookie as it is (`readSealedSession`) and never writes the session. Geins refuses a second concurrent refresh with the same refresh token (`403`), and the client's lock can't serialize a refresh on another server instance (Vercel, a scaled-out Azure app). If the proxy refreshed too, it could race a session route, and the loser's `RefreshTokenInvalid` cookie could reach the browser last and log the user out. So only the session routes, which the client calls under its Web Lock, call `auth/refresh`. An expired token comes back `401` from the API, and the client refreshes under the lock and retries.
 
-- **One refresh per server instance.** Parallel proxy calls in one instance share a single Geins refresh per refresh token (a `Map` of refreshes in flight).
-- **The proxy never writes a failure.** If its refresh fails, it sends the request with the token it has and writes no cookie: a parallel call on another instance may have just rotated the token, and the browser keeps the last cookie it receives. Only the session routes (`GET /api/auth/session`, `POST /api/auth/refresh`), which the client calls under its Web Lock, write `RefreshTokenInvalid` or `RefreshFailed`.
+`POST /api/auth/account` rewrites the cookie it read, so it never refreshes either, and the client calls it under the same lock: otherwise it could write back a refresh token another tab has just spent.
+
+Within one server instance, session reads that arrive together share a single Geins refresh per refresh token (a `Map` of refreshes in flight), for browsers without Web Locks.
 
 After every successful refresh, the stored account is checked against the new token again and cleared if the user was removed from it; the login page then asks for an account.
 
@@ -89,25 +90,25 @@ After every successful refresh, the stored account is checked against the new to
 
 A session read never throws over a failed refresh: that would turn a Geins hiccup into a logout. The failure is recorded in the session instead, and reaches the client as `session.error` (`sessionError` in `useGeinsAuth`):
 
-| Refresh result                                                      | Token                    | `session.error`       | Effect                                                           |
-| ------------------------------------------------------------------- | ------------------------ | --------------------- | ---------------------------------------------------------------- |
-| Success, first try or after a `403`                                 | New tokens, same account | —                     | Error cleared                                                    |
-| `401`, `403` twice in a row, any other `4xx` but `408` and `429`    | Tokens dropped           | `RefreshTokenInvalid` | `isAuthenticated: false`; the client decides to log out          |
-| `5xx`, `408`, `429`, network error, timeout (also on the 403 retry) | Kept as is               | `RefreshFailed`       | User stays logged in; the next session fetch retries the refresh |
+| Refresh result                                    | Token                    | `session.error`       | Effect                                                           |
+| ------------------------------------------------- | ------------------------ | --------------------- | ---------------------------------------------------------------- |
+| Success                                           | New tokens, same account | —                     | Error cleared                                                    |
+| `401`, `403`, any other `4xx` but `408` and `429` | Tokens dropped           | `RefreshTokenInvalid` | `isAuthenticated: false`; the client decides to log out          |
+| `5xx`, `408`, `429`, network error, timeout       | Kept as is               | `RefreshFailed`       | User stays logged in; the next session fetch retries the refresh |
 
-Geins answers an expired refresh token with `403`, not `401`, so every `4xx` except "try again later" (`408`, `429`) ends the session. Keeping the token on one would leave a session that looks signed in while every API call fails with the expired access token, and the refresh is retried forever.
+Geins answers a dead refresh token (expired, revoked, or already redeemed by a concurrent refresh) with `403`, not `401`, so every `4xx` except "try again later" (`408`, `429`) ends the session. Keeping the token on one would leave a session that looks signed in while every API call fails with the expired access token, and the refresh is retried forever.
 
-A `403` is retried once first (`refreshWithRetry`). Geins also answers `403`, with the same body, when its own check of the token fails (a SQL or Key Vault error), and until the backend answers that with a `5xx` instead, Studio can't tell a short outage from a dead token. Without the retry, a blip logs out everyone who refreshes during it. The server waits a jittered 300–800 ms and refreshes again with the **same** refresh token. A dead token stays dead, so the retry costs one request. Reusing the token is safe: Geins refuses it only once a refresh with it has finished, and two refreshes with one token at the same moment both succeed. The retry's own result decides the row above. Nothing else is retried: other `4xx` are final, and `5xx`, network errors and timeouts already keep the session. The client can't do this retry itself, because the server has already dropped the refresh token by the time the client sees `RefreshTokenInvalid`.
+A `403` is final and never retried. Geins answers a failed check on its own side (a SQL or Key Vault error) with `503`, so a `403` always means a dead token, and a retry would only delay the losing response of a concurrent refresh, which makes it likelier to land last.
 
-Calls to the Geins auth endpoints time out after 10 seconds, so a hung refresh becomes a retryable `RefreshFailed` instead of running into the function timeout. With the `403` retry, a refresh takes at most about 21 seconds: a `403` just inside the timeout, the 800 ms pause, and a retry that times out. A `403` normally comes back fast, so the usual cost of the retry is the pause.
+Calls to the Geins auth endpoints time out after 10 seconds, so a hung refresh becomes a retryable `RefreshFailed` instead of running into the function timeout.
 
-On `RefreshTokenInvalid`, `auth-state.ts` waits 1.5 seconds and re-reads the session once, under the lock: another tab or server instance may have just rotated the token, and its cookie wins. Only if the session is still invalid does the tab log out.
+On `RefreshTokenInvalid`, `auth-state.ts` waits 1.5 seconds and re-reads the session once, under the lock: another tab may have just rotated the token (in a browser without Web Locks), and its cookie wins. Only if the session is still invalid does the tab log out.
 
 ## When the API rejects a token
 
-The server refreshes only a token that is expired or about to expire. The API can still reject one that hasn't expired: after a signing-key rotation, or when a session started against another environment's API. Refreshing on a timer never catches that token, so every call would fail until it expires. Instead, `$geinsApi` handles a `401` (`createUnauthorizedRecovery` in `shared/utils/auth-recovery.ts`):
+The API proxy never refreshes, so a token that expired before the tab refreshed it reaches the API and comes back `401`: the tab's clock is behind the server's, the tab slept, or the request crossed the 5-minute mark in flight. The API can also reject a token that hasn't expired: after a signing-key rotation, or when a session started against another environment's API, which no expiry check catches. `$geinsApi` handles both the same way (`createUnauthorizedRecovery` in `shared/utils/auth-recovery.ts`):
 
-1. **Force a refresh.** A `401` to a request sent while this tab held a token calls `useGeinsAuth().forceRefresh`. The browser never sees the token, so the session's `tokenExpires` identifies it: `$geinsApi` records it on each request (`sentTokenExpires`). `forceRefresh` posts `{ rejectedTokenExpires }` to `POST /api/auth/refresh`, which refreshes through the same `refreshWithRetry` path as a due token (`shouldForceRefresh` in `shared/utils/auth-session.ts`), so a failed refresh is classified the same way and the route never throws over it.
+1. **Force a refresh.** A `401` to a request sent while this tab held a token calls `useGeinsAuth().forceRefresh`. The browser never sees the token, so the session's `tokenExpires` identifies it: `$geinsApi` records it on each request (`sentTokenExpires`). `forceRefresh` posts `{ rejectedTokenExpires }` to `POST /api/auth/refresh`, which refreshes through the same path as a due token (`shouldForceRefresh` in `shared/utils/auth-session.ts`), so a failed refresh is classified the same way and the route never throws over it. A token that is both due and rejected gets one Geins refresh, not two.
 2. **Retry once.** With a new token, the request is retried once (ofetch's retry; the proxy sends the new token from the cookie). A `401` to a token the tab has already replaced is retried the same way, without another refresh.
 3. **Log out.** A `401` to the retry means the API rejects the new token too: `logout()`.
 
@@ -121,6 +122,8 @@ The server refreshes only a token that is expired or about to expire. The API ca
 It never applies to a request sent while the tab held no token, to a tab that isn't signed in, or on an auth page: those `401`s can't be fixed by a refresh, and acting on them would loop (the login page loads data before sign-in).
 
 Concurrent `401`s share one forced refresh, which runs under the same Web Lock as `refresh`, and start at most one logout. The server refreshes only while the cookie still holds the rejected token: if another tab already rotated it, it returns that token instead, since refreshing again would revoke it.
+
+The orchestrator execution stream (`LiveConsole.vue`) goes through `$geinsApi` too, with `responseType: 'stream'`, so a `401` when it opens refreshes the token and reconnects once. A stream that is already open isn't cut when the token expires.
 
 Loading the user follows the same rules. A `401` from `user/me` goes through the steps above. A transient failure (no response, `408`, `429`, `5xx`) never signs out: `useUserStore` retries it in the background after 1, 2, 5 and 10 seconds, and the sidebar shows a skeleton until the user loads. Nothing shows a placeholder such as "N/A" for the signed-in user.
 
@@ -172,7 +175,7 @@ The cookies are `httpOnly`, `Secure` outside `pnpm dev`, `SameSite=Lax` and `Pat
 Until Phase 4, sessions lived in next-auth's cookie (`__Secure-next-auth.session-token` on https, `next-auth.session-token` on http, split into `.0`, `.1`, … over 4 KB). So that nobody is logged out by the switch, a request with no sealed session but a next-auth cookie is migrated once (`server/utils/legacy-session.ts`, marked `cutover:`):
 
 1. The chunks are joined and decrypted as next-auth 4 encrypted them: a JWE with `alg: dir` and `enc: A256GCM`, keyed by `HKDF-SHA256(AUTH_SECRET, '', 'NextAuth.js Generated Encryption Key', 32)`.
-2. With tokens in it, the access and refresh tokens move into a sealed session. The stored account is kept only if the token allows it. A due token is then refreshed as usual.
+2. With tokens in it, the access and refresh tokens move into a sealed session. The stored account is kept only if the token allows it. A due token is then refreshed as usual. Only the session routes migrate (the auth-state plugin reads the session before anything else); the API proxy reads the sealed session alone, since a migration writes the cookie too.
 3. Every `next-auth.*` cookie is deleted, migrated or not. A cookie that can't be read (tampered, expired, another secret, signed out or mid-MFA) leaves an empty session: login.
 
 `AUTH_SECRET` stays set for this alone. Remove the migration and `AUTH_SECRET` (with `AUTH_PATH` and `AUTH_ORIGIN`) one or two releases after the sealed session ships, once the old cookies have expired (next-auth's 30 days) or been migrated.

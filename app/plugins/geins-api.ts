@@ -61,9 +61,9 @@ export default defineNuxtPlugin(() => {
    * The `$fetch` instance for the Geins API.
    *
    * This instance is created using the nuxt `$fetch.create` method.
-   * It refreshes a token that is due before the request, so the proxy rarely
-   * has to. If a request fails with a 401 status, it forces a refresh and
-   * retries the request once. A read that fails with a 502, 503 or 504 is
+   * It refreshes a token that is due before the request; the proxy never
+   * refreshes. If a request fails with a 401 status (an expired or rejected
+   * token), it forces a refresh and retries the request once. A read that fails with a 502, 503 or 504 is
    * retried once.
    *
    * @example

@@ -38,9 +38,9 @@ export type UnauthorizedAction =
  * rejected the token: the login page and requests sent before sign-in get 401s
  * a refresh can't fix, and acting on them would loop.
  *
- * The server refreshes only a token that is expired or about to expire, so a
- * token the API rejects early (a rotated signing key, another environment's
- * token) would otherwise stay in use, and fail every call, until it expires.
+ * The API proxy never refreshes, so this replaces an expired token the tab
+ * didn't refresh first (its clock behind the server's, say), and a token the
+ * API rejects early (a rotated signing key, another environment's token).
  */
 export const unauthorizedAction = ({
   status,

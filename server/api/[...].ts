@@ -10,18 +10,18 @@ import {
   getRequestHost,
   type H3Event,
 } from 'h3';
+import { useRuntimeConfig } from 'nitropack/runtime';
 import { resolveAppId } from '#shared/utils/app';
 import {
   isGeinsAuthPath,
   pickUpstreamHeaders,
 } from '#shared/utils/proxy-headers';
 import { describeNetworkError } from '../utils/error-logging';
-import { readGeinsSession } from '../utils/geins-session';
 import {
   refreshSalesPortal,
   describeFetchError,
 } from '../utils/refresh-sales-portal';
-import { useRuntimeConfig } from '#imports';
+import { readSealedSession } from '../utils/sealed-session';
 
 // HOTFIX STU-216 — remove when BE handles config-refresh natively (STU-217)
 const CHANNEL_PATCH_RE = /^\/api\/account\/channel\/([^/?]+)(\?|$)/;
@@ -77,19 +77,10 @@ async function pipeUpstream(
     : undefined;
   // fetch's `BodyInit` doesn't take Node's `Buffer<ArrayBufferLike>`.
   const body = raw && new Uint8Array(raw);
-  // A refresh before this call wrote the session cookies, and `sendProxy`
-  // replaces `set-cookie` with the upstream's whenever it sends any: keep
-  // ours, and drop Geins' (the JSON path never forwards them either).
-  const sessionCookies = event.node.res.getHeader('set-cookie');
   return sendProxy(event, target, {
     fetchOptions: { method: event.method, body, headers },
-    onResponse: (proxied) => {
-      if (sessionCookies === undefined) {
-        proxied.node.res.removeHeader('set-cookie');
-      } else {
-        proxied.node.res.setHeader('set-cookie', sessionCookies);
-      }
-    },
+    // Never Geins' cookies; the JSON path doesn't forward them either.
+    onResponse: (proxied) => proxied.node.res.removeHeader('set-cookie'),
   });
 }
 
@@ -143,9 +134,10 @@ export default defineEventHandler(async (event) => {
 
   geinsLog(`[${correlationId}] ${event.method} ${fetchUrl}`);
 
-  // Refreshes first when the token is due, rewriting the session cookie on
-  // this response; a failed refresh is never written here.
-  const session = await readGeinsSession(event);
+  // The cookie as it is: the proxy never refreshes or writes the session. Only
+  // the session routes refresh, under the client's Web Lock; an expired token
+  // comes back 401, and `$geinsApi` force-refreshes and retries.
+  const session = await readSealedSession(event);
   const apiHeaders = pickUpstreamHeaders(headers, {
     accessToken: session.secure?.accessToken,
     accountKey: session.accountKey,
