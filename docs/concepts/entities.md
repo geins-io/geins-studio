@@ -28,7 +28,7 @@ export type EntityKey = keyof typeof ENTITIES; // 'price_list' | 'quotation' | �
 ```
 
 - **`endpoint`** is omitted for singletons with no standard CRUD endpoint (`profile`, served via `/user/me`). Repositories read it by passing the entry to `repo.entity(ENTITIES.x, fetch)` (see [API Repositories](./api-repositories.md)).
-- **`route`** is omitted for sub-entities rendered inside a parent page (`buyer`, `customer`) and entities with no list/`[id]` page (`product`, `message`). It is the one place a route↔i18n-key mismatch (e.g. a plural folder) is reconciled. The route helpers `entityListUrl(key)` / `entityChildPattern(key)` / `entityBasePath(key)` build page URLs from it, so [`navigation.ts`](/composables/) (and any entity link) reads paths from the registry rather than hardcoding them.
+- **`route`** is omitted for sub-entities rendered inside a parent page (`buyer`, `customer`) and entities with no list/`[id]` page (`product`, `message`). It is the one place a route↔i18n-key mismatch (e.g. a plural folder) is reconciled. The route helpers `entityListUrl(key)` / `entityChildPattern(key)` / `entityBasePath(key)` build page URLs from it, so [`navigation.ts`](/composables/useNavigation) (and any entity link) reads paths from the registry rather than hardcoding them.
 
 Two distinct sets exist, and only the first goes in the registry:
 

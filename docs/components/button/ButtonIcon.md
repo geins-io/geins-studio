@@ -94,4 +94,4 @@ The button label. Required for accessibility — never use `ButtonIcon` without 
 ## Dependencies
 
 - shadcn-vue [`Button`](/components/shadcn-vue) — visual primitive
-- `useLucideIcon` — resolves the icon name to a component (tree-shake-safe). See `app/composables/useLucideIcon.ts`.
+- [`useLucideIcon`](/composables/useLucideIcon) — resolves the icon name to a component (tree-shake-safe)

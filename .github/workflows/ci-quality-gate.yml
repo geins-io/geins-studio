@@ -47,3 +47,7 @@ jobs:
       # Only the build compiles i18n messages, so bad message syntax (literal braces) fails here
       - name: Build
         run: pnpm build
+
+      # VitePress fails on dead links; the docs release only runs on main, so catch them on the PR
+      - name: Build docs
+        run: pnpm docs:build
