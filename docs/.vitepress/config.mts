@@ -119,6 +119,7 @@ export default defineConfig({
               { text: 'useDate', link: '/composables/useDate.md' },
               { text: 'useGeinsImage', link: '/composables/useGeinsImage.md' },
               { text: 'useGeinsLog', link: '/composables/useGeinsLog.md' },
+              { text: 'useLucideIcon', link: '/composables/useLucideIcon.md' },
               { text: 'useAppLayout', link: '/composables/useAppLayout.md' },
               {
                 text: 'useBackgroundJobs',

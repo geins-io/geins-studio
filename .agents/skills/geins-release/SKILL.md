@@ -123,15 +123,17 @@ MAIN_SHA=$(git rev-parse origin/main)
 
 ## 5. Watch the deploys
 
-The merge to `main` triggers two production deploys:
+The merge to `main` triggers two production deploys, plus a docs deploy when `docs/**` changed:
 
 | Host | How | Expected `app-version` |
 | --- | --- | --- |
 | geins.studio | Vercel Git integration | `X.Y.Z+dev` (Vercel builds have no `GIT_SHA`) |
 | litium.studio | `.github/workflows/deploy.yml` (Build & Push → staging slot → swap) | `X.Y.Z+<MAIN_SHA>` |
+| Docs site | `.github/workflows/release-docs.yml` (only when `docs/**` changed) | — (green run) |
 
 ```bash
 gh run list --workflow deploy.yml --branch main --limit 1
+gh run list --workflow release-docs.yml --branch main --limit 1   # docs changed but no run? GitHub's paths filter only sees the first 300 files → gh workflow run release-docs.yml --ref main
 gh run watch <run-id>             # in the background; prod / prod-swap environments may wait for approval
 curl -s https://geins.studio/ | grep -o '<meta name="app-version"[^>]*>'
 curl -s https://litium.studio/ | grep -o '<meta name="app-version"[^>]*>'
