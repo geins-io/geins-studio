@@ -4,7 +4,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const { isAuthenticated, broadcastAuthSignal } = useGeinsAuth();
 
   if (to.path.startsWith('/auth')) {
-    // Every logout lands here once next-auth has cleared the shared cookie
+    // Every logout lands here once the session cookie is cleared
     if (to.path.includes('logout') && !isAuthenticated.value) {
       broadcastAuthSignal({ type: 'signed-out' });
     }

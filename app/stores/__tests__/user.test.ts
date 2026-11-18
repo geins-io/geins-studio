@@ -12,6 +12,8 @@ const { me, logout } = vi.hoisted(() => ({
 mockNuxtImport('useGeinsRepository', () => () => ({ userApi: { me } }));
 mockNuxtImport('useGeinsAuth', () => () => ({
   session: ref({ isAuthenticated: true, accountKey: 'account-1' }),
+  // For the app's own auth-state plugin, which boots with this mock.
+  authStateDiffers: ref(false),
   logout,
 }));
 

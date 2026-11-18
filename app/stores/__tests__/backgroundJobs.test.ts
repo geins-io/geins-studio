@@ -9,7 +9,11 @@ const { session } = vi.hoisted(() => ({
   session: { value: { accountKey: 'acc1' } as { accountKey?: string } | null },
 }));
 
-mockNuxtImport('useGeinsAuth', () => () => ({ session: ref(session.value) }));
+// `authStateDiffers` for the app's own auth-state plugin, which boots with this mock.
+mockNuxtImport('useGeinsAuth', () => () => ({
+  session: ref(session.value),
+  authStateDiffers: ref(false),
+}));
 
 import {
   BACKGROUND_JOB_KEEP_MS,

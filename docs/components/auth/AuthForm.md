@@ -81,6 +81,16 @@ Triggers the negative feedback banner with mode-specific copy. Set after a faile
 
 - **Default:** `false`
 
+### `rateLimited`
+
+```ts
+rateLimited?: boolean
+```
+
+With `showInvalid`, the banner says to wait instead: the auth service answered `429` (too many attempts).
+
+- **Default:** `false`
+
 ### `mfaMethod`
 
 ```ts

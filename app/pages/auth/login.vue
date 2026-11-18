@@ -5,25 +5,22 @@ import { useToast } from '@/components/ui/toast/use-toast';
 
 definePageMeta({
   layout: 'auth',
-  auth: {
-    unauthenticatedOnly: true,
-    navigateAuthenticatedTo: '/',
-  },
 });
 
 const { toast } = useToast();
 const { t } = useI18n();
-const { login, verify, setAccount, session, isAuthenticated } = useGeinsAuth();
+const { login, verify, setAccount, syncSession, session, isAuthenticated } =
+  useGeinsAuth();
 const userStore = useUserStore();
 const { user } = storeToRefs(userStore);
 const router = useRouter();
 const route = useRoute();
 
 // State
-const loginToken = ref('');
 const mfaMethod = ref('');
 const loading = ref(false);
 const showInvalid = ref(false);
+const rateLimited = ref(false);
 const mode = ref<AuthFormMode>('login');
 
 // Initialize auth state
@@ -33,8 +30,7 @@ onMounted(async () => {
 
 // Handle authentication state and determine appropriate mode
 const handleInitialState = async () => {
-  if (session.value?.mfaActive && session.value?.loginToken) {
-    loginToken.value = session.value.loginToken;
+  if (session.value?.mfaActive) {
     mfaMethod.value = session.value.mfaMethod || '';
     mode.value = 'verify';
     return;
@@ -74,8 +70,7 @@ const redirectToHome = async () => {
 
 // Handle post-authentication flow
 const handlePostAuth = async () => {
-  if (session.value?.mfaActive && session.value?.loginToken) {
-    loginToken.value = session.value.loginToken;
+  if (session.value?.mfaActive) {
     mfaMethod.value = session.value.mfaMethod || '';
     mode.value = 'verify';
     loading.value = false;
@@ -108,15 +103,17 @@ const handleLogin = async (credentials: LoginCredentials) => {
 
   loading.value = true;
   showInvalid.value = false;
+  rateLimited.value = false;
 
   try {
-    const authResponse = await login({
+    const { ok, status } = await login({
       username: credentials.username,
       password: credentials.password,
     });
 
-    if (!authResponse || authResponse.error || !authResponse.ok) {
+    if (!ok) {
       showInvalid.value = true;
+      rateLimited.value = status === 429;
       return;
     }
 
@@ -127,22 +124,27 @@ const handleLogin = async (credentials: LoginCredentials) => {
 };
 
 const handleVerify = async (mfaCode: string) => {
-  if (!loginToken.value || !mfaCode) {
+  if (!mfaCode) {
     showInvalid.value = true;
     return;
   }
 
   loading.value = true;
   showInvalid.value = false;
+  rateLimited.value = false;
 
-  const verifyResult = await verify({
-    mfaCode,
-    loginToken: loginToken.value,
-  });
+  const { ok, status } = await verify(mfaCode);
 
-  if (!verifyResult || verifyResult.error) {
-    showInvalid.value = true;
+  if (!ok) {
     loading.value = false;
+    // The login token lives 5 minutes; once it's gone, start over.
+    await syncSession().catch(() => undefined);
+    if (!session.value?.mfaActive) {
+      mode.value = 'login';
+      return;
+    }
+    showInvalid.value = true;
+    rateLimited.value = status === 429;
     return;
   }
 
@@ -158,9 +160,9 @@ const handleSetAccount = async (accountKey: string) => {
   loading.value = true;
   showInvalid.value = false;
 
-  const setAccountResult = await setAccount(accountKey);
+  const { ok } = await setAccount(accountKey);
 
-  if (!setAccountResult || setAccountResult.error) {
+  if (!ok) {
     showInvalid.value = true;
     loading.value = false;
     return;
@@ -172,6 +174,7 @@ const handleSetAccount = async (accountKey: string) => {
 const handleSetMode = (formMode: AuthFormMode) => {
   mode.value = formMode;
   showInvalid.value = false;
+  rateLimited.value = false;
   loading.value = false;
 };
 </script>
@@ -181,6 +184,7 @@ const handleSetMode = (formMode: AuthFormMode) => {
     :mode="mode"
     :loading="loading"
     :show-invalid="showInvalid"
+    :rate-limited="rateLimited"
     :mfa-method="mfaMethod"
     :accounts="user?.basicAccounts"
     @login="handleLogin"

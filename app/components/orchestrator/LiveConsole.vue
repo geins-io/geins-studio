@@ -1,17 +1,18 @@
 <script setup lang="ts">
-import type { LiveConsoleLine } from '#shared/types';
+import type { GeinsApiError, LiveConsoleLine } from '#shared/types';
 import { formatTimestamp } from '#shared/utils/time';
 import { LucideTrash2 } from '#components';
 
 const { t } = useI18n();
+const { $geinsApi } = useNuxtApp();
 
 interface Props {
+  /** A `$geinsApi` path (no `/api` prefix). */
   streamUrl?: string | null;
   active?: boolean;
   seedLines?: LiveConsoleLine[];
   title?: string;
   liveTitle?: string;
-  requestHeaders?: Record<string, string>;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -20,7 +21,6 @@ const props = withDefaults(defineProps<Props>(), {
   seedLines: () => [],
   title: undefined,
   liveTitle: undefined,
-  requestHeaders: () => ({}),
 });
 
 const resolvedTitle = computed(
@@ -132,25 +132,20 @@ const startLiveStream = async () => {
   }, 3000);
 
   try {
-    const res = await fetch(props.streamUrl, {
-      signal: controller.signal,
-      headers: props.requestHeaders,
-    });
+    // Through `$geinsApi`, which refreshes a due token first and, on a 401,
+    // refreshes under the auth lock and reconnects once: the proxy never does.
+    const body = await $geinsApi<ReadableStream<Uint8Array> | undefined>(
+      props.streamUrl,
+      { responseType: 'stream', signal: controller.signal },
+    );
 
     streamOpened = true;
     clearWaitingTimer();
 
-    if (!res.ok || !res.body) {
-      pushStream({
-        timestamp: formatTimestamp(new Date().toISOString()),
-        level: 'error',
-        source: 'stream',
-        message: t('orchestrator.console.unavailable', { status: res.status }),
-      });
-      return;
-    }
+    // A 204: nothing to stream.
+    if (!body) return;
 
-    const reader = res.body.getReader();
+    const reader = body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
 
@@ -175,16 +170,26 @@ const startLiveStream = async () => {
 
     if (buffer.trim()) appendStreamLine(buffer);
   } catch (err) {
-    if ((err as Error).name !== 'AbortError') {
-      pushStream({
-        timestamp: formatTimestamp(new Date().toISOString()),
-        level: 'error',
-        source: 'stream',
-        message: t('orchestrator.console.error', {
-          message: (err as Error).message,
-        }),
-      });
+    clearWaitingTimer();
+    // `$geinsApi` rejects with a `GeinsApiError`; a read cut by the abort
+    // rejects with the reader's own `AbortError`.
+    const apiError = err as Partial<GeinsApiError>;
+    if (
+      (err as Error).name === 'AbortError' ||
+      apiError.type === 'CANCELLED_ERROR'
+    ) {
+      return;
     }
+    pushStream({
+      timestamp: formatTimestamp(new Date().toISOString()),
+      level: 'error',
+      source: 'stream',
+      message: apiError.status
+        ? t('orchestrator.console.unavailable', { status: apiError.status })
+        : t('orchestrator.console.error', {
+            message: (err as Error).message,
+          }),
+    });
   } finally {
     if (streamController === controller) streamController = null;
   }

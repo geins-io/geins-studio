@@ -10,14 +10,18 @@ import {
   getRequestHost,
   type H3Event,
 } from 'h3';
+import { useRuntimeConfig } from 'nitropack/runtime';
 import { resolveAppId } from '#shared/utils/app';
-import { pickUpstreamHeaders } from '#shared/utils/proxy-headers';
+import {
+  isGeinsAuthPath,
+  pickUpstreamHeaders,
+} from '#shared/utils/proxy-headers';
 import { describeNetworkError } from '../utils/error-logging';
 import {
   refreshSalesPortal,
   describeFetchError,
 } from '../utils/refresh-sales-portal';
-import { useRuntimeConfig } from '#imports';
+import { readSealedSession } from '../utils/sealed-session';
 
 // HOTFIX STU-216 — remove when BE handles config-refresh natively (STU-217)
 const CHANNEL_PATCH_RE = /^\/api\/account\/channel\/([^/?]+)(\?|$)/;
@@ -75,6 +79,8 @@ async function pipeUpstream(
   const body = raw && new Uint8Array(raw);
   return sendProxy(event, target, {
     fetchOptions: { method: event.method, body, headers },
+    // Never Geins' cookies; the JSON path doesn't forward them either.
+    onResponse: (proxied) => proxied.node.res.removeHeader('set-cookie'),
   });
 }
 
@@ -84,7 +90,8 @@ async function pipeUpstream(
  * This handler is a catch-all for API requests that are not handled by other routes.
  * It forwards the request to the target API and returns the response.
  * The target API URL is specified in the request query string.
- * Only allowlisted headers go upstream (`pickUpstreamHeaders`).
+ * Only allowlisted headers go upstream (`pickUpstreamHeaders`); the token and
+ * account key come from the sealed session.
  *
  */
 export default defineEventHandler(async (event) => {
@@ -101,6 +108,9 @@ export default defineEventHandler(async (event) => {
   const targetUrl = event.context.params?._;
   if (!targetUrl) {
     return { success: false, error: 'Target URL is required' };
+  }
+  if (isGeinsAuthPath(targetUrl)) {
+    throw createError({ statusCode: 404, statusMessage: 'Not Found' });
   }
 
   const fullUrl = `${config.public.apiUrl}/${targetUrl}`;
@@ -124,7 +134,14 @@ export default defineEventHandler(async (event) => {
 
   geinsLog(`[${correlationId}] ${event.method} ${fetchUrl}`);
 
-  const apiHeaders = pickUpstreamHeaders(headers);
+  // The cookie as it is: the proxy never refreshes or writes the session. Only
+  // the session routes refresh, under the client's Web Lock; an expired token
+  // comes back 401, and `$geinsApi` force-refreshes and retries.
+  const session = await readSealedSession(event);
+  const apiHeaders = pickUpstreamHeaders(headers, {
+    accessToken: session.secure?.accessToken,
+    accountKey: session.accountKey,
+  });
 
   if (!apiHeaders['x-app']) {
     apiHeaders['x-app'] = resolveAppId(

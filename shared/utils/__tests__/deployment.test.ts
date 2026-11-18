@@ -11,7 +11,7 @@ vi.mock('../log', () => ({
 }));
 
 // eslint-disable-next-line import/first
-import { getBaseUrl, getAuthBaseUrl, includeDevPages } from '../deployment';
+import { getBaseUrl, includeDevPages } from '../deployment';
 
 const ENV_KEYS = [
   'VERCEL',
@@ -19,7 +19,6 @@ const ENV_KEYS = [
   'VERCEL_TARGET_ENV',
   'VERCEL_BRANCH_URL',
   'BASE_URL',
-  'AUTH_PATH',
 ] as const;
 
 const saved: Record<string, string | undefined> = {};
@@ -80,31 +79,6 @@ describe('getBaseUrl', () => {
   it('falls back to localhost in production without BASE_URL', () => {
     process.env.VERCEL_TARGET_ENV = 'production';
     expect(getBaseUrl()).toBe('http://localhost:3000');
-  });
-});
-
-describe('getAuthBaseUrl', () => {
-  it('appends /api/auth by default', () => {
-    expect(getAuthBaseUrl()).toBe('http://localhost:3000/api/auth');
-  });
-
-  it('uses AUTH_PATH env var when set', () => {
-    process.env.AUTH_PATH = '/custom/auth';
-    expect(getAuthBaseUrl()).toBe('http://localhost:3000/custom/auth');
-  });
-
-  it('combines Vercel preview URL with default auth path', () => {
-    process.env.VERCEL = '1';
-    process.env.VERCEL_ENV = 'preview';
-    process.env.VERCEL_TARGET_ENV = 'preview';
-    process.env.VERCEL_BRANCH_URL = 'my-branch.vercel.app';
-    expect(getAuthBaseUrl()).toBe('https://my-branch.vercel.app/api/auth');
-  });
-
-  it('combines BASE_URL with custom AUTH_PATH', () => {
-    process.env.BASE_URL = 'https://studio.geins.io';
-    process.env.AUTH_PATH = '/auth/v2';
-    expect(getAuthBaseUrl()).toBe('https://studio.geins.io/auth/v2');
   });
 });
 

@@ -985,6 +985,10 @@ export default defineConfig({
                 text: 'OrchestratorExecutionErrorDetails',
                 link: '/components/orchestrator/OrchestratorExecutionErrorDetails.md',
               },
+              {
+                text: 'OrchestratorLiveConsole',
+                link: '/components/orchestrator/OrchestratorLiveConsole.md',
+              },
             ],
           },
           {
