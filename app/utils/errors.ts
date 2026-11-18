@@ -94,10 +94,11 @@ export function getFallbackErrorMessage(
   return serverMessage || statusMessages[status] || 'Unknown error';
 }
 
-// Pull a string field (`title` / `detail`) out of the two error shapes the app
-// sees: a normalized GeinsApiError (`error.originalError.data.<field>`) and a
-// raw ofetch FetchError (`error.data.<field>` or the Nitro-wrapped
-// `error.data.data.<field>`).
+// Pull a string field (`title` / `detail`) out of the error shapes the app
+// sees: a normalized GeinsApiError (`error.originalError.data.<field>`, or
+// `error.originalError.<field>` when the proxy piped the backend body through
+// unwrapped — multipart and stream calls) and a raw ofetch FetchError
+// (`error.data.<field>` or the Nitro-wrapped `error.data.data.<field>`).
 function pickErrorField(
   error: unknown,
   field: 'title' | 'detail',
@@ -115,7 +116,7 @@ function pickErrorField(
 
   const orig = err.originalError;
   if (orig && typeof orig === 'object') {
-    const fromOrig = read((orig as Record<string, unknown>).data);
+    const fromOrig = read((orig as Record<string, unknown>).data) ?? read(orig);
     if (fromOrig !== undefined) return fromOrig;
   }
 
