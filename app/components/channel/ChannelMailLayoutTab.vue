@@ -69,9 +69,10 @@ function colorLabel(key: keyof ChannelMailSettings): string {
   return t(`channels.mail_color_${map[key]}`);
 }
 
-const isCuratedFont = computed(
-  () => fontToGoogleUrl(model.value.fontFamily ?? '') !== null,
-);
+const isAutoFontUrl = computed(() => {
+  const autoUrl = fontToGoogleUrl(model.value.fontFamily ?? '');
+  return autoUrl !== null && model.value.fontUrl === autoUrl;
+});
 
 function handleFontFamily(value: string) {
   const autoUrl = fontToGoogleUrl(value);
@@ -206,7 +207,7 @@ function handleFontFamily(value: string) {
           <div class="space-y-1.5">
             <Label>{{ t('channels.mail_font_url') }}</Label>
             <FormInputLocked :model-value="model.fontUrl ?? ''" type="url" />
-            <FormInputDescription v-if="isCuratedFont">
+            <FormInputDescription v-if="isAutoFontUrl">
               {{ t('channels.mail_font_url_auto') }}
             </FormInputDescription>
           </div>

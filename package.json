@@ -22,6 +22,7 @@
     "test": "vitest",
     "test:changed": "base=$(git merge-base HEAD origin/next) && vitest run --changed \"$base\" --passWithNoTests",
     "test:coverage": "vitest run --coverage",
+    "fonts:update": "node scripts/update-google-fonts.mjs",
     "infra:setup": "bash infra/scripts/setup.sh",
     "infra:setup:rg": "bash infra/scripts/setup.sh --rg-only",
     "infra:setup:sp": "bash infra/scripts/setup.sh --sp-only",

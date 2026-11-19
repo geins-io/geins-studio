@@ -1,9 +1,20 @@
+const FONT_CATEGORIES = [
+  'sans-serif',
+  'serif',
+  'display',
+  'handwriting',
+  'monospace',
+] as const;
+
+export type FontCategory = (typeof FONT_CATEGORIES)[number];
+
 export interface StorefrontFont {
   label: string;
   value: string;
-  category: 'sans-serif' | 'serif' | 'display' | 'monospace';
+  category: FontCategory;
 }
 
+/** Curated quick picks, shown as suggestions above the full catalogue. */
 export const storefrontFonts: StorefrontFont[] = [
   // Modern sans
   { label: 'Inter', value: 'Inter', category: 'sans-serif' },
@@ -56,38 +67,112 @@ export const storefrontFonts: StorefrontFont[] = [
   { label: 'Source Code Pro', value: 'Source Code Pro', category: 'monospace' },
 ];
 
-/** Characters needed to render all font names in the preview subset */
+/** Characters needed to render every catalogue font name in its preview. */
 const subsetText =
   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz 0123456789+-';
 
-/** Single Google Fonts CSS URL loading all curated fonts as lightweight subsets */
-export const storefrontFontsCssUrl = (() => {
-  const families = storefrontFonts
-    .map((f) => `family=${f.value.replace(/ /g, '+')}`)
-    .join('&');
+const GOOGLE_FONTS_CSS_URL = 'https://fonts.googleapis.com/css2';
+
+function familyParam(family: string): string {
+  return `family=${encodeURIComponent(family).replace(/%20/g, '+')}`;
+}
+
+function previewCssUrl(families: string[]): string {
+  const params = families.map(familyParam).join('&');
   const text = encodeURIComponent(subsetText);
-  return `https://fonts.googleapis.com/css2?${families}&text=${text}&display=swap`;
-})();
+  return `${GOOGLE_FONTS_CSS_URL}?${params}&text=${text}&display=swap`;
+}
 
 /**
- * Generate a full Google Fonts CSS URL for a given font family.
- * Returns `null` if the font is not in the curated list.
+ * One Google Fonts CSS URL loading a lightweight subset of each family — just
+ * enough glyphs to preview the font names. Every family must exist on Google
+ * Fonts: a single unknown one fails the whole stylesheet.
+ */
+export function fontPreviewCssUrl(families: string[]): string | null {
+  return families.length ? previewCssUrl(families) : null;
+}
+
+/** Preview stylesheet for the curated fonts. */
+export const storefrontFontsCssUrl = previewCssUrl(
+  storefrontFonts.map((f) => f.value),
+);
+
+/**
+ * Full Google Fonts CSS URL for a font family, or `null` when blank. The
+ * picker only offers Google Fonts families, so any picked value resolves.
  */
 export function fontToGoogleUrl(fontFamily: string): string | null {
-  const match = storefrontFonts.find((f) => f.value === fontFamily);
-  if (!match) return null;
-  const family = match.value.replace(/ /g, '+');
-  return `https://fonts.googleapis.com/css2?family=${family}&display=swap`;
+  const family = fontFamily.trim();
+  if (!family) return null;
+  return `${GOOGLE_FONTS_CSS_URL}?${familyParam(family)}&display=swap`;
 }
 
 /** Get the CSS fallback stack for a font category */
-export function fontFallback(category: StorefrontFont['category']): string {
+export function fontFallback(category: FontCategory): string {
   switch (category) {
     case 'serif':
       return 'serif';
     case 'monospace':
       return 'monospace';
+    case 'handwriting':
+      return 'cursive';
     default:
       return 'sans-serif';
   }
+}
+
+function isFontCategory(value: string): value is FontCategory {
+  return FONT_CATEGORIES.some((category) => category === value);
+}
+
+/** Maps raw catalogue entries to picker options; unknown categories → sans-serif. */
+export function toStorefrontFonts(
+  entries: { family: string; category: string }[],
+): StorefrontFont[] {
+  return entries.map(({ family, category }) => ({
+    label: family,
+    value: family,
+    category: isFontCategory(category) ? category : 'sans-serif',
+  }));
+}
+
+let googleFontsPromise: Promise<StorefrontFont[]> | undefined;
+
+/**
+ * The full Google Fonts catalogue (~2,000 families, most popular first),
+ * loaded once on demand so it stays out of the main bundle. Refresh the
+ * snapshot with `pnpm fonts:update`.
+ */
+export function loadGoogleFonts(): Promise<StorefrontFont[]> {
+  googleFontsPromise ??= import('@/assets/google-fonts.json')
+    .then((module) => toStorefrontFonts(module.default))
+    .catch((error: unknown) => {
+      googleFontsPromise = undefined;
+      throw error;
+    });
+  return googleFontsPromise;
+}
+
+/**
+ * Fonts whose name matches `query`, best matches first: names starting with
+ * it, then names with a word starting with it, then any other match. Keeps
+ * the input order (popularity) within each group.
+ */
+export function searchFonts(
+  fonts: StorefrontFont[],
+  query: string,
+  limit = Infinity,
+): StorefrontFont[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  const prefix: StorefrontFont[] = [];
+  const wordStart: StorefrontFont[] = [];
+  const contains: StorefrontFont[] = [];
+  for (const font of fonts) {
+    const name = font.label.toLowerCase();
+    if (name.startsWith(q)) prefix.push(font);
+    else if (name.includes(` ${q}`)) wordStart.push(font);
+    else if (name.includes(q)) contains.push(font);
+  }
+  return [...prefix, ...wordStart, ...contains].slice(0, limit);
 }
