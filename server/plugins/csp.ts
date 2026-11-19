@@ -1,5 +1,5 @@
 import { defineNitroPlugin } from 'nitropack/runtime';
-import { reportOnlyCspHeaders } from '#shared/utils/security-headers';
+import { cspHeaders } from '#shared/utils/security-headers';
 
 // The SPA shell is rendered per request, and its inline scripts change with
 // every build (importmap, buildId) and with runtime config, so the policy is
@@ -14,7 +14,7 @@ export default defineNitroPlugin((nitroApp) => {
     }
     response.headers = {
       ...response.headers,
-      ...(await reportOnlyCspHeaders(response.body, vercelPreview)),
+      ...(await cspHeaders(response.body, vercelPreview)),
     };
   });
 });

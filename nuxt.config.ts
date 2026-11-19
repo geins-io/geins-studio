@@ -63,7 +63,8 @@ export default defineNuxtConfig({
 
   // Production only: X-Frame-Options DENY would also block the Nuxt DevTools
   // iframe in dev. Vercel writes these into its edge config, so static assets
-  // get them too. The report-only CSP is per document (server/plugins/csp.ts).
+  // get them too. The CSP, frame-ancestors included, is per document
+  // (server/plugins/csp.ts).
   $production: {
     routeRules: {
       '/**': { headers: SECURITY_HEADERS },
