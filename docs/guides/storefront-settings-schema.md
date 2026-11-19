@@ -218,7 +218,7 @@ Renders a color picker input.
 
 ### `font`
 
-Renders a font picker (searchable select populated with Google Fonts).
+Renders a font picker ([`FormInputFont`](/components/form/input/FormInputFont)): curated suggestions plus a search of the full Google Fonts catalogue. The value is the font family name (e.g. `"Hanuman"`), whether it was picked from the suggestions or found by search.
 
 ```json
 {

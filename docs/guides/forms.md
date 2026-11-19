@@ -349,7 +349,7 @@ Located in `app/components/form/input/` and `app/components/form/item/`. All are
 | `FormInputMarketSelect`   | `string`                 | Market dropdown. Shows "{country} ({currency})" format. Props: `dataSet`, `disableTeleport`                                                                                 |
 | `FormInputDate`           | `string` (ISO)           | Date picker via Popover + Calendar. Props: `placeholder`, `minValue`                                                                                                        |
 | `FormInputColor`          | `string` (hex)           | Color picker button + hex text input                                                                                                                                        |
-| `FormInputFont`           | `string`                 | Font selector combobox with live preview                                                                                                                                    |
+| `FormInputFont`           | `string`                 | Font selector combobox with live preview: curated suggestions plus a search of all Google Fonts                                                                             |
 | `FormInputImage`          | `string \| File \| null` | File picker with drag-drop and image preview                                                                                                                                |
 | `FormInputRadioCards`     | `string`                 | 2-column grid of radio card options. Props: `options: SchemaFormFieldOption[]`                                                                                              |
 
