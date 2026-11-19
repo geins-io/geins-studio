@@ -74,10 +74,11 @@ export function flagClass(countryCode: string, square = true): string {
 /**
  * Maps a language code (ISO 639-1) to a country code (ISO 3166-1 alpha-2) for flag display.
  * Falls back to the language code itself for codes that match (e.g. "de" → "de").
+ * The region subtag is ignored ("en-US" → "en"), except "en-GB", which keeps the British flag.
  */
 export function languageToCountryCode(langCode: string): string {
   const map: Record<string, string> = {
-    en: 'gb',
+    en: 'us',
     sv: 'se',
     da: 'dk',
     ja: 'jp',
@@ -100,7 +101,9 @@ export function languageToCountryCode(langCode: string): string {
     ka: 'ge',
     hy: 'am',
   };
-  const code = langCode.toLowerCase().split('-')[0] ?? langCode.toLowerCase();
+  const lower = langCode.toLowerCase();
+  if (lower === 'en-gb') return 'gb';
+  const code = lower.split('-')[0] ?? lower;
   return map[code] || code;
 }
 
