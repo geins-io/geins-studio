@@ -139,9 +139,10 @@ curl -s https://geins.studio/ | grep -o '<meta name="app-version"[^>]*>'
 curl -s https://litium.studio/ | grep -o '<meta name="app-version"[^>]*>'
 curl -s https://studio-prod-app.azurewebsites.net/ | grep -o '<meta name="app-version"[^>]*>'
 curl -s https://studio-prod-app-staging.azurewebsites.net/ | grep -o '<meta name="app-version"[^>]*>'
+for h in geins.studio litium.studio; do curl -sI https://$h/ | grep -ci '^content-security-policy:.*script-src'; done  # 1 per host
 ```
 
-Both hosts must show the new version before moving on. Check both Azure slots too: after the swap the production slot shows `X.Y.Z+<MAIN_SHA>` and the staging slot the previous release. Anything else means the staging slot didn't pull the new image, so the swap made an older build live. If any check fails, stop and report it before creating the GitHub release. For a lagging geins.studio, check the Vercel side with `vercel ls geins-studio --prod` and `vercel inspect <deployment-url> --logs`.
+Both hosts must show the new version before moving on, and send the enforced CSP (`1` per host): it comes from a Nitro `render:response` hook, so a renderer change could drop it silently. Check both Azure slots too: after the swap the production slot shows `X.Y.Z+<MAIN_SHA>` and the staging slot the previous release. Anything else means the staging slot didn't pull the new image, so the swap made an older build live. If any check fails, stop and report it before creating the GitHub release. For a lagging geins.studio, check the Vercel side with `vercel ls geins-studio --prod` and `vercel inspect <deployment-url> --logs`.
 
 ## 6. GitHub release
 
