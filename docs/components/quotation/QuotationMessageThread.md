@@ -5,7 +5,7 @@
 ## Features
 
 - Two layouts via `mode`:
-  - `external` — sent messages right-aligned (`justify-end`), 4/5 width
+  - `external` — 4/5 width, colored by side: sent (`toCustomer`) right-aligned (`justify-end`) with a green tint (`positive` token), received (`fromCustomer`) left-aligned with a blue tint (`info-icon` token)
   - `internal` — full-width, left-aligned
 - Reply excerpts: messages with `answerRef` show a compact quoted preview that anchor-links to the parent message
 - Inline edit: Edit action turns the message body into a `Textarea` with Cancel / Save
