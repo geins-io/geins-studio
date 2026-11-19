@@ -12,11 +12,11 @@ const columnOrder = useUserRouteCookie<ColumnOrderState>('geins-order', {
 
 The cookie name is `${prefix}-${userId}${path}`, e.g. `geins-order-u1/assets`. Without a signed-in user, `userId` is `default`.
 
-| Prefix                 | Owner                                                          |
-| ---------------------- | -------------------------------------------------------------- |
-| `geins-cols`           | `TableView` column visibility                                  |
-| `geins-order`          | `TableView` column order                                       |
-| `geins-filters-pinned` | [`useListFilters`](/composables/useListFilters) pinned filters |
+| Prefix                 | Owner                                                                   |
+| ---------------------- | ----------------------------------------------------------------------- |
+| `geins-cols`           | `TableView` column visibility (`geins-cols-v{n}` with `columnsVersion`) |
+| `geins-order`          | `TableView` column order (`geins-order-v{n}` with `columnsVersion`)     |
+| `geins-filters-pinned` | [`useListFilters`](/composables/useListFilters) pinned filters          |
 
 ## Type Definitions
 

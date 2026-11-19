@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { defineComponent, h, nextTick, ref } from 'vue';
 import { TableMode } from '#shared/types';
 import { useColumns } from '@/composables/useColumns';
@@ -182,6 +182,37 @@ describe('TableView — client mode', () => {
     expect(table.options.data).toHaveLength(30);
     expect(table.options.data).toBe(table.options.data);
     expect(table.options.columns).toBe(table.options.columns);
+  });
+});
+
+describe('TableView — saved columns', () => {
+  // useUserRouteCookie: `${prefix}-${userId}${path}`, no user and route `/` here
+  const setCookie = (name: string, value: unknown) => {
+    document.cookie = `${name}-default/=${encodeURIComponent(JSON.stringify(value))}; path=/`;
+  };
+  const clearCookies = () =>
+    ['geins-cols', 'geins-order', 'geins-cols-v2', 'geins-order-v2'].forEach(
+      (name) => {
+        document.cookie = `${name}-default/=; path=/; max-age=0`;
+      },
+    );
+  const mountAdvanced = (props: Record<string, unknown> = {}) =>
+    mountTable({ mode: TableMode.Advanced, initVisibilityState: {}, ...props });
+
+  afterEach(clearCookies);
+
+  it('keeps a saved hidden column hidden over a new default', async () => {
+    setCookie('geins-cols', { name: false });
+    const wrapper = await mountAdvanced();
+    expect(names(wrapper)).toEqual([]);
+  });
+
+  it('resets saved columns to the defaults once columnsVersion is bumped', async () => {
+    setCookie('geins-cols', { name: false });
+    setCookie('geins-order', ['select', 'actions']);
+    const wrapper = await mountAdvanced({ columnsVersion: 2 });
+    expect(names(wrapper)).toEqual(['b', 'a', 'c']);
+    expect(tableOf(wrapper).getState().columnOrder).toEqual([]);
   });
 });
 

@@ -261,6 +261,10 @@ Pass `:error="fetchError"` and `:on-retry="refresh"` to `TableView`. This shows 
 
 Wrap `TableView` in `<NuxtErrorBoundary>` as a runtime safety net for unexpected rendering errors.
 
+## Changing an existing list's default columns
+
+`TableView` saves column visibility and order in per-user cookies on the **first visit**, so editing `hiddenColumns` (or the default order) on a list people have opened only reaches new users. Bump the list's `:columns-version` in the same change — everyone's saved column options on that list reset once to the new defaults. Ref: `app/pages/orders/quotations/index.vue`.
+
 ## Checklist for new list pages
 
 - [ ] Define `EntityList` type in `shared/types/` with Tooltip overrides for array fields
