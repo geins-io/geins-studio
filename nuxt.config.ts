@@ -119,7 +119,11 @@ export default defineNuxtConfig({
     // Cast required because Nuxt and VitePress may resolve different Vite type versions.
     plugins: [tailwindcss() as unknown as never],
     optimizeDeps: {
+      // Vite's dep scanner can't see into Nuxt's virtual plugins module, so a
+      // package imported only from app/plugins/ must be listed here or the
+      // first page load in dev triggers a re-optimize and a full reload.
       include: [
+        '@formkit/auto-animate/vue',
         '@lucide/vue',
         '@tanstack/vue-table',
         '@vercel/analytics/nuxt',
@@ -131,6 +135,7 @@ export default defineNuxtConfig({
         'reka-ui',
         'tailwind-merge',
         'vuedraggable',
+        'zod',
       ],
     },
     server: {
