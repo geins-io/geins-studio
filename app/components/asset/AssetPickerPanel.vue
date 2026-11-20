@@ -562,7 +562,7 @@ async function confirmSelection() {
                   <Badge
                     v-if="isPreselected(asset._id)"
                     size="sm"
-                    variant="slate"
+                    variant="outline"
                     class="absolute top-2 right-2 z-10"
                   >
                     {{ $t('asset_library.picker_linked') }}

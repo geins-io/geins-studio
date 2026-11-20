@@ -7,7 +7,7 @@ The `useAssetType` composable is the single source of presentation metadata for 
 ```ts
 const { meta, label } = useAssetType();
 
-meta('pdf'); // { labelKey: 'asset_type.pdf', variant: 'pink', icon: 'FileText', tint: 'bg-tone-pink/10 text-tone-pink' }
+meta('pdf'); // { labelKey: 'asset_library.asset_type.pdf', variant: 'pink', icon: 'FileText', tint: 'bg-tone-pink/10 text-tone-pink' }
 label('pdf'); // 'PDF' (localized)
 ```
 
