@@ -38,7 +38,7 @@ Writes the asset's public `url` to the clipboard and toasts (`entity_copied`). N
 download: (asset: Asset) => void;
 ```
 
-Triggers an anchor download of the asset's `url` (cross-origin storage URLs fall back to opening in a new tab). No-op when there is no `url`.
+Clicks a same-origin anchor with `download` to `assetDownloadHref(asset._id)` (`GET /api/media/assets/{id}/download`). Media answers a 302 to a one-hour storage URL with `Content-Disposition: attachment`, which the API proxy passes on to the browser, so the file saves under its own name and the page stays put. Works for private assets, which have no `url`.
 
 ### `deleteAsset`
 

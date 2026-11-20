@@ -43,16 +43,20 @@ interface WizardFileSettings {
 
 ## Returns
 
-| Name                       | Type                                            | Description                                      |
-| -------------------------- | ----------------------------------------------- | ------------------------------------------------ |
-| `files`                    | `Ref<WizardFile[]>`                             | Selected files, each with a stable id.           |
-| `settings`                 | `Ref<Record<string, WizardFileSettings>>`       | Per-file metadata, keyed by `WizardFile.id`.     |
-| `totalSize`                | `ComputedRef<number>`                           | Sum of all file sizes (bytes).                   |
-| `addFiles(list)`           | `(FileList \| File[]) => void`                  | Appends files, minting an id each.               |
-| `removeFiles(ids)`         | `(string[]) => void`                            | Drops files and their settings by id.            |
-| `clear()`                  | `() => void`                                    | Removes all files and settings.                  |
-| `settingsOf(id)`           | `(string) => WizardFileSettings`                | Settings for one file (empty object if none).    |
-| `patchSettings(id, patch)` | `(string, Partial<WizardFileSettings>) => void` | Merges a partial patch into one file's settings. |
+| Name                       | Type                                            | Description                                                                                                                                            |
+| -------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `files`                    | `Ref<WizardFile[]>`                             | Selected files, each with a stable id.                                                                                                                 |
+| `settings`                 | `Ref<Record<string, WizardFileSettings>>`       | Per-file metadata, keyed by `WizardFile.id`.                                                                                                           |
+| `totalSize`                | `ComputedRef<number>`                           | Sum of all file sizes (bytes).                                                                                                                         |
+| `addFiles(list)`           | `(FileList \| File[]) => void`                  | Appends files, minting an id each.                                                                                                                     |
+| `removeFiles(ids)`         | `(string[]) => void`                            | Drops files and their settings by id.                                                                                                                  |
+| `clear()`                  | `() => void`                                    | Removes all files and settings.                                                                                                                        |
+| `settingsOf(id)`           | `(string) => WizardFileSettings`                | Settings for one file (empty object if none).                                                                                                          |
+| `patchSettings(id, patch)` | `(string, Partial<WizardFileSettings>) => void` | Merges a partial patch into one file's settings.                                                                                                       |
+| `linkProducts`             | `Ref<boolean>`                                  | Auto-link files to matched products (default on).                                                                                                      |
+| `linkToOrder`              | `Ref<boolean>`                                  | Link every file to one order (default off).                                                                                                            |
+| `linkOrder`                | `Ref<Order \| null>`                            | The order found for `linkToOrder`.                                                                                                                     |
+| `orderToLink`              | `ComputedRef<Order \| null>`                    | `linkOrder` while `linkToOrder` is on; the upload adds an `orderfile` link to each claim. With `linkToOrder` on and no order, **Next** stays disabled. |
 
 ## Bulk operations (step 2 bulk pane)
 

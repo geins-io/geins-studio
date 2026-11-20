@@ -86,6 +86,8 @@ Editing them on a draft:
 
 **Items** — `QuotationUpdate.items` accepts `QuotationItemCreate[]` (shape: `{ skuId, quantity, unitPrice? }`), not the response item type. The response `QuotationItem` includes enriched fields: `ordPrice`, `listPrice`, `name`, `articleNumber`, `primaryImage`.
 
+**Order files** — an asset linked to an order with an `orderfile` media link is a file on that order: Merchant Center lists it on the order's Files tab, and the customer who placed the order downloads it through the Merchant API. Studio has no order page, so files are linked from three places: the **Files** button on each row of a company's **Orders** tab opens [`OrderFilesPanel`](/components/order/OrderFilesPanel) (`GET media/targets/orderfile/{orderId}/assets`, add through the asset picker, open, download, unlink); an asset's "Where it's used" links it to an order; and the asset library links many assets at once (bulk action, upload wizard). See the [assets domain](./assets.md#usage-links-where-it-s-used). The target id is `Order._id`, the legacy numeric id. Media never checks that an order exists, so an order is always looked up first (`orderApi.get` in [`OrderLookup`](/components/order/OrderLookup)). An asset's order links are shown with order details from one `orderApi.query` by `orderIds`.
+
 **Live preview** — `POST /quotation/{id}/preview` calculates totals without persisting. Only available in editable (draft) mode. Returns `{ items, total }` where items are enriched with `ordPrice`/`listPrice` from applied price lists. `unitPrice` is never overwritten from the preview response. **Infinite loop prevention**: Do NOT watch `quotationItems` to trigger preview — the preview response updates `skuItemData` (ordPrice/listPrice), which changes `quotationItems` output, creating a loop. Trigger from explicit user-action handlers instead.
 
 **Sent mode** — Three mutually exclusive modes: `createMode` (route param `new`), draft (editable) mode, and sent (read-only) mode. `isQuotationEditable()` (`shared/utils/quotation.ts`) is the one rule: only `draft` is editable, every other status (`requested` included) is read-only. `sentMode` is a `ref<boolean>` set from it in `parseEntityData` on every load — never reverts since transitions are one-way. In sent mode, General tab renders read-only cards; Products tab is replaced by Communications tab. Status transitions use `POST /quotation/{id}/{action}` → `refreshEntityData()` to update all UI state. Nothing in sent mode goes through `useEntityEdit`'s update (the save button, the customer panel and the on-load snapshot re-save are draft only): the API refuses it, and a full update that went through would rebuild the cart and reset the payment and shipping method the buyer chose at checkout.
@@ -156,7 +158,7 @@ Editing them on a draft:
 | Types       | `shared/types/Order.ts`, `shared/types/Quotation.ts` |
 | Repository  | `app/utils/repositories/order.ts`                    |
 | Composables | `useCompanyOrders.ts`                                |
-| Components  | `app/components/quotation/`                          |
+| Components  | `app/components/quotation/`, `app/components/order/` |
 | Pages       | `app/pages/orders/quotations/index.vue`, `[id].vue`  |
 
 ## Decision Log

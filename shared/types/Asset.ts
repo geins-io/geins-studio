@@ -144,11 +144,18 @@ export interface AssetLink extends AssetLinkTarget<
 }
 
 /**
- * The writable link kinds. A product link is split by what the asset is to the
- * product: `productimage` (image + svg only — anything else is a `422`, or
+ * The product link kinds, split by what the asset is to the product:
+ * `productimage` (image + svg only — anything else is a `422`, or
  * `LINK_ASSET_TYPE_INVALID` on a ticket) or `productfile` (any type).
  */
-export type AssetLinkTargetType = 'productimage' | 'productfile';
+export type ProductLinkTargetType = 'productimage' | 'productfile';
+
+/**
+ * The writable link kinds. `orderfile` attaches an asset of any type to an
+ * order (target id = the order's numeric `_id`). It is the only kind a private
+ * asset takes: every other kind publishes the asset's CDN URL.
+ */
+export type AssetLinkTargetType = ProductLinkTargetType | 'orderfile';
 
 /**
  * What a link points at — the body of `POST /media/assets/{id}/links` and one
@@ -159,11 +166,33 @@ export type AssetLinkTargetType = 'productimage' | 'productfile';
 export interface AssetLinkTarget<T extends string = AssetLinkTargetType> {
   targetType: T;
   /**
-   * The target's id as stored. A product id has its leading zero stripped when
-   * the link is written, so matching it back to a product must tolerate that.
+   * The target's id as stored. A product or order id has its leading zero
+   * stripped when the link is written, so matching it back must tolerate that.
    */
   targetId: string;
 }
+
+/** Fields of `media_response_linkedAsset`, see {@link LinkedAsset}. */
+export interface LinkedAssetBase {
+  name: string;
+  type: AssetType;
+  path: string;
+  /** Empty when unknown. */
+  mime: string;
+  sizeBytes: number;
+  /** How the asset is linked to the target, such as `orderfile`. */
+  linkType: AssetLinkTargetType | (string & {});
+  linkedAt: string;
+  /** In the private container: no URL can be composed, open it via `/view`. */
+  private: boolean;
+}
+
+/**
+ * One asset a target holds — `GET media/targets/{type}/{id}/assets`, oldest
+ * link first. Trashed assets are left out. It carries no `url`: open it
+ * through `assetViewHref` (public or private alike).
+ */
+export type LinkedAsset = ResponseEntity<LinkedAssetBase>;
 
 /**
  * What a bulk link selection holds: only images (image/svg), no images, or
@@ -318,7 +347,8 @@ export type UploadRejectionCode =
   | 'BLOB_MISSING'
   | 'CONTENT_TYPE_MISMATCH'
   | 'SCAN_REJECTED'
-  | 'LINK_ASSET_TYPE_INVALID';
+  | 'LINK_ASSET_TYPE_INVALID'
+  | 'ASSET_PRIVATE';
 
 export type UploadTicketResult =
   | {
@@ -380,7 +410,13 @@ export interface Asset extends ResponseEntity<AssetBase> {
   altText: string | null;
   sizeBytes: number;
   mime: string | null;
+  /** Absent for a private asset — the CDN serves it only with a token. */
   url: string | null;
+  /**
+   * In the account's private container (a private folder): no `url`, and the
+   * only link it takes is `orderfile`. Open it via `assetViewHref`.
+   */
+  private?: boolean;
   createdBy: string | null;
   createdAt: string;
   updatedAt: string;

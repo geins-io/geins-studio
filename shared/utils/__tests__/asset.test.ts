@@ -23,6 +23,8 @@ import {
   isProductLink,
   isReplaceExtensionAllowed,
   mimeToAssetType,
+  orderLinkTarget,
+  parseOrderNumber,
   parseProductRef,
   productLinkTargetType,
   replaceErrorMessageKey,
@@ -565,5 +567,33 @@ describe('applyProductRefPaste', () => {
       }).selected;
     expect(replace('MON-1, FIC-1')).toEqual(['1001', '1002']);
     expect(replace('nope')).toEqual(['1003']);
+  });
+});
+
+describe('parseOrderNumber', () => {
+  it.each([
+    ['1001', '1001'],
+    ['  1001 ', '1001'],
+    ['#1001', '1001'],
+    // Media stores order ids without a leading zero.
+    ['001001', '1001'],
+  ])('reads %j as %j', (input, expected) => {
+    expect(parseOrderNumber(input)).toBe(expected);
+  });
+
+  it.each(['', '   ', 'abc', '10-01', '1.5', '0', '000', '9c1f0b2e'])(
+    'refuses %j',
+    (input) => {
+      expect(parseOrderNumber(input)).toBeNull();
+    },
+  );
+});
+
+describe('orderLinkTarget', () => {
+  it('links to the order as an orderfile', () => {
+    expect(orderLinkTarget('1001')).toEqual({
+      targetType: 'orderfile',
+      targetId: '1001',
+    });
   });
 });

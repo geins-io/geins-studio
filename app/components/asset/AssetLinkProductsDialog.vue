@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AssetLinkTargetType, AssetType } from '#shared/types';
+import type { ProductLinkTargetType, AssetType } from '#shared/types';
 import { productLinkKindKey, productLinkTargetType } from '#shared/utils/asset';
 import { chunkIds } from '#shared/utils/bulk';
 import { useToast } from '@/components/ui/toast/use-toast';
@@ -14,7 +14,7 @@ const props = defineProps<{
   assetId: string;
   assetType: AssetType;
   /** Product ids the asset is already linked to, per link kind. */
-  linkedProductIds: Record<AssetLinkTargetType, string[]>;
+  linkedProductIds: Record<ProductLinkTargetType, string[]>;
 }>();
 const open = defineModel<boolean>('open', { default: false });
 const emit = defineEmits<{ linked: [] }>();
@@ -33,7 +33,7 @@ productsStore.init();
 const canLinkAsImage = computed(
   () => productLinkTargetType(props.assetType) === 'productimage',
 );
-const kind = ref<AssetLinkTargetType>('productimage');
+const kind = ref<ProductLinkTargetType>('productimage');
 const selected = ref<string[]>([]);
 const linking = ref(false);
 

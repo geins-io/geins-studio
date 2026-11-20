@@ -68,7 +68,7 @@ const emit = defineEmits<{
           <LucideEye class="mr-2 size-4" aria-hidden="true" />
           <span>{{ $t('asset_library.view_details') }}</span>
         </DropdownMenuItem>
-        <DropdownMenuItem :disabled="!asset.url" @click="emit('download')">
+        <DropdownMenuItem @click="emit('download')">
           <LucideDownload class="mr-2 size-4" aria-hidden="true" />
           <span>{{ $t('download') }}</span>
         </DropdownMenuItem>

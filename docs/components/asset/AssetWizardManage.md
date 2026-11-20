@@ -2,6 +2,8 @@
 
 `AssetWizardManage` is **step 2 (manage)** of the asset upload wizard (`/asset-library/upload`). A split panel: the left column lists the selected files with checkboxes; the right column edits the metadata of the single selected file, or shows the bulk pane when several are checked.
 
+Above the split panel sit two whole-upload controls: [`AssetWizardProductLinking`](/components/asset/AssetWizardProductLinking) and [`AssetWizardOrderLinking`](/components/asset/AssetWizardOrderLinking).
+
 All edits write straight into the shared wizard state via [`useUploadWizard`](/composables/useUploadWizard) (`useUploadWizardContext`), so no props are needed — it reads the same files + settings the other steps use.
 
 ## Usage

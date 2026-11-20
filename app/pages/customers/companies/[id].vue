@@ -14,6 +14,7 @@ import {
   type CustomerCompanyApiOptions,
   type CompanyBuyerList,
   type CompanyPriceListRow,
+  type CustomerOrder,
 } from '#shared/types';
 import { ENTITIES, NEW_ENTITY_URL_SEGMENT } from '#shared/utils/entities';
 import {
@@ -955,6 +956,45 @@ const showRestrictedBuyersNote = computed(
 const { ordersList, ordersLoading, ordersError, orderColumns, fetchOrders } =
   useCompanyOrders();
 
+// A Files button per order opens the files linked to it (`orderfile` links).
+const {
+  getBasicHeaderStyle: getOrderHeaderStyle,
+  getBasicCellStyle: getOrderCellStyle,
+} = useColumns<CustomerOrder>();
+const orderFilesOpen = ref(false);
+const orderFilesId = ref<string | null>(null);
+const openOrderFiles = (orderId: string) => {
+  orderFilesId.value = orderId;
+  orderFilesOpen.value = true;
+};
+const companyOrderColumns = computed<ColumnDef<CustomerOrder>[]>(() => {
+  if (!orderColumns.value.length) return [];
+  const filesColumn: ColumnDef<CustomerOrder> = {
+    id: 'files',
+    enableSorting: false,
+    enableHiding: false,
+    header: ({ table }) => h('div', { class: getOrderHeaderStyle(table) }),
+    cell: ({ table, row }) =>
+      h(
+        'div',
+        { class: cn(getOrderCellStyle(table), 'justify-end px-2.5') },
+        h(
+          ButtonIcon,
+          {
+            icon: 'Paperclip',
+            variant: 'outline',
+            size: 'xs',
+            'data-test': 'company-order-files',
+            onClick: () => openOrderFiles(row.original._id),
+          },
+          () => t('file', 2),
+        ),
+      ),
+    meta: { type: 'actions' },
+  };
+  return [...orderColumns.value, filesColumn];
+});
+
 const loadOrders = () =>
   fetchOrders(
     {
@@ -1874,7 +1914,7 @@ if (!createMode.value) {
                 <TableView
                   :mode="TableMode.Simple"
                   entity-key="order"
-                  :columns="orderColumns"
+                  :columns="companyOrderColumns"
                   :data="ordersList"
                   :page-size="20"
                   :pinned-state="null"
@@ -1885,6 +1925,10 @@ if (!createMode.value) {
                 />
               </div>
             </ContentEditCard>
+            <OrderFilesPanel
+              v-model:open="orderFilesOpen"
+              :order-id="orderFilesId"
+            />
           </ContentEditMainContent>
         </KeepAlive>
         <KeepAlive>

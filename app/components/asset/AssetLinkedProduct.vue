@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AssetLinkTargetType, ProductMatch } from '#shared/types';
+import type { ProductLinkTargetType, ProductMatch } from '#shared/types';
 import { productLinkKindKey } from '#shared/utils/asset';
 
 /**
@@ -13,7 +13,7 @@ import { productLinkKindKey } from '#shared/utils/asset';
  */
 const props = defineProps<{
   product: ProductMatch;
-  kind?: AssetLinkTargetType;
+  kind?: ProductLinkTargetType;
 }>();
 
 const refs = computed(() =>

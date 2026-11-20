@@ -2,6 +2,7 @@ import type {
   AssetLabelKind,
   AssetLabelLimitBreach,
   LocalizedText,
+  Order,
 } from '#shared/types';
 import { assetLabelLimitError, sameAssetLabels } from '#shared/utils/asset';
 import type { InjectionKey, Ref, ComputedRef } from 'vue';
@@ -46,6 +47,12 @@ interface UseUploadWizardReturnType {
   // manage (indicator + control) and review (grouping) steps. Matching itself
   // (article number or product id) lives in useProductMatch.
   linkProducts: Ref<boolean>;
+  // Whole-upload order link: every file gets an `orderfile` link to it. On
+  // without an order picked holds the manage step.
+  linkToOrder: Ref<boolean>;
+  linkOrder: Ref<Order | null>;
+  /** The order every file links to, or `null` when off or none picked. */
+  orderToLink: ComputedRef<Order | null>;
   addFiles: (list: FileList | File[] | null | undefined) => void;
   removeFiles: (ids: string[]) => void;
   clear: () => void;
@@ -87,6 +94,11 @@ export function useUploadWizard(): UseUploadWizardReturnType {
   const files = ref<WizardFile[]>([]);
   const settings = ref<Record<string, WizardFileSettings>>({});
   const linkProducts = ref(true);
+  const linkToOrder = ref(false);
+  const linkOrder = ref<Order | null>(null);
+  const orderToLink = computed(() =>
+    linkToOrder.value ? linkOrder.value : null,
+  );
 
   const totalSize = computed(() =>
     files.value.reduce((sum, f) => sum + f.file.size, 0),
@@ -227,6 +239,9 @@ export function useUploadWizard(): UseUploadWizardReturnType {
     files,
     settings,
     linkProducts,
+    linkToOrder,
+    linkOrder,
+    orderToLink,
     totalSize,
     addFiles,
     removeFiles,

@@ -3,6 +3,7 @@ import type {
   AssetCreate,
   AssetLink,
   AssetLinkTarget,
+  AssetLinkTargetType,
   AssetLocalizations,
   AssetQuery,
   AssetQueryFilters,
@@ -24,6 +25,7 @@ import type {
   GeinsErrorAction,
   ListQueryRequestOptions,
   ListQueryState,
+  LinkedAsset,
   Localized,
   MediaMove,
   UploadCompleteResponse,
@@ -640,6 +642,22 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         },
       );
     },
+
+    /**
+     * What one link target holds — `GET media/targets/{type}/{id}/assets`,
+     * e.g. the files on an order. Oldest link first; trashed assets and ones
+     * in a folder the caller may not see are left out. Nothing checks that the
+     * target exists: an unknown one answers `[]`.
+     */
+    target: (targetType: AssetLinkTargetType, targetId: string) => ({
+      async list(fetchOptions?: RepoFetchOptions): Promise<LinkedAsset[]> {
+        const res = await fetch<LinkedAsset[]>(
+          `/media/targets/${encodeURIComponent(targetType)}/${encodeURIComponent(targetId)}/assets`,
+          { ...fetchOptions },
+        );
+        return Array.isArray(res) ? res : [];
+      },
+    }),
 
     /**
      * Distinct tags on live assets, sorted by name — `GET media/tags`.

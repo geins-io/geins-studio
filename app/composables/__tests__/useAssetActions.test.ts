@@ -1,6 +1,7 @@
 /* eslint-disable import/order, import/first */
 import { mockNuxtImport } from '@nuxt/test-utils/runtime';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { Asset } from '#shared/types';
 import { buildAsset } from '../../../test/fixtures';
 
 const {
@@ -62,36 +63,41 @@ describe('useAssetActions — copyUrl', () => {
 });
 
 describe('useAssetActions — download', () => {
-  it('clicks an anchor pointing at the file url', () => {
+  // A same-origin link to media's download route: it 302s to storage with
+  // `Content-Disposition`, so private assets (no `url`) download too.
+  function clickDownload(asset: Asset) {
     const click = vi.fn();
-    const anchor = {
-      click,
-      href: '',
-      download: '',
-      target: '',
-      rel: '',
-      remove: vi.fn(),
-    };
+    const anchor = { click, href: '', download: '', remove: vi.fn() };
     const createEl = vi
       .spyOn(document, 'createElement')
       .mockReturnValue(anchor as unknown as HTMLAnchorElement);
-    vi.spyOn(document.body, 'appendChild').mockImplementation((n) => n);
+    const append = vi
+      .spyOn(document.body, 'appendChild')
+      .mockImplementation((n) => n);
+    try {
+      useAssetActions().download(asset);
+    } finally {
+      createEl.mockRestore();
+      append.mockRestore();
+    }
+    return anchor;
+  }
 
-    const { download } = useAssetActions();
-    download(buildAsset({ url: 'https://cdn/x.jpg', name: 'x.jpg' }));
-
-    expect(anchor.href).toBe('https://cdn/x.jpg');
+  it('clicks an anchor to the media download route', () => {
+    const anchor = clickDownload(
+      buildAsset({ _id: 'as-3', url: 'https://cdn/x.jpg', name: 'x.jpg' }),
+    );
+    expect(anchor.href).toBe('/api/media/assets/as-3/download');
     expect(anchor.download).toBe('x.jpg');
-    expect(click).toHaveBeenCalled();
-    createEl.mockRestore();
+    expect(anchor.click).toHaveBeenCalled();
   });
 
-  it('is a no-op when the asset has no url', () => {
-    const createEl = vi.spyOn(document, 'createElement');
-    const { download } = useAssetActions();
-    download(buildAsset({ url: null }));
-    expect(createEl).not.toHaveBeenCalled();
-    createEl.mockRestore();
+  it('downloads a private asset, which has no url', () => {
+    const anchor = clickDownload(
+      buildAsset({ _id: 'as-4', url: null, private: true, name: 'terms.pdf' }),
+    );
+    expect(anchor.href).toBe('/api/media/assets/as-4/download');
+    expect(anchor.click).toHaveBeenCalled();
   });
 });
 
