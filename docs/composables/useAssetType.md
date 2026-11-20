@@ -7,7 +7,7 @@ The `useAssetType` composable is the single source of presentation metadata for 
 ```ts
 const { meta, label } = useAssetType();
 
-meta('pdf'); // { labelKey: 'asset_type.pdf', variant: 'rose', icon: 'FileText' }
+meta('pdf'); // { labelKey: 'asset_type.pdf', variant: 'pink', icon: 'FileText', tint: 'bg-tone-pink/10 text-tone-pink' }
 label('pdf'); // 'PDF' (localized)
 ```
 
@@ -18,7 +18,7 @@ Unknown types fall back to the `other` entry.
 ### `meta`
 
 ```ts
-meta(type: AssetType): { labelKey: string; variant: BadgeVariants['variant']; icon: string }
+meta(type: AssetType): { labelKey: string; variant: BadgeVariants['variant']; icon: string; tint: string }
 ```
 
 Presentation metadata for a type.
@@ -33,15 +33,17 @@ The localized type label (resolves `meta(type).labelKey`).
 
 ## Type map
 
-| Type    | Variant  | Icon       |
-| ------- | -------- | ---------- |
-| `image` | `blue`   | `Image`    |
-| `svg`   | `teal`   | `Shapes`   |
-| `doc`   | `indigo` | `FileText` |
-| `pdf`   | `rose`   | `FileText` |
-| `video` | `purple` | `Film`     |
-| `audio` | `amber`  | `Music`    |
-| `other` | `slate`  | `File`     |
+| Type    | Variant   | Icon       |
+| ------- | --------- | ---------- |
+| `image` | `info`    | `Image`    |
+| `svg`   | `teal`    | `Shapes`   |
+| `doc`   | `slate`   | `FileText` |
+| `pdf`   | `pink`    | `FileText` |
+| `video` | `purple`  | `Film`     |
+| `audio` | `warning` | `Music`    |
+| `other` | `neutral` | `File`     |
+
+Image and Audio reuse the info and warning status tones on purpose; the rest use the tag tones (see [Colors](/guides/ui/colors)). `tint` (the thumbnail placeholder) uses the same color as the badge.
 
 ## Consumed by
 

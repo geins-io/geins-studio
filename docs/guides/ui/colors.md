@@ -49,7 +49,7 @@ Same recipe as the status tones, in hues the statuses don't use. For asset types
 | `--tone-pink`   | `#9d174d` |
 | `--tone-slate`  | `#334155` |
 
-Asset types reuse `--tone-info` (Image) and `--tone-warning` (Audio) on purpose.
+Each is a `Badge` variant of the same name (`purple`, `teal`, `indigo`, `pink`, `slate`). Asset types reuse `info` (Image) and `warning` (Audio) on purpose, and Other is `neutral` so it doesn't look like Doc (`slate`) — see [`useAssetType`](/composables/useAssetType).
 
 ## Callouts
 

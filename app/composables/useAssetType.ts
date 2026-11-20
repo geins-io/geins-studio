@@ -17,45 +17,45 @@ interface AssetTypeMeta {
 const ASSET_TYPE_META: Record<AssetType, AssetTypeMeta> = {
   image: {
     labelKey: 'asset_library.asset_type.image',
-    variant: 'blue',
+    variant: 'info',
     icon: 'Image',
-    tint: 'bg-blue-500/15 text-blue-600 dark:text-blue-300',
+    tint: 'bg-tone-info/10 text-tone-info',
   },
   svg: {
     labelKey: 'asset_library.asset_type.svg',
     variant: 'teal',
     icon: 'Shapes',
-    tint: 'bg-teal-500/15 text-teal-600 dark:text-teal-300',
+    tint: 'bg-tone-teal/10 text-tone-teal',
   },
   doc: {
     labelKey: 'asset_library.asset_type.doc',
-    variant: 'indigo',
+    variant: 'slate',
     icon: 'FileText',
-    tint: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-300',
+    tint: 'bg-tone-slate/10 text-tone-slate',
   },
   pdf: {
     labelKey: 'asset_library.asset_type.pdf',
-    variant: 'rose',
+    variant: 'pink',
     icon: 'FileText',
-    tint: 'bg-rose-500/15 text-rose-600 dark:text-rose-300',
+    tint: 'bg-tone-pink/10 text-tone-pink',
   },
   video: {
     labelKey: 'asset_library.asset_type.video',
     variant: 'purple',
     icon: 'Film',
-    tint: 'bg-purple-500/15 text-purple-600 dark:text-purple-300',
+    tint: 'bg-tone-purple/10 text-tone-purple',
   },
   audio: {
     labelKey: 'asset_library.asset_type.audio',
-    variant: 'amber',
+    variant: 'warning',
     icon: 'Music',
-    tint: 'bg-amber-500/15 text-amber-600 dark:text-amber-300',
+    tint: 'bg-tone-warning-bg text-tone-warning',
   },
   other: {
     labelKey: 'asset_library.asset_type.other',
-    variant: 'slate',
+    variant: 'neutral',
     icon: 'File',
-    tint: 'bg-slate-500/15 text-slate-600 dark:text-slate-300',
+    tint: 'bg-tone-neutral/10 text-tone-neutral-foreground',
   },
 };
 

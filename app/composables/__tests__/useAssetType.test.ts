@@ -13,16 +13,24 @@ describe('useAssetType', () => {
   it('returns presentation metadata per type', () => {
     expect(meta('image')).toMatchObject({
       labelKey: 'asset_library.asset_type.image',
-      variant: 'blue',
+      variant: 'info',
       icon: 'Image',
     });
     expect(meta('svg').variant).toBe('teal');
-    expect(meta('pdf').variant).toBe('rose');
+    expect(meta('pdf').variant).toBe('pink');
+    expect(meta('audio').variant).toBe('warning');
     expect(meta('video').icon).toBe('Film');
   });
 
   it('carries a tint class matching the type', () => {
-    expect(meta('audio').tint).toContain('amber');
+    expect(meta('pdf').tint).toContain('tone-pink');
+    expect(meta('audio').tint).toContain('tone-warning');
+  });
+
+  // Doc is slate, so Other must not be, or the two read as the same type.
+  it('keeps "other" apart from "doc"', () => {
+    expect(meta('other').variant).toBe('neutral');
+    expect(meta('doc').variant).toBe('slate');
   });
 
   it('falls back to "other" for an unknown type', () => {
