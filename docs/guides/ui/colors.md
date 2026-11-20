@@ -21,6 +21,8 @@ Status badges use a light tint of the tone with text in the tone itself, darker.
 
 Solid light green (`--positive`, white text) stays for Active, Completed and Confirmed.
 
+Each tone is a `Badge` variant of the same name (`success`, `success-solid`, `info`, `info-solid`, `warning`, `danger`, `neutral`, `draft`, plus `positive`). [`StatusBadge`](/components/StatusBadge) picks one per status.
+
 ### Recipe
 
 | Style          | Classes                                              |
