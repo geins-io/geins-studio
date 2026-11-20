@@ -46,7 +46,7 @@ Same recipe as the status tones, in hues the statuses don't use. For asset types
 | `--tone-purple` | `#6b21a8` |
 | `--tone-teal`   | `#115e59` |
 | `--tone-indigo` | `#3730a3` |
-| `--tone-pink`   | `#9d174d` |
+| `--tone-pink`   | `#9f144e` |
 | `--tone-slate`  | `#334155` |
 
 Each is a `Badge` variant of the same name (`purple`, `teal`, `indigo`, `pink`, `slate`). Asset types reuse `info` (Image) and `warning` (Audio) on purpose, and Other is `neutral` so it doesn't look like Doc (`slate`) — see [`useAssetType`](/composables/useAssetType).
@@ -85,4 +85,4 @@ White on the positive green and the warning yellow is below AA (2.2:1). That's a
 
 ## Dark mode
 
-Every token above has a dark value. Tones, tags and callouts get lighter text in the same hue on a low tint, and tinted badges a thin ring.
+Every token above has a dark value, except `--toast-negative`: the calm red is the same in both themes. Tones, tags and callouts get lighter text in the same hue on a low tint, and tinted badges a thin ring.

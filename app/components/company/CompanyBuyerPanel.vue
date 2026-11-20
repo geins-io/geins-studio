@@ -451,8 +451,10 @@ const existingCustomerName = computed(() => {
             </i18n-t>
           </template>
           <template #actions>
+            <!-- Own card surface: its muted description is too faint on the callout fill. -->
             <ContentSwitch
               v-model:checked="updateCustomer"
+              class="bg-card"
               :label="
                 $t('customers.buyers_assign_existing', {
                   customerName: existingCustomerName,
