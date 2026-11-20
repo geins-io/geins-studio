@@ -62,6 +62,8 @@ Callouts (`Feedback`) are filled in their type's color: background, border, text
 | positive | `bg-positive-callout-bg …`                                                            |
 | negative | `bg-negative-callout-bg …`                                                            |
 
+In a page, use [`Feedback`](/components/Feedback) (or `Alert` with `info`, `warning`, `positive` or `destructive`) rather than these utilities.
+
 ::: warning
 `--warning-foreground` is **not** callout text: it's the white text on solid warning (the yellow toast). Use `--warning-callout-foreground` in callouts.
 :::
