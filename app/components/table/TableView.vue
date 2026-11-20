@@ -54,6 +54,8 @@ const props = withDefaults(
     error?: boolean;
     onRetry?: () => void;
     initVisibilityState?: VisibilityState;
+    /** Bump when the default columns change, so saved column options reset to them. */
+    columnsVersion?: number;
     initSortingState?: SortingState;
     enableExpanding?: boolean;
     getSubRows?: (row: TData) => TData[] | undefined;
@@ -266,11 +268,17 @@ if (serverMode) {
   );
 }
 
+// Both column cookies are written on the first visit and the saved order holds
+// only the columns visible then, so new defaults reach saved users only under
+// new cookie names.
+const columnsCookieName = (prefix: string) =>
+  props.columnsVersion ? `${prefix}-v${props.columnsVersion}` : prefix;
+
 /**
  * Setup column visibility
  **/
 const columnVisibilityCookie = advancedMode.value
-  ? useUserRouteCookie<VisibilityState>('geins-cols', {
+  ? useUserRouteCookie<VisibilityState>(columnsCookieName('geins-cols'), {
       default: () => props.initVisibilityState || {},
     })
   : ref(props.initVisibilityState || {});
@@ -290,7 +298,9 @@ watch(columnVisibility, updateVisibilityCookie, { deep: true });
  * Setup column order
  **/
 const columnOrderCookie = advancedMode.value
-  ? useUserRouteCookie<ColumnOrderState>('geins-order', { default: () => [] })
+  ? useUserRouteCookie<ColumnOrderState>(columnsCookieName('geins-order'), {
+      default: () => [],
+    })
   : ref([]);
 const columnOrder = ref(advancedMode.value ? columnOrderCookie.value : []);
 const updateSortingCookie = () => {

@@ -9,6 +9,7 @@
   - `negative` → `destructive` variant + `TriangleAlert`
   - `warning` → `warning` variant + `CircleAlert`
   - `info` (default) → `info` variant + `Info`
+- Filled in the type's color: background, border, text and icon come from the `--{type}-callout-*` tokens (see [Colors](/guides/ui/colors#callouts)). Content inherits the callout's text color — don't set `text-muted-foreground` inside; use `opacity-80` for secondary lines
 - Three slots: `title`, `description`, optional `actions`
 
 ## Usage

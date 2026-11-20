@@ -4,7 +4,7 @@ export type StringKeyOf<T> = Extract<keyof T, string>;
 
 /**
  * Known status values for StatusBadge with dedicated styling.
- * Any other string falls back to 'outline' variant with auto-capitalized text.
+ * Any other string falls back to the 'neutral' variant with auto-capitalized text.
  */
 export type StatusBadgeKnownStatus =
   | 'pending'
@@ -34,7 +34,7 @@ export type StatusBadgeKnownStatus =
 
 /**
  * StatusBadge accepts booleans (active/inactive), known statuses with
- * dedicated styling, or any string (rendered with 'outline' variant).
+ * dedicated styling, or any string (rendered with the 'neutral' variant).
  */
 export type StatusBadgeStatus =
   | boolean

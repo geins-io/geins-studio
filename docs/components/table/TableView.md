@@ -356,7 +356,20 @@ When provided alongside `error: true`, shows a Retry button in the error empty s
 initVisibilityState?: VisibilityState
 ```
 
-Initial column visibility map. In `Advanced` mode this is overlaid with the per-user cookie.
+Initial column visibility map. In `Advanced` mode the per-user cookie replaces it once saved — and it is saved on the first visit, so changing a default here only reaches users who haven't opened the list yet. Bump [`columnsVersion`](#columnsversion) along with it.
+
+### `columnsVersion`
+
+```ts
+columnsVersion?: number
+```
+
+Versions the column cookies (`geins-cols-v{n}` and `geins-order-v{n}` instead of `geins-cols` and `geins-order`). Bump it when a list's default columns or their order change, so every user's saved column options reset once to the new defaults — their own show/hide and order choices on that list are dropped. Both cookies go together: a saved order holds only the columns visible when it was saved, and TanStack puts any other column last. Ignored outside `Advanced` mode.
+
+```vue
+<!-- Ref number became a default column after Name -->
+<TableView :init-visibility-state="visibilityState" :columns-version="2" />
+```
 
 ### `initSortingState`
 

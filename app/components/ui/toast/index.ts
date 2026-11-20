@@ -20,7 +20,7 @@ export const toastVariants = cva(
       variant: {
         default: 'bg-card text-card-foreground border',
         positive: 'bg-positive text-positive-foreground',
-        negative: 'bg-negative text-negative-foreground',
+        negative: 'bg-toast-negative text-white',
         warning: 'bg-warning text-warning-foreground',
       },
     },

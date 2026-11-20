@@ -9,47 +9,7 @@ const props = defineProps<{
 
 const { t } = useI18n();
 
-const badgeVariant = computed(() => {
-  switch (props.status) {
-    case 'pending':
-    case 'on-hold':
-    case 'backorder':
-    case 'partial':
-    case 'sent':
-    case 'degraded':
-      return 'warning';
-    case 'requested':
-      return 'warning-outline';
-    case 'canceled':
-    case 'unhealthy':
-      return 'negative-light';
-    case 'rejected':
-      return 'negative';
-    case 'refunded':
-    case 'inactive':
-    case 'idle':
-      return 'inactive';
-    case 'finalized':
-    case 'healthy':
-    case 'enabled':
-      return 'positive-light';
-    case 'accepted':
-      return 'positive-outline';
-    case 'completed':
-    case 'confirmed':
-    case true:
-      return 'positive';
-    case 'draft':
-    case false:
-      return 'secondary';
-    case 'revised':
-      return 'outline';
-    case 'in-progress':
-      return 'blue';
-    default:
-      return 'outline';
-  }
-});
+const badgeVariant = computed(() => statusBadgeVariant(props.status));
 
 const badgeText = computed(() => {
   if (props.label) return props.label;

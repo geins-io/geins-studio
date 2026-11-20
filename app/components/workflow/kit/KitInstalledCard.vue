@@ -72,7 +72,7 @@ const variableCount = computed(
               class="text-muted-foreground mt-0.5 flex items-center gap-1.5 text-xs"
             >
               v{{ installation.kitVersion }}
-              <Badge v-if="updateAvailable" variant="warning-light" size="sm">
+              <Badge v-if="updateAvailable" variant="warning" size="sm">
                 <LucideArrowUpCircle class="size-3" />
                 {{
                   latestVersion

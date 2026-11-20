@@ -71,19 +71,19 @@ const copyText = computed(() =>
       <Badge
         v-if="error.type && !compact"
         size="sm"
-        variant="negative-light"
+        variant="danger"
         class="font-mono"
       >
         {{ error.type }}
       </Badge>
-      <Badge v-if="code" size="sm" variant="negative-light" class="font-mono">
+      <Badge v-if="code" size="sm" variant="danger" class="font-mono">
         {{ $t('executions.error_code', { code }) }}
       </Badge>
     </AlertTitle>
     <AlertDescription class="space-y-2 pr-7">
       <p
         :class="[
-          'text-destructive font-mono wrap-break-word whitespace-pre-wrap',
+          'font-mono wrap-break-word whitespace-pre-wrap',
           compact ? 'text-xs' : 'text-sm',
         ]"
       >
@@ -91,7 +91,7 @@ const copyText = computed(() =>
       </p>
       <div
         v-if="child && !compact"
-        class="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-xs"
+        class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs opacity-80"
       >
         <span>
           {{

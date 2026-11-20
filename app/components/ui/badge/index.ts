@@ -15,31 +15,31 @@ export const badgeVariants = cva(
         secondary: 'bg-muted text-muted-foreground dark:bg-secondary',
         outline:
           'bg-secondary text-primary/70 dark:border-muted-foreground/30 border',
+        // Status tones (docs/guides/ui/colors.md). Tints get a ring in dark
+        // mode only, where a low tint alone doesn't lift off the card.
         positive: 'bg-positive text-positive-foreground',
-        'positive-light': 'bg-positive/20 ring-positive text-positive ring-1',
-        'positive-outline':
-          'text-positive ring-positive border-positive bg-transparent ring-1',
-        negative: 'bg-negative text-negative-foreground',
-        'negative-light': 'bg-negative/20 ring-negative text-negative ring-1',
-        warning: 'bg-warning text-warning-foreground',
-        'warning-light': 'bg-warning/20 ring-warning text-warning ring-1',
-        'warning-outline':
-          'text-warning ring-warning border-warning bg-transparent ring-1',
-        inactive:
-          'bg-muted text-muted-foreground/60 dark:bg-muted/90 dark:text-muted-foreground/60',
-        // Tinted color set (e.g. asset-type badges). Same light style as the
-        // *-light variants; readable in both themes.
-        blue: 'bg-blue-500/15 text-blue-700 ring-1 ring-blue-500/30 dark:text-blue-300',
-        teal: 'bg-teal-500/15 text-teal-700 ring-1 ring-teal-500/30 dark:text-teal-300',
-        indigo:
-          'bg-indigo-500/15 text-indigo-700 ring-1 ring-indigo-500/30 dark:text-indigo-300',
-        rose: 'bg-rose-500/15 text-rose-700 ring-1 ring-rose-500/30 dark:text-rose-300',
+        success:
+          'bg-tone-success/8 text-tone-success dark:ring-tone-success/30 dark:ring-1',
+        'success-solid': 'bg-tone-success text-tone-solid-foreground',
+        info: 'bg-tone-info/10 text-tone-info dark:ring-tone-info/30 dark:ring-1',
+        'info-solid': 'bg-tone-info text-tone-solid-foreground',
+        warning:
+          'bg-tone-warning-bg text-tone-warning dark:ring-tone-warning/30 dark:ring-1',
+        danger:
+          'bg-tone-danger/10 text-tone-danger dark:ring-tone-danger/30 dark:ring-1',
+        neutral:
+          'bg-tone-neutral/10 text-tone-neutral-foreground dark:ring-tone-neutral/30 dark:ring-1',
+        draft:
+          'border-border-dark text-tone-neutral border border-dashed bg-transparent',
+        // Tag tones: categories that aren't a state (asset types).
         purple:
-          'bg-purple-500/15 text-purple-700 ring-1 ring-purple-500/30 dark:text-purple-300',
-        amber:
-          'bg-amber-500/15 text-amber-700 ring-1 ring-amber-500/30 dark:text-amber-300',
+          'bg-tone-purple/10 text-tone-purple dark:ring-tone-purple/30 dark:ring-1',
+        teal: 'bg-tone-teal/10 text-tone-teal dark:ring-tone-teal/30 dark:ring-1',
+        indigo:
+          'bg-tone-indigo/10 text-tone-indigo dark:ring-tone-indigo/30 dark:ring-1',
+        pink: 'bg-tone-pink/10 text-tone-pink dark:ring-tone-pink/30 dark:ring-1',
         slate:
-          'bg-slate-500/15 text-slate-700 ring-1 ring-slate-500/30 dark:text-slate-300',
+          'bg-tone-slate/10 text-tone-slate dark:ring-tone-slate/30 dark:ring-1',
       },
     },
     defaultVariants: {
