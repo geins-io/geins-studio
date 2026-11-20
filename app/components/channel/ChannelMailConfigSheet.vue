@@ -313,7 +313,7 @@ const categoryLabel = computed(() => {
                   <Label>{{ prettifyLangKey(entry.key, allTextKeys) }}</Label>
                   <Badge
                     v-if="entry.isOverridden"
-                    variant="warning-light"
+                    variant="warning"
                     size="sm"
                     class="mr-0.5 mb-0.5"
                   >

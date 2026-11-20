@@ -54,37 +54,31 @@ Translated text to show instead of the sentence-cased status. Pass it whenever t
 - **Type:** `string`
 - **Required:** no
 
+## Colors
+
+The status picks a `Badge` variant from the status tones (see [Colors](/guides/ui/colors)), through `statusBadgeVariant()` in `app/utils/status-badge.ts`. Seen from the seller: info is the seller's turn, warning needs attention, neutral is idle.
+
+| Variant         | Statuses                                                   |
+| --------------- | ---------------------------------------------------------- |
+| `positive`      | `completed`, `confirmed`, `true` (Active)                  |
+| `success`       | `accepted`, `enabled`, `healthy`                           |
+| `success-solid` | `finalized`                                                |
+| `info`          | `pending`, `sent`, `partial`, `in-progress`                |
+| `info-solid`    | `requested`                                                |
+| `warning`       | `expired`, `on-hold`, `backorder`, `degraded`              |
+| `danger`        | `canceled`, `cancelled`, `rejected`, `unhealthy`           |
+| `neutral`       | `inactive`, `false`, `refunded`, `revised`, `idle`, others |
+| `draft`         | `draft`                                                    |
+
+A new value in `StatusBadgeKnownStatus` fails typecheck until it gets a variant.
+
 ## Type Definitions
 
 ```ts
-type StatusBadgeStatus =
-  | 'pending'
-  | 'on-hold'
-  | 'backorder'
-  | 'partial'
-  | 'sent'
-  | 'degraded'
-  | 'canceled'
-  | 'unhealthy'
-  | 'rejected'
-  | 'refunded'
-  | 'inactive'
-  | 'idle'
-  | 'finalized'
-  | 'healthy'
-  | 'enabled'
-  | 'requested' // amber outline
-  | 'revised' // outline, like expired
-  | 'accepted'
-  | 'completed'
-  | 'confirmed'
-  | 'draft'
-  | 'in-progress' // blue
-  | boolean
-  | string;
+type StatusBadgeStatus = boolean | StatusBadgeKnownStatus | string;
 ```
 
-The exact union is defined in `shared/types`. `boolean` values render the localized "Active" / "Inactive" label. Any other string falls through to `outline` variant with a sentence-cased label.
+The known statuses are defined in `shared/types/Global.ts`. `boolean` values render the localized "Active" / "Inactive" label. Any other string renders `neutral` with a sentence-cased label.
 
 ## Dependencies
 

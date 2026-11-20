@@ -71,12 +71,12 @@ const copyText = computed(() =>
       <Badge
         v-if="error.type && !compact"
         size="sm"
-        variant="negative-light"
+        variant="danger"
         class="font-mono"
       >
         {{ error.type }}
       </Badge>
-      <Badge v-if="code" size="sm" variant="negative-light" class="font-mono">
+      <Badge v-if="code" size="sm" variant="danger" class="font-mono">
         {{ $t('executions.error_code', { code }) }}
       </Badge>
     </AlertTitle>
