@@ -1080,6 +1080,7 @@ export default defineConfig({
       {
         text: 'Guides',
         items: [
+          { text: 'Colors', link: '/guides/ui/colors' },
           { text: 'Feedback system', link: '/guides/ui/feedback-system' },
           { text: 'Testing', link: '/guides/testing' },
           { text: 'Forms', link: '/guides/forms' },
