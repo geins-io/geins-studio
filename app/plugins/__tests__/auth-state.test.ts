@@ -48,6 +48,15 @@ const signedIn: Session = {
   tokenExpires: 1000,
 };
 
+const setVisibility = async (state: DocumentVisibilityState) => {
+  Object.defineProperty(document, 'visibilityState', {
+    configurable: true,
+    get: () => state,
+  });
+  document.dispatchEvent(new Event('visibilitychange'));
+  await nextTick();
+};
+
 describe('auth-state plugin', () => {
   const warnings: string[] = [];
 
@@ -76,7 +85,7 @@ describe('auth-state plugin', () => {
   beforeEach(async () => {
     session.value = signedIn;
     auth.expiresSoon.mockReturnValue(true);
-    await nextTick();
+    await setVisibility('visible');
     vi.clearAllMocks();
   });
 
@@ -101,6 +110,32 @@ describe('auth-state plugin', () => {
   // Not counted: the app's boot registered a listener too.
   it('refreshes a due token when the tab becomes visible', () => {
     document.dispatchEvent(new Event('visibilitychange'));
+    expect(auth.refresh).toHaveBeenCalled();
+  });
+
+  // A sleeping machine that wakes briefly can lose the response, and with it
+  // the rotated single-use refresh token.
+  it("doesn't refresh on the poll while the tab is hidden, even when the token is due", async () => {
+    await setVisibility('hidden');
+    await vi.advanceTimersByTimeAsync(30 * 60_000);
+    expect(auth.refresh).not.toHaveBeenCalled();
+  });
+
+  it('refreshes a due token once a hidden tab becomes visible', async () => {
+    await setVisibility('hidden');
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(auth.refresh).not.toHaveBeenCalled();
+
+    await setVisibility('visible');
+    expect(auth.refresh).toHaveBeenCalled();
+  });
+
+  it('refreshes on the poll again once a hidden tab is visible', async () => {
+    await setVisibility('hidden');
+    await setVisibility('visible');
+    auth.refresh.mockClear();
+
+    await vi.advanceTimersByTimeAsync(60_000);
     expect(auth.refresh).toHaveBeenCalled();
   });
 

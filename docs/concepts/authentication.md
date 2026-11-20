@@ -73,10 +73,18 @@ The token is refreshed server-side, by the session routes only. `GET /api/auth/s
 A refresh is triggered:
 
 1. Before each `$geinsApi` request, when the access token is expired or expires within 5 minutes.
-2. Every 60 seconds while authenticated (`auth-state.ts`, via `usePollWhile`), with the same check, so an idle tab refreshes before the token expires.
+2. Every 60 seconds while authenticated and the tab is visible (`auth-state.ts`, via `usePollWhile`), with the same check, so an idle tab refreshes before the token expires.
 3. When a tab becomes visible again, since timers don't run while a laptop sleeps.
 
 A `401` despite all this means the token expired before the tab refreshed it, or the API rejected it: see [When the API rejects a token](#when-the-api-rejects-a-token).
+
+**Never from a hidden tab.** A Geins refresh token is single-use: the refresh revokes it and returns the next one. A sleeping Mac wakes briefly from time to time (Power Nap), and a hidden tab's timers run then. If the machine dozes off again after Geins rotated the token but before the browser stored the response, the cookie keeps the revoked token, and the next refresh gets `403` and logs the user out. So the proactive check does nothing while `document.visibilityState` is `hidden`, and [`usePollWhile`](/composables/usePollWhile) pauses every poll in a hidden tab, since each request from one goes through trigger 1. An access token left to expire in a hidden tab costs nothing: the refresh token lasts 7 days, and the tab refreshes once it is visible again (trigger 3) or before its next request (trigger 1), when the user is back and the machine awake.
+
+A few timers still call the API from a hidden tab, each only while something runs:
+
+- The workflow logs panel (`WorkflowPanelLogs.vue`) polls a running execution, since its pop-out window is meant to be watched while the Studio tab may be hidden.
+- [`settleJob`](/concepts/background-jobs) checks a background job for up to 2 minutes of waiting, so its success toast and data refresh land. It counts the delays it scheduled, not wall-clock time, so a sleep stretches it.
+- The user store retries a failed `user/me` load at most 4 times, within about 20 seconds.
 
 **The API proxy never refreshes.** It sends the token in the cookie as it is (`readSealedSession`) and never writes the session. Geins refuses a second concurrent refresh with the same refresh token (`403`), and the client's lock can't serialize a refresh on another server instance (Vercel, a scaled-out Azure app). If the proxy refreshed too, it could race a session route, and the loser's `RefreshTokenInvalid` cookie could reach the browser last and log the user out. So only the session routes, which the client calls under its Web Lock, call `auth/refresh`. An expired token comes back `401` from the API, and the client refreshes under the lock and retries.
 
