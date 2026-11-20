@@ -231,6 +231,29 @@ describe('getApiErrorTitle', () => {
     ).toBe('Market not found');
   });
 
+  it('reads an unwrapped backend body piped through the proxy (originalError.title)', () => {
+    expect(
+      getApiErrorTitle({
+        status: 422,
+        originalError: {
+          type: 'https://tools.ietf.org/html/rfc4918#section-11.2',
+          title: 'Invalid channel payload.',
+          status: 422,
+          detail:
+            "Market IDs must be unique. Duplicate market ID 'FR-EUR' found.",
+        },
+      }),
+    ).toBe('Invalid channel payload.');
+  });
+
+  it('prefers the wrapped title over an unwrapped one', () => {
+    expect(
+      getApiErrorTitle({
+        originalError: { title: 'outer', data: { title: 'wrapped' } },
+      }),
+    ).toBe('wrapped');
+  });
+
   it('reads FetchError shape (data.title)', () => {
     expect(getApiErrorTitle({ data: { title: 'Bad request' } })).toBe(
       'Bad request',
@@ -263,6 +286,18 @@ describe('getApiErrorDetail', () => {
         originalError: { data: { detail: 'Id was invalid' } },
       }),
     ).toBe('Id was invalid');
+  });
+
+  it('reads an unwrapped backend body piped through the proxy (originalError.detail)', () => {
+    expect(
+      getApiErrorDetail({
+        originalError: {
+          title: 'Invalid channel payload.',
+          detail:
+            "Market IDs must be unique. Duplicate market ID 'FR-EUR' found.",
+        },
+      }),
+    ).toBe("Market IDs must be unique. Duplicate market ID 'FR-EUR' found.");
   });
 
   it('reads FetchError shapes (data.detail and data.data.detail)', () => {

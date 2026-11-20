@@ -1,11 +1,8 @@
 // @vitest-environment node
-import { describe, it, expect, vi } from 'vitest';
-import type { AuthResponse, Session } from '#shared/types';
+import { describe, it, expect } from 'vitest';
+import type { TokenSession } from '#shared/types';
 import {
   AuthApiError,
-  refreshRetryDelay,
-  refreshWithRetry,
-  sessionFromToken,
   shouldForceRefresh,
   tokenAfterRefresh,
   tokenAfterRefreshError,
@@ -16,9 +13,7 @@ const encode = (value: object) =>
 const fakeJwt = (payload: { exp: number; iat: number }) =>
   `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode(payload)}.signature`;
 
-const EXPIRES = '2026-11-30T12:00:00.000Z';
-
-const authenticatedToken: Session = {
+const authenticatedToken: TokenSession = {
   isAuthenticated: true,
   accessToken: fakeJwt({ exp: 2000, iat: 1000 }),
   refreshToken: 'refresh-1',
@@ -91,177 +86,10 @@ describe('tokenAfterRefreshError', () => {
       new AuthApiError(403, 'Insufficient permissions'),
     );
 
-    expect(next.error).toBe('RefreshTokenInvalid');
-    expect(sessionFromToken(next, EXPIRES)).toEqual({
-      expires: EXPIRES,
-      isAuthenticated: false,
-      error: 'RefreshTokenInvalid',
-    });
-  });
-});
-
-describe('refreshWithRetry', () => {
-  const refreshedResponse: AuthResponse = {
-    accessToken: fakeJwt({ exp: 5000, iat: 4000 }),
-    refreshToken: 'refresh-2',
-  };
-
-  // Each answer is one call to auth/refresh: a response, or the error it throws.
-  const setup = (...answers: (AuthResponse | AuthApiError)[]) => {
-    const refresh = vi.fn(async (_refreshToken?: string) => {
-      const answer = answers.shift();
-      if (!answer) throw new Error('Unexpected refresh call');
-      if (answer instanceof AuthApiError) throw answer;
-      return answer;
-    });
-    const wait = vi.fn(async (_ms: number) => {});
-    const onRetry = vi.fn();
-    // As the jwt callback does: a response becomes the token, an error is
-    // classified.
-    const run = () =>
-      refreshWithRetry(refresh, authenticatedToken.refreshToken, {
-        wait,
-        onRetry,
-      }).then(
-        (response) => tokenAfterRefresh(authenticatedToken, response),
-        (error) => tokenAfterRefreshError(authenticatedToken, error),
-      );
-    return { refresh, wait, onRetry, run };
-  };
-
-  it('refreshes on a retry after one 403', async () => {
-    const { refresh, wait, onRetry, run } = setup(
-      new AuthApiError(403, 'Insufficient permissions'),
-      refreshedResponse,
-    );
-
-    const next = await run();
-
-    expect(next.error).toBeUndefined();
-    expect(next.isAuthenticated).toBe(true);
-    expect(next.accessToken).toBe(refreshedResponse.accessToken);
-    expect(next.refreshToken).toBe('refresh-2');
-    expect(refresh).toHaveBeenCalledTimes(2);
-    expect(onRetry).toHaveBeenCalledExactlyOnceWith(403, 2);
-    expect(wait).toHaveBeenCalledOnce();
-    const [delay] = wait.mock.calls[0]!;
-    expect(delay).toBeGreaterThanOrEqual(300);
-    expect(delay).toBeLessThanOrEqual(800);
-  });
-
-  it('retries with the same refresh token', async () => {
-    const { refresh, run } = setup(
-      new AuthApiError(403, 'Insufficient permissions'),
-      refreshedResponse,
-    );
-
-    await run();
-
-    expect(refresh).toHaveBeenNthCalledWith(1, 'refresh-1');
-    expect(refresh).toHaveBeenNthCalledWith(2, 'refresh-1');
-  });
-
-  it('waits before it retries', async () => {
-    const { refresh, wait, run } = setup(
-      new AuthApiError(403, 'Insufficient permissions'),
-      refreshedResponse,
-    );
-    let callsWhenWaiting = 0;
-    wait.mockImplementationOnce(async () => {
-      callsWhenWaiting = refresh.mock.calls.length;
-    });
-
-    await run();
-
-    expect(callsWhenWaiting).toBe(1);
-  });
-
-  it('signs out after two 403s in a row', async () => {
-    const { refresh, run } = setup(
-      new AuthApiError(403, 'Insufficient permissions'),
-      new AuthApiError(403, 'Insufficient permissions'),
-    );
-
-    const next = await run();
-
     expect(next).toEqual({
       isAuthenticated: false,
       error: 'RefreshTokenInvalid',
     });
-    expect(refresh).toHaveBeenCalledTimes(2);
-  });
-
-  it.each([
-    ['a 503', new AuthApiError(503, 'Server error')],
-    ['a network error', new AuthApiError(0, 'Request failed')],
-  ])(
-    'keeps the session when the retry after a 403 gets %s',
-    async (_, retryError) => {
-      const { refresh, run } = setup(
-        new AuthApiError(403, 'Insufficient permissions'),
-        retryError,
-      );
-
-      const next = await run();
-
-      expect(next).toEqual({ ...authenticatedToken, error: 'RefreshFailed' });
-      expect(next.refreshToken).toBe('refresh-1');
-      expect(refresh).toHaveBeenCalledTimes(2);
-    },
-  );
-
-  it.each([400, 401, 404])(
-    'signs out on a %i without a retry',
-    async (status) => {
-      const { refresh, wait, onRetry, run } = setup(
-        new AuthApiError(status, 'Rejected'),
-      );
-
-      const next = await run();
-
-      expect(next.error).toBe('RefreshTokenInvalid');
-      expect(refresh).toHaveBeenCalledOnce();
-      expect(wait).not.toHaveBeenCalled();
-      expect(onRetry).not.toHaveBeenCalled();
-    },
-  );
-
-  it.each([0, 408, 429, 500, 503])(
-    'keeps the session on a %i without a retry',
-    async (status) => {
-      const { refresh, wait, run } = setup(
-        new AuthApiError(status, 'Try again'),
-      );
-
-      const next = await run();
-
-      expect(next).toEqual({ ...authenticatedToken, error: 'RefreshFailed' });
-      expect(refresh).toHaveBeenCalledOnce();
-      expect(wait).not.toHaveBeenCalled();
-    },
-  );
-
-  it('does not retry an error without a status', async () => {
-    const refresh = vi.fn(async () => {
-      throw new Error('boom');
-    });
-    const wait = vi.fn(async () => {});
-
-    await expect(
-      refreshWithRetry(refresh, 'refresh-1', { wait }),
-    ).rejects.toThrow('boom');
-    expect(refresh).toHaveBeenCalledOnce();
-    expect(wait).not.toHaveBeenCalled();
-  });
-});
-
-describe('refreshRetryDelay', () => {
-  it.each([
-    [0, 300],
-    [0.5, 550],
-    [0.999_999, 800],
-  ])('maps random %d to %i ms', (random, delay) => {
-    expect(refreshRetryDelay(() => random)).toBe(delay);
   });
 });
 
@@ -324,8 +152,7 @@ describe('tokenAfterRefresh', () => {
 
 describe('shouldForceRefresh', () => {
   const forceRefresh = {
-    forceRefresh: true,
-    rejectedToken: authenticatedToken.accessToken,
+    rejectedTokenExpires: authenticatedToken.tokenExpires,
   };
 
   it('forces a refresh of the rejected token', () => {
@@ -334,91 +161,25 @@ describe('shouldForceRefresh', () => {
 
   it("doesn't refresh a token another tab already rotated", () => {
     expect(
-      shouldForceRefresh(authenticatedToken, {
-        ...forceRefresh,
-        rejectedToken: 'an-older-token',
-      }),
+      shouldForceRefresh(authenticatedToken, { rejectedTokenExpires: 1500 }),
     ).toBe(false);
   });
 
   it.each([
-    ['no update data', undefined],
-    ['other update data', { accountKey: 'account-2' }],
-    ['forceRefresh not true', { ...forceRefresh, forceRefresh: 'yes' }],
-  ])("doesn't refresh on %s", (_, update) => {
-    expect(shouldForceRefresh(authenticatedToken, update)).toBe(false);
+    ['no body', undefined],
+    ['other data', { accountKey: 'account-2' }],
+    ['no expiry', { rejectedTokenExpires: undefined }],
+    ['an expiry that is not a number', { rejectedTokenExpires: '2000' }],
+  ])("doesn't refresh on %s", (_, body) => {
+    expect(shouldForceRefresh(authenticatedToken, body)).toBe(false);
   });
 
   it("doesn't refresh a session without tokens", () => {
     expect(
       shouldForceRefresh(
         { isAuthenticated: false, error: 'RefreshTokenInvalid' },
-        { forceRefresh: true, rejectedToken: undefined },
+        { rejectedTokenExpires: undefined },
       ),
     ).toBe(false);
-  });
-});
-
-describe('sessionFromToken', () => {
-  it('returns the authenticated session without user data', () => {
-    const session = sessionFromToken(authenticatedToken, EXPIRES);
-
-    expect(session).toEqual({ ...authenticatedToken, expires: EXPIRES });
-    expect(session).not.toHaveProperty('user');
-  });
-
-  it('passes a refresh error through to the client', () => {
-    const session = sessionFromToken(
-      { ...authenticatedToken, error: 'RefreshFailed' },
-      EXPIRES,
-    );
-
-    expect(session.isAuthenticated).toBe(true);
-    expect(session.error).toBe('RefreshFailed');
-  });
-
-  it('returns an unauthenticated session for an invalid refresh token', () => {
-    const session = sessionFromToken(
-      { isAuthenticated: false, error: 'RefreshTokenInvalid' },
-      EXPIRES,
-    );
-
-    expect(session).toEqual({
-      expires: EXPIRES,
-      isAuthenticated: false,
-      error: 'RefreshTokenInvalid',
-    });
-  });
-
-  it('returns the pending MFA state', () => {
-    const session = sessionFromToken(
-      {
-        isAuthenticated: false,
-        mfaActive: true,
-        mfaMethod: 'email',
-        loginToken: 'login-1',
-      },
-      EXPIRES,
-    );
-
-    expect(session).toEqual({
-      expires: EXPIRES,
-      isAuthenticated: false,
-      mfaActive: true,
-      mfaMethod: 'email',
-      loginToken: 'login-1',
-    });
-  });
-
-  it.each<[string, Session]>([
-    ['an empty token', {}],
-    [
-      'an authenticated token without an access token',
-      { isAuthenticated: true },
-    ],
-    ['an access token without authentication', { accessToken: 'a' }],
-  ])('never throws, and is unauthenticated, for %s', (_, token) => {
-    expect(() => sessionFromToken(token, EXPIRES)).not.toThrow();
-    expect(sessionFromToken(token, EXPIRES).isAuthenticated).toBe(false);
   });
 });

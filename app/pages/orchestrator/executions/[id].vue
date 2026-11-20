@@ -321,18 +321,11 @@ const handleReplay = async () => {
 };
 
 // ─── Live console ──────────────────────────────────────────────────
-const { accessToken, accountKey } = useGeinsAuth();
-
 const consoleStreamUrl = computed(() =>
   executionId.value
-    ? `/api/orchestrator/executions/${encodeURIComponent(executionId.value)}/stream`
+    ? `/orchestrator/executions/${encodeURIComponent(executionId.value)}/stream`
     : null,
 );
-
-const consoleStreamHeaders = computed<Record<string, string>>(() => ({
-  ...(accessToken.value ? { 'x-access-token': accessToken.value } : {}),
-  ...(accountKey.value ? { 'x-account-key': accountKey.value } : {}),
-}));
 
 const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
   const lines: LiveConsoleLine[] = [];
@@ -686,7 +679,7 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
         <p v-if="execution.cancellationReason">
           {{ execution.cancellationReason }}
         </p>
-        <p v-if="execution.cancelledBy" class="text-muted-foreground text-xs">
+        <p v-if="execution.cancelledBy" class="text-xs opacity-80">
           {{ $t('executions.by_label') }} {{ execution.cancelledBy }}
         </p>
       </template>
@@ -696,7 +689,7 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
       <template #title>{{ $t('executions.paused_title') }}</template>
       <template #description>
         <p v-if="execution.pauseReason">{{ execution.pauseReason }}</p>
-        <p v-if="execution.pausedBy" class="text-muted-foreground text-xs">
+        <p v-if="execution.pausedBy" class="text-xs opacity-80">
           {{ $t('executions.by_label') }} {{ execution.pausedBy }}
         </p>
       </template>
@@ -725,7 +718,6 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
         :stream-url="consoleStreamUrl"
         :active="isRunning"
         :seed-lines="consoleSeedLines"
-        :request-headers="consoleStreamHeaders"
       />
     </div>
   </div>

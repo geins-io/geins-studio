@@ -6,14 +6,13 @@ export const MEDIA_CDN_ORIGINS = [
 
 /**
  * Upload plan URLs are Azure Blob SAS URLs: asset bytes are `PUT` there
- * straight from the browser, not through the proxy. Narrow this to the
- * storage accounts before the CSP is enforced — the wildcard admits any
- * Azure account.
+ * straight from the browser, not through the proxy. Only Geins' own storage
+ * accounts (prod, QA): any other account would be an exfiltration target.
  */
-export const UPLOAD_ORIGINS = ['https://*.blob.core.windows.net'];
-
-/** Product images: `https://{account}.commerce.services/product/…`. */
-export const PRODUCT_IMAGE_ORIGINS = ['https://*.commerce.services'];
+export const UPLOAD_ORIGINS = [
+  'https://gestmediaprod.blob.core.windows.net',
+  'https://gestmediaqa.blob.core.windows.net',
+];
 
 /** The storefront font picker loads its previews from Google Fonts. */
 const GOOGLE_FONTS_CSS = 'https://fonts.googleapis.com';
@@ -21,10 +20,13 @@ const GOOGLE_FONTS_FILES = 'https://fonts.gstatic.com';
 
 export const CSP_REPORT_PATH = '/api/csp-report';
 
-/** Sent on every response, static assets included. */
+/**
+ * Sent on every response, static assets included. The CSP (with
+ * `frame-ancestors`) goes on HTML documents only, from `cspHeaders`: a route
+ * rule header of the same name could clash with it on Vercel's edge.
+ */
 export const SECURITY_HEADERS: Record<string, string> = {
   'X-Frame-Options': 'DENY',
-  'Content-Security-Policy': "frame-ancestors 'none'",
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
@@ -40,14 +42,14 @@ type Directive =
   | 'frame-src'
   | 'object-src'
   | 'base-uri'
-  | 'form-action';
+  | 'form-action'
+  | 'frame-ancestors';
 
 /** Vercel's toolbar (comments, feedback) on preview deploys. */
 const VERCEL_PREVIEW_SOURCES: Partial<Record<Directive, string[]>> = {
   'script-src': ['https://vercel.live'],
   'style-src': ['https://vercel.live'],
   'font-src': ['https://vercel.live', 'https://assets.vercel.com'],
-  'img-src': ['https://vercel.live', 'https://vercel.com'],
   'connect-src': ['https://vercel.live', 'wss://ws-us3.pusher.com'],
   'frame-src': ['https://vercel.live'],
 };
@@ -60,7 +62,7 @@ export interface CspOptions {
 }
 
 /**
- * The report-only policy for an HTML document. Vercel Analytics and Speed
+ * The enforced policy for an HTML document. Vercel Analytics and Speed
  * Insights load and beacon from the deploy's own `/_vercel/*`, so `'self'`
  * covers them.
  */
@@ -74,20 +76,17 @@ export function contentSecurityPolicy({
     // Vue's :style bindings and reka-ui's positioning write inline styles.
     'style-src': ["'self'", "'unsafe-inline'", GOOGLE_FONTS_CSS],
     'font-src': ["'self'", GOOGLE_FONTS_FILES],
-    // blob: is FormInputImage's preview of a picked file.
-    'img-src': [
-      "'self'",
-      'data:',
-      'blob:',
-      ...MEDIA_CDN_ORIGINS,
-      ...PRODUCT_IMAGE_ORIGINS,
-    ],
+    // Any https: image: the mail preview (a srcdoc iframe, which inherits this
+    // policy) shows images from each channel's storefront host, and customers
+    // will bring their own domains. blob: is FormInputImage's local preview.
+    'img-src': ["'self'", 'data:', 'blob:', 'https:'],
     // The zip download fetches files from the CDN and a replace HEADs it.
     'connect-src': ["'self'", ...MEDIA_CDN_ORIGINS, ...UPLOAD_ORIGINS],
     'frame-src': ["'self'"],
     'object-src': ["'none'"],
     'base-uri': ["'self'"],
     'form-action': ["'self'"],
+    'frame-ancestors': ["'none'"],
   };
   if (vercelPreview) {
     for (const [name, sources] of Object.entries(VERCEL_PREVIEW_SOURCES)) {
@@ -149,13 +148,13 @@ export async function inlineScriptHashes(html: string): Promise<string[]> {
   return [...hashes];
 }
 
-/** The header that carries the report-only CSP for one HTML document. */
-export async function reportOnlyCspHeaders(
+/** The header that carries the enforced CSP for one HTML document. */
+export async function cspHeaders(
   html: string,
   vercelPreview = false,
 ): Promise<Record<string, string>> {
   return {
-    'Content-Security-Policy-Report-Only': contentSecurityPolicy({
+    'Content-Security-Policy': contentSecurityPolicy({
       scriptHashes: await inlineScriptHashes(html),
       vercelPreview,
     }),

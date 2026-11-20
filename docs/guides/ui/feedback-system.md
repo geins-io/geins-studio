@@ -70,9 +70,11 @@ onMounted(() => {
 interface Toast {
   title: string;
   description: string;
-  variant: 'positive' | 'destructive' | 'default';
+  variant: 'positive' | 'negative' | 'warning' | 'default';
 }
 ```
+
+`positive` is solid green, `negative` a calm red (`--toast-negative`), `warning` solid yellow, all with white text; `default` is the white card with a border. See [Colors](/guides/ui/colors#toasts).
 
 ## Alerts
 

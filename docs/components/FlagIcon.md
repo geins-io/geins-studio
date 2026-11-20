@@ -28,7 +28,7 @@
 ```
 
 > [!NOTE]
-> For language-shaped data, call the auto-imported `languageToCountryCode(langCode)` helper before passing the result into `FlagIcon`. Keeps the component domain-agnostic.
+> For language-shaped data, call the auto-imported `languageToCountryCode(langCode)` helper before passing the result into `FlagIcon`. Keeps the component domain-agnostic. English maps to the US flag (`en`, `en-US`); only `en-GB` shows the British one.
 
 ## Props
 

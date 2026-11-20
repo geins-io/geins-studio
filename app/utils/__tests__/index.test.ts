@@ -207,8 +207,8 @@ describe('prettifyLangKey', () => {
 });
 
 describe('languageToCountryCode', () => {
-  it('maps "en" to "gb"', () => {
-    expect(languageToCountryCode('en')).toBe('gb');
+  it('maps "en" to "us"', () => {
+    expect(languageToCountryCode('en')).toBe('us');
   });
 
   it('maps "sv" to "se"', () => {
@@ -228,7 +228,12 @@ describe('languageToCountryCode', () => {
   });
 
   it('handles codes with region subtags by using the language part', () => {
-    expect(languageToCountryCode('en-US')).toBe('gb');
+    expect(languageToCountryCode('en-US')).toBe('us');
+  });
+
+  it('keeps the British flag for "en-GB"', () => {
+    expect(languageToCountryCode('en-GB')).toBe('gb');
+    expect(languageToCountryCode('en-gb')).toBe('gb');
   });
 
   it('lowercases the input', () => {

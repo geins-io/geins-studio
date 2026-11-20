@@ -126,5 +126,8 @@ Zod schemas define validation rules in TypeScript; VeeValidate bridges them to V
 **2026-11-03: Hand-written security headers, CSP hashed from the served HTML**
 Frame protection and the basic headers are route rules, so Vercel's edge and the Node server both send them on every response. The CSP is report-only until its reports are clean. Its inline-script hashes are computed from each response, because the shell's config script and importmap change per build and per runtime env. The `nuxt-security` module was not used: with `ssr: false` it only hashes prerendered pages, and its default rate limiter and XSS validator would break the API proxy. See [docs/concepts/security-headers.md](docs/concepts/security-headers.md).
 
+**2026-11-19: CSP enforced, images from any `https:` host**
+After the report-only soak (litium.studio's App Service logs, 9–17 Nov), the policy is sent as `Content-Security-Policy` and carries `frame-ancestors 'none'`. The route-rule copy is gone: two same-named headers could clash on Vercel's edge. `img-src` takes any `https:` image, because the mail preview shows images from each channel's storefront host and customers will bring their own domains. Scripts stay hash-locked and uploads may only go to Geins' two storage accounts (`connect-src`).
+
 **2026-03-19: Trimmed to ~1 page overview**
 Detailed sections (auth flow, plugins, state management, page patterns, component architecture, styling, logging, i18n, path aliases) relocated to APP.md, CLAUDE.md, and domain docs. ARCHITECTURE.md now serves the 10,000ft altitude only.

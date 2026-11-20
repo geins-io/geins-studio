@@ -6,7 +6,7 @@
 
 - Two-way `v-model` for the entire `Partial<ChannelMailSettings>` object
 - Separate `v-model:staged-files` for the freshly-picked logo / header `File` instances (the parent uploads them on save)
-- Curated-font autodetect: when the user picks a font from [`FormInputFont`](/components/form/input/FormInputFont) that has a known Google Fonts CSS URL, `fontUrl` is auto-populated and shown as locked
+- Font URL autofill: picking any font in [`FormInputFont`](/components/form/input/FormInputFont) (a suggestion or a searched Google font) sets `fontUrl` to its Google Fonts CSS URL, shown locked; the "auto-generated" hint shows while the stored URL matches the generated one
 - Three color-key groups rendered as `1+1+1` grids: backgrounds, text, buttons
 - Pixel inputs ([`FormInputPixel`](/components/form/input/FormInputPixel)) for every size value (small/medium/large font, line height, border radius)
 - Product display section: show-brand + hide-article-number toggles + free-text product parameters
@@ -65,4 +65,4 @@ Exported from `ChannelMailLayoutTab.vue`.
 - shadcn-vue `Item` family, `Switch`, `Input`, `Label`
 - [`ContentSection`](/components/content/ContentSection)
 - [`FormInputImage`](/components/form/input/FormInputImage), [`FormInputColor`](/components/form/input/FormInputColor), [`FormInputFont`](/components/form/input/FormInputFont), [`FormInputLocked`](/components/form/input/FormInputLocked), [`FormInputPixel`](/components/form/input/FormInputPixel), [`FormInputDescription`](/components/form/input/FormInputDescription)
-- `fontToGoogleUrl` from `@/utils/storefrontFonts` — curated-font URL detection
+- `fontToGoogleUrl` from `@/utils/storefrontFonts` — Google Fonts CSS URL for the picked family

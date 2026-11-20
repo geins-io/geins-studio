@@ -903,7 +903,7 @@ const { summaryProps } = useEntityEditSummary({
   settingsSummary,
   entityKey,
   entityLiveStatus: isEnabled,
-  status: computed(() => (isEnabled.value ? 'active' : 'inactive')),
+  status: isEnabled,
 });
 </script>
 

@@ -119,6 +119,7 @@ export default defineConfig({
               { text: 'useDate', link: '/composables/useDate.md' },
               { text: 'useGeinsImage', link: '/composables/useGeinsImage.md' },
               { text: 'useGeinsLog', link: '/composables/useGeinsLog.md' },
+              { text: 'useLucideIcon', link: '/composables/useLucideIcon.md' },
               { text: 'useAppLayout', link: '/composables/useAppLayout.md' },
               {
                 text: 'useBackgroundJobs',
@@ -127,6 +128,7 @@ export default defineConfig({
               { text: 'useNavigation', link: '/composables/useNavigation.md' },
               { text: 'usePageError', link: '/composables/usePageError.md' },
               { text: 'usePageTitle', link: '/composables/usePageTitle.md' },
+              { text: 'usePollWhile', link: '/composables/usePollWhile.md' },
               { text: 'usePrice', link: '/composables/usePrice.md' },
               {
                 text: 'useUserRouteCookie',
@@ -985,6 +987,10 @@ export default defineConfig({
                 text: 'OrchestratorExecutionErrorDetails',
                 link: '/components/orchestrator/OrchestratorExecutionErrorDetails.md',
               },
+              {
+                text: 'OrchestratorLiveConsole',
+                link: '/components/orchestrator/OrchestratorLiveConsole.md',
+              },
             ],
           },
           {
@@ -1074,6 +1080,7 @@ export default defineConfig({
       {
         text: 'Guides',
         items: [
+          { text: 'Colors', link: '/guides/ui/colors' },
           { text: 'Feedback system', link: '/guides/ui/feedback-system' },
           { text: 'Testing', link: '/guides/testing' },
           { text: 'Forms', link: '/guides/forms' },

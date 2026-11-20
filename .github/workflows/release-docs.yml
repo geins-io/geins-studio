@@ -1,5 +1,11 @@
 name: Docs Release
-on: workflow_dispatch
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/release-docs.yml'
+  workflow_dispatch:
 
 jobs:
   build_and_deploy_job:

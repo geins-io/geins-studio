@@ -5,7 +5,7 @@ import { parseCspReports } from '#shared/utils/security-headers';
 const MAX_BODY_BYTES = 64 * 1024;
 
 /**
- * Collects report-only CSP violations into the server log (Vercel / Azure).
+ * Collects CSP violations into the server log (Vercel / Azure).
  * Unauthenticated by nature — browsers post here without credentials — so it
  * reads a capped body, logs a trimmed summary and always answers 204.
  */
@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
     const { geinsLogWarn } = log('csp-report');
     for (const v of parseCspReports(payload)) {
       geinsLogWarn(
-        `CSP report-only: ${v.directive} blocked ${v.blockedUrl || '?'} on ${v.documentUrl || '?'}` +
+        `CSP violation: ${v.directive} blocked ${v.blockedUrl || '?'} on ${v.documentUrl || '?'}` +
           (v.sourceFile ? ` (${v.sourceFile}:${v.line ?? '?'})` : '') +
           (v.sample ? ` sample="${v.sample}"` : ''),
       );

@@ -1,8 +1,8 @@
 import { promiseTimeout, useEventListener } from '@vueuse/core';
 
 const REFRESH_CHECK_INTERVAL_MS = 60_000;
-// Long enough for another tab's (or lambda's) token rotation to land in the
-// shared cookie before a `RefreshTokenInvalid` session is re-read.
+// Long enough for another tab's token rotation to land in the shared cookie
+// before a `RefreshTokenInvalid` session is re-read.
 const INVALID_RECHECK_DELAY_MS = 1_500;
 
 export default defineNuxtPlugin(async (_nuxtApp) => {
@@ -21,6 +21,41 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
     expiresSoon,
     logout,
   } = useGeinsAuth();
+
+  // Refresh before the token expires instead of on the next API call, and as
+  // soon as a tab becomes visible again: timers don't run while a laptop sleeps.
+  // Never from a hidden tab: a sleeping Mac wakes briefly (Power Nap) and can
+  // doze off before the rotated, single-use refresh token reaches the cookie.
+  const refreshIfDue = async () => {
+    if (
+      document.visibilityState === 'hidden' ||
+      !isAuthenticated.value ||
+      !(isExpired() || expiresSoon())
+    ) {
+      return;
+    }
+    try {
+      await refresh();
+    } catch (error) {
+      geinsLogWarn('proactive refresh failed:', error);
+    }
+  };
+  // Before the await below: code after it runs outside the app's effect scope,
+  // where `usePollWhile` can't register its cleanup. Neither does anything
+  // until `isAuthenticated`, so the session read still comes first.
+  usePollWhile(isAuthenticated, refreshIfDue, REFRESH_CHECK_INTERVAL_MS);
+  useEventListener(document, 'visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      void refreshIfDue();
+    }
+  });
+
+  // Plugins run before the route middleware, which needs the session.
+  try {
+    await syncSession();
+  } catch (error) {
+    geinsLogWarn('reading the session failed:', error);
+  }
 
   // Another tab's login, account switch, refresh or logout. Each tab re-reads
   // its own session (the cookie is shared) and acts on what it finds, so one
@@ -56,38 +91,14 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
   watch(
     isAuthenticated,
     (value) => {
-      const cookieSettings: { expires?: Date } = {};
-      if (session.value?.expires) {
-        cookieSettings.expires = new Date(session.value?.expires);
-      }
-      const authCookie = useCookie<boolean>('geins-auth', cookieSettings);
-      authCookie.value = value;
+      useCookie<boolean>('geins-auth').value = value;
     },
     { immediate: true },
   );
 
-  // Refresh before the token expires instead of on the next API call, and as
-  // soon as a tab becomes visible again: timers don't run while a laptop sleeps.
-  const refreshIfDue = async () => {
-    if (!isAuthenticated.value || !(isExpired() || expiresSoon())) {
-      return;
-    }
-    try {
-      await refresh();
-    } catch (error) {
-      geinsLogWarn('proactive refresh failed:', error);
-    }
-  };
-  usePollWhile(isAuthenticated, refreshIfDue, REFRESH_CHECK_INTERVAL_MS);
-  useEventListener(document, 'visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      void refreshIfDue();
-    }
-  });
-
   // Logging out is this tab's deliberate decision, never a side effect of a
   // failed fetch. A `RefreshTokenInvalid` session is re-read once first:
-  // another tab or lambda may have just rotated the token.
+  // another tab may have just rotated the token.
   const authStateHandler = async () => {
     if (session.value?.mfaActive || !authStateDiffers.value) {
       return;

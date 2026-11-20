@@ -25,14 +25,14 @@ const setColorMode = () => {
 const { isMobile } = useSidebar();
 
 const setNewAccount = async (accountKey: string) => {
-  try {
-    await setAccount(accountKey);
-    window.location.href = '/';
-  } catch (error) {
+  // A 403: the token doesn't allow this account (no longer a member).
+  const { ok, status } = await setAccount(accountKey);
+  if (!ok) {
     showErrorToast();
-    geinsLogError('error switching account:', error);
+    geinsLogError(`switching account failed (${status})`);
     return;
   }
+  window.location.href = '/';
 };
 </script>
 

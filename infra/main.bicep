@@ -39,9 +39,14 @@ param ghcrToken string = ''
 @description('Geins API URL')
 param geinsApiUrl string = ''
 
-@description('NextAuth secret')
+@description('Old NextAuth secret: only migrates next-auth session cookies into the sealed session (cutover)')
 @secure()
 param authSecret string = ''
+
+@description('Seals the session cookie (NUXT_APP_SECRET, at least 32 characters)')
+@secure()
+@minLength(32)
+param appSecret string
 
 @description('Base URL of the application')
 param baseUrl string = ''
@@ -155,6 +160,7 @@ module webApp 'modules/webApp.bicep' = {
     // Application settings
     geinsApiUrl: geinsApiUrl
     authSecret: authSecret
+    appSecret: appSecret
     baseUrl: baseUrl
     authPath: authPath
     geinsDebug: geinsDebug

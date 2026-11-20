@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import en from '../../../i18n/locales/en.json';
@@ -9,33 +9,46 @@ import { ENTITIES } from '../entities';
 /**
  * Guards the entity registry and the locale files against drift.
  *
- * 1. **Locale parity** — `en.json` and `sv.json` must have identical keys. This
- *    one assertion covers EVERY key (domain entities, label-only entity names,
- *    everything) with zero per-key maintenance — no hand-kept list to forget.
+ * 1. **Locale parity** — `en.json` and `sv.json` must have identical key paths
+ *    at every depth. This covers EVERY key (domain entities, label-only entity
+ *    names, everything) with zero per-key maintenance — no hand-kept list.
  * 2. **Registry keys** — every domain-entity key (the i18n key) must resolve in
  *    both locales, so a renamed/removed entity key surfaces here instead of
  *    silently degrading toasts, 404 titles, or empty states.
  * 3. **Registry routes** — every `route` must point at a real `app/pages/`
  *    folder, so a moved/renamed folder (or a typo) is caught.
  */
+const keyPaths = (messages: object, prefix = ''): string[] =>
+  Object.entries(messages).flatMap(([key, value]) =>
+    value && typeof value === 'object'
+      ? keyPaths(value, `${prefix}${key}.`)
+      : [`${prefix}${key}`],
+  );
+
+// Read from disk: the imported locale JSON is compiled to message ASTs by the
+// i18n vite plugin, so walking it would compare AST nodes, not keys.
+const rawLocaleKeys = (locale: string): string[] =>
+  keyPaths(
+    JSON.parse(
+      readFileSync(
+        resolve(process.cwd(), `i18n/locales/${locale}.json`),
+        'utf8',
+      ),
+    ),
+  );
+
 describe('entity registry', () => {
-  it('en.json and sv.json have identical keys', () => {
-    expect(Object.keys(en).sort()).toEqual(Object.keys(sv).sort());
+  // Nested keys too: comparing only top-level keys let a missing sv key inside
+  // `orders` or `workflows.events` through, which renders English or a raw path.
+  const enKeys = rawLocaleKeys('en');
+  const svKeys = rawLocaleKeys('sv');
+
+  it('every en.json key exists in sv.json', () => {
+    expect(enKeys.filter((key) => !svKeys.includes(key))).toEqual([]);
   });
 
-  // Top-level parity above treats a nested object (e.g. `asset_library`) as one
-  // key, so guard its sub-keys explicitly — a missing locale variant inside it
-  // would otherwise render the raw key path.
-  it('asset_library sub-keys match across locales', () => {
-    expect(Object.keys(en.asset_library).sort()).toEqual(
-      Object.keys(sv.asset_library).sort(),
-    );
-  });
-
-  it('asset_library.asset_type sub-keys match across locales', () => {
-    expect(Object.keys(en.asset_library.asset_type).sort()).toEqual(
-      Object.keys(sv.asset_library.asset_type).sort(),
-    );
+  it('every sv.json key exists in en.json', () => {
+    expect(svKeys.filter((key) => !enKeys.includes(key))).toEqual([]);
   });
 
   // A message that interpolates an entity name must resolve the key itself

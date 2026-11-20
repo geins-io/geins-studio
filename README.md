@@ -35,12 +35,12 @@ To set up Geins Studio, follow these steps:
 
 2. **Set Up Environment Variables**
 
-Create an `.env` file in the project root and configure the following variables. Read more about AUTH_SECRET [here](https://auth.sidebase.io/guide/authjs/nuxt-auth-handler#secret).
+Create an `.env` file in the project root and configure the following variables.
 
 ```ini
 GEINS_API_URL=https://mgmtapi.geins.services/v2
 GEINS_DEBUG=true
-AUTH_SECRET=your_secret_key # https://auth-secret-generator.vercel.app/
+NUXT_APP_SECRET=your_secret_key # openssl rand -base64 32 (min 32 chars)
 
 ```
 

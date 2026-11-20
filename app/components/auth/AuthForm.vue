@@ -14,6 +14,8 @@ const props = withDefaults(
   defineProps<{
     loading?: boolean;
     showInvalid?: boolean;
+    /** With `showInvalid`: the auth service answered 429. */
+    rateLimited?: boolean;
     mode: AuthFormMode;
     mfaMethod?: string;
     accounts?: AuthAccounts[];
@@ -22,6 +24,7 @@ const props = withDefaults(
   {
     loading: false,
     showInvalid: false,
+    rateLimited: false,
     mfaMethod: '',
   },
 );
@@ -149,6 +152,9 @@ const feedbackTitle = computed(() => {
   if (resetRequestSuccess.value)
     return t('auth.password_reset_requested_title');
   if (resetRequestError.value) return t('auth.password_reset_error_title');
+  if (props.showInvalid && props.rateLimited) {
+    return t('auth.too_many_attempts_title');
+  }
   if (props.showInvalid) {
     switch (props.mode) {
       case 'login':
@@ -170,6 +176,9 @@ const feedbackDescription = computed(() => {
     return t('auth.password_reset_requested_description');
   if (resetRequestError.value)
     return t('auth.password_reset_error_description');
+  if (props.showInvalid && props.rateLimited) {
+    return t('auth.too_many_attempts_description');
+  }
   if (props.showInvalid) {
     switch (props.mode) {
       case 'login':

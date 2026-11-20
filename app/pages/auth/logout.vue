@@ -1,9 +1,6 @@
 <script lang="ts" setup>
 definePageMeta({
   layout: 'auth',
-  auth: {
-    navigateAuthenticatedTo: '/',
-  },
 });
 
 await nextTick();

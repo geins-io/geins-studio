@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.9.0 - 2026-11-20
+
+### 🚀 Enhancements
+
+- **Auth & security hardening** — sign-in tokens stay on the server, logout ends the session at Geins, and a Content Security Policy is enforced ([#508](https://github.com/geins-io/geins-studio/pull/508), [#530](https://github.com/geins-io/geins-studio/pull/530))
+- Status colors — new colors for status and asset type badges, filled callouts and a calmer error toast ([#538](https://github.com/geins-io/geins-studio/pull/538))
+- Channels — search all Google Fonts in the font pickers ([#531](https://github.com/geins-io/geins-studio/pull/531))
+- Quotations — the ref number is a default, searchable column in the list ([#533](https://github.com/geins-io/geins-studio/pull/533))
+- Quotations — sent and received messages have their own colors ([#532](https://github.com/geins-io/geins-studio/pull/532))
+
+### 🐛 Bug Fixes
+
+- Login — a background tab no longer logs you out after sleep ([#535](https://github.com/geins-io/geins-studio/pull/535))
+- Channels — a rejected save shows the API's reason instead of "Unknown error" ([#529](https://github.com/geins-io/geins-studio/pull/529))
+- Languages — English shows the US flag ([#534](https://github.com/geins-io/geins-studio/pull/534))
+
+### ❤️ Contributors
+
+- Olivia Axelsson ([@olivia-geins](https://github.com/olivia-geins))
+
 ## v0.8.0 - 2026-11-16
 
 ### 🚀 Enhancements

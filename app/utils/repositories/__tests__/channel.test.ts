@@ -88,6 +88,7 @@ describe('accountRepo', () => {
         method: 'PATCH',
         body: expect.any(FormData),
         query: undefined,
+        errorContext: { action: 'updating', entity: 'channel' },
       });
     });
   });

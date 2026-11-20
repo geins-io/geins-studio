@@ -94,6 +94,13 @@ const isOwnMessage = (msg: QuotationMessage): boolean => {
 
 const isSent = (msg: QuotationMessage): boolean => msg.type === 'toCustomer';
 
+const bubbleClass = (msg: QuotationMessage): string => {
+  if (props.mode !== 'external') return 'w-full';
+  return isSent(msg)
+    ? 'w-4/5 border-positive/40 bg-positive/15'
+    : 'w-4/5 border-info-icon/40 bg-info-icon/15';
+};
+
 const getTag = (msg: QuotationMessage, key: string): string | undefined =>
   msg.tags?.find((t) => t.key === key)?.value;
 
@@ -163,10 +170,7 @@ const statusTransitionsMap = computed<
         'justify-start': mode === 'external' && !isSent(msg),
       }"
     >
-      <div
-        class="rounded-lg border p-4"
-        :class="mode === 'external' ? 'w-4/5' : 'w-full'"
-      >
+      <div class="rounded-lg border p-4" :class="bubbleClass(msg)">
         <!-- Reply excerpt -->
         <a
           v-if="msg.answerRef && parentMessagesMap.has(msg.answerRef)"

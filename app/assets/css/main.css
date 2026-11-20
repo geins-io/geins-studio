@@ -36,10 +36,43 @@
   --color-negative-foreground: var(--negative-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
-  --color-info: var(--info);
-  --color-info-foreground: var(--info-foreground);
   --color-info-icon: var(--info-icon);
   --color-link: var(--link);
+
+  /* Status tones — see docs/guides/ui/colors.md */
+  --color-tone-success: var(--tone-success);
+  --color-tone-info: var(--tone-info);
+  --color-tone-warning: var(--tone-warning);
+  --color-tone-warning-bg: var(--tone-warning-bg);
+  --color-tone-danger: var(--tone-danger);
+  --color-tone-neutral: var(--tone-neutral);
+  --color-tone-neutral-foreground: var(--tone-neutral-foreground);
+  --color-tone-solid-foreground: var(--tone-solid-foreground);
+  --color-tone-purple: var(--tone-purple);
+  --color-tone-teal: var(--tone-teal);
+  --color-tone-indigo: var(--tone-indigo);
+  --color-tone-pink: var(--tone-pink);
+  --color-tone-slate: var(--tone-slate);
+
+  /* Callouts */
+  --color-info-callout-bg: var(--info-callout-bg);
+  --color-info-callout-border: var(--info-callout-border);
+  --color-info-callout-foreground: var(--info-callout-foreground);
+  --color-info-callout-icon: var(--info-callout-icon);
+  --color-warning-callout-bg: var(--warning-callout-bg);
+  --color-warning-callout-border: var(--warning-callout-border);
+  --color-warning-callout-foreground: var(--warning-callout-foreground);
+  --color-warning-callout-icon: var(--warning-callout-icon);
+  --color-positive-callout-bg: var(--positive-callout-bg);
+  --color-positive-callout-border: var(--positive-callout-border);
+  --color-positive-callout-foreground: var(--positive-callout-foreground);
+  --color-positive-callout-icon: var(--positive-callout-icon);
+  --color-negative-callout-bg: var(--negative-callout-bg);
+  --color-negative-callout-border: var(--negative-callout-border);
+  --color-negative-callout-foreground: var(--negative-callout-foreground);
+  --color-negative-callout-icon: var(--negative-callout-icon);
+
+  --color-toast-negative: var(--toast-negative);
 
   /* Sidebar */
   --color-sidebar-ring: var(--sidebar-ring);
@@ -160,9 +193,44 @@
   --negative: hsl(0 59% 60%);
   --negative-foreground: hsl(0 0% 100%);
 
-  --info: hsl(194 85% 89%);
-  --info-foreground: hsl(0 0% 9%);
   --info-icon: hsl(194 100% 64%);
+
+  /* Status tones: text in the tone on an 8–10% tint of it, all WCAG AA. */
+  --tone-success: hsl(161.8 100% 23.9%);
+  --tone-info: hsl(201.3 100% 27.1%);
+  --tone-warning: hsl(28 100% 34%);
+  /* A clear orange, not a tint, so warning reads as needs attention. */
+  --tone-warning-bg: hsl(34.3 100% 91.8%);
+  --tone-danger: hsl(357.8 100% 37.8%);
+  --tone-neutral: hsl(0 0% 45.1%);
+  --tone-neutral-foreground: hsl(0 0% 32.2%);
+  --tone-solid-foreground: hsl(0 0% 100%);
+  /* Tag tones: same recipe, in hues the statuses don't use. */
+  --tone-purple: hsl(272.9 67.2% 39.4%);
+  --tone-teal: hsl(176.1 69.4% 21.8%);
+  --tone-indigo: hsl(243.7 54.5% 41.4%);
+  --tone-pink: hsl(335.1 77.6% 35.1%);
+  --tone-slate: hsl(215.3 25% 26.7%);
+
+  /* Not --warning-foreground: that one is the white text on solid warning. */
+  --info-callout-bg: hsl(213 64% 95%);
+  --info-callout-border: hsl(210 57% 85%);
+  --info-callout-foreground: hsl(208 63% 33%);
+  --info-callout-icon: hsl(204 49% 58%);
+  --warning-callout-bg: hsl(48 100% 96%);
+  --warning-callout-border: hsl(48 96% 76%);
+  --warning-callout-foreground: hsl(32 81% 29%);
+  --warning-callout-icon: hsl(27 96% 49%);
+  --positive-callout-bg: hsl(147 52% 96%);
+  --positive-callout-border: hsl(147 43% 82%);
+  --positive-callout-foreground: hsl(151 57% 27%);
+  --positive-callout-icon: hsl(149 53% 39%);
+  --negative-callout-bg: hsl(0 86% 97%);
+  --negative-callout-border: hsl(0 71% 88%);
+  --negative-callout-foreground: hsl(0 56% 39%);
+  --negative-callout-icon: hsl(0 61% 54%);
+
+  --toast-negative: hsl(2 42% 46%);
 
   --sidebar: hsl(0 0% 100%);
   --sidebar-foreground: hsl(240 5.3% 26.1%);
@@ -215,6 +283,38 @@
 
   --positive: hsl(151 83% 35%);
   --positive-foreground: hsl(0 0% 100%);
+
+  /* Lighter text in the same hue on a low tint; solid tones get dark text. */
+  --tone-success: hsl(158.1 64.4% 51.6%);
+  --tone-info: hsl(198.4 93.2% 59.6%);
+  --tone-warning: hsl(27 96% 61%);
+  --tone-warning-bg: hsl(27 96% 61% / 0.1);
+  --tone-danger: hsl(0 90.6% 70.8%);
+  --tone-neutral: hsl(0 0% 63.9%);
+  --tone-neutral-foreground: hsl(0 0% 83.1%);
+  --tone-solid-foreground: hsl(0 0% 5%);
+  --tone-purple: hsl(270 95.2% 75.3%);
+  --tone-teal: hsl(172.5 66% 50.4%);
+  --tone-indigo: hsl(234.5 89.5% 73.9%);
+  --tone-pink: hsl(329.4 85.5% 70.2%);
+  --tone-slate: hsl(215 20.2% 65.1%);
+
+  --info-callout-bg: hsl(205 45% 11%);
+  --info-callout-border: hsl(205 40% 24%);
+  --info-callout-foreground: hsl(205 80% 82%);
+  --info-callout-icon: hsl(199 85% 62%);
+  --warning-callout-bg: hsl(40 55% 10%);
+  --warning-callout-border: hsl(40 50% 24%);
+  --warning-callout-foreground: hsl(43 90% 72%);
+  --warning-callout-icon: hsl(32 92% 58%);
+  --positive-callout-bg: hsl(151 40% 9%);
+  --positive-callout-border: hsl(151 35% 22%);
+  --positive-callout-foreground: hsl(151 55% 72%);
+  --positive-callout-icon: hsl(151 60% 50%);
+  --negative-callout-bg: hsl(0 45% 11%);
+  --negative-callout-border: hsl(0 40% 26%);
+  --negative-callout-foreground: hsl(0 85% 82%);
+  --negative-callout-icon: hsl(0 80% 65%);
 
   --sidebar: var(--card);
   --sidebar-foreground: hsl(240 4.8% 95.9%);

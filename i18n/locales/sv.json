@@ -15,6 +15,9 @@
   "count_entity": "{count} @.lower:{entityKey}",
   "more_count": "+{count} till",
   "file": "Fil | Filer",
+  "font": "Typsnitt | Typsnitt",
+  "font_suggestions": "Förslag",
+  "font_all_google_fonts": "Alla Google Fonts",
   "select_all": "Markera alla",
   "select_row": "Markera rad",
   "deselect_all": "Avmarkera alla",
@@ -347,6 +350,8 @@
     "invalid_credentials_description": "Kontrollera din e-post och ditt lösenord och försök igen.",
     "invalid_code_title": "Ogiltig kod",
     "invalid_code_description": "Kontrollera verifieringskoden och försök igen.",
+    "too_many_attempts_title": "För många försök",
+    "too_many_attempts_description": "Vänta några minuter innan du försöker igen.",
     "reset_password_error_title": "Återställning av lösenord misslyckades",
     "reset_password_error_description": "Din token är ogiltig eller har utgått. Försök igen.",
     "general_error_title": "Något gick fel",
@@ -465,8 +470,11 @@
         "refunded": "Order återbetald",
         "shipped": "Order skickad",
         "returned": "Order returnerad",
-        "paid": "Order paid",
-        "unpaid": "Order unpaid"
+        "paid": "Order betald",
+        "unpaid": "Order obetald",
+        "complete": {
+          "*": "Order slutförd (valfri)"
+        }
       },
       "product": {
         "*": {
@@ -928,10 +936,10 @@
     "calculating": "Beräknar…",
     "place_order": "Lägg order",
     "require_confirmation": "Kräv bekräftelse",
+    "require_confirmation_description": "Kräver att kunden accepterar och att du bekräftar innan ordern kan läggas.",
     "workflow_info_title": "Offertflöde",
     "workflow_info_description": "En visuell förklaring av offertflödet och dess olika steg.",
     "workflow_default_title": "Standardflöde",
-    "workflow_default_description": "Kund (eller du) kan lägga ordern direkt efter acceptans.",
     "workflow_strict_title": "Bekräftelse krävs",
     "workflow_step_draft": "Du kan göra ändringar",
     "workflow_step_requested": "Du kan granska förfrågan",

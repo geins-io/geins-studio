@@ -15,6 +15,7 @@ import type {
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
 import { ENTITIES } from '#shared/utils/entities';
+import type { RepoFetchOptions } from './entity-base';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const BASE_ENDPOINT = '/account';
@@ -57,6 +58,7 @@ export function accountRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         id: string,
         data: ChannelUpdate,
         options?: ChannelApiOptions,
+        fetchOptions?: RepoFetchOptions,
       ): Promise<Channel> {
         const formData = new FormData();
 
@@ -129,6 +131,8 @@ export function accountRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
           method: 'PATCH',
           body: formData,
           query: buildQueryObject(options),
+          errorContext: { action: 'updating', entity: ENTITIES.channel.key },
+          ...fetchOptions,
         });
       },
 

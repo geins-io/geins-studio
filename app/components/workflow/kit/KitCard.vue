@@ -71,7 +71,7 @@ const logo = computed<Component | null>(() =>
         </div>
         <Badge
           v-if="status === 'installed'"
-          variant="positive-light"
+          variant="success"
           size="sm"
           class="shrink-0"
         >
@@ -80,7 +80,7 @@ const logo = computed<Component | null>(() =>
         </Badge>
         <Badge
           v-else-if="status === 'update-available'"
-          variant="warning-light"
+          variant="warning"
           size="sm"
           class="shrink-0"
         >

@@ -30,21 +30,6 @@ export function getBaseUrl() {
 }
 
 /**
- * Gets the authentication base URL by combining the base URL with the auth path.
- *
- * Uses the AUTH_PATH environment variable if available, otherwise defaults to '/api/auth'.
- *
- * @returns The complete authentication URL string
- */
-export function getAuthBaseUrl() {
-  const baseUrl = getBaseUrl();
-  if (process.env.AUTH_PATH) {
-    return `${baseUrl}${process.env.AUTH_PATH}`;
-  }
-  return `${baseUrl}/api/auth`;
-}
-
-/**
  * Whether the dev-only pages under `app/pages/dev/**` are part of the build.
  *
  * Read from `nuxt.config.ts` so the routes are dropped at build time, not

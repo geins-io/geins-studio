@@ -153,6 +153,13 @@ onMounted(() => {
   // getColumns puts Status last, so moving it to 10 pushes Version to 11
   columns.value = setColumnOrder(columns.value, 'version', 10);
   columns.value = setColumnOrder(columns.value, 'status', 10);
+  // Ref number after Name. Moved last, so Status and Version keep their
+  // neighbours; setColumnOrder removes the column first, so count without it.
+  const afterName =
+    columns.value
+      .filter((col) => col.id !== 'quotationNumber')
+      .findIndex((col) => col.id === 'name') + 1;
+  columns.value = setColumnOrder(columns.value, 'quotationNumber', afterName);
 
   const versionColumn = columns.value.find((col) => col.id === 'version');
   if (versionColumn) {
@@ -209,7 +216,6 @@ onMounted(() => {
 const { getVisibilityState } = useTable<EntityList>();
 const hiddenColumns: StringKeyOf<EntityList>[] = [
   '_id',
-  'quotationNumber',
   'currency',
   'channel',
   'orderId',
@@ -261,6 +267,7 @@ const confirmDelete = async () => {
 const searchableFields: Array<keyof EntityList> = [
   '_id',
   'name',
+  'quotationNumber',
   'company',
   'status',
   'owner',
@@ -288,6 +295,7 @@ const searchableFields: Array<keyof EntityList> = [
       :columns="columns"
       :data="dataList"
       :init-visibility-state="visibilityState"
+      :columns-version="2"
       :searchable-fields="searchableFields"
       :error="fetchError"
       :on-retry="refresh"
