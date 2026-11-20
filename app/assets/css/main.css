@@ -36,8 +36,6 @@
   --color-negative-foreground: var(--negative-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
-  --color-info: var(--info);
-  --color-info-foreground: var(--info-foreground);
   --color-info-icon: var(--info-icon);
   --color-link: var(--link);
 
@@ -195,8 +193,6 @@
   --negative: hsl(0 59% 60%);
   --negative-foreground: hsl(0 0% 100%);
 
-  --info: hsl(194 85% 89%);
-  --info-foreground: hsl(0 0% 9%);
   --info-icon: hsl(194 100% 64%);
 
   /* Status tones: text in the tone on an 8–10% tint of it, all WCAG AA. */

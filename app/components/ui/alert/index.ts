@@ -5,15 +5,20 @@ export { default as AlertDescription } from './AlertDescription.vue';
 export { default as AlertTitle } from './AlertTitle.vue';
 
 export const alertVariants = cva(
-  'text-foreground [&>svg]:text-foreground relative w-full rounded-lg border bg-transparent px-4 py-3 text-sm shadow-xs [&>svg]:absolute [&>svg]:top-4 [&>svg]:left-4 [&>svg+div]:translate-y-[-3px] [&>svg~*]:pl-7',
+  'relative w-full rounded-lg border px-4 py-3 text-sm [&>svg]:absolute [&>svg]:top-4 [&>svg]:left-4 [&>svg+div]:translate-y-[-3px] [&>svg~*]:pl-7',
   {
     variants: {
       variant: {
-        default: '',
-        info: 'border-info-icon/30 [&>svg]:text-info-icon dark:[&>svg]:text-info-icon/80',
-        destructive: 'border-destructive/35 [&>svg]:text-destructive',
-        positive: 'border-positive/40 [&>svg]:text-positive',
-        warning: 'border-warning/40 [&>svg]:text-warning',
+        default:
+          'text-foreground [&>svg]:text-foreground bg-transparent shadow-xs',
+        // Filled in the type's color (docs/guides/ui/colors.md).
+        info: 'bg-info-callout-bg border-info-callout-border text-info-callout-foreground [&>svg]:text-info-callout-icon',
+        destructive:
+          'bg-negative-callout-bg border-negative-callout-border text-negative-callout-foreground [&>svg]:text-negative-callout-icon',
+        positive:
+          'bg-positive-callout-bg border-positive-callout-border text-positive-callout-foreground [&>svg]:text-positive-callout-icon',
+        warning:
+          'bg-warning-callout-bg border-warning-callout-border text-warning-callout-foreground [&>svg]:text-warning-callout-icon',
       },
     },
     defaultVariants: {

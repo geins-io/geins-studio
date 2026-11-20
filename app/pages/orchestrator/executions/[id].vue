@@ -679,7 +679,7 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
         <p v-if="execution.cancellationReason">
           {{ execution.cancellationReason }}
         </p>
-        <p v-if="execution.cancelledBy" class="text-muted-foreground text-xs">
+        <p v-if="execution.cancelledBy" class="text-xs opacity-80">
           {{ $t('executions.by_label') }} {{ execution.cancelledBy }}
         </p>
       </template>
@@ -689,7 +689,7 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
       <template #title>{{ $t('executions.paused_title') }}</template>
       <template #description>
         <p v-if="execution.pauseReason">{{ execution.pauseReason }}</p>
-        <p v-if="execution.pausedBy" class="text-muted-foreground text-xs">
+        <p v-if="execution.pausedBy" class="text-xs opacity-80">
           {{ $t('executions.by_label') }} {{ execution.pausedBy }}
         </p>
       </template>
