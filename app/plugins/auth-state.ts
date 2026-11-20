@@ -24,8 +24,14 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
 
   // Refresh before the token expires instead of on the next API call, and as
   // soon as a tab becomes visible again: timers don't run while a laptop sleeps.
+  // Never from a hidden tab: a sleeping Mac wakes briefly (Power Nap) and can
+  // doze off before the rotated, single-use refresh token reaches the cookie.
   const refreshIfDue = async () => {
-    if (!isAuthenticated.value || !(isExpired() || expiresSoon())) {
+    if (
+      document.visibilityState === 'hidden' ||
+      !isAuthenticated.value ||
+      !(isExpired() || expiresSoon())
+    ) {
       return;
     }
     try {

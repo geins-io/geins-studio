@@ -128,6 +128,7 @@ export default defineConfig({
               { text: 'useNavigation', link: '/composables/useNavigation.md' },
               { text: 'usePageError', link: '/composables/usePageError.md' },
               { text: 'usePageTitle', link: '/composables/usePageTitle.md' },
+              { text: 'usePollWhile', link: '/composables/usePollWhile.md' },
               { text: 'usePrice', link: '/composables/usePrice.md' },
               {
                 text: 'useUserRouteCookie',
