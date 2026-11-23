@@ -71,6 +71,29 @@ Reports that need no change:
 - **Workflow logs pop-out.** `WorkflowPanelLogs.vue` writes into an `about:blank` window, which inherits the opener's CSP. It copies the page's styles in as `<style>` elements, which `'unsafe-inline'` allows.
 - **Channel mail preview.** `ChannelMailConfigSheet.vue` renders the preview HTML in a sandboxed `srcdoc` iframe (`sandbox=""`, so no script runs), which inherits the CSP too. Its images come from the channel's storefront host, such as `https://{store}.litium.store/mail/logo.png`. That's why `img-src` takes any `https:` image.
 
+## CSV import relay
+
+A CSV import names files on third-party hosts. The browser can't fetch them: most hosts send no CORS headers, and `connect-src` allows only the media CDN and the storage accounts. So the server fetches each file and streams it into the upload ticket's SAS URL. The bytes never reach the browser, which means the CSP stays as it is. `server/api/media-import/probe.post.ts` answers a file's size and MIME type for the ticket claim. `transfer.post.ts` streams `GET source` → `PUT` plan URL.
+
+Both routes fetch user-supplied URLs, which makes them an SSRF surface. The pure checks live in `#shared/utils/media-import` (unit-tested in node). The network side, an undici `Agent`, lives in `server/utils/media-import.ts`.
+
+- **Session.** A request without a signed-in session (`readSealedSession`) gets `401`; otherwise the relay would be an open proxy. The CSRF middleware covers both routes like every other `/api` POST.
+- **Source URL.** `https:` only, no credentials, no `localhost` names.
+- **Address checks.** IP literals are checked as they are. A hostname is resolved by a custom `connect.lookup`, which refuses the host when any address is loopback, private, CGNAT, link-local (`169.254.169.254`), unique-local, multicast, reserved or unspecified, including IPv4-mapped, NAT64 and 6to4 forms of those. The socket connects to the address that was checked, so DNS rebinding can't swap it after the check.
+- **Redirects.** Followed by hand, at most 5. Every hop is checked again, and `https:` → `http:` is refused.
+- **Upload URL.** It must be on `UPLOAD_ORIGINS` (imported, not copied), or the route answers `400`. Without that check, the relay could push data to any host.
+- **Headers.** Nothing from the browser is forwarded to the source. The relay sends a fixed `User-Agent` and `Accept-Encoding: identity`, so the probed length is the length that streams.
+- **Size.** The declared size must be ≤ `MAX_FILE_BYTES` (1 GB). A source that sends more bytes, or ends short, fails with `SOURCE_SIZE_MISMATCH` before the blob is written. A source with no length at all gets `SOURCE_SIZE_UNKNOWN`.
+- **Timeouts.** 10 s to connect, 30 s idle.
+- **Logging.** Logs name the host and never the full URL, because a signed URL's query is a credential.
+
+The routes answer a failed row as `{ error: MediaImportErrorCode }` with `200`, not as an HTTP error: one bad row is a row result, and it mustn't fire the global API error toast. `mediaImportErrorMessageKey` maps each code to its message.
+
+Hosting limits:
+
+- **Azure (App Service).** It drops a request that sends nothing for ~240 s. So `transfer` writes a space every 20 s, then the JSON. `JSON.parse` skips leading whitespace.
+- **Vercel.** The function's max duration bounds a transfer. It was 15 s, without Fluid compute, when the relay was added (STU-546).
+
 ## Why not `nuxt-security`
 
 The module was evaluated and not used:

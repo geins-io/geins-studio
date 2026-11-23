@@ -364,6 +364,45 @@ export interface AssetReplace {
   mimeType?: string;
 }
 
+/**
+ * Why the CSV import relay (`/api/media-import/*`) couldn't probe or move one
+ * row's file. Answered as `{ error }` with HTTP 200, so a failed row never
+ * fires the global API error toast.
+ */
+export type MediaImportErrorCode =
+  | 'SOURCE_INVALID'
+  | 'SOURCE_BLOCKED'
+  | 'SOURCE_UNREACHABLE'
+  | 'SOURCE_NOT_FOUND'
+  | 'SOURCE_TOO_LARGE'
+  | 'SOURCE_SIZE_UNKNOWN'
+  | 'SOURCE_SIZE_MISMATCH'
+  | 'UPLOAD_FAILED';
+
+export interface MediaImportFailure {
+  error: MediaImportErrorCode;
+}
+
+/** Body of `POST /api/media-import/probe`. */
+export interface MediaImportProbeRequest {
+  url: string;
+}
+
+/** What an upload ticket claim needs up front. `mimeType` is `''` when the source sends none. */
+export type MediaImportProbeResult =
+  | { sizeBytes: number; mimeType: string }
+  | MediaImportFailure;
+
+/** Body of `POST /api/media-import/transfer`: stream `sourceUrl` into a ticket's plan URL. */
+export interface MediaImportTransferRequest {
+  sourceUrl: string;
+  uploadUrl: string;
+  sizeBytes: number;
+  mimeType: string;
+}
+
+export type MediaImportTransferResult = { ok: true } | MediaImportFailure;
+
 /** Asset as returned by the API — base + identity + server-managed fields. */
 export interface Asset extends ResponseEntity<AssetBase> {
   /**
