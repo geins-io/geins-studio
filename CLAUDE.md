@@ -40,7 +40,7 @@ These MUST be followed for every task.
 
 For the full runbook, read `.agents/skills/geins-linear/SKILL.md` (issue lifecycle) — the rules below are the always-on non-negotiables that must hold even if that file isn't read.
 
-**Before writing code**: (1) Set the Linear issue to "In Progress" **and assign it to `me`** (`assignee: "me"`). (2) Branch from `next`: `feat/{issue}-{desc}` or `fix/{issue}-{desc}` — auto-pick `feat` vs `fix`, NEVER ask about branching and NEVER surface Linear's suggested `gitBranchName`. Only ask if `feat`-vs-`fix` is genuinely ambiguous. A `Context group:` shares one branch (`feat/{first-issue}-{group}`), one commit per issue, one PR — `geins-linear` §4a. (3) Verify issue has enough codebase-specific guidance. (4) Read issue body against this file + matching skill. (5) Check the Linear project plan and issue for Figma links — if a design exists, fetch it with `get_design_context` and match the layout before coding. (6) Read `.agents/skills/implementation-plan/SKILL.md` and produce a plan before coding.
+**Before writing code**: (1) Set the Linear issue to "In Progress" **and assign it to `me`** (`assignee: "me"`). (2) Branch from `next`: `feat/{issue}-{desc}` or `fix/{issue}-{desc}` — auto-pick `feat` vs `fix`, NEVER ask about branching and NEVER surface Linear's suggested `gitBranchName`. Only ask if `feat`-vs-`fix` is genuinely ambiguous. A `Context group:` shares one branch (`feat/{first-issue}-{group}`), one commit per issue, one PR — `geins-linear` §4a. (3) Verify issue has enough codebase-specific guidance. (4) Read issue body against this file + matching skill. (5) Open the prototype the issue/project references (`studio-prototypes`) and match its layout, states and copy before coding. (6) Read `.agents/skills/implementation-plan/SKILL.md` and produce a plan before coding.
 
 **While writing code**: (7) Follow all patterns in this file; document why if you break one. (8) Consider performance. (9) **Docs travel with the code** — a new/changed component or composable gets its VitePress page updated + registered in `docs/.vitepress/config.mts` in the SAME PR (not deferred).
 
@@ -80,7 +80,7 @@ pnpm test --run       # Vitest single run (CI-safe)
 pnpm test:changed     # Only tests affected by the branch (local preflight)
 ```
 
-External tools: GitHub → `gh`; Vercel → `vercel` CLI (`vercel ls <project> --prod`, `vercel inspect <url> --logs`, `vercel logs <url>`), not the Vercel MCP — trim output with `--json`/`jq`/`tail`. Linear + Figma stay on MCP.
+External tools: GitHub → `gh`; Vercel → `vercel` CLI (`vercel ls <project> --prod`, `vercel inspect <url> --logs`, `vercel logs <url>`), not the Vercel MCP — trim output with `--json`/`jq`/`tail`. Linear stays on MCP.
 
 ## Project Structure
 
