@@ -52,8 +52,8 @@ Emitted with the updated asset after a file replace; the page sets `detailAsset`
 
 An action row under the preview:
 
-- **Copy URL** — writes the asset's `url` to the clipboard (`entity_copied` toast); disabled when the asset has no `url`. A **private** asset (`asset.private`, a file in a private folder) has no public URL, so the button is **Open file** instead: a new-tab link to `assetViewHref(id)` (`GET media/assets/{id}/view`, a 302 to a one-hour signed URL that the API proxy hands to the browser). The thumbnail carries a **Private** badge.
-- **Download** — `useAssetActions().download`: a same-origin anchor with `download` to `assetDownloadHref(id)` (`GET media/assets/{id}/download`, a 302 to storage with `Content-Disposition: attachment`), so it works for private assets too.
+- **Copy URL** — writes the asset's `url` to the clipboard (`entity_copied` toast); disabled when the asset has no `url`.
+- **Download** — anchor `download` of `url` (falls back to opening in a new tab); disabled when there is no `url`.
 - **Replace** — opens [`AssetReplaceDialog`](/components/asset/AssetReplaceDialog) to swap the underlying file (same id + metadata).
 
 Footer is the standard **Cancel + Save**. Trashing lives in a **section at the bottom of the panel** (like `CompanyBuyerPanel`): a `ContentCardHeader` ("Move to trash", restorable for 30 days) + secondary **Move to trash** button → [`DialogDelete`](/components/dialog/DialogDelete) with the soft `title` / `description` / `confirmLabel` → `assetApi.delete(id)` (a soft delete) → toast + close at once, while the `asset-library-list` refresh runs (`deleteAsset` doesn't await it).
@@ -81,7 +81,7 @@ Preview ([`AssetThumbnail`](/components/asset/AssetThumbnail)), type badge, size
 
 ## Where it's used
 
-Between the info list and the remove section the panel shows a **"Where it's used"** section — [`AssetUsedIn`](/components/asset/AssetUsedIn), what the asset is linked to (products and orders), where it can also be linked to a product as an image or a file or to an order, or have a link removed. It gets `assetPrivate`, since a private asset takes only order links.
+Between the info list and the remove section the panel shows a **"Where it's used"** section — [`AssetUsedIn`](/components/asset/AssetUsedIn), what the asset is linked to (products and orders), where it can also be linked to a product as an image or a file or to an order, or have a link removed. It gets `assetPrivate`, since a private asset takes no product link.
 
 ## Not here
 

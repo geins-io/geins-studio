@@ -1,12 +1,11 @@
 import type { Asset } from '#shared/types';
-import { assetDownloadHref } from '#shared/utils/asset';
 import { ENTITIES } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 
 export interface UseAssetActionsReturnType {
   /** Copy the asset's public `url` to the clipboard (+ toast). No-op if unset. */
   copyUrl: (asset: Asset) => Promise<void>;
-  /** Save the asset's file through media's download route, private or not. */
+  /** Download the file from its `url` (new-tab fallback). No-op if unset. */
   download: (asset: Asset) => void;
   /**
    * Move the asset to trash, toast, and start a library-list refresh without
@@ -65,11 +64,13 @@ export function useAssetActions(): UseAssetActionsReturnType {
   }
 
   function download(asset: Asset) {
-    // Same-origin, so `download` is honoured: the proxy's 302 lands on storage
-    // with `Content-Disposition: attachment`, and the page stays put.
+    if (!asset.url) return;
+    // Anchor download; cross-origin storage URLs fall back to opening in a tab.
     const link = document.createElement('a');
-    link.href = assetDownloadHref(asset._id);
+    link.href = asset.url;
     link.download = asset.name;
+    link.target = '_blank';
+    link.rel = 'noopener';
     document.body.appendChild(link);
     link.click();
     link.remove();

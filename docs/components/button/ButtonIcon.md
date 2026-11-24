@@ -76,22 +76,6 @@ When set, renders as a `NuxtLink` instead of a plain `<div>` inside the `Button`
 
 - **Default:** `''`
 
-### `external`
-
-```ts
-external?: boolean
-```
-
-With `href`, renders a plain link that opens in a new tab (`external` + `target="_blank"` on the `NuxtLink`) instead of a router navigation. Use it for another origin or a server route, such as media's signed-URL redirect (`assetViewHref`).
-
-```vue
-<ButtonIcon icon="ExternalLink" :href="assetViewHref(asset._id)" external>
-  {{ $t('asset_library.open_file') }}
-</ButtonIcon>
-```
-
-- **Default:** `false`
-
 ### `variant` / `size`
 
 ```ts

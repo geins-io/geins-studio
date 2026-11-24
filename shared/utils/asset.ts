@@ -116,7 +116,6 @@ const UPLOAD_REJECTION_KEYS: Record<UploadRejectionCode, string> = {
   SCAN_REJECTED: 'asset_library.upload_reject_scan_rejected',
   LINK_ASSET_TYPE_INVALID:
     'asset_library.upload_reject_link_asset_type_invalid',
-  ASSET_PRIVATE: 'asset_library.upload_reject_asset_private',
 };
 
 /**
@@ -286,15 +285,25 @@ export function parseOrderNumber(input: string): string | null {
   return id === '0' ? null : id;
 }
 
-// Media answers both with a 302 to a URL that lives an hour; the API proxy
-// passes the redirect on to the browser (`isMediaRedirectPath`), so the signed
-// URL never reaches page JS. Use them as plain link targets, not fetches.
-/** Opens an asset in the browser — the only way to show a private one. */
-export const assetViewHref = (assetId: string): string =>
-  `/api/media/assets/${encodeURIComponent(assetId)}/view`;
-/** Saves an asset's file (`Content-Disposition: attachment`), private or not. */
-export const assetDownloadHref = (assetId: string): string =>
-  `/api/media/assets/${encodeURIComponent(assetId)}/download`;
+/**
+ * Order numbers typed or pasted into one field, split on commas, semicolons
+ * and whitespace. `ids` are unique and in input order; `invalid` holds the
+ * tokens that can't be an order number.
+ */
+export function parseOrderNumbers(input: string): {
+  ids: string[];
+  invalid: string[];
+} {
+  const ids = new Set<string>();
+  const invalid = new Set<string>();
+  for (const token of input.split(/[\s,;]+/)) {
+    if (!token) continue;
+    const id = parseOrderNumber(token);
+    if (id) ids.add(id);
+    else invalid.add(token);
+  }
+  return { ids: [...ids], invalid: [...invalid] };
+}
 
 /**
  * Fastly image-optimizer params per preview surface, sized to the rendered box

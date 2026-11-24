@@ -3,7 +3,6 @@ import { describe, it, expect } from 'vitest';
 import {
   IF_MATCH_PROXY_HEADER,
   isGeinsAuthPath,
-  isMediaRedirectPath,
   pickUpstreamHeaders,
   restoreIfMatch,
   tunnelIfMatch,
@@ -170,26 +169,4 @@ describe('isGeinsAuthPath', () => {
       expect(isGeinsAuthPath(path)).toBe(false);
     },
   );
-});
-
-describe('isMediaRedirectPath', () => {
-  const id = '3f2b9c1e-7a4d-4e8b-9f60-1c2d3e4f5a6b';
-
-  it.each([`media/assets/${id}/view`, `media/assets/${id}/download`])(
-    'matches %s',
-    (path) => {
-      expect(isMediaRedirectPath(path)).toBe(true);
-    },
-  );
-
-  it.each([
-    `media/assets/${id}`,
-    `media/assets/${id}/links`,
-    `media/assets/${id}/view/extra`,
-    'media/assets/not-a-guid/view',
-    `/media/assets/${id}/view`,
-    `order/${id}/view`,
-  ])('leaves %s to the JSON path', (path) => {
-    expect(isMediaRedirectPath(path)).toBe(false);
-  });
 });

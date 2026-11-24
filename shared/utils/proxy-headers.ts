@@ -89,12 +89,3 @@ export const isGeinsAuthPath = (path: string): boolean => {
   }
   return /^\/auth(?:\/|$)/i.test(resolved);
 };
-
-/**
- * Whether a proxied path is a media route that answers with a 302 to a signed,
- * short-lived URL (`media/assets/{id}/view`, `…/download`). The proxy hands
- * that redirect to the browser instead of following it, so the bytes never
- * pass through the function and the token never reaches page JS.
- */
-export const isMediaRedirectPath = (path: string): boolean =>
-  /^media\/assets\/[0-9a-f-]{36}\/(?:view|download)$/i.test(path);

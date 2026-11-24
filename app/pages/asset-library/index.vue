@@ -698,7 +698,7 @@ const bulkLinkSummary = (value: AssetBulkLinkValue) => {
   const products = value.productIds.length;
   return t('asset_library.bulk_link_summary', {
     assets: countOf('asset', assets),
-    products: countOf('product', products),
+    targets: countOf('product', products),
     links: countOf('link', assets * products),
   });
 };
@@ -724,7 +724,7 @@ const linkAction = computed<BulkAction<AssetBulkLinkValue>>(() => {
     label: t('asset_library.link_to_products'),
     icon: 'Link2',
     component: AssetBulkLinkProducts,
-    componentProps: { composition, summary: bulkLinkSummary },
+    componentProps: { composition, summary: bulkLinkSummary, privateCount },
     initialValue: () => ({
       mode: composition === 'files' ? 'file' : 'byType',
       productIds: [],
@@ -733,7 +733,7 @@ const linkAction = computed<BulkAction<AssetBulkLinkValue>>(() => {
     confirmTitle: (count, value) =>
       t('asset_library.bulk_link_confirm_title', {
         assets: countOf('asset', Math.max(count - privateCount, 0)),
-        products: countOf('product', value.productIds.length),
+        targets: countOf('product', value.productIds.length),
       }),
     warning: () =>
       privateCount
@@ -766,31 +766,39 @@ const linkAction = computed<BulkAction<AssetBulkLinkValue>>(() => {
     successMessage: () => t('entity_added', { entityKey: 'link' }, 2),
   };
 });
-// One `orderfile` target per call: any asset, private ones included, can be
-// linked, and only an order the lookup found can be picked.
+// Any asset, private ones included, can take order links, and only orders the
+// lookup found can be picked. Each call carries at most 100 links.
 const OrderLookup = resolveComponent('OrderLookup');
-const linkOrderAction = computed<BulkAction<Order | null>>(() => ({
+const linkOrderAction = computed<BulkAction<Order[]>>(() => ({
   key: 'link-to-order',
   label: t('asset_library.link_to_order'),
   icon: 'Receipt',
   component: OrderLookup,
-  initialValue: () => null,
-  isValid: (value) => !!value,
+  initialValue: () => [],
+  isValid: (value) => value.length > 0,
   confirmTitle: (count, value) =>
-    t('asset_library.bulk_link_order_confirm_title', {
+    t('asset_library.bulk_link_confirm_title', {
       assets: countOf('asset', count),
-      number: value?._id ?? '',
+      targets: countOf('order', value.length),
     }),
-  summary: (value) =>
-    value
-      ? {
-          list: [t('orders.order_title', { number: value._id }), value.email],
-        }
-      : undefined,
+  summary: (value) => ({
+    list: [
+      t('asset_library.bulk_link_summary', {
+        assets: countOf('asset', selectedIds.value.length),
+        targets: countOf('order', value.length),
+        links: countOf('link', selectedIds.value.length * value.length),
+      }),
+      t(
+        'orders.order_title',
+        { number: value.map((order) => order._id).join(', ') },
+        value.length,
+      ),
+    ],
+  }),
   note: () => t('asset_library.bulk_add_note', { entityKey: 'link' }, 2),
   run: async (ids, value, options) => {
-    if (value)
-      await assetApi.bulkLink(ids, [orderLinkTarget(value._id)], options);
+    for (const orderIds of chunkIds(value.map((order) => order._id)))
+      await assetApi.bulkLink(ids, orderIds.map(orderLinkTarget), options);
   },
   successMessage: () => t('entity_added', { entityKey: 'link' }, 2),
 }));

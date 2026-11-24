@@ -8,15 +8,12 @@ import {
   getHeaders,
   getQuery,
   getRequestHost,
-  sendRedirect,
-  setResponseHeader,
   type H3Event,
 } from 'h3';
 import { useRuntimeConfig } from 'nitropack/runtime';
 import { resolveAppId } from '#shared/utils/app';
 import {
   isGeinsAuthPath,
-  isMediaRedirectPath,
   pickUpstreamHeaders,
 } from '#shared/utils/proxy-headers';
 import { describeNetworkError } from '../utils/error-logging';
@@ -84,52 +81,6 @@ async function pipeUpstream(
     fetchOptions: { method: event.method, body, headers },
     // Never Geins' cookies; the JSON path doesn't forward them either.
     onResponse: (proxied) => proxied.node.res.removeHeader('set-cookie'),
-  });
-}
-
-// Media's view/download answer a 302 to a signed URL that lives an hour.
-// `$fetch` would follow it and pull the file through the function, so hand the
-// redirect to the browser. Never log the location: it carries the token.
-async function passRedirect(
-  event: H3Event,
-  target: string,
-  headers: Record<string, string>,
-  correlationId: string,
-) {
-  const { geinsLogError } = log('server/api/[...].ts');
-  let upstream: Response;
-  try {
-    upstream = await fetch(target, { headers, redirect: 'manual' });
-  } catch (error) {
-    geinsLogError(
-      `[upstream_unreachable] [${correlationId}] ${JSON.stringify({
-        url: target,
-        network: describeNetworkError(error),
-      })}`,
-    );
-    throw createError({ statusCode: 502, statusMessage: 'Bad Gateway' });
-  }
-  const location = upstream.headers.get('location');
-  if (
-    upstream.status >= 300 &&
-    upstream.status < 400 &&
-    location?.startsWith('https://')
-  ) {
-    setResponseHeader(event, 'cache-control', 'no-store');
-    return sendRedirect(event, location, 302);
-  }
-  const statusCode = upstream.status >= 400 ? upstream.status : 502;
-  geinsLogError(
-    `[upstream_error] [${correlationId}] ${JSON.stringify({
-      url: target,
-      statusCode: upstream.status,
-    })}`,
-  );
-  throw createError({
-    statusCode,
-    statusMessage:
-      upstream.statusText ||
-      (statusCode === 404 ? 'Not Found' : 'Upstream Error'),
   });
 }
 
@@ -216,10 +167,6 @@ export default defineEventHandler(async (event) => {
       );
     }
     return result;
-  }
-
-  if (event.method === 'GET' && isMediaRedirectPath(targetUrl)) {
-    return passRedirect(event, fetchUrl, apiHeaders, correlationId);
   }
 
   // Stream endpoints (e.g. /orchestrator/executions/:id/stream) need to be

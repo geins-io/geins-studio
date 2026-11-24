@@ -339,10 +339,6 @@ export default defineConfig({
                 link: '/components/asset/AssetWizardProductLinking.md',
               },
               {
-                text: 'AssetWizardOrderLinking',
-                link: '/components/asset/AssetWizardOrderLinking.md',
-              },
-              {
                 text: 'AssetReviewRow',
                 link: '/components/asset/AssetReviewRow.md',
               },
@@ -1009,10 +1005,6 @@ export default defineConfig({
               {
                 text: 'OrderLookup',
                 link: '/components/order/OrderLookup.md',
-              },
-              {
-                text: 'OrderFilesPanel',
-                link: '/components/order/OrderFilesPanel.md',
               },
             ],
           },

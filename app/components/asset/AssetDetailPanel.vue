@@ -12,7 +12,6 @@ import type {
 } from '#shared/types';
 import {
   ASSET_LABEL_LIMITS,
-  assetViewHref,
   normalizeAssetLabels,
   sameAssetLabels,
   TRASH_RETENTION_DAYS,
@@ -406,41 +405,17 @@ async function handleDelete() {
         </AlertDescription>
       </Alert>
 
-      <div class="relative mb-6">
+      <div class="mb-6">
         <AssetThumbnail
           :type="asset.type"
           :url="asset.url"
           :alt="asset.name"
           size="banner"
         />
-        <Badge
-          v-if="asset.private"
-          variant="secondary"
-          class="absolute top-2 left-2 gap-1"
-          data-test="asset-private-badge"
-        >
-          <LucideLock class="size-3" aria-hidden="true" />
-          {{ $t('asset_library.private') }}
-        </Badge>
       </div>
 
       <div class="flex gap-2">
-        <!-- A private asset has no public URL; it opens through media's view
-             route, which signs a one-hour URL. -->
         <ButtonIcon
-          v-if="asset.private"
-          icon="ExternalLink"
-          :href="assetViewHref(asset._id)"
-          external
-          variant="outline"
-          size="sm"
-          class="flex-1 bg-transparent dark:bg-transparent"
-          data-test="asset-open"
-        >
-          {{ $t('asset_library.open_file') }}
-        </ButtonIcon>
-        <ButtonIcon
-          v-else
           icon="copy"
           variant="outline"
           size="sm"
@@ -455,6 +430,7 @@ async function handleDelete() {
           variant="outline"
           size="sm"
           class="flex-1 bg-transparent dark:bg-transparent"
+          :disabled="!asset.url"
           @click="download(asset)"
         >
           {{ $t('download') }}

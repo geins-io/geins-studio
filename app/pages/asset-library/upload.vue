@@ -9,7 +9,6 @@ import type {
 import {
   mimeToAssetType,
   normalizeAssetLabels,
-  orderLinkTarget,
   productLinkTargetType,
   uploadRejectionMessageKey,
 } from '#shared/utils/asset';
@@ -62,15 +61,10 @@ const steps = computed(() => [
 ]);
 
 // Step 1 needs at least one file; step 2 holds while a file breaks a label
-// limit, since the ticket would reject that file, and while "link to an
-// order" is on with no order found yet.
+// limit, since the ticket would reject that file.
 const canProceed = computed(() => {
   if (currentStep.value === 1) return files.value.length > 0;
-  if (currentStep.value === 2)
-    return (
-      !hasLabelLimitError.value &&
-      (!wizard.linkToOrder.value || !!wizard.linkOrder.value)
-    );
+  if (currentStep.value === 2) return !hasLabelLimitError.value;
   return true;
 });
 
@@ -140,18 +134,6 @@ async function submit() {
     // Metadata + the matched product ride the claim, so a completed upload is
     // already fully described — no second write to fail after the bytes land.
     const product = wizard.linkProducts.value ? matchOf(wf.file) : null;
-    const order = wizard.orderToLink.value;
-    const links = [
-      ...(product
-        ? [
-            {
-              targetType: productLinkTargetType(mimeToAssetType(wf.file.type)),
-              targetId: product._id,
-            },
-          ]
-        : []),
-      ...(order ? [orderLinkTarget(order._id)] : []),
-    ];
     return {
       file: wf.file,
       clientRef: wf.id,
@@ -161,7 +143,18 @@ async function submit() {
       tags: normalizeAssetLabels(s.tags ?? []),
       channels: normalizeAssetLabels(s.channels ?? []),
       languages: normalizeAssetLabels(s.languages ?? []),
-      ...(links.length ? { links } : {}),
+      ...(product
+        ? {
+            links: [
+              {
+                targetType: productLinkTargetType(
+                  mimeToAssetType(wf.file.type),
+                ),
+                targetId: product._id,
+              },
+            ],
+          }
+        : {}),
     };
   });
 

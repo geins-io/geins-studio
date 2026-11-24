@@ -152,7 +152,6 @@ const rowFolderName = (id: string): string | undefined => {
 <template>
   <div class="flex h-full min-h-0 flex-col gap-4">
     <AssetWizardProductLinking />
-    <AssetWizardOrderLinking />
 
     <div class="flex min-h-0 flex-1 overflow-hidden rounded-lg border">
       <!-- Left: file list -->

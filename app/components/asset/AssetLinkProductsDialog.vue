@@ -93,7 +93,9 @@ async function link() {
         </DialogDescription>
       </DialogHeader>
 
-      <div class="flex flex-col gap-4">
+      <!-- min-w-0: inside the dialog's grid, long product names would
+           otherwise widen the whole dialog past its border. -->
+      <div class="flex min-w-0 flex-col gap-4">
         <div
           v-if="canLinkAsImage"
           class="flex items-center justify-between gap-3"

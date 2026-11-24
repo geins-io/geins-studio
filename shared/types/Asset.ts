@@ -172,28 +172,6 @@ export interface AssetLinkTarget<T extends string = AssetLinkTargetType> {
   targetId: string;
 }
 
-/** Fields of `media_response_linkedAsset`, see {@link LinkedAsset}. */
-export interface LinkedAssetBase {
-  name: string;
-  type: AssetType;
-  path: string;
-  /** Empty when unknown. */
-  mime: string;
-  sizeBytes: number;
-  /** How the asset is linked to the target, such as `orderfile`. */
-  linkType: AssetLinkTargetType | (string & {});
-  linkedAt: string;
-  /** In the private container: no URL can be composed, open it via `/view`. */
-  private: boolean;
-}
-
-/**
- * One asset a target holds — `GET media/targets/{type}/{id}/assets`, oldest
- * link first. Trashed assets are left out. It carries no `url`: open it
- * through `assetViewHref` (public or private alike).
- */
-export type LinkedAsset = ResponseEntity<LinkedAssetBase>;
-
 /**
  * What a bulk link selection holds: only images (image/svg), no images, or
  * both — decides which "Link as" choices the bulk pane offers.
@@ -347,8 +325,7 @@ export type UploadRejectionCode =
   | 'BLOB_MISSING'
   | 'CONTENT_TYPE_MISMATCH'
   | 'SCAN_REJECTED'
-  | 'LINK_ASSET_TYPE_INVALID'
-  | 'ASSET_PRIVATE';
+  | 'LINK_ASSET_TYPE_INVALID';
 
 export type UploadTicketResult =
   | {
@@ -414,7 +391,7 @@ export interface Asset extends ResponseEntity<AssetBase> {
   url: string | null;
   /**
    * In the account's private container (a private folder): no `url`, and the
-   * only link it takes is `orderfile`. Open it via `assetViewHref`.
+   * only link it takes is `orderfile`. Studio doesn't open private files yet.
    */
   private?: boolean;
   createdBy: string | null;

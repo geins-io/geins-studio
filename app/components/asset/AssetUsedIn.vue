@@ -179,7 +179,7 @@ const productRemovable = (row: ProductRow): RemovableLink => ({
 });
 const orderRemovable = (link: AssetLink): RemovableLink => ({
   link,
-  target: t('orders.order_title', { number: link.targetId }),
+  target: link.targetId,
 });
 
 async function confirmRemove() {
@@ -203,14 +203,12 @@ async function confirmRemove() {
   }
 }
 
-const removeDescription = computed(() =>
-  t(
-    pendingRemove.value?.link.targetType === 'orderfile'
-      ? 'asset_library.remove_order_link_description'
-      : 'asset_library.remove_link_description',
-    { target: pendingRemove.value?.target },
-  ),
-);
+const removeDescription = computed(() => {
+  const row = pendingRemove.value;
+  return row?.link.targetType === 'orderfile'
+    ? t('asset_library.remove_order_link_description', { number: row.target })
+    : t('asset_library.remove_link_description', { target: row?.target });
+});
 </script>
 
 <template>

@@ -2,7 +2,7 @@
 
 `AssetActionsMenu` is the shared asset context menu — a `DropdownMenu` with **View details**, **Download**, **Copy public URL**, and **Move to trash**. Both the grid-view [`AssetCard`](/components/asset/AssetCard) and the list-view actions column render it, so the two views stay in sync.
 
-Copy URL is disabled when the asset has no public `url` (a private asset). Download always works: it goes through media's download route.
+Download and Copy URL are disabled when the asset has no public `url`.
 
 In **`trashed`** mode (the library's Trash view) the menu collapses to **Restore** and **Delete permanently** (regular item styling; the red is on its confirm): a soft-deleted asset can only come back or go for good, and its stored file may already be unreachable, so details / download / trash would be dead ends.
 
@@ -42,7 +42,7 @@ h(AssetActionsMenu, {
 asset: Asset;
 ```
 
-The asset the menu acts on. Its `url` drives whether Copy URL is enabled.
+The asset the menu acts on. Its `url` drives whether Download / Copy URL are enabled.
 
 ### `trigger`
 
@@ -68,7 +68,7 @@ Trash mode: **Restore** and **Delete permanently** become the only items. Set by
 
 ### `download` / `copyUrl`
 
-Download the file / copy its public URL. Copy URL is disabled when the asset has no `url`.
+Download the file / copy its public URL. Disabled when the asset has no `url`.
 
 ### `delete`
 

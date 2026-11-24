@@ -25,6 +25,7 @@ import {
   mimeToAssetType,
   orderLinkTarget,
   parseOrderNumber,
+  parseOrderNumbers,
   parseProductRef,
   productLinkTargetType,
   replaceErrorMessageKey,
@@ -587,6 +588,30 @@ describe('parseOrderNumber', () => {
       expect(parseOrderNumber(input)).toBeNull();
     },
   );
+});
+
+describe('parseOrderNumbers', () => {
+  it('splits on commas, semicolons, spaces and new lines', () => {
+    expect(parseOrderNumbers('1001, 1002;1003\n#1004  1005')).toEqual({
+      ids: ['1001', '1002', '1003', '1004', '1005'],
+      invalid: [],
+    });
+  });
+
+  it('drops duplicates, counting leading zeros as the same number', () => {
+    expect(parseOrderNumbers('1001 001001 1001').ids).toEqual(['1001']);
+  });
+
+  it('keeps the tokens that are not order numbers apart', () => {
+    expect(parseOrderNumbers('1001, abc, 0, abc')).toEqual({
+      ids: ['1001'],
+      invalid: ['abc', '0'],
+    });
+  });
+
+  it('reads an empty field as nothing', () => {
+    expect(parseOrderNumbers(' ,  ')).toEqual({ ids: [], invalid: [] });
+  });
 });
 
 describe('orderLinkTarget', () => {

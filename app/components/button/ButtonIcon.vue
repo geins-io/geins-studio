@@ -14,17 +14,11 @@ const props = withDefaults(
   defineProps<{
     icon: ButtonIconAlias | (string & {});
     href?: string;
-    /**
-     * Open `href` in a new tab as a plain link, not a router navigation —
-     * for another origin or a server route such as `/api/…`.
-     */
-    external?: boolean;
     variant?: ButtonVariants['variant'];
     size?: ButtonVariants['size'];
   }>(),
   {
     href: '',
-    external: false,
   },
 );
 
@@ -49,13 +43,7 @@ const elem = props.href ? link : 'div';
 </script>
 <template>
   <Button :as-child="!!href" :variant="variant" :size="size">
-    <component
-      :is="elem"
-      :to="href || undefined"
-      :external="href && external ? true : undefined"
-      :target="href && external ? '_blank' : undefined"
-      class="flex"
-    >
+    <component :is="elem" :to="href" class="flex">
       <component :is="iconComponent" class="mr-2 size-4" />
       <slot />
     </component>

@@ -25,4 +25,4 @@ When the order couldn't be looked up (`order` is `null`), the row shows the bare
 | --------- | ---------------------------- |
 | `default` | Trailing actions or a badge. |
 
-Used by [`OrderLookup`](/components/order/OrderLookup.md) (the found order) and [`AssetUsedIn`](/components/asset/AssetUsedIn.md) (the asset's order links).
+Used by [`OrderLookup`](/components/order/OrderLookup.md) (the orders found) and [`AssetUsedIn`](/components/asset/AssetUsedIn.md) (the asset's order links).
