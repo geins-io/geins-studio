@@ -2,7 +2,8 @@ import type {
   AssetApiOptions,
   AssetLabelKind,
   AssetLabelLimitBreach,
-  AssetLinkTargetType,
+  AssetLinkTarget,
+  ProductLinkTargetType,
   AssetSelectionKind,
   AssetSortField,
   AssetType,
@@ -194,18 +195,18 @@ const PREVIEWABLE_TYPES = new Set<AssetType>(['image', 'svg']);
  * The product link kind for an asset type. `productimage` only accepts image +
  * svg; `productfile` accepts anything, so an unrecognised type falls back safely.
  */
-export function productLinkTargetType(type: AssetType): AssetLinkTargetType {
+export function productLinkTargetType(type: AssetType): ProductLinkTargetType {
   return PREVIEWABLE_TYPES.has(type) ? 'productimage' : 'productfile';
 }
 
-const PRODUCT_LINK_KIND_KEYS: Record<AssetLinkTargetType, string> = {
+const PRODUCT_LINK_KIND_KEYS: Record<ProductLinkTargetType, string> = {
   productimage: 'asset_library.asset_type.image',
   productfile: 'file',
 };
 const PRODUCT_LINK_TYPES = new Set<string>(Object.keys(PRODUCT_LINK_KIND_KEYS));
 
 /** i18n key naming a product link's kind — "Image" or "File". */
-export function productLinkKindKey(kind: AssetLinkTargetType): string {
+export function productLinkKindKey(kind: ProductLinkTargetType): string {
   return PRODUCT_LINK_KIND_KEYS[kind];
 }
 
@@ -237,7 +238,7 @@ export function bulkLinkCalls(
   productIds: readonly string[],
   maxLinks = 100,
 ): BulkLinkCall[] {
-  const byKind = new Map<AssetLinkTargetType, string[]>();
+  const byKind = new Map<ProductLinkTargetType, string[]>();
   for (const id of assetIds) {
     const type = typeOf(id);
     const kind =
@@ -263,8 +264,45 @@ export function bulkLinkCalls(
 /** Whether a read link points at a product (either kind). */
 export function isProductLink(
   targetType: string,
-): targetType is AssetLinkTargetType {
+): targetType is ProductLinkTargetType {
   return PRODUCT_LINK_TYPES.has(targetType);
+}
+
+/** The link that attaches an asset to an order (its numeric `_id`). */
+export const orderLinkTarget = (orderId: string): AssetLinkTarget => ({
+  targetType: 'orderfile',
+  targetId: orderId,
+});
+
+/**
+ * An order number as typed: digits only, leading zeros dropped (media stores
+ * the id that way). `null` when it can't be an order number.
+ */
+export function parseOrderNumber(input: string): string | null {
+  const trimmed = input.trim().replace(/^#/, '');
+  if (!/^\d+$/.test(trimmed)) return null;
+  const id = trimmed.replace(/^0+(?=\d)/, '');
+  return id === '0' ? null : id;
+}
+
+/**
+ * Order numbers typed or pasted into one field, split on commas, semicolons
+ * and whitespace. `ids` are unique and in input order; `invalid` holds the
+ * tokens that can't be an order number.
+ */
+export function parseOrderNumbers(input: string): {
+  ids: string[];
+  invalid: string[];
+} {
+  const ids = new Set<string>();
+  const invalid = new Set<string>();
+  for (const token of input.split(/[\s,;]+/)) {
+    if (!token) continue;
+    const id = parseOrderNumber(token);
+    if (id) ids.add(id);
+    else invalid.add(token);
+  }
+  return { ids: [...ids], invalid: [...invalid] };
 }
 
 /**

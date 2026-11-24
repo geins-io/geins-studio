@@ -81,7 +81,7 @@ Preview ([`AssetThumbnail`](/components/asset/AssetThumbnail)), type badge, size
 
 ## Where it's used
 
-Between the info list and the remove section the panel shows a **"Where it's used"** section — [`AssetUsedIn`](/components/asset/AssetUsedIn), what the asset is linked to (products today), where it can also be linked to a product as an image or a file, or have a product link removed.
+Between the info list and the remove section the panel shows a **"Where it's used"** section — [`AssetUsedIn`](/components/asset/AssetUsedIn), what the asset is linked to (products and orders), where it can also be linked to a product as an image or a file or to an order, or have a link removed. It gets `assetPrivate`, since a private asset takes no product link.
 
 ## Not here
 

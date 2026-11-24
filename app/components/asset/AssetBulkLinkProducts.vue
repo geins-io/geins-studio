@@ -16,6 +16,8 @@ const props = defineProps<{
   composition: AssetSelectionKind;
   /** "N assets → M products (X links)" — shared with the confirm step. */
   summary: (value: AssetBulkLinkValue) => string;
+  /** Private assets in the selection, which the action leaves out. */
+  privateCount?: number;
 }>();
 const value = defineModel<AssetBulkLinkValue>({
   default: () => ({ mode: 'byType', productIds: [] }),
@@ -51,6 +53,26 @@ const setMode = (mode: unknown) => {
 
 <template>
   <div class="flex flex-col gap-4">
+    <!-- Here as well as on the confirm step: an all-private selection can't
+         reach the confirm, since Run stays disabled. -->
+    <Feedback
+      v-if="privateCount"
+      type="warning"
+      data-test="bulk-link-private-warning"
+    >
+      <template #title>
+        {{ $t('asset_library.bulk_link_private_title') }}
+      </template>
+      <template #description>
+        {{
+          $t(
+            'asset_library.bulk_link_private_description',
+            { count: privateCount },
+            privateCount,
+          )
+        }}
+      </template>
+    </Feedback>
     <div v-if="composition !== 'files'" class="flex flex-col gap-2">
       <p class="text-sm font-medium">{{ $t('asset_library.link_as') }}</p>
       <RadioGroup

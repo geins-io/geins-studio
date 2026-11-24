@@ -9,6 +9,7 @@ import type {
   BulkLinkMode,
   BulkRunResult,
   ListSort,
+  Order,
 } from '#shared/types';
 import { TableMode } from '#shared/types';
 import {
@@ -21,6 +22,7 @@ import {
   countAssetIds,
   folderIdForSelection,
   isTrashSelection,
+  orderLinkTarget,
   trashedFolderId,
   ROOT_FOLDER_KEY,
   TRASH_KEY,
@@ -688,12 +690,15 @@ function labelsAction(kind: keyof typeof LABEL_KINDS): BulkAction<string[]> {
   };
 }
 const AssetBulkLinkProducts = resolveComponent('AssetBulkLinkProducts');
+// A private asset takes only order links, and one in a bulk-link call fails
+// the whole call (422), so product links leave private assets out.
+const isPrivateAsset = (id: string) => !!knownAssets.get(id)?.private;
 const bulkLinkSummary = (value: AssetBulkLinkValue) => {
-  const assets = selectedIds.value.length;
+  const assets = selectedIds.value.filter((id) => !isPrivateAsset(id)).length;
   const products = value.productIds.length;
   return t('asset_library.bulk_link_summary', {
     assets: countOf('asset', assets),
-    products: countOf('product', products),
+    targets: countOf('product', products),
     links: countOf('link', assets * products),
   });
 };
@@ -709,25 +714,38 @@ const bulkLinkModeLabel = (
 // Images and files go in separate calls (a productimage link on a file fails
 // the whole call), each capped at 100 links. Linking only adds.
 const linkAction = computed<BulkAction<AssetBulkLinkValue>>(() => {
+  const linkable = selectedIds.value.filter((id) => !isPrivateAsset(id));
+  const privateCount = selectedIds.value.length - linkable.length;
   const composition = assetSelectionKind(
-    selectedIds.value.map((id) => knownAssets.get(id)?.type),
+    linkable.map((id) => knownAssets.get(id)?.type),
   );
   return {
     key: 'link-to-products',
     label: t('asset_library.link_to_products'),
     icon: 'Link2',
     component: AssetBulkLinkProducts,
-    componentProps: { composition, summary: bulkLinkSummary },
+    componentProps: { composition, summary: bulkLinkSummary, privateCount },
     initialValue: () => ({
       mode: composition === 'files' ? 'file' : 'byType',
       productIds: [],
     }),
-    isValid: (value) => value.productIds.length > 0,
+    isValid: (value) => value.productIds.length > 0 && linkable.length > 0,
     confirmTitle: (count, value) =>
       t('asset_library.bulk_link_confirm_title', {
-        assets: countOf('asset', count),
-        products: countOf('product', value.productIds.length),
+        assets: countOf('asset', Math.max(count - privateCount, 0)),
+        targets: countOf('product', value.productIds.length),
       }),
+    warning: () =>
+      privateCount
+        ? {
+            title: t('asset_library.bulk_link_private_title'),
+            description: t(
+              'asset_library.bulk_link_private_description',
+              { count: privateCount },
+              privateCount,
+            ),
+          }
+        : undefined,
     summary: (value) => ({
       list: [
         bulkLinkSummary(value),
@@ -737,7 +755,7 @@ const linkAction = computed<BulkAction<AssetBulkLinkValue>>(() => {
     note: () => t('asset_library.bulk_add_note', { entityKey: 'link' }, 2),
     run: async (ids, value, options) => {
       const calls = bulkLinkCalls(
-        ids,
+        ids.filter((id) => !isPrivateAsset(id)),
         (id) => knownAssets.get(id)?.type,
         value.mode,
         value.productIds,
@@ -748,6 +766,42 @@ const linkAction = computed<BulkAction<AssetBulkLinkValue>>(() => {
     successMessage: () => t('entity_added', { entityKey: 'link' }, 2),
   };
 });
+// Any asset, private ones included, can take order links, and only orders the
+// lookup found can be picked. Each call carries at most 100 links.
+const OrderLookup = resolveComponent('OrderLookup');
+const linkOrderAction = computed<BulkAction<Order[]>>(() => ({
+  key: 'link-to-order',
+  label: t('asset_library.link_to_order'),
+  icon: 'Receipt',
+  component: OrderLookup,
+  initialValue: () => [],
+  isValid: (value) => value.length > 0,
+  confirmTitle: (count, value) =>
+    t('asset_library.bulk_link_confirm_title', {
+      assets: countOf('asset', count),
+      targets: countOf('order', value.length),
+    }),
+  summary: (value) => ({
+    list: [
+      t('asset_library.bulk_link_summary', {
+        assets: countOf('asset', selectedIds.value.length),
+        targets: countOf('order', value.length),
+        links: countOf('link', selectedIds.value.length * value.length),
+      }),
+      t(
+        'orders.order_title',
+        { number: value.map((order) => order._id).join(', ') },
+        value.length,
+      ),
+    ],
+  }),
+  note: () => t('asset_library.bulk_add_note', { entityKey: 'link' }, 2),
+  run: async (ids, value, options) => {
+    for (const orderIds of chunkIds(value.map((order) => order._id)))
+      await assetApi.bulkLink(ids, orderIds.map(orderLinkTarget), options);
+  },
+  successMessage: () => t('entity_added', { entityKey: 'link' }, 2),
+}));
 const tagsAction = computed(() => labelsAction('tags'));
 const channelsAction = computed(() => labelsAction('channels'));
 const languagesAction = computed(() => labelsAction('languages'));
@@ -756,6 +810,7 @@ const bulkActions = computed<BulkAction[]>(() => [
   channelsAction.value,
   languagesAction.value,
   linkAction.value,
+  linkOrderAction.value,
   moveAction.value,
   trashAction.value,
 ]);

@@ -2,14 +2,15 @@
 import { mockNuxtImport } from '@nuxt/test-utils/runtime';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { defineComponent, h, ref } from 'vue';
-import type { AssetLink } from '#shared/types';
+import type { AssetLink, Order } from '#shared/types';
 import { mountWithContext } from '../../../../test/helpers';
 
-const { assetApi } = vi.hoisted(() => ({
+const { assetApi, orderApi } = vi.hoisted(() => ({
   assetApi: { links: vi.fn(), removeLink: vi.fn() },
+  orderApi: { query: vi.fn() },
 }));
 
-mockNuxtImport('useGeinsRepository', () => () => ({ assetApi }));
+mockNuxtImport('useGeinsRepository', () => () => ({ assetApi, orderApi }));
 mockNuxtImport('useProductMatch', () => () => ({
   pending: ref(false),
   matchOf: () => null,
@@ -18,9 +19,13 @@ mockNuxtImport('useProductMatch', () => () => ({
 
 import AssetUsedIn from '../AssetUsedIn.vue';
 
-const link = (assetId: string, targetId: string): AssetLink => ({
+const link = (
+  assetId: string,
+  targetId: string,
+  targetType = 'productimage',
+): AssetLink => ({
   assetId,
-  targetType: 'productimage',
+  targetType,
   targetId,
   createdAt: '2026-10-01T00:00:00.000Z',
 });
@@ -36,13 +41,21 @@ async function flush() {
   await new Promise((r) => setTimeout(r, 0));
 }
 
-const stubs = { AssetLinkProductsDialog: true, DialogDelete: true };
+const stubs = {
+  AssetLinkProductsDialog: true,
+  AssetLinkOrderDialog: true,
+  DialogDelete: true,
+};
 
 let mounted: { unmount: () => void }[] = [];
-async function mountUsedIn(assetId = ref('a1')) {
+async function mountUsedIn(assetId = ref('a1'), assetPrivate = false) {
   const Host = defineComponent({
     setup: () => () =>
-      h(AssetUsedIn, { assetId: assetId.value, assetType: 'image' }),
+      h(AssetUsedIn, {
+        assetId: assetId.value,
+        assetType: 'image',
+        assetPrivate,
+      }),
   });
   const wrapper = await mountWithContext(Host, { global: { stubs } });
   mounted.push(wrapper);
@@ -57,6 +70,7 @@ const rowsSection = (wrapper: Wrapper) =>
 beforeEach(() => {
   assetApi.links.mockReset();
   assetApi.removeLink.mockReset();
+  orderApi.query.mockReset();
 });
 afterEach(() => {
   for (const wrapper of mounted) wrapper.unmount();
@@ -113,5 +127,67 @@ describe('AssetUsedIn — loading', () => {
     await flush();
     expect(skeletons(wrapper)).toHaveLength(0);
     expect(rowsSection(wrapper).text()).toContain('P-300');
+  });
+});
+
+const ordersSection = (wrapper: Wrapper) =>
+  wrapper.find('[data-test="used-in-orders"]');
+
+describe('AssetUsedIn — orders', () => {
+  const order: Order = {
+    _id: '1001',
+    _type: 'geins.order',
+    dateCreated: '2026-11-20T10:00:00.000Z',
+    customerId: 'buyer@acme.test',
+    email: 'buyer@acme.test',
+    sumExVat: 1600,
+    sumIncVat: 2000,
+    wholesaleAccountId: '7',
+    channel: '1',
+    currency: 'SEK',
+    itemCount: 1,
+    status: 'pending',
+    priceLists: [],
+  };
+
+  it('lists order links with the looked-up order details', async () => {
+    assetApi.links.mockResolvedValue([link('a1', '1001', 'orderfile')]);
+    orderApi.query.mockResolvedValue({ items: [order] });
+    const wrapper = await mountUsedIn();
+    await flush();
+
+    expect(orderApi.query).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: [{ selections: [{ orderIds: ['1001'] }] }],
+      }),
+      undefined,
+      { suppressErrorToast: true },
+    );
+    expect(ordersSection(wrapper).findAll('li')).toHaveLength(1);
+    expect(ordersSection(wrapper).text()).toContain('buyer@acme.test');
+    expect(rowsSection(wrapper).findAll('li')).toHaveLength(0);
+  });
+
+  it('still shows the order number when the order read fails', async () => {
+    assetApi.links.mockResolvedValue([link('a1', '1001', 'orderfile')]);
+    orderApi.query.mockRejectedValue(new Error('offline'));
+    const wrapper = await mountUsedIn();
+    await flush();
+
+    // The row stays (with only the order number), so the link isn't hidden.
+    expect(ordersSection(wrapper).findAll('li')).toHaveLength(1);
+    expect(ordersSection(wrapper).text()).not.toContain('buyer@acme.test');
+  });
+
+  it('disables Link to product on a private asset', async () => {
+    assetApi.links.mockResolvedValue([]);
+    const wrapper = await mountUsedIn(ref('a1'), true);
+    await flush();
+
+    const button = wrapper.find('[data-test="used-in-link-product"]');
+    expect(button.attributes('disabled')).toBeDefined();
+    expect(
+      wrapper.find('[data-test="used-in-link-order"]').attributes('disabled'),
+    ).toBeUndefined();
   });
 });

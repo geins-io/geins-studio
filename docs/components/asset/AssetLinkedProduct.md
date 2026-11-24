@@ -12,10 +12,10 @@ Inherits STU-335's phase-2 caveat — the product data is fetched client-side fo
 
 ## Props
 
-| Prop      | Type                   | Meaning                                                             |
-| --------- | ---------------------- | ------------------------------------------------------------------- |
-| `product` | `ProductMatch`         | The matched product (`_id`, `name`, `articleNumber`, `thumbnail?`). |
-| `kind`    | `AssetLinkTargetType?` | Link kind for the trailing badge; omitted → no badge.               |
+| Prop      | Type                     | Meaning                                                             |
+| --------- | ------------------------ | ------------------------------------------------------------------- |
+| `product` | `ProductMatch`           | The matched product (`_id`, `name`, `articleNumber`, `thumbnail?`). |
+| `kind`    | `ProductLinkTargetType?` | Link kind for the trailing badge; omitted → no badge.               |
 
 ## Slots
 

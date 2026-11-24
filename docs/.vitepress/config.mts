@@ -367,6 +367,10 @@ export default defineConfig({
                 link: '/components/asset/AssetLinkProductsDialog.md',
               },
               {
+                text: 'AssetLinkOrderDialog',
+                link: '/components/asset/AssetLinkOrderDialog.md',
+              },
+              {
                 text: 'AssetBulkLabels',
                 link: '/components/asset/AssetBulkLabels.md',
               },
@@ -990,6 +994,17 @@ export default defineConfig({
               {
                 text: 'OrchestratorLiveConsole',
                 link: '/components/orchestrator/OrchestratorLiveConsole.md',
+              },
+            ],
+          },
+          {
+            text: 'Order',
+            collapsed: true,
+            items: [
+              { text: 'OrderRow', link: '/components/order/OrderRow.md' },
+              {
+                text: 'OrderLookup',
+                link: '/components/order/OrderLookup.md',
               },
             ],
           },

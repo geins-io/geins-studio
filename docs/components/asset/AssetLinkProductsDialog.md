@@ -8,12 +8,12 @@ Links one asset to one or more products. Opened from the **Link to product** act
 
 ## Props
 
-| Prop               | Type                                    | Meaning                                       |
-| ------------------ | --------------------------------------- | --------------------------------------------- |
-| `assetId`          | `string`                                | The asset to link.                            |
-| `assetType`        | `AssetType`                             | Decides whether **Image** is offered.         |
-| `linkedProductIds` | `Record<AssetLinkTargetType, string[]>` | Product ids already linked, per link kind.    |
-| `open` (`v-model`) | `boolean`                               | Dialog visibility; picks reset on every open. |
+| Prop               | Type                                      | Meaning                                       |
+| ------------------ | ----------------------------------------- | --------------------------------------------- |
+| `assetId`          | `string`                                  | The asset to link.                            |
+| `assetType`        | `AssetType`                               | Decides whether **Image** is offered.         |
+| `linkedProductIds` | `Record<ProductLinkTargetType, string[]>` | Product ids already linked, per link kind.    |
+| `open` (`v-model`) | `boolean`                                 | Dialog visibility; picks reset on every open. |
 
 ## Events
 

@@ -17,11 +17,12 @@ Properties pane of the asset library's bulk **Link to products** action (in [`Li
 
 ## Props
 
-| Prop                     | Type                                    | Meaning                                            |
-| ------------------------ | --------------------------------------- | -------------------------------------------------- |
-| `composition`            | `AssetSelectionKind`                    | `images`, `files` or `mixed` — which choices show. |
-| `summary`                | `(value: AssetBulkLinkValue) => string` | The count line, shared with the confirm step.      |
-| `modelValue` (`v-model`) | `AssetBulkLinkValue`                    | Mode + picked product ids.                         |
+| Prop                     | Type                                    | Meaning                                                                                                                                                                                                                                           |
+| ------------------------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `composition`            | `AssetSelectionKind`                    | `images`, `files` or `mixed` — which choices show.                                                                                                                                                                                                |
+| `summary`                | `(value: AssetBulkLinkValue) => string` | The count line, shared with the confirm step.                                                                                                                                                                                                     |
+| `modelValue` (`v-model`) | `AssetBulkLinkValue`                    | Mode + picked product ids.                                                                                                                                                                                                                        |
+| `privateCount`           | `number?`                               | Private assets in the selection. A private asset takes no product link, so the action leaves them out; when any, a warning tops the pane (and the confirm step). With only private assets selected, Run stays disabled and this warning says why. |
 
 ## Usage
 
