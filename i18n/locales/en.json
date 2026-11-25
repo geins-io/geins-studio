@@ -41,6 +41,7 @@
   "company_price_list": "Company price list | Company price lists",
   "order": "Order | Orders",
   "company": "Company | Companies",
+  "dashboard": "Dashboard | Dashboards",
   "user_account": "Account | Accounts",
   "user": "User | Users",
   "channel": "Channel | Channels",
@@ -291,7 +292,6 @@
   "dashboard_description": "All amounts will be shown excluding VAT. If you keep this page open, your stats will update every 60 seconds.",
   "feedback_error": "Something went wrong",
   "feedback_error_description": "Please refresh the page and try again. Contact support if the problem persists.",
-  "welcome_title": "Welcome to {brand} {account}",
   "feedback_welcome_back": "Welcome back {name}!",
   "feedback_welcome_back_description": "You have successfully logged in.",
   "selector_brand_linking_word_or": "and all products from",
@@ -989,6 +989,25 @@
       "expire": "set the quotation as expired",
       "extend": "set a new expiration date",
       "finalize": "placed the order"
+    }
+  },
+  "dashboards": {
+    "my_work": "My work",
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "greeting_named": "{greeting}, {name}",
+    "widgets": {
+      "quick_access": {
+        "title": "Quick access",
+        "description": "Shortcuts to everyday tasks"
+      },
+      "company_orders": {
+        "title": "Latest company orders",
+        "description": "The most recent orders placed by buyers linked to a company"
+      }
     }
   },
   "changelog": {

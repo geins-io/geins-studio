@@ -109,9 +109,9 @@ const { t } = useI18n();
 const showSearch =
   props.mode === TableMode.Advanced ? ref(true) : ref(props.showSearch);
 
-// Minimal mode: disable column pinning
+// Minimal and compact modes: disable column pinning
 const pinnedStateOverride = computed(() => {
-  if (props.mode === TableMode.Minimal) {
+  if (props.mode === TableMode.Minimal || props.mode === TableMode.Compact) {
     return { left: [] as string[], right: [] as string[] };
   }
   return undefined;
@@ -160,6 +160,9 @@ const tableMaximized = useState<boolean>('table-maximized', () => false);
 const advancedMode = computed(() => props.mode === TableMode.Advanced);
 const simpleMode = computed(() => props.mode === TableMode.Simple);
 const minimalMode = computed(() => props.mode === TableMode.Minimal);
+const compactMode = computed(() => props.mode === TableMode.Compact);
+// Every row on one page, no pager and no sorting
+const unpagedMode = computed(() => minimalMode.value || compactMode.value);
 
 if (!serverMode) {
   const debouncedSearch = useDebounceFn((value: string) => {
@@ -420,13 +423,9 @@ const table = useVueTable({
   enableMultiSort: serverMode ? false : undefined,
   getCoreRowModel: getCoreRowModel(),
   getPaginationRowModel:
-    props.mode !== TableMode.Minimal && !serverMode
-      ? getPaginationRowModel()
-      : undefined,
+    !unpagedMode.value && !serverMode ? getPaginationRowModel() : undefined,
   getSortedRowModel:
-    props.mode !== TableMode.Minimal && !serverMode
-      ? getSortedRowModel()
-      : undefined,
+    !unpagedMode.value && !serverMode ? getSortedRowModel() : undefined,
   getExpandedRowModel: props.enableExpanding
     ? getExpandedRowModel()
     : undefined,
@@ -558,7 +557,7 @@ const table = useVueTable({
   },
   initialState: {
     pagination: {
-      pageSize: props.mode === TableMode.Minimal ? 99999 : props.pageSize,
+      pageSize: unpagedMode.value ? 99999 : props.pageSize,
     },
     columnPinning: columnPinningState.value,
   },
@@ -572,7 +571,7 @@ const table = useVueTable({
 watch(
   () => props.pageSize,
   (size) => {
-    if (!serverMode && !minimalMode.value) table.setPageSize(size);
+    if (!serverMode && !unpagedMode.value) table.setPageSize(size);
   },
 );
 
@@ -688,6 +687,7 @@ const hasSearchableColumns = computed(() => {
         'table-view',
         `${advancedMode ? 'table-view--advanced' : ''}`,
         `${minimalMode ? 'table-view--minimal' : ''}`,
+        `${compactMode ? 'table-view--compact' : ''}`,
         `${tableMaximized ? 'table-view--maximized' : ''}`,
         `${advancedMode && !tableMaximized ? '-mt-40' : ''}`,
       )
@@ -826,7 +826,7 @@ const hasSearchableColumns = computed(() => {
       </TableBody>
     </Table>
     <TablePagination
-      v-if="!minimalMode"
+      v-if="!unpagedMode"
       :entity-key="entityKey"
       :rows-selectable="rowsSelectable"
       :selected-count="serverMode ? selectedCount : undefined"
@@ -879,5 +879,32 @@ const hasSearchableColumns = computed(() => {
 /* Minimal mode: no row hover */
 .table-view--minimal :deep(tr[data-slot='table-row']:hover) {
   background: transparent;
+}
+
+/* Compact mode: the surrounding card is the frame, so no border of its own; it
+   fills its parent and scrolls under a sticky header */
+.table-view--compact {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  padding-bottom: 0;
+}
+.table-view--compact :deep([data-slot='table-container']) {
+  background: transparent;
+  border-radius: 0;
+}
+.table-view--compact :deep(td[data-slot='table-cell']),
+.table-view--compact :deep(th[data-slot='table-head']) {
+  border-left: 0;
+  border-radius: 0;
+}
+/* Line the outer columns up with the card's 20px padding */
+.table-view--compact :deep(td[data-slot='table-cell']:first-child > *),
+.table-view--compact :deep(th[data-slot='table-head']:first-child > *) {
+  padding-left: 1.25rem;
+}
+.table-view--compact :deep(td[data-slot='table-cell']:last-child > *),
+.table-view--compact :deep(th[data-slot='table-head']:last-child > *) {
+  padding-right: 1.25rem;
 }
 </style>

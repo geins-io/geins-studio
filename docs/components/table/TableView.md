@@ -4,7 +4,7 @@
 
 ## Features
 
-- Three layout modes (`Advanced`, `Simple`, `Minimal`) via the `TableMode` enum
+- Four layout modes (`Advanced`, `Simple`, `Minimal`, `Compact`) via the `TableMode` enum
 - Client or server data source: sort, page and search in the browser, or let the backend do it (see [Server mode](#server-mode))
 - Built-in global search with 300ms debounce and field allowlist
 - Column visibility + order persisted per user/route via cookies
@@ -49,6 +49,24 @@ For tables embedded inside cards or panels — no search, no pagination, no pinn
     :data="data"
     :mode="TableMode.Minimal"
     entity-key="line"
+  />
+</template>
+```
+
+### Compact mode (a list inside a card)
+
+For short lists that sit in a card of their own, like the dashboard's list widgets. No border of its own, no column lines, a small muted header that sticks while the rows scroll, 52px rows with hover, and the outer columns lined up with the card's 20px padding. No search, pagination, sorting or pinning. The table fills its parent's height, so give the parent a height (`min-h-0 flex-1` in a flex column).
+
+```vue
+<template>
+  <TableView
+    :columns="columns"
+    :data="rows"
+    :mode="TableMode.Compact"
+    entity-key="order"
+    :loading="pending"
+    :error="failed"
+    :on-retry="refresh"
   />
 </template>
 ```
@@ -188,7 +206,7 @@ Field used as the stable row identifier for selection persistence.
 pageSize?: number
 ```
 
-Page size in client mode. Later changes to the prop are applied too. Ignored in `Minimal` mode (no pagination). In server mode the size comes from the `pagination` model.
+Page size in client mode. Later changes to the prop are applied too. Ignored in `Minimal` and `Compact` modes (no pagination). In server mode the size comes from the `pagination` model.
 
 - **Default:** `30`
 
@@ -256,7 +274,7 @@ Whitelist of fields the global search input filters against.
 mode?: TableMode
 ```
 
-`TableMode.Advanced` (default — search, column toggle, pinning, maximize), `TableMode.Simple` (search optional, no pinning), `TableMode.Minimal` (no chrome, fully embedded).
+`TableMode.Advanced` (default — search, column toggle, pinning, maximize), `TableMode.Simple` (search optional, no pinning), `TableMode.Minimal` (no chrome, fully embedded), `TableMode.Compact` (a short list inside a card: small header, compact rows, no paging or sorting).
 
 - **Default:** `TableMode.Advanced`
 

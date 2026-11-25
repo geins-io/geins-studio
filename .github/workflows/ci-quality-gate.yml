@@ -2,7 +2,8 @@ name: CI Quality Gate
 
 on:
   pull_request:
-    branches: [main, next]
+    # feat/dashboards: long-lived feature branch until the PO approves the start dashboard
+    branches: [main, next, feat/dashboards]
   push:
     branches: [main, next]
 

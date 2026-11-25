@@ -10,6 +10,8 @@ export const enum TableMode {
   Simple = 'simple',
   Advanced = 'advanced',
   Minimal = 'minimal',
+  /** A short list inside a card (dashboard widgets): no paging or sorting */
+  Compact = 'compact',
 }
 
 /**

@@ -16,8 +16,9 @@ Tables in Geins Studio are built with TanStack Table wrapped by `TableView`. The
 | `Advanced` | Full list pages | Pagination, sorting, column toggle, pinning, borders |
 | `Simple` | Lightweight nested tables | Reduced chrome |
 | `Minimal` | Inline edit-page tables (e.g. quotation items) | No pagination, no sorting, no borders, taller rows |
+| `Compact` | A short list inside a card (dashboard list widgets) | No pagination, no sorting, no border or column lines, small muted header, 52px rows with hover; fills its parent's height |
 
-Pass mode via `table.options.meta.mode`. Minimal-mode styling overrides live in scoped CSS on `.table-view--minimal` in `TableView.vue` — never modify UI primitives for mode-specific styling.
+Pass mode via `table.options.meta.mode`. Minimal- and compact-mode styling overrides live in scoped CSS on `.table-view--minimal` / `.table-view--compact` in `TableView.vue` — never modify UI primitives for mode-specific styling.
 
 ## Client vs server data source
 
