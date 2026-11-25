@@ -19,6 +19,7 @@ const {
   cancelEdit,
   doneEdit,
   removeWidget,
+  resetToDefault,
 } = useDashboard();
 
 // A minute tick, so the greeting and date follow the day while the page stays open
@@ -79,8 +80,32 @@ breadcrumbsStore.setShowBreadcrumbs(false);
   <Feedback v-if="editing" type="info" class="mb-4">
     <template #description>{{ $t('dashboards.edit_hint') }}</template>
   </Feedback>
+  <Card v-if="!items.length">
+    <CardContent class="p-0">
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <LucideLayoutGrid class="size-5" />
+          </EmptyMedia>
+          <EmptyTitle>{{ $t('dashboards.empty_title') }}</EmptyTitle>
+          <EmptyDescription>
+            {{ $t('dashboards.empty_description') }}
+          </EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <ButtonIcon
+            icon="LayoutDashboard"
+            variant="secondary"
+            @click="resetToDefault"
+          >
+            {{ $t('dashboards.use_default') }}
+          </ButtonIcon>
+        </EmptyContent>
+      </Empty>
+    </CardContent>
+  </Card>
   <!-- Rendered once measured, so phones never flash the grid first -->
-  <div ref="board">
+  <div v-else ref="board">
     <DashboardBoard
       v-if="width > 0"
       v-model:layout="layout"

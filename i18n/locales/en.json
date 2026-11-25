@@ -1010,7 +1010,10 @@
         "description": "The most recent orders placed by buyers linked to a company"
       }
     },
-    "edit_hint": "Drag a widget by its header to move it, drag its bottom-right corner to resize it, and remove it with ✕."
+    "edit_hint": "Drag a widget by its header to move it, drag its bottom-right corner to resize it, and remove it with ✕.",
+    "empty_title": "Build your dashboard",
+    "empty_description": "Add widgets to keep an eye on what matters to you, or start from the default dashboard.",
+    "use_default": "Use the default dashboard"
   },
   "changelog": {
     "tab_title": "Changelog",

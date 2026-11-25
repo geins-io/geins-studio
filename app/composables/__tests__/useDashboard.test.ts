@@ -1,16 +1,42 @@
 // @vitest-environment node
-import { describe, it, expect } from 'vitest';
+import { mockNuxtImport } from '@nuxt/test-utils/runtime';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
+import { computed, nextTick, reactive } from 'vue';
+import type { DashboardBoard } from '#shared/types';
+import { createDashboardBoard } from '@/lib/dashboard';
 import { useDashboard } from '../dashboard/useDashboard';
 
+const storage = vi.hoisted(() => ({
+  state: null as null | {
+    key: string | null;
+    stored: DashboardBoard | null;
+    saved: DashboardBoard[];
+  },
+}));
+
+mockNuxtImport('useDashboardStorage', () => () => ({
+  storageKey: computed(() => storage.state!.key),
+  load: () => storage.state!.stored,
+  save: (board: DashboardBoard) =>
+    storage.state!.saved.push(JSON.parse(JSON.stringify(board))),
+}));
+
+const snapshotOf = (dashboard: ReturnType<typeof useDashboard>) =>
+  JSON.parse(
+    JSON.stringify({
+      items: dashboard.items.value,
+      layout: dashboard.layout.value,
+    }),
+  );
+
+beforeEach(() => {
+  storage.state = reactive({ key: null, stored: null, saved: [] });
+});
+
 describe('useDashboard edit session', () => {
-  it('restores the board exactly on cancel', () => {
+  it('restores the board exactly on cancel, without saving', () => {
     const dashboard = useDashboard();
-    const before = JSON.parse(
-      JSON.stringify({
-        items: dashboard.items.value,
-        layout: dashboard.layout.value,
-      }),
-    );
+    const before = snapshotOf(dashboard);
 
     dashboard.startEdit();
     // The grid moves layout items in place while dragging
@@ -19,13 +45,11 @@ describe('useDashboard edit session', () => {
     dashboard.cancelEdit();
 
     expect(dashboard.editing.value).toBe(false);
-    expect({
-      items: dashboard.items.value,
-      layout: dashboard.layout.value,
-    }).toEqual(before);
+    expect(snapshotOf(dashboard)).toEqual(before);
+    expect(storage.state!.saved).toHaveLength(0);
   });
 
-  it('keeps the changes on done', () => {
+  it('keeps and saves the changes on done', () => {
     const dashboard = useDashboard();
     dashboard.startEdit();
     dashboard.layout.value[0]!.y = 7;
@@ -33,6 +57,7 @@ describe('useDashboard edit session', () => {
 
     expect(dashboard.editing.value).toBe(false);
     expect(dashboard.layout.value[0]!.y).toBe(7);
+    expect(storage.state!.saved.at(-1)!.layout[0]!.y).toBe(7);
   });
 
   it('removes a widget together with its layout entry', () => {
@@ -56,5 +81,75 @@ describe('useDashboard edit session', () => {
     dashboard.cancelEdit();
 
     expect(dashboard.layout.value[0]!.y).toBe(y);
+  });
+});
+
+describe('useDashboard saved board', () => {
+  const saved = createDashboardBoard([['list-company-orders', 0, 0, 6, 8]]);
+
+  it('shows the saved board once user and account are known', async () => {
+    storage.state!.stored = saved;
+    const dashboard = useDashboard();
+    expect(dashboard.items.value).toHaveLength(2);
+
+    storage.state!.key = 'geins-dashboard-acme-u1';
+    await nextTick();
+
+    expect(snapshotOf(dashboard)).toEqual(saved);
+  });
+
+  it('starts from the default board when nothing is saved', () => {
+    storage.state!.key = 'geins-dashboard-acme-u1';
+    const dashboard = useDashboard();
+    expect(dashboard.items.value.map((item) => item.type)).toEqual([
+      'quick-access',
+      'list-company-orders',
+    ]);
+  });
+
+  it('saves widget settings right away, and keeps them through cancel', () => {
+    storage.state!.key = 'geins-dashboard-acme-u1';
+    const dashboard = useDashboard();
+    const quickAccess = dashboard.items.value[0]!.i;
+    const y = dashboard.layout.value[1]!.y;
+
+    dashboard.startEdit();
+    dashboard.layout.value[1]!.y = y + 5;
+    dashboard.updateWidgetConfig(quickAccess, { shortcuts: ['companies'] });
+
+    // Saved: the last saved layout with the new settings, not the edit
+    const lastSave = storage.state!.saved.at(-1)!;
+    expect(lastSave.layout[1]!.y).toBe(y);
+    expect(lastSave.items[0]!.config).toEqual({ shortcuts: ['companies'] });
+
+    dashboard.cancelEdit();
+    expect(dashboard.layout.value[1]!.y).toBe(y);
+    expect(dashboard.items.value[0]!.config).toEqual({
+      shortcuts: ['companies'],
+    });
+  });
+
+  it('saves nothing on done without a change', () => {
+    storage.state!.key = 'geins-dashboard-acme-u1';
+    const dashboard = useDashboard();
+    dashboard.startEdit();
+    dashboard.doneEdit();
+
+    expect(storage.state!.saved).toHaveLength(0);
+  });
+
+  it('puts the default board back and saves it', () => {
+    storage.state!.key = 'geins-dashboard-acme-u1';
+    storage.state!.stored = { items: [], layout: [] };
+    const dashboard = useDashboard();
+    expect(dashboard.items.value).toHaveLength(0);
+
+    dashboard.resetToDefault();
+
+    expect(dashboard.items.value.map((item) => item.type)).toEqual([
+      'quick-access',
+      'list-company-orders',
+    ]);
+    expect(storage.state!.saved.at(-1)!.items).toHaveLength(2);
   });
 });

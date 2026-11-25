@@ -102,4 +102,24 @@ describe('ContentEditTabs', () => {
 
     expect(replace).toHaveBeenCalledWith({ query: {} });
   });
+
+  it('never selects a disabled tab, from the URL or a click', async () => {
+    routeRef.query = { tab: '1' };
+    const withDisabled = [
+      'my work',
+      { label: 'new', disabled: true, tooltip: 'coming soon' },
+    ];
+
+    const wrapper = await mountWithContext(ContentEditTabs, {
+      props: { tabs: withDisabled, currentTab: 0 },
+    });
+    await flush();
+    await wrapper.findAll('button')[1]?.trigger('click');
+    await flush();
+
+    expect(wrapper.emitted('update:currentTab')).toBeUndefined();
+    expect(replace).not.toHaveBeenCalledWith(
+      expect.objectContaining({ query: expect.anything() }),
+    );
+  });
 });

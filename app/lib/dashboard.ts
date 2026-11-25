@@ -1,3 +1,4 @@
+import * as z from 'zod';
 import type {
   DashboardBoard,
   DashboardLayoutItem,
@@ -98,6 +99,105 @@ export function removeDashboardWidget(
     items: board.items.filter((item) => item.i !== i),
     layout: board.layout.filter((position) => position.i !== i),
   };
+}
+
+// ── Saved boards ─────────────────────────────────────────────────────────────
+
+/**
+ * Version of the saved shape. Bump it, and teach `parseStoredDashboards` the
+ * old one, when the shape changes; an unknown version falls back to the default.
+ */
+export const DASHBOARD_STORAGE_VERSION = 1;
+/** The one dashboard there is until users can have several */
+export const DEFAULT_DASHBOARD_ID = 'my-work';
+
+export function dashboardStorageKey(accountKey: string, userId: string) {
+  return `geins-dashboard-${accountKey}-${userId}`;
+}
+
+const storedDashboardsSchema = z.object({
+  version: z.literal(DASHBOARD_STORAGE_VERSION),
+  dashboards: z.array(
+    z.object({
+      id: z.string(),
+      items: z.array(
+        z.object({
+          i: z.string().min(1),
+          type: z.string(),
+          config: z.record(z.string(), z.unknown()).optional(),
+        }),
+      ),
+      layout: z.array(
+        z.object({
+          i: z.string(),
+          x: z.number().int(),
+          y: z.number().int(),
+          w: z.number().int(),
+          h: z.number().int(),
+        }),
+      ),
+    }),
+  ),
+});
+
+export type StoredDashboards = z.infer<typeof storedDashboardsSchema>;
+
+/** The saved form of a board: plain grid units only, no grid-internal flags */
+export function serializeDashboards(board: DashboardBoard): StoredDashboards {
+  return {
+    version: DASHBOARD_STORAGE_VERSION,
+    dashboards: [
+      {
+        id: DEFAULT_DASHBOARD_ID,
+        items: board.items.map(({ i, type, config }) =>
+          config ? { i, type, config } : { i, type },
+        ),
+        layout: board.layout.map(({ i, x, y, w, h }) => ({ i, x, y, w, h })),
+      },
+    ],
+  };
+}
+
+/**
+ * The saved board, made safe to render: widgets the registry no longer knows
+ * are dropped with their layout entries, a widget needs exactly one layout
+ * entry, and sizes are clamped to the widget's minimum and the grid. `null`
+ * when there's nothing usable (another version, or not a saved board at all).
+ */
+export function parseStoredDashboards(raw: unknown): DashboardBoard | null {
+  const parsed = storedDashboardsSchema.safeParse(raw);
+  if (!parsed.success) return null;
+  const stored =
+    parsed.data.dashboards.find((d) => d.id === DEFAULT_DASHBOARD_ID) ??
+    parsed.data.dashboards[0];
+  if (!stored) return null;
+
+  const positions = new Map(stored.layout.map((p) => [p.i, p]));
+  const board: DashboardBoard = { items: [], layout: [] };
+  const seen = new Set<string>();
+
+  for (const item of stored.items) {
+    const position = positions.get(item.i);
+    if (!isDashboardWidgetType(item.type) || !position || seen.has(item.i)) {
+      continue;
+    }
+    seen.add(item.i);
+    const { size } = DASHBOARD_WIDGETS[item.type];
+    const w = Math.min(Math.max(position.w, size.minW), DASHBOARD_GRID_COLUMNS);
+    board.items.push(
+      item.config
+        ? { i: item.i, type: item.type, config: item.config }
+        : { i: item.i, type: item.type },
+    );
+    board.layout.push({
+      i: item.i,
+      x: Math.min(Math.max(position.x, 0), DASHBOARD_GRID_COLUMNS - w),
+      y: Math.max(position.y, 0),
+      w,
+      h: Math.max(position.h, size.minH),
+    });
+  }
+  return board;
 }
 
 /**
