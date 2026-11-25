@@ -16,6 +16,8 @@ interface SheetContentProps extends DialogContentProps {
   class?: HTMLAttributes['class'];
   side?: 'top' | 'right' | 'bottom' | 'left';
   width?: 'narrow' | 'medium' | 'wide';
+  /** Classes for the modal overlay behind the sheet */
+  overlayClass?: HTMLAttributes['class'];
 }
 
 const widthClasses = computed(() => {
@@ -40,14 +42,14 @@ const props = withDefaults(defineProps<SheetContentProps>(), {
 });
 const emits = defineEmits<DialogContentEmits>();
 
-const delegatedProps = reactiveOmit(props, 'class', 'side');
+const delegatedProps = reactiveOmit(props, 'class', 'side', 'overlayClass');
 
 const forwarded = useForwardPropsEmits(delegatedProps, emits);
 </script>
 
 <template>
   <DialogPortal>
-    <SheetOverlay />
+    <SheetOverlay :class="overlayClass" />
     <DialogContent
       data-slot="sheet-content"
       :class="

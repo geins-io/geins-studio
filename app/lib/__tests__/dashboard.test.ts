@@ -3,14 +3,21 @@ import { describe, it, expect } from 'vitest';
 import type { DashboardLayoutItem } from '#shared/types';
 import {
   DASHBOARD_GRID_COLUMNS,
+  DASHBOARD_GRID_GAP,
+  DASHBOARD_ROW_HEIGHT,
   DASHBOARD_WIDGETS,
   DEFAULT_QUICK_ACCESS_SHORTCUTS,
   QUICK_ACCESS_SHORTCUTS,
+  addDashboardWidget,
   cloneDashboardBoard,
+  createDashboardBoard,
+  dashboardBottom,
+  dashboardCellAt,
   dashboardStorageKey,
   defaultDashboardBoard,
   greetingPeriod,
   isDashboardWidgetType,
+  nextDashboardWidgetId,
   parseStoredDashboards,
   quickAccessColumns,
   removeDashboardWidget,
@@ -136,6 +143,98 @@ describe('removeDashboardWidget', () => {
     expect(next.items).toEqual([second]);
     expect(next.layout.map((l) => l.i)).toEqual([second!.i]);
     expect(board.items).toHaveLength(2);
+  });
+});
+
+describe('addDashboardWidget', () => {
+  it('adds at the bottom on the left, at the default size', () => {
+    const board = defaultDashboardBoard();
+    const bottom = dashboardBottom(board.layout);
+    const next = addDashboardWidget(board, 'quick-access');
+    const added = next.layout.at(-1)!;
+    const { size } = DASHBOARD_WIDGETS['quick-access'];
+
+    expect(next.items.at(-1)!.type).toBe('quick-access');
+    expect(added).toMatchObject({ x: 0, y: bottom, w: size.w, h: size.h });
+    for (const position of board.layout) {
+      expect(added.y).toBeGreaterThanOrEqual(position.y + position.h);
+    }
+    expect(board.items).toHaveLength(2);
+  });
+
+  it('adds at the top of an empty board', () => {
+    const next = addDashboardWidget({ items: [], layout: [] }, 'quick-access');
+    expect(next.layout[0]).toMatchObject({ x: 0, y: 0 });
+  });
+
+  it('gives the same widget a new id each time', () => {
+    let board = defaultDashboardBoard();
+    board = addDashboardWidget(board, 'list-company-orders');
+    board = addDashboardWidget(board, 'list-company-orders');
+    const ids = board.items.map((item) => item.i);
+
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids.slice(-2)).toEqual([
+      expect.stringMatching(/^list-company-orders__\d+$/),
+      expect.stringMatching(/^list-company-orders__\d+$/),
+    ]);
+    expect(board.layout.map((l) => l.i)).toEqual(ids);
+  });
+
+  it('places it at a cell, kept on the grid', () => {
+    const board = defaultDashboardBoard();
+    const { w } = DASHBOARD_WIDGETS['list-company-orders'].size;
+
+    expect(
+      addDashboardWidget(board, 'list-company-orders', {
+        x: 4,
+        y: 2,
+      }).layout.at(-1),
+    ).toMatchObject({ x: 4, y: 2 });
+    expect(
+      addDashboardWidget(board, 'list-company-orders', {
+        x: 11,
+        y: -1,
+      }).layout.at(-1),
+    ).toMatchObject({ x: DASHBOARD_GRID_COLUMNS - w, y: 0 });
+  });
+});
+
+describe('nextDashboardWidgetId', () => {
+  it('skips ids already on the board', () => {
+    const { items } = createDashboardBoard([
+      ['quick-access', 0, 0],
+      ['quick-access', 0, 4],
+    ]);
+    // quick-access__0 and quick-access__1, minus the first
+    expect(nextDashboardWidgetId(items.slice(1), 'quick-access')).toBe(
+      'quick-access__2',
+    );
+  });
+});
+
+describe('dashboardCellAt', () => {
+  // 84px columns, so a column and its gap are 100px
+  const width = DASHBOARD_GRID_GAP * (DASHBOARD_GRID_COLUMNS + 1) + 84 * 12;
+  const rowPitch = DASHBOARD_ROW_HEIGHT + DASHBOARD_GRID_GAP;
+
+  it('maps a point to the cell whose corner is nearest', () => {
+    expect(dashboardCellAt(16 + 6 * 100, 16 + 3 * rowPitch, width, 4)).toEqual({
+      x: 6,
+      y: 3,
+    });
+    expect(dashboardCellAt(16 + 2 * 100 + 40, 16, width, 4)).toEqual({
+      x: 2,
+      y: 0,
+    });
+  });
+
+  it('keeps the widget on the grid', () => {
+    expect(dashboardCellAt(-50, -50, width, 4)).toEqual({ x: 0, y: 0 });
+    expect(dashboardCellAt(width, 16, width, 4)).toEqual({
+      x: DASHBOARD_GRID_COLUMNS - 4,
+      y: 0,
+    });
   });
 });
 

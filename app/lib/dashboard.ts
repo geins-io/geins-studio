@@ -4,6 +4,7 @@ import type {
   DashboardLayoutItem,
   DashboardWidgetDefinition,
   DashboardWidgetGroup,
+  DashboardWidgetInstance,
   DashboardWidgetType,
 } from '#shared/types';
 import { entityListUrl, entityNewUrl } from '#shared/utils/entities';
@@ -98,6 +99,80 @@ export function removeDashboardWidget(
   return {
     items: board.items.filter((item) => item.i !== i),
     layout: board.layout.filter((position) => position.i !== i),
+  };
+}
+
+// ── Adding widgets ───────────────────────────────────────────────────────────
+
+/** The grid's stand-in layout entry while a widget is dragged in from the panel */
+export const DASHBOARD_DROP_ID = '__dropping__';
+
+/** The first free row under every widget */
+export function dashboardBottom(layout: DashboardLayoutItem[]): number {
+  return layout.reduce((bottom, p) => Math.max(bottom, p.y + p.h), 0);
+}
+
+/**
+ * An instance id not on the board yet, `{type}__{n}`, so the same widget can
+ * sit on the board more than once.
+ */
+export function nextDashboardWidgetId(
+  items: DashboardWidgetInstance[],
+  type: DashboardWidgetType,
+): string {
+  const taken = new Set(items.map((item) => item.i));
+  let n = items.length;
+  while (taken.has(`${type}__${n}`)) n++;
+  return `${type}__${n}`;
+}
+
+/**
+ * The board with a new `type` widget at its default size: at `at`, or on the
+ * left under every other widget.
+ */
+export function addDashboardWidget(
+  board: DashboardBoard,
+  type: DashboardWidgetType,
+  at?: { x: number; y: number },
+): DashboardBoard {
+  const { size, defaultConfig } = DASHBOARD_WIDGETS[type];
+  const i = nextDashboardWidgetId(board.items, type);
+  const x = Math.min(Math.max(at?.x ?? 0, 0), DASHBOARD_GRID_COLUMNS - size.w);
+  const y = at ? Math.max(at.y, 0) : dashboardBottom(board.layout);
+  return {
+    items: [
+      ...board.items,
+      defaultConfig
+        ? { i, type, config: JSON.parse(JSON.stringify(defaultConfig)) }
+        : { i, type },
+    ],
+    layout: [...board.layout, { i, x, y, w: size.w, h: size.h }],
+  };
+}
+
+/**
+ * The grid cell for a widget `w` columns wide whose top-left corner is at
+ * `left`/`top` px from the grid's top-left, kept on the grid. Same maths as
+ * grid-layout-plus uses for its own drags, so the drop lands where it shows.
+ */
+export function dashboardCellAt(
+  left: number,
+  top: number,
+  gridWidth: number,
+  w: number,
+): { x: number; y: number } {
+  const colWidth =
+    (gridWidth - DASHBOARD_GRID_GAP * (DASHBOARD_GRID_COLUMNS + 1)) /
+    DASHBOARD_GRID_COLUMNS;
+  const x = Math.round(
+    (left - DASHBOARD_GRID_GAP) / (colWidth + DASHBOARD_GRID_GAP),
+  );
+  const y = Math.round(
+    (top - DASHBOARD_GRID_GAP) / (DASHBOARD_ROW_HEIGHT + DASHBOARD_GRID_GAP),
+  );
+  return {
+    x: Math.min(Math.max(x, 0), DASHBOARD_GRID_COLUMNS - w),
+    y: Math.max(y, 0),
   };
 }
 

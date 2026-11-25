@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useElementSize } from '@vueuse/core';
+import type { DashboardWidgetType } from '#shared/types';
 import type { TabDescriptor } from '@/components/content/edit/ContentEditTabs.vue';
 import { DASHBOARD_STACK_BELOW, greetingPeriod } from '@/lib/dashboard';
 
@@ -19,6 +20,7 @@ const {
   cancelEdit,
   doneEdit,
   removeWidget,
+  addWidget,
   resetToDefault,
 } = useDashboard();
 
@@ -52,6 +54,29 @@ const boardEl = useTemplateRef<HTMLElement>('board');
 const { width } = useElementSize(boardEl);
 const stacked = computed(() => width.value < DASHBOARD_STACK_BELOW);
 
+const addOpen = ref(false);
+// The widget being dragged from the panel onto the board
+const dropType = ref<DashboardWidgetType | null>(null);
+
+// From the empty board too, which isn't in edit mode yet
+const openAddWidget = () => {
+  startEdit();
+  addOpen.value = true;
+};
+
+// The panel closes after adding, so the new widget is in view
+const onAddWidget = (
+  type: DashboardWidgetType,
+  at?: { x: number; y: number },
+) => {
+  addWidget(type, at);
+  addOpen.value = false;
+};
+
+watch(editing, (isEditing) => {
+  if (!isEditing) addOpen.value = false;
+});
+
 const breadcrumbsStore = useBreadcrumbsStore();
 breadcrumbsStore.setShowBreadcrumbs(false);
 </script>
@@ -60,6 +85,9 @@ breadcrumbsStore.setShowBreadcrumbs(false);
   <ContentHeader :title="greeting" :description="today">
     <div class="flex items-start gap-2">
       <template v-if="editing">
+        <ButtonIcon icon="new" variant="secondary" @click="addOpen = true">
+          {{ $t('add_entity', { entityKey: 'widget' }) }}
+        </ButtonIcon>
         <Button variant="ghost" @click="cancelEdit">{{ $t('cancel') }}</Button>
         <ButtonIcon icon="Check" @click="doneEdit">{{ $t('done') }}</ButtonIcon>
       </template>
@@ -77,7 +105,8 @@ breadcrumbsStore.setShowBreadcrumbs(false);
       <ContentEditTabs v-model:current-tab="currentTab" :tabs="tabs" />
     </template>
   </ContentHeader>
-  <Feedback v-if="editing" type="info" class="mb-4">
+  <!-- Moving and resizing need the grid: no hint on a stacked or empty board -->
+  <Feedback v-if="editing && !stacked" type="info" class="mb-4">
     <template #description>{{ $t('dashboards.edit_hint') }}</template>
   </Feedback>
   <Card v-if="!items.length">
@@ -92,7 +121,10 @@ breadcrumbsStore.setShowBreadcrumbs(false);
             {{ $t('dashboards.empty_description') }}
           </EmptyDescription>
         </EmptyHeader>
-        <EmptyContent>
+        <EmptyContent class="flex-row flex-wrap justify-center gap-2">
+          <ButtonIcon icon="new" @click="openAddWidget">
+            {{ $t('add_entity', { entityKey: 'widget' }) }}
+          </ButtonIcon>
           <ButtonIcon
             icon="LayoutDashboard"
             variant="secondary"
@@ -112,7 +144,15 @@ breadcrumbsStore.setShowBreadcrumbs(false);
       :items="items"
       :stacked="stacked"
       :editing="editing"
+      :drop-type="dropType"
       @remove="removeWidget"
+      @drop="onAddWidget"
     />
   </div>
+  <DashboardAddWidgetPanel
+    v-model:open="addOpen"
+    v-model:drag-type="dropType"
+    :items="items"
+    @add="onAddWidget"
+  />
 </template>
