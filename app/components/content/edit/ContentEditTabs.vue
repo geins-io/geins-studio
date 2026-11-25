@@ -2,6 +2,12 @@
 export interface TabDescriptor {
   label: string;
   error?: boolean;
+  /** Shown but not selectable, e.g. a tab that's coming later */
+  disabled?: boolean;
+  /** Tooltip text, typically why the tab is disabled */
+  tooltip?: string;
+  /** Lucide icon name shown before the label */
+  icon?: string;
 }
 
 const props = defineProps<{
@@ -9,13 +15,22 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
+const { resolveIcon } = useLucideIcon();
 
-const normalizedTabs = computed<TabDescriptor[]>(() =>
-  props.tabs.map((t) => (typeof t === 'string' ? { label: t } : t)),
+const normalizedTabs = computed(() =>
+  props.tabs.map((tab) => {
+    const descriptor: TabDescriptor =
+      typeof tab === 'string' ? { label: tab } : tab;
+    return {
+      ...descriptor,
+      iconComponent: descriptor.icon ? resolveIcon(descriptor.icon) : null,
+    };
+  }),
 );
 
 const currentTab = defineModel<number>('currentTab');
 const setCurrentTab = (value: number) => {
+  if (normalizedTabs.value[value]?.disabled) return;
   currentTab.value = value;
 };
 
@@ -83,33 +98,52 @@ watch(currentTab, async (value) => {
 
 <template>
   <nav class="w-full overflow-auto">
-    <ul class="flex gap-2">
-      <li v-for="(tab, index) in normalizedTabs" :key="index">
-        <button
-          type="button"
-          :class="
-            cn(
-              'text-muted-foreground relative border-b-4 border-transparent px-1.5 py-0.5 text-xs font-bold whitespace-nowrap transition-colors duration-200 ease-in-out sm:px-3 sm:py-1.5 sm:text-sm',
-              `${currentTab === index ? 'border-foreground text-foreground' : ''}`,
-            )
-          "
-          @click="setCurrentTab(index)"
-        >
-          {{ tab.label }}
-          <span
-            aria-hidden="true"
-            :class="
-              cn(
-                'bg-destructive absolute top-0 right-0 size-1.5 rounded-full transition-opacity duration-150 ease-in-out',
-                tab.error ? 'opacity-100' : 'opacity-0',
-              )
-            "
-          />
-          <span v-if="tab.error" class="sr-only">
-            {{ t('tab_has_errors') }}
-          </span>
-        </button>
-      </li>
-    </ul>
+    <TooltipProvider :delay-duration="100">
+      <ul class="flex gap-2">
+        <li v-for="(tab, index) in normalizedTabs" :key="index">
+          <Tooltip :disabled="!tab.tooltip">
+            <TooltipTrigger as-child>
+              <!-- aria-disabled, not disabled: a disabled button gets no
+                   pointer events, so its tooltip would never open -->
+              <button
+                type="button"
+                :aria-disabled="tab.disabled || undefined"
+                :class="
+                  cn(
+                    'text-muted-foreground relative flex items-center gap-1 border-b-4 border-transparent px-1.5 py-0.5 text-xs font-bold whitespace-nowrap transition-colors duration-200 ease-in-out sm:px-3 sm:py-1.5 sm:text-sm',
+                    `${currentTab === index ? 'border-foreground text-foreground' : ''}`,
+                    tab.disabled && 'cursor-not-allowed opacity-50',
+                  )
+                "
+                @click="setCurrentTab(index)"
+              >
+                <component
+                  :is="tab.iconComponent"
+                  v-if="tab.iconComponent"
+                  class="size-4"
+                  aria-hidden="true"
+                />
+                {{ tab.label }}
+                <span
+                  aria-hidden="true"
+                  :class="
+                    cn(
+                      'bg-destructive absolute top-0 right-0 size-1.5 rounded-full transition-opacity duration-150 ease-in-out',
+                      tab.error ? 'opacity-100' : 'opacity-0',
+                    )
+                  "
+                />
+                <span v-if="tab.error" class="sr-only">
+                  {{ t('tab_has_errors') }}
+                </span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent v-if="tab.tooltip">
+              {{ tab.tooltip }}
+            </TooltipContent>
+          </Tooltip>
+        </li>
+      </ul>
+    </TooltipProvider>
   </nav>
 </template>

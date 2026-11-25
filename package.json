@@ -65,6 +65,7 @@
     "cronstrue": "^3.14.0",
     "fflate": "^0.8.3",
     "flag-icons": "^7.5.0",
+    "grid-layout-plus": "1.1.1",
     "iron-webcrypto": "^2.0.0",
     "jose": "^6.2.16",
     "jwt-decode": "^4.0.0",

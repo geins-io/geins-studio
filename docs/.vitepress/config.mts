@@ -175,6 +175,12 @@ export default defineConfig({
             ],
           },
           {
+            text: 'Dashboard',
+            items: [
+              { text: 'useDashboard', link: '/composables/useDashboard.md' },
+            ],
+          },
+          {
             text: 'Orders',
             items: [
               {
@@ -994,6 +1000,28 @@ export default defineConfig({
               {
                 text: 'OrchestratorLiveConsole',
                 link: '/components/orchestrator/OrchestratorLiveConsole.md',
+              },
+            ],
+          },
+          {
+            text: 'Dashboard',
+            collapsed: true,
+            items: [
+              {
+                text: 'DashboardBoard',
+                link: '/components/dashboard/DashboardBoard.md',
+              },
+              {
+                text: 'DashboardWidget',
+                link: '/components/dashboard/DashboardWidget.md',
+              },
+              {
+                text: 'DashboardWidgetQuickAccess',
+                link: '/components/dashboard/DashboardWidgetQuickAccess.md',
+              },
+              {
+                text: 'DashboardWidgetCompanyOrders',
+                link: '/components/dashboard/DashboardWidgetCompanyOrders.md',
               },
             ],
           },

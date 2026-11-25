@@ -4,7 +4,9 @@
 
 ## Features
 
-- Two label shapes: `string` or `TabDescriptor` (`{ label, error? }`)
+- Two label shapes: `string` or `TabDescriptor` (`{ label, error?, disabled?, tooltip?, icon? }`)
+- Disabled tabs: shown but never selected. They use `aria-disabled` rather than `disabled`, so their tooltip still opens on hover
+- Optional tooltip per tab and a Lucide icon before the label (resolved with `useLucideIcon()`)
 - Red dot in the top-right corner of any tab whose `error` is `true` (with screen-reader announcement)
 - Two-way `v-model:current-tab` (numeric index)
 - URL query sync: writes `?tab=N` on change, reads it on mount, removes the query when index `0` is selected
@@ -40,6 +42,17 @@ const tabs = computed<TabDescriptor[]>(() => [
 <template>
   <ContentEditTabs v-model:current-tab="currentTab" :tabs="tabs" />
 </template>
+```
+
+### Disabled tab with a tooltip
+
+```vue
+<script setup lang="ts">
+const tabs = computed<TabDescriptor[]>(() => [
+  { label: t('dashboards.my_work') },
+  { label: t('new'), icon: 'Plus', disabled: true, tooltip: t('coming_soon') },
+]);
+</script>
 ```
 
 ## Props
