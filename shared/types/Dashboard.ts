@@ -44,6 +44,11 @@ export interface DashboardWidgetDefinition {
    * lets the content decide. Omitted: the grid height (rows × row height + gaps).
    */
   stackedHeight?: number | 'auto';
+  /**
+   * The height follows the content: the widget frame measures it and sets the
+   * grid height to the rows it needs, so the user resizes only the width.
+   */
+  fit?: boolean;
   /** Settings a new instance starts with */
   defaultConfig?: Record<string, unknown>;
 }

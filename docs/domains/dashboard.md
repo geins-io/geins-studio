@@ -23,6 +23,12 @@ It is built in the long-lived `feat/dashboards` branch and merges into `next` on
 
 **Grid** — 12 columns, 28px rows, 16px gaps (`grid-layout-plus`). Below 640px of board width the widgets stack one per row in reading order.
 
+**Fitted height** — A widget registered with `fit` (Quick access) has the height its content needs: the widget frame measures it and reports it in grid rows (`fitWidget`), and the user resizes only its width. The height follows the width and settings, so it isn't saved on its own.
+
+**Widget settings** — A widget with settings has a sliders button in its header ([`DashboardWidgetSettings`](/components/dashboard/DashboardWidgetSettings.md)) that opens a narrow panel. Settings live in the instance's `config` and save as soon as the panel's Save is clicked, in or outside edit mode.
+
+**Quick access shortcuts** — `QUICK_ACCESS_SHORTCUTS`: create a company, companies, create a price list, price lists, quotations, asset library, upload assets, workflows, workflow runs (the Executions page, labelled "Executions" as in the navigation) and channels. URLs come from the entity registry; ids are saved in `config.shortcuts`, so they must stay stable. The default is the four links the start page had before the dashboard.
+
 ## Widgets and their data
 
 | Widget                | Reads                                                                               | Filters |

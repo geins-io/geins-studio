@@ -20,6 +20,8 @@ const {
   doneEdit,
   removeWidget,
   resetToDefault,
+  updateWidgetConfig,
+  fitWidget,
 } = useDashboard();
 
 // A minute tick, so the greeting and date follow the day while the page stays open
@@ -113,6 +115,8 @@ breadcrumbsStore.setShowBreadcrumbs(false);
       :stacked="stacked"
       :editing="editing"
       @remove="removeWidget"
+      @fit="fitWidget"
+      @update-config="updateWidgetConfig"
     />
   </div>
 </template>

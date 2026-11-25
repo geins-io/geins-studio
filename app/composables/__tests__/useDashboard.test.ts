@@ -138,6 +138,33 @@ describe('useDashboard saved board', () => {
     expect(storage.state!.saved).toHaveLength(0);
   });
 
+  it('fits a widget height without saving it, and keeps it through cancel', () => {
+    storage.state!.key = 'geins-dashboard-acme-u1';
+    const dashboard = useDashboard();
+    const quickAccess = dashboard.layout.value[0]!;
+    const before = dashboard.layout.value;
+
+    dashboard.startEdit();
+    dashboard.fitWidget(quickAccess.i, quickAccess.h + 2);
+
+    // A new array, so the grid compacts the widgets below
+    expect(dashboard.layout.value).not.toBe(before);
+    expect(dashboard.layout.value[0]!.h).toBe(quickAccess.h + 2);
+
+    dashboard.cancelEdit();
+    expect(dashboard.layout.value[0]!.h).toBe(quickAccess.h + 2);
+    expect(storage.state!.saved).toHaveLength(0);
+  });
+
+  it('leaves the layout alone when the fitted height is already set', () => {
+    const dashboard = useDashboard();
+    const { i, h } = dashboard.layout.value[0]!;
+    const before = dashboard.layout.value;
+
+    dashboard.fitWidget(i, h);
+    expect(dashboard.layout.value).toBe(before);
+  });
+
   it('puts the default board back and saves it', () => {
     storage.state!.key = 'geins-dashboard-acme-u1';
     storage.state!.stored = { items: [], layout: [] };

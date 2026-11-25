@@ -20,6 +20,7 @@ interface UseDashboardReturnType {
   removeWidget: (i: string) => void;
   resetToDefault: () => void;
   updateWidgetConfig: (i: string, config: Record<string, unknown>) => void;
+  fitWidget: (i: string, h: number) => void;
 }
 
 /**
@@ -40,6 +41,7 @@ interface UseDashboardReturnType {
  * @property {function} removeWidget - Takes a widget and its layout entry off the board
  * @property {function} resetToDefault - Replaces the board with the default one and saves it
  * @property {function} updateWidgetConfig - Sets a widget's own settings and saves them right away
+ * @property {function} fitWidget - Sets the height (grid rows) a widget that fits its content needs
  */
 export const useDashboard = (): UseDashboardReturnType => {
   const storage = useDashboardStorage();
@@ -51,13 +53,25 @@ export const useDashboard = (): UseDashboardReturnType => {
   const editing = ref(false);
   let snapshot: DashboardBoard | null = null;
 
+  // Rows each content-fitted widget last reported. A fitted height follows the
+  // widget's width and settings, not a saved layout, so it's put back over any
+  // board that replaces the current one (Cancel, load, reset).
+  const fitted = new Map<string, number>();
+  const withFittedHeights = (positions: DashboardLayoutItem[]) =>
+    positions.map((position) => {
+      const h = fitted.get(position.i);
+      return h === undefined || h === position.h
+        ? position
+        : { ...position, h };
+    });
+
   const current = (): DashboardBoard => ({
     items: items.value,
     layout: layout.value,
   });
   const apply = (next: DashboardBoard) => {
     items.value = next.items;
-    layout.value = next.layout;
+    layout.value = withFittedHeights(next.layout);
   };
 
   // The user can load after the page, and switching account swaps the board
@@ -122,6 +136,17 @@ export const useDashboard = (): UseDashboardReturnType => {
     storage.save(snapshot ?? current());
   };
 
+  // Not saved on its own: it's derived, and saving would make a user who never
+  // changed anything keep this board instead of the default as it grows. A new
+  // layout array makes the grid compact the widgets below. A refit during an
+  // edit (the width crossing a column step) still counts as a change on Done.
+  const fitWidget = (i: string, h: number) => {
+    fitted.set(i, h);
+    if (layout.value.some((position) => position.i === i && position.h !== h)) {
+      layout.value = withFittedHeights(layout.value);
+    }
+  };
+
   return {
     items,
     layout,
@@ -132,5 +157,6 @@ export const useDashboard = (): UseDashboardReturnType => {
     removeWidget,
     resetToDefault,
     updateWidgetConfig,
+    fitWidget,
   };
 };

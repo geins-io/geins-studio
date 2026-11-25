@@ -1003,7 +1003,10 @@
     "widgets": {
       "quick_access": {
         "title": "Snabbåtkomst",
-        "description": "Genvägar till vardagliga uppgifter"
+        "description": "Genvägar du väljer själv",
+        "choose": "Välj genvägar",
+        "choose_description": "Välj vilka genvägar som ska visas.",
+        "empty": "Inga genvägar valda än."
       },
       "company_orders": {
         "title": "Senaste företagsordrar",
