@@ -214,6 +214,7 @@
   "add_selected": "Add selected",
   "select_from": "Select from",
   "cancel": "Cancel",
+  "done": "Done",
   "recommended": "Recommended",
   "continue": "Continue",
   "exclude": "Exclude",
@@ -1008,7 +1009,8 @@
         "title": "Latest company orders",
         "description": "The most recent orders placed by buyers linked to a company"
       }
-    }
+    },
+    "edit_hint": "Drag a widget by its header to move it, drag its bottom-right corner to resize it, and remove it with ✕."
   },
   "changelog": {
     "tab_title": "Changelog",

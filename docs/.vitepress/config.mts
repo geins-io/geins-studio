@@ -1016,6 +1016,10 @@ export default defineConfig({
                 link: '/components/dashboard/DashboardWidget.md',
               },
               {
+                text: 'DashboardWidgetRemove',
+                link: '/components/dashboard/DashboardWidgetRemove.md',
+              },
+              {
                 text: 'DashboardWidgetQuickAccess',
                 link: '/components/dashboard/DashboardWidgetQuickAccess.md',
               },

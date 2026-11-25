@@ -6,6 +6,7 @@ import type {
   DashboardWidgetType,
 } from '#shared/types';
 import {
+  DASHBOARD_BOARD_CONTEXT,
   DASHBOARD_GRID_COLUMNS,
   DASHBOARD_GRID_GAP,
   DASHBOARD_ROW_HEIGHT,
@@ -22,14 +23,23 @@ import {
 /**
  * The dashboard grid: 12 columns, widgets placed by `layout`. With `stacked`
  * (a narrow board) the widgets go one per row in reading order instead.
+ * While `editing`, widgets drag by their header and resize from the corner.
  */
 const props = defineProps<{
   items: DashboardWidgetInstance[];
   stacked?: boolean;
+  editing?: boolean;
 }>();
+
+const emit = defineEmits<{ remove: [i: string] }>();
 
 const layout = defineModel<DashboardLayoutItem[]>('layout', {
   required: true,
+});
+
+provide(DASHBOARD_BOARD_CONTEXT, {
+  editing: computed(() => props.editing),
+  remove: (i) => emit('remove', i),
 });
 
 // Every widget type needs a component; the Record makes a missing one a type error.
@@ -86,11 +96,11 @@ const stackedEntries = computed(() =>
     :col-num="DASHBOARD_GRID_COLUMNS"
     :row-height="DASHBOARD_ROW_HEIGHT"
     :margin="[DASHBOARD_GRID_GAP, DASHBOARD_GRID_GAP]"
-    :is-draggable="false"
-    :is-resizable="false"
+    :is-draggable="editing"
+    :is-resizable="editing"
     vertical-compact
     use-css-transforms
-    class="-m-4"
+    class="dashboard-grid -m-4"
   >
     <GridItem
       v-for="{ position, item, size } in placed"
@@ -102,8 +112,21 @@ const stackedEntries = computed(() =>
       :h="position.h"
       :min-w="size.minW"
       :min-h="size.minH"
+      drag-allow-from=".dashboard-widget-handle"
     >
       <component :is="WIDGET_COMPONENTS[item.type]" :instance="item" />
     </GridItem>
   </GridLayout>
 </template>
+
+<style scoped>
+/* grid-layout-plus themes itself through these variables (default: red) */
+.dashboard-grid {
+  --vgl-placeholder-bg: var(--link);
+  --vgl-placeholder-opacity: 15%;
+  --vgl-resizer-border-color: var(--muted-foreground);
+}
+.dashboard-grid :deep(.vgl-item--placeholder) {
+  border-radius: var(--radius);
+}
+</style>

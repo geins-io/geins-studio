@@ -6,6 +6,7 @@ import type {
   DashboardWidgetType,
 } from '#shared/types';
 import { entityListUrl, entityNewUrl } from '#shared/utils/entities';
+import type { InjectionKey, Ref } from 'vue';
 
 /** Grid columns, row height (px) and gap (px), as in the prototype */
 export const DASHBOARD_GRID_COLUMNS = 12;
@@ -79,6 +80,37 @@ export function defaultDashboardBoard(): DashboardBoard {
     ['list-company-orders', 0, 4],
   ]);
 }
+
+/**
+ * A deep copy of plain board data. The grid moves layout items in place while
+ * dragging, so an edit session keeps a copy to restore on Cancel.
+ */
+export function cloneDashboardBoard(board: DashboardBoard): DashboardBoard {
+  return JSON.parse(JSON.stringify(board));
+}
+
+/** The board without widget `i`: its item and its layout entry */
+export function removeDashboardWidget(
+  board: DashboardBoard,
+  i: string,
+): DashboardBoard {
+  return {
+    items: board.items.filter((item) => item.i !== i),
+    layout: board.layout.filter((position) => position.i !== i),
+  };
+}
+
+/**
+ * What a board gives the widgets inside it: whether it's being edited, and
+ * how to take a widget off it.
+ */
+export interface DashboardBoardContext {
+  editing: Readonly<Ref<boolean>>;
+  remove: (i: string) => void;
+}
+
+export const DASHBOARD_BOARD_CONTEXT: InjectionKey<DashboardBoardContext> =
+  Symbol('dashboard-board');
 
 /** Layout in reading order (top to bottom, then left to right) for stacking */
 export function stackedOrder(

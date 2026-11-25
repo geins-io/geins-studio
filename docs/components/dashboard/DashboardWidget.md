@@ -1,6 +1,8 @@
 # `DashboardWidget`
 
-The frame every dashboard widget renders itself in: a card with a header (title, description, optional badge, actions) and a body. Title, description and variant come from the widget registry (`DASHBOARD_WIDGETS` in `app/lib/dashboard.ts`), looked up by `type`.
+The frame every dashboard widget renders itself in: a card with a header (title, description, optional badge, actions) and a body. Title, description and variant come from the widget registry (`DASHBOARD_WIDGETS` in `app/lib/dashboard.ts`), looked up by the instance's `type`.
+
+While the board around it is edited (`DASHBOARD_BOARD_CONTEXT` from [`DashboardBoard`](/components/dashboard/DashboardBoard.md)), the header shows a grip and becomes the drag handle, a [`DashboardWidgetRemove`](/components/dashboard/DashboardWidgetRemove.md) ✕ sits at its right end, and the card gets a `--link` ring. A `bare` widget drags by the whole card and shows the ✕ in its top-right corner. Outside a board nothing is editable.
 
 ## Variants
 
@@ -21,7 +23,7 @@ defineProps<{ instance: DashboardWidgetInstance }>();
 </script>
 
 <template>
-  <DashboardWidget :type="instance.type">
+  <DashboardWidget :instance="instance">
     <template #actions>
       <!-- icon buttons in the header, e.g. settings -->
     </template>
@@ -32,11 +34,11 @@ defineProps<{ instance: DashboardWidgetInstance }>();
 
 ## Props
 
-| Prop          | Type                  | Meaning                                               |
-| ------------- | --------------------- | ----------------------------------------------------- |
-| `type`        | `DashboardWidgetType` | The registry entry for title, description and variant |
-| `description` | `string`              | Replaces the registry description, e.g. one per mode  |
-| `badge`       | `number`              | A count next to the title (`danger` badge)            |
+| Prop          | Type                      | Meaning                                                                    |
+| ------------- | ------------------------- | -------------------------------------------------------------------------- |
+| `instance`    | `DashboardWidgetInstance` | The widget; its `type` picks the registry entry, its `i` is what ✕ removes |
+| `description` | `string`                  | Replaces the registry description, e.g. one per mode                       |
+| `badge`       | `number`                  | A count next to the title (`danger` badge)                                 |
 
 ## Slots
 

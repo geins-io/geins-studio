@@ -6,10 +6,12 @@ import {
   DASHBOARD_WIDGETS,
   DEFAULT_QUICK_ACCESS_SHORTCUTS,
   QUICK_ACCESS_SHORTCUTS,
+  cloneDashboardBoard,
   defaultDashboardBoard,
   greetingPeriod,
   isDashboardWidgetType,
   quickAccessColumns,
+  removeDashboardWidget,
   rowsToPixels,
   stackedOrder,
 } from '../dashboard';
@@ -107,5 +109,29 @@ describe('quick access', () => {
     expect(quickAccessColumns(400, 4)).toBe(2);
     expect(quickAccessColumns(2000, 4)).toBe(4);
     expect(quickAccessColumns(2000, 0)).toBe(1);
+  });
+});
+
+describe('cloneDashboardBoard', () => {
+  it('copies deeply, configs included', () => {
+    const board = defaultDashboardBoard();
+    board.items[0]!.config = { shortcuts: ['companies'] };
+    const copy = cloneDashboardBoard(board);
+    expect(copy).toEqual(board);
+    copy.layout[0]!.x = 5;
+    (copy.items[0]!.config!.shortcuts as string[]).push('price-lists');
+    expect(board.layout[0]!.x).toBe(0);
+    expect(board.items[0]!.config!.shortcuts).toEqual(['companies']);
+  });
+});
+
+describe('removeDashboardWidget', () => {
+  it('drops the widget and its layout entry only', () => {
+    const board = defaultDashboardBoard();
+    const [first, second] = board.items;
+    const next = removeDashboardWidget(board, first!.i);
+    expect(next.items).toEqual([second]);
+    expect(next.layout.map((l) => l.i)).toEqual([second!.i]);
+    expect(board.items).toHaveLength(2);
   });
 });
