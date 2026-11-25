@@ -40,7 +40,7 @@ const router = useRouter();
 onMounted(() => {
   // Initialize currentTab from route query parameter
   if (route.query?.tab && typeof route.query.tab === 'string') {
-    currentTab.value = parseInt(route.query.tab);
+    setCurrentTab(parseInt(route.query.tab));
   }
 });
 

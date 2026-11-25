@@ -5,7 +5,7 @@
 ## Features
 
 - Two label shapes: `string` or `TabDescriptor` (`{ label, error?, disabled?, tooltip?, icon? }`)
-- Disabled tabs: shown but never selected. They use `aria-disabled` rather than `disabled`, so their tooltip still opens on hover
+- Disabled tabs: shown but never selected, by a click or by `?tab=` in the URL. They use `aria-disabled` rather than `disabled`, so their tooltip still opens on hover
 - Optional tooltip per tab and a Lucide icon before the label (resolved with `useLucideIcon()`)
 - Red dot in the top-right corner of any tab whose `error` is `true` (with screen-reader announcement)
 - Two-way `v-model:current-tab` (numeric index)

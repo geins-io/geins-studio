@@ -17,6 +17,10 @@ It is built in the long-lived `feat/dashboards` branch and merges into `next` on
 
 **Board** — `items` (widget instances: `i`, `type`, optional `config`) plus `layout` (`i`, `x`, `y`, `w`, `h`). An instance id is `{type}__{n}`, so the same widget can be on a board twice with different settings. [`useDashboard`](/composables/useDashboard.md) holds the board; `defaultDashboardBoard()` is where a user starts.
 
+**Saving** — Each user's board is kept in `localStorage`, per user and account (`geins-dashboard-{accountKey}-{userId}`), through [`useDashboardStorage`](/composables/useDashboardStorage.md) only. The saved shape is versioned (`version: 1`) and already holds a list of dashboards (`my-work` for now), so several dashboards and server-side saving (project Phase 5) change that one module. Done saves the layout; a widget's own settings save as soon as they change.
+
+**Empty board** — When every widget has been removed, the page shows the `Empty` state ("Build your dashboard") with **Use the default dashboard** (`resetToDefault`), so a saved empty board is never a dead end. Add widget joins it with the Add widget panel.
+
 **Grid** — 12 columns, 28px rows, 16px gaps (`grid-layout-plus`). Below 640px of board width the widgets stack one per row in reading order.
 
 ## Widgets and their data

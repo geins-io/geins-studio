@@ -1010,7 +1010,10 @@
         "description": "De senaste ordrarna från köpare kopplade till ett företag"
       }
     },
-    "edit_hint": "Dra en widget i rubriken för att flytta den, dra i nedre högra hörnet för att ändra storleken och ta bort den med ✕."
+    "edit_hint": "Dra en widget i rubriken för att flytta den, dra i nedre högra hörnet för att ändra storleken och ta bort den med ✕.",
+    "empty_title": "Bygg din översikt",
+    "empty_description": "Lägg till widgetar för att hålla koll på det som är viktigt för dig, eller börja från standardöversikten.",
+    "use_default": "Använd standardöversikten"
   },
   "changelog": {
     "tab_title": "Ändringslogg",

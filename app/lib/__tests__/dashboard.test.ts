@@ -7,12 +7,15 @@ import {
   DEFAULT_QUICK_ACCESS_SHORTCUTS,
   QUICK_ACCESS_SHORTCUTS,
   cloneDashboardBoard,
+  dashboardStorageKey,
   defaultDashboardBoard,
   greetingPeriod,
   isDashboardWidgetType,
+  parseStoredDashboards,
   quickAccessColumns,
   removeDashboardWidget,
   rowsToPixels,
+  serializeDashboards,
   stackedOrder,
 } from '../dashboard';
 
@@ -133,5 +136,94 @@ describe('removeDashboardWidget', () => {
     expect(next.items).toEqual([second]);
     expect(next.layout.map((l) => l.i)).toEqual([second!.i]);
     expect(board.items).toHaveLength(2);
+  });
+});
+
+describe('saved boards', () => {
+  const stored = (dashboards: unknown, version: unknown = 1) => ({
+    version,
+    dashboards,
+  });
+
+  it('round-trips a board through serialize and parse', () => {
+    const board = defaultDashboardBoard();
+    board.items[0]!.config = { shortcuts: ['companies'] };
+    expect(parseStoredDashboards(serializeDashboards(board))).toEqual(board);
+  });
+
+  it('saves plain grid units only', () => {
+    const board = defaultDashboardBoard();
+    const withGridFlags = {
+      ...board,
+      layout: board.layout.map((l) => ({ ...l, moved: false, static: false })),
+    };
+    expect(serializeDashboards(withGridFlags).dashboards[0]!.layout).toEqual(
+      board.layout,
+    );
+  });
+
+  it('gives null for another version or anything that is not a saved board', () => {
+    const { dashboards } = serializeDashboards(defaultDashboardBoard());
+    expect(parseStoredDashboards(stored(dashboards, 2))).toBeNull();
+    expect(parseStoredDashboards(stored([]))).toBeNull();
+    expect(parseStoredDashboards(null)).toBeNull();
+    expect(parseStoredDashboards('board')).toBeNull();
+    expect(parseStoredDashboards({ version: 1 })).toBeNull();
+    expect(
+      parseStoredDashboards(
+        stored([{ id: 'my-work', items: [{ i: 'a' }], layout: [] }]),
+      ),
+    ).toBeNull();
+  });
+
+  it('drops unknown widgets, widgets without a position and duplicates', () => {
+    const board = parseStoredDashboards(
+      stored([
+        {
+          id: 'my-work',
+          items: [
+            { i: 'gone__0', type: 'sales-forecast' },
+            { i: 'quick-access__1', type: 'quick-access' },
+            { i: 'quick-access__1', type: 'quick-access' },
+            { i: 'list-company-orders__2', type: 'list-company-orders' },
+          ],
+          layout: [
+            { i: 'gone__0', x: 0, y: 0, w: 4, h: 4 },
+            { i: 'quick-access__1', x: 0, y: 4, w: 4, h: 4 },
+          ],
+        },
+      ]),
+    );
+    expect(board).toEqual({
+      items: [{ i: 'quick-access__1', type: 'quick-access' }],
+      layout: [{ i: 'quick-access__1', x: 0, y: 4, w: 4, h: 4 }],
+    });
+  });
+
+  it('clamps sizes to the widget minimum and the grid', () => {
+    const board = parseStoredDashboards(
+      stored([
+        {
+          id: 'my-work',
+          items: [
+            { i: 'a', type: 'list-company-orders' },
+            { i: 'b', type: 'quick-access' },
+          ],
+          layout: [
+            { i: 'a', x: -2, y: -1, w: 1, h: 2 },
+            { i: 'b', x: 10, y: 0, w: 40, h: 4 },
+          ],
+        },
+      ]),
+    );
+    const { minW, minH } = DASHBOARD_WIDGETS['list-company-orders'].size;
+    expect(board!.layout).toEqual([
+      { i: 'a', x: 0, y: 0, w: minW, h: minH },
+      { i: 'b', x: 0, y: 0, w: DASHBOARD_GRID_COLUMNS, h: 4 },
+    ]);
+  });
+
+  it('keys storage by account and user', () => {
+    expect(dashboardStorageKey('acme', 'u1')).toBe('geins-dashboard-acme-u1');
   });
 });

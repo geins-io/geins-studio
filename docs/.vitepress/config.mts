@@ -178,6 +178,10 @@ export default defineConfig({
             text: 'Dashboard',
             items: [
               { text: 'useDashboard', link: '/composables/useDashboard.md' },
+              {
+                text: 'useDashboardStorage',
+                link: '/composables/useDashboardStorage.md',
+              },
             ],
           },
           {
