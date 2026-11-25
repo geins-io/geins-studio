@@ -110,7 +110,7 @@ const columns = computed(() =>
 </script>
 
 <template>
-  <DashboardWidget :type="instance.type">
+  <DashboardWidget :instance="instance">
     <TableView
       :columns="columns"
       :data="rows"

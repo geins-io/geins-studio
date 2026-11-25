@@ -214,6 +214,7 @@
   "add_selected": "Lägg till valda",
   "select_from": "Välj från",
   "cancel": "Avbryt",
+  "done": "Klar",
   "recommended": "Rekommenderas",
   "continue": "Fortsätt",
   "exclude": "Exkludera",
@@ -1008,7 +1009,8 @@
         "title": "Senaste företagsordrar",
         "description": "De senaste ordrarna från köpare kopplade till ett företag"
       }
-    }
+    },
+    "edit_hint": "Dra en widget i rubriken för att flytta den, dra i nedre högra hörnet för att ändra storleken och ta bort den med ✕."
   },
   "changelog": {
     "tab_title": "Ändringslogg",

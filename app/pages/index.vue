@@ -11,7 +11,15 @@ definePageMeta({
 const { t } = useI18n();
 const { formatDate } = useDate();
 const { user } = storeToRefs(useUserStore());
-const { items, layout } = useDashboard();
+const {
+  items,
+  layout,
+  editing,
+  startEdit,
+  cancelEdit,
+  doneEdit,
+  removeWidget,
+} = useDashboard();
 
 // A minute tick, so the greeting and date follow the day while the page stays open
 const { now } = useLiveClock(true, 60_000);
@@ -49,10 +57,28 @@ breadcrumbsStore.setShowBreadcrumbs(false);
 
 <template>
   <ContentHeader :title="greeting" :description="today">
+    <div class="flex items-start gap-2">
+      <template v-if="editing">
+        <Button variant="ghost" @click="cancelEdit">{{ $t('cancel') }}</Button>
+        <ButtonIcon icon="Check" @click="doneEdit">{{ $t('done') }}</ButtonIcon>
+      </template>
+      <!-- Drag and resize need the grid, so no editing on a stacked board -->
+      <ButtonIcon
+        v-else-if="!stacked"
+        icon="Pencil"
+        variant="secondary"
+        @click="startEdit"
+      >
+        {{ $t('edit_entity', { entityKey: 'dashboard' }) }}
+      </ButtonIcon>
+    </div>
     <template #tabs>
       <ContentEditTabs v-model:current-tab="currentTab" :tabs="tabs" />
     </template>
   </ContentHeader>
+  <Feedback v-if="editing" type="info" class="mb-4">
+    <template #description>{{ $t('dashboards.edit_hint') }}</template>
+  </Feedback>
   <!-- Rendered once measured, so phones never flash the grid first -->
   <div ref="board">
     <DashboardBoard
@@ -60,6 +86,8 @@ breadcrumbsStore.setShowBreadcrumbs(false);
       v-model:layout="layout"
       :items="items"
       :stacked="stacked"
+      :editing="editing"
+      @remove="removeWidget"
     />
   </div>
 </template>

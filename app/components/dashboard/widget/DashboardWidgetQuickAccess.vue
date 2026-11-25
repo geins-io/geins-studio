@@ -37,7 +37,7 @@ const columns = computed(() =>
 </script>
 
 <template>
-  <DashboardWidget :type="instance.type">
+  <DashboardWidget :instance="instance">
     <div
       ref="grid"
       class="grid gap-2"
