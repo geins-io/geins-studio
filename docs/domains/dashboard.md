@@ -19,7 +19,9 @@ It is built in the long-lived `feat/dashboards` branch and merges into `next` on
 
 **Saving** — Each user's board is kept in `localStorage`, per user and account (`geins-dashboard-{accountKey}-{userId}`), through [`useDashboardStorage`](/composables/useDashboardStorage.md) only. The saved shape is versioned (`version: 1`) and already holds a list of dashboards (`my-work` for now), so several dashboards and server-side saving (project Phase 5) change that one module. Done saves the layout; a widget's own settings save as soon as they change.
 
-**Empty board** — When every widget has been removed, the page shows the `Empty` state ("Build your dashboard") with **Use the default dashboard** (`resetToDefault`), so a saved empty board is never a dead end. Add widget joins it with the Add widget panel.
+**Adding widgets** — In edit mode, **Add widget** opens the [`DashboardAddWidgetPanel`](/components/dashboard/DashboardAddWidgetPanel.md): every registry widget, grouped (Needs attention, Charts, Lists, Shortcuts), searchable by title, with "N on board". **+** adds a widget at its default size on the left under every other widget; dragging a row onto the board drops it where the grid's placeholder shows. Either way the panel closes and the widget gets a new id, so the same widget can be added twice. Additions belong to the edit session: Cancel takes them back off, Done saves them.
+
+**Empty board** — When every widget has been removed, the page shows the `Empty` state ("Build your dashboard") with **Add widget** (enters edit mode and opens the panel) and **Use the default dashboard** (`resetToDefault`), so a saved empty board is never a dead end. With no grid on the page, an empty board takes widgets from + only, not by dragging.
 
 **Grid** — 12 columns, 28px rows, 16px gaps (`grid-layout-plus`). Below 640px of board width the widgets stack one per row in reading order.
 

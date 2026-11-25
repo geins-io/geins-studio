@@ -84,6 +84,43 @@ describe('useDashboard edit session', () => {
   });
 });
 
+describe('useDashboard adding widgets', () => {
+  it('takes an added widget back off on cancel, without saving', () => {
+    storage.state!.key = 'geins-dashboard-acme-u1';
+    const dashboard = useDashboard();
+    const before = snapshotOf(dashboard);
+
+    dashboard.startEdit();
+    dashboard.addWidget('quick-access');
+    expect(dashboard.items.value).toHaveLength(3);
+    dashboard.cancelEdit();
+
+    expect(snapshotOf(dashboard)).toEqual(before);
+    expect(storage.state!.saved).toHaveLength(0);
+  });
+
+  it('saves an added widget on done', () => {
+    storage.state!.key = 'geins-dashboard-acme-u1';
+    const dashboard = useDashboard();
+    dashboard.startEdit();
+    dashboard.addWidget('list-company-orders', { x: 4, y: 0 });
+    dashboard.doneEdit();
+
+    const saved = storage.state!.saved.at(-1)!;
+    expect(saved.items).toHaveLength(3);
+    expect(saved.layout.at(-1)).toMatchObject({ x: 4, y: 0 });
+  });
+
+  it('starts editing when adding outside edit mode, so cancel still works', () => {
+    const dashboard = useDashboard();
+    dashboard.addWidget('quick-access');
+
+    expect(dashboard.editing.value).toBe(true);
+    dashboard.cancelEdit();
+    expect(dashboard.items.value).toHaveLength(2);
+  });
+});
+
 describe('useDashboard saved board', () => {
   const saved = createDashboardBoard([['list-company-orders', 0, 0, 6, 8]]);
 

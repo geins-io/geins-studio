@@ -4,6 +4,15 @@ The start dashboard's board state: the widgets on it, where they sit on the grid
 
 Editing starts from a deep copy of the board (`cloneDashboardBoard`), because the grid moves layout items in place while dragging. **Cancel** puts that copy back exactly; **Done** keeps the changes. The state lives in the page, so leaving the page while editing drops the changes like Cancel, with no dialog.
 
+## Adding widgets
+
+`addWidget(type, at?)` puts a new `type` widget on the board at its registry default size (`addDashboardWidget` in `app/lib/dashboard.ts`):
+
+- Without `at` it goes on the left under every other widget (x 0, y = `dashboardBottom(layout)`), which is what the Add widget panel's **+** does.
+- With `at` (`{ x, y }` in grid units) it goes to that cell, kept on the grid; that's a drop from the panel onto [`DashboardBoard`](/components/dashboard/DashboardBoard.md).
+- Its id is the first free `{type}__{n}` (`nextDashboardWidgetId`), so the same widget can sit on the board more than once.
+- It starts the edit session if one isn't running, so an addition is always something Cancel takes back and Done saves.
+
 ## Saving
 
 The board is saved per user and account through [`useDashboardStorage`](/composables/useDashboardStorage.md):
@@ -25,6 +34,7 @@ const {
   cancelEdit,
   doneEdit,
   removeWidget,
+  addWidget,
   resetToDefault,
   updateWidgetConfig,
   fitWidget,
@@ -33,18 +43,19 @@ const {
 
 ## Returns
 
-| Property             | Type                                                   | Meaning                                                        |
-| -------------------- | ------------------------------------------------------ | -------------------------------------------------------------- |
-| `items`              | `Ref<DashboardWidgetInstance[]>`                       | The widgets on the board (`i`, `type`, `config`)               |
-| `layout`             | `Ref<DashboardLayoutItem[]>`                           | Grid position and size per widget, matched by `i`              |
-| `editing`            | `Readonly<Ref<boolean>>`                               | Whether the board is being edited                              |
-| `startEdit`          | `() => void`                                           | Copies the board and starts editing (a second call is ignored) |
-| `cancelEdit`         | `() => void`                                           | Puts the copy back and stops editing                           |
-| `doneEdit`           | `() => void`                                           | Keeps the changes, saves them if there are any, stops editing  |
-| `removeWidget`       | `(i: string) => void`                                  | Takes a widget and its layout entry off the board              |
-| `resetToDefault`     | `() => void`                                           | Replaces the board with the default one and saves it           |
-| `updateWidgetConfig` | `(i: string, config: Record<string, unknown>) => void` | Sets a widget's own settings and saves them right away         |
-| `fitWidget`          | `(i: string, h: number) => void`                       | Sets the grid rows a content-fitted widget needs (not saved)   |
+| Property             | Type                                                                 | Meaning                                                            |
+| -------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `items`              | `Ref<DashboardWidgetInstance[]>`                                     | The widgets on the board (`i`, `type`, `config`)                   |
+| `layout`             | `Ref<DashboardLayoutItem[]>`                                         | Grid position and size per widget, matched by `i`                  |
+| `editing`            | `Readonly<Ref<boolean>>`                                             | Whether the board is being edited                                  |
+| `startEdit`          | `() => void`                                                         | Copies the board and starts editing (a second call is ignored)     |
+| `cancelEdit`         | `() => void`                                                         | Puts the copy back and stops editing                               |
+| `doneEdit`           | `() => void`                                                         | Keeps the changes, saves them if there are any, stops editing      |
+| `removeWidget`       | `(i: string) => void`                                                | Takes a widget and its layout entry off the board                  |
+| `addWidget`          | `(type: DashboardWidgetType, at?: { x: number; y: number }) => void` | Puts a new widget at a cell, or at the bottom, in the edit session |
+| `resetToDefault`     | `() => void`                                                         | Replaces the board with the default one and saves it               |
+| `updateWidgetConfig` | `(i: string, config: Record<string, unknown>) => void`               | Sets a widget's own settings and saves them right away             |
+| `fitWidget`          | `(i: string, h: number) => void`                                     | Sets the grid rows a content-fitted widget needs (not saved)       |
 
 ## Related
 

@@ -2,8 +2,10 @@ import type {
   DashboardBoard,
   DashboardLayoutItem,
   DashboardWidgetInstance,
+  DashboardWidgetType,
 } from '#shared/types';
 import {
+  addDashboardWidget,
   cloneDashboardBoard,
   defaultDashboardBoard,
   removeDashboardWidget,
@@ -18,6 +20,7 @@ interface UseDashboardReturnType {
   cancelEdit: () => void;
   doneEdit: () => void;
   removeWidget: (i: string) => void;
+  addWidget: (type: DashboardWidgetType, at?: { x: number; y: number }) => void;
   resetToDefault: () => void;
   updateWidgetConfig: (i: string, config: Record<string, unknown>) => void;
   fitWidget: (i: string, h: number) => void;
@@ -39,6 +42,7 @@ interface UseDashboardReturnType {
  * @property {function} cancelEdit - Restores the copy and stops editing
  * @property {function} doneEdit - Keeps the changes and saves them if there are any, stops editing
  * @property {function} removeWidget - Takes a widget and its layout entry off the board
+ * @property {function} addWidget - Puts a new widget on the board, at a cell or at the bottom, as part of the edit session
  * @property {function} resetToDefault - Replaces the board with the default one and saves it
  * @property {function} updateWidgetConfig - Sets a widget's own settings and saves them right away
  * @property {function} fitWidget - Sets the height (grid rows) a widget that fits its content needs
@@ -121,6 +125,15 @@ export const useDashboard = (): UseDashboardReturnType => {
     apply(removeDashboardWidget(current(), i));
   };
 
+  // Always inside an edit session, so Cancel takes the widget back off
+  const addWidget = (
+    type: DashboardWidgetType,
+    at?: { x: number; y: number },
+  ) => {
+    startEdit();
+    apply(addDashboardWidget(current(), type, at));
+  };
+
   // Settings save on their own, outside the layout edit session: during one,
   // the snapshot takes the new settings too, so Cancel keeps them and what's
   // saved is the last saved layout with them.
@@ -155,6 +168,7 @@ export const useDashboard = (): UseDashboardReturnType => {
     cancelEdit,
     doneEdit,
     removeWidget,
+    addWidget,
     resetToDefault,
     updateWidgetConfig,
     fitWidget,

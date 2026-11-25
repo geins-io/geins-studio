@@ -1016,6 +1016,10 @@ export default defineConfig({
                 link: '/components/dashboard/DashboardBoard.md',
               },
               {
+                text: 'DashboardAddWidgetPanel',
+                link: '/components/dashboard/DashboardAddWidgetPanel.md',
+              },
+              {
                 text: 'DashboardWidget',
                 link: '/components/dashboard/DashboardWidget.md',
               },

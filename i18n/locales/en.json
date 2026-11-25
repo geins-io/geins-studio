@@ -42,6 +42,7 @@
   "order": "Order | Orders",
   "company": "Company | Companies",
   "dashboard": "Dashboard | Dashboards",
+  "widget": "Widget | Widgets",
   "user_account": "Account | Accounts",
   "user": "User | Users",
   "channel": "Channel | Channels",
@@ -1016,7 +1017,16 @@
     "edit_hint": "Drag a widget by its header to move it, drag its bottom-right corner to resize it, and remove it with ✕.",
     "empty_title": "Build your dashboard",
     "empty_description": "Add widgets to keep an eye on what matters to you, or start from the default dashboard.",
-    "use_default": "Use the default dashboard"
+    "use_default": "Use the default dashboard",
+    "add_widget_hint": "Drag a widget onto the dashboard, or click + to add it at the bottom.",
+    "add_at_bottom": "Add at the bottom",
+    "on_board": "{count} on board",
+    "groups": {
+      "needs_attention": "Needs attention",
+      "charts": "Charts",
+      "lists": "Lists",
+      "shortcuts": "Shortcuts"
+    }
   },
   "changelog": {
     "tab_title": "Changelog",
