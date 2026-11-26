@@ -48,6 +48,43 @@ export const DASHBOARD_WIDGETS: Record<
     size: { w: 4, h: 10, minW: 3, minH: 6 },
     variant: 'table',
   },
+  'needs-attention': {
+    type: 'needs-attention',
+    titleKey: 'dashboards.groups.needs_attention',
+    descriptionKey: 'dashboards.widgets.needs_attention.description',
+    group: 'needs_attention',
+    icon: 'CircleAlert',
+    size: { w: 12, h: 4, minW: 4, minH: 4 },
+    variant: 'default',
+    stackedHeight: 330,
+  },
+  'attention-quotation-requests': {
+    type: 'attention-quotation-requests',
+    titleKey: 'dashboards.attention.requests.label',
+    descriptionKey: 'dashboards.widgets.attention_tile.description',
+    group: 'needs_attention',
+    icon: 'Inbox',
+    size: { w: 4, h: 4, minW: 3, minH: 4 },
+    variant: 'bare',
+  },
+  'attention-expiring-quotations': {
+    type: 'attention-expiring-quotations',
+    titleKey: 'dashboards.attention.expiring.label',
+    descriptionKey: 'dashboards.widgets.attention_tile.description',
+    group: 'needs_attention',
+    icon: 'Clock',
+    size: { w: 4, h: 4, minW: 3, minH: 4 },
+    variant: 'bare',
+  },
+  'attention-failed-runs': {
+    type: 'attention-failed-runs',
+    titleKey: 'dashboards.attention.failed_runs.label',
+    descriptionKey: 'dashboards.widgets.attention_tile.description',
+    group: 'needs_attention',
+    icon: 'Workflow',
+    size: { w: 4, h: 4, minW: 3, minH: 4 },
+    variant: 'bare',
+  },
 };
 
 export function isDashboardWidgetType(

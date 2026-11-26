@@ -1012,7 +1012,32 @@
       "company_orders": {
         "title": "Latest company orders",
         "description": "The most recent orders placed by buyers linked to a company"
+      },
+      "needs_attention": {
+        "description": "All three numbers in one block",
+        "header_description": "What needs doing right now"
+      },
+      "attention_tile": {
+        "description": "The number on its own, with a link"
       }
+    },
+    "attention": {
+      "requests": {
+        "label": "Quotation requests",
+        "text": "Buyers are waiting for an answer",
+        "link": "Answer requests"
+      },
+      "expiring": {
+        "label": "Quotations expiring",
+        "text": "Within the next 7 days",
+        "link": "View quotations"
+      },
+      "failed_runs": {
+        "label": "Failed workflow runs",
+        "text": "Since yesterday, in Orchestrator",
+        "link": "View runs"
+      },
+      "error": "Couldn't load the number"
     },
     "edit_hint": "Drag a widget by its header to move it, drag its bottom-right corner to resize it, and remove it with ✕.",
     "empty_title": "Build your dashboard",

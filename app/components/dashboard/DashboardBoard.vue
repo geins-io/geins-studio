@@ -19,7 +19,9 @@ import {
 } from '@/lib/dashboard';
 import type { Component } from 'vue';
 import {
+  LazyDashboardWidgetAttentionTile,
   LazyDashboardWidgetCompanyOrders,
+  LazyDashboardWidgetNeedsAttention,
   LazyDashboardWidgetQuickAccess,
 } from '#components';
 
@@ -61,6 +63,10 @@ provide(DASHBOARD_BOARD_CONTEXT, {
 const WIDGET_COMPONENTS: Record<DashboardWidgetType, Component> = {
   'quick-access': LazyDashboardWidgetQuickAccess,
   'list-company-orders': LazyDashboardWidgetCompanyOrders,
+  'needs-attention': LazyDashboardWidgetNeedsAttention,
+  'attention-quotation-requests': LazyDashboardWidgetAttentionTile,
+  'attention-expiring-quotations': LazyDashboardWidgetAttentionTile,
+  'attention-failed-runs': LazyDashboardWidgetAttentionTile,
 };
 
 const itemsById = computed(
