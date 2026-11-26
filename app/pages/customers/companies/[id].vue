@@ -1189,8 +1189,8 @@ const settingsSummary = computed<DataItem[]>(() => {
   dataList.push({
     label: t('customers.vat'),
     value: entityData.value?.exVat
-      ? t('customers.vat_true')
-      : t('customers.vat_false'),
+      ? t('customers.vat_exempt')
+      : t('customers.vat_charged'),
   });
   dataList.push({
     label: t('customers.product_access'),
@@ -1913,8 +1913,8 @@ if (!createMode.value) {
                 />
                 <ContentSwitch
                   v-model:checked="entityDataUpdate.exVat"
-                  :label="$t('customers.vat_included_label')"
-                  :description="$t('customers.vat_included_description')"
+                  :label="$t('customers.vat_exempt')"
+                  :description="$t('customers.vat_exempt_description')"
                 />
               </div>
             </ContentEditCard>
