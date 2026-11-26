@@ -22,6 +22,7 @@ describe('statusBadgeVariant', () => {
     ['canceled', 'danger'],
     ['rejected', 'danger'],
     ['unhealthy', 'danger'],
+    ['failed', 'danger'],
     ['inactive', 'neutral'],
     ['refunded', 'neutral'],
     ['revised', 'neutral'],

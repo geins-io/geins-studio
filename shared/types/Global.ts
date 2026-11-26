@@ -30,7 +30,8 @@ export type StatusBadgeKnownStatus =
   | 'unhealthy'
   | 'idle'
   | 'enabled'
-  | 'in-progress';
+  | 'in-progress'
+  | 'failed';
 
 /**
  * StatusBadge accepts booleans (active/inactive), known statuses with

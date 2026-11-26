@@ -1019,6 +1019,22 @@
       },
       "attention_tile": {
         "description": "The number on its own, with a link"
+      },
+      "queue_quotation_requests": {
+        "title": "Open quotation requests",
+        "description": "Buyers waiting for an answer"
+      },
+      "queue_expiring_quotations": {
+        "title": "Quotations expiring soon",
+        "description": "Quotations that expire within 7 days"
+      },
+      "queue_failed_runs": {
+        "title": "Latest failed workflow runs",
+        "description": "Workflow runs in Orchestrator that failed"
+      },
+      "recent_quotations": {
+        "title": "Latest quotations",
+        "description": "The most recently updated quotations"
       }
     },
     "attention": {
@@ -1039,6 +1055,8 @@
       },
       "error": "Couldn't load the number"
     },
+    "expires": "Expires {when}",
+    "view_all": "View all",
     "edit_hint": "Drag a widget by its header to move it, drag its bottom-right corner to resize it, and remove it with ✕.",
     "empty_title": "Build your dashboard",
     "empty_description": "Add widgets to keep an eye on what matters to you, or start from the default dashboard.",

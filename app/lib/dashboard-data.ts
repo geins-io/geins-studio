@@ -12,6 +12,8 @@ import { entityListUrl } from '#shared/utils/entities';
  * share one definition of "expiring" or "failed".
  */
 
+/** How many rows a dashboard list shows */
+export const DASHBOARD_LIST_LIMIT = 10;
 /** A pending quotation counts as expiring this many calendar days ahead */
 export const EXPIRING_WITHIN_DAYS = 7;
 /** Failed workflow runs count this far back (ms) */
@@ -170,6 +172,35 @@ export function expiringQuotations<T extends ExpiryFields>(
       return days !== undefined && days >= 0 && days <= withinDays;
     })
     .sort((a, b) => time(a.validTo) - time(b.validTo));
+}
+
+type RecentFields = Pick<Quotation, 'createdAt' | 'modifiedAt'>;
+
+/** When the quotation last changed */
+export function changedAt(quotation: RecentFields): string | undefined {
+  return quotation.modifiedAt ?? quotation.createdAt;
+}
+
+/** The most recently changed quotations, newest first */
+export function recentQuotations<T extends RecentFields>(
+  quotations: T[],
+  limit = DASHBOARD_LIST_LIMIT,
+): T[] {
+  return [...quotations]
+    .sort((a, b) => time(changedAt(b)) - time(changedAt(a)))
+    .slice(0, limit);
+}
+
+/** A company's initials for its avatar: the first letter of its first two words */
+export function companyInitials(name: string): string {
+  const initials = name
+    .split(/\s+/)
+    .filter((word) => /^\p{L}/u.test(word))
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join('')
+    .toUpperCase();
+  return initials || '?';
 }
 
 // ── Workflow runs ────────────────────────────────────────────────────────────

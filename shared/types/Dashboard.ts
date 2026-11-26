@@ -1,3 +1,5 @@
+import type { StatusBadgeStatus } from './Global';
+
 /**
  * Start dashboard: a board of widgets on a 12-column grid. These are UI state
  * kept per user in the browser, not API entities.
@@ -10,7 +12,11 @@ export type DashboardWidgetType =
   | 'needs-attention'
   | 'attention-quotation-requests'
   | 'attention-expiring-quotations'
-  | 'attention-failed-runs';
+  | 'attention-failed-runs'
+  | 'queue-quotation-requests'
+  | 'queue-expiring-quotations'
+  | 'queue-failed-runs'
+  | 'list-recent-quotations';
 
 /** Groups in the Add widget panel, in display order. */
 export type DashboardWidgetGroup =
@@ -79,4 +85,21 @@ export interface DashboardLayoutItem {
 export interface DashboardBoard {
   items: DashboardWidgetInstance[];
   layout: DashboardLayoutItem[];
+}
+
+/**
+ * One row in a dashboard queue: a quotation or workflow run, with the link to
+ * it. `avatar` is a company name, shown as its initials.
+ */
+export interface DashboardQueueItem {
+  id: string;
+  to: string;
+  title: string;
+  meta: string;
+  /** Right of the title: an age, or when it expires */
+  aside?: string;
+  avatar?: string;
+  status?: StatusBadgeStatus;
+  /** Translated status text; see `StatusBadge` */
+  statusLabel?: string;
 }

@@ -42,4 +42,15 @@ describe('useDate', () => {
       expect(formatRelativeDate('not a date')).toBe('not a date');
     });
   });
+
+  describe('formatRelativeDays', () => {
+    const { formatRelativeDays } = useDate();
+
+    it('reads calendar days as today / tomorrow / in N days', () => {
+      expect(formatRelativeDays(0)).toBe('today');
+      expect(formatRelativeDays(1)).toBe('tomorrow');
+      expect(formatRelativeDays(3)).toBe('in 3 days');
+      expect(formatRelativeDays(-1)).toBe('yesterday');
+    });
+  });
 });

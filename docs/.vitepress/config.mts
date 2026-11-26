@@ -1067,6 +1067,30 @@ export default defineConfig({
                 text: 'DashboardAttentionCard',
                 link: '/components/dashboard/DashboardAttentionCard.md',
               },
+              {
+                text: 'DashboardWidgetQuotationRequests',
+                link: '/components/dashboard/DashboardWidgetQuotationRequests.md',
+              },
+              {
+                text: 'DashboardWidgetExpiringQuotations',
+                link: '/components/dashboard/DashboardWidgetExpiringQuotations.md',
+              },
+              {
+                text: 'DashboardWidgetFailedRuns',
+                link: '/components/dashboard/DashboardWidgetFailedRuns.md',
+              },
+              {
+                text: 'DashboardWidgetRecentQuotations',
+                link: '/components/dashboard/DashboardWidgetRecentQuotations.md',
+              },
+              {
+                text: 'DashboardQueue',
+                link: '/components/dashboard/DashboardQueue.md',
+              },
+              {
+                text: 'DashboardQueueRow',
+                link: '/components/dashboard/DashboardQueueRow.md',
+              },
             ],
           },
           {
