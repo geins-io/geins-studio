@@ -1107,6 +1107,10 @@ export default defineConfig({
                 text: 'DashboardQueueRow',
                 link: '/components/dashboard/DashboardQueueRow.md',
               },
+              {
+                text: 'DashboardWidgetRecentAssets',
+                link: '/components/dashboard/DashboardWidgetRecentAssets.md',
+              },
             ],
           },
           {

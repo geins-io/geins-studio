@@ -35,16 +35,17 @@ It is built in the long-lived `feat/dashboards` branch and merges into `next` on
 
 ## Widgets and their data
 
-| Widget                      | Reads                                                                               | Filters          |
-| --------------------------- | ----------------------------------------------------------------------------------- | ---------------- |
-| Quick access                | Nothing: links built from the entity registry                                       | —                |
-| Latest company orders       | `POST order/query` (all wholesale orders, no pagination) + `wholesale/account` list | Channel          |
-| Needs attention             | Quotation requests, expiring quotations and failed workflow runs (below)            | —                |
-| Single numbers (×3)         | One of the Needs attention numbers each                                             | —                |
-| Open quotation requests     | Quotation requests, newest first (`useDashboardQuotations`)                         | Channel / Market |
-| Quotations expiring soon    | Expiring quotations, soonest first (`useDashboardQuotations`)                       | Channel / Market |
-| Latest failed workflow runs | Failed runs, newest first (`useDashboardExecutions`)                                | —                |
-| Latest quotations           | The 10 last changed quotations (`useDashboardQuotations`)                           | Channel / Market |
+| Widget                      | Reads                                                                                           | Filters          |
+| --------------------------- | ----------------------------------------------------------------------------------------------- | ---------------- |
+| Quick access                | Nothing: links built from the entity registry                                                   | —                |
+| Latest company orders       | `POST order/query` (all wholesale orders, no pagination) + `wholesale/account` list             | Channel          |
+| Needs attention             | Quotation requests, expiring quotations and failed workflow runs (below)                        | —                |
+| Single numbers (×3)         | One of the Needs attention numbers each                                                         | —                |
+| Open quotation requests     | Quotation requests, newest first (`useDashboardQuotations`)                                     | Channel / Market |
+| Quotations expiring soon    | Expiring quotations, soonest first (`useDashboardQuotations`)                                   | Channel / Market |
+| Latest failed workflow runs | Failed runs, newest first (`useDashboardExecutions`)                                            | —                |
+| Latest quotations           | The 10 last changed quotations (`useDashboardQuotations`)                                       | Channel / Market |
+| Recently uploaded assets    | `POST media/assets/query` (10 newest live assets by `createdAt`) + `user` list (uploader names) | —                |
 
 **Needs attention** counts what needs doing right now, so it ignores the period and Channel / Market. Its definitions live in `app/lib/dashboard-data.ts` (pure, tested) and every widget reads them through one shared fetch per source:
 

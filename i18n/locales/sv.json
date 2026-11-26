@@ -1036,6 +1036,11 @@
       "recent_quotations": {
         "title": "Senaste offerter",
         "description": "De senast uppdaterade offerterna"
+      },
+      "recent_assets": {
+        "title": "Senast uppladdade filer",
+        "description": "Filer som lagts till i mediebiblioteket",
+        "added": "Tillagd"
       }
     },
     "attention": {

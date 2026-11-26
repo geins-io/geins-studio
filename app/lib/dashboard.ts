@@ -124,6 +124,15 @@ export const DASHBOARD_WIDGETS: Record<
     size: { w: 4, h: 10, minW: 3, minH: 6 },
     variant: 'table',
   },
+  'list-recent-assets': {
+    type: 'list-recent-assets',
+    titleKey: 'dashboards.widgets.recent_assets.title',
+    descriptionKey: 'dashboards.widgets.recent_assets.description',
+    group: 'lists',
+    icon: 'Image',
+    size: { w: 4, h: 10, minW: 3, minH: 6 },
+    variant: 'table',
+  },
 };
 
 export function isDashboardWidgetType(
@@ -655,5 +664,22 @@ export function inDashboardScope(
   return (
     (!channelIds.length || channelIds.includes(String(item.channelId))) &&
     (!marketIds.length || marketIds.includes(String(item.marketId)))
+  );
+}
+
+/**
+ * The user a free-text reference such as an asset's `createdBy` names: by
+ * user id or by email, ignoring case.
+ */
+export function findUserByRef<T extends { _id: string; email?: string | null }>(
+  ref: string | null | undefined,
+  users: T[],
+): T | undefined {
+  const wanted = ref?.trim().toLowerCase();
+  if (!wanted) return undefined;
+  return users.find(
+    (user) =>
+      user._id.toLowerCase() === wanted ||
+      user.email?.trim().toLowerCase() === wanted,
   );
 }
