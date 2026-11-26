@@ -66,7 +66,7 @@ The status picks a `Badge` variant from the status tones (see [Colors](/guides/u
 | `info`          | `pending`, `sent`, `partial`, `in-progress`                |
 | `info-solid`    | `requested`                                                |
 | `warning`       | `expired`, `on-hold`, `backorder`, `degraded`              |
-| `danger`        | `canceled`, `cancelled`, `rejected`, `unhealthy`           |
+| `danger`        | `canceled`, `cancelled`, `rejected`, `unhealthy`, `failed` |
 | `neutral`       | `inactive`, `false`, `refunded`, `revised`, `idle`, others |
 | `draft`         | `draft`                                                    |
 

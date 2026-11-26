@@ -33,12 +33,16 @@ It is built in the long-lived `feat/dashboards` branch and merges into `next` on
 
 ## Widgets and their data
 
-| Widget                | Reads                                                                               | Filters |
-| --------------------- | ----------------------------------------------------------------------------------- | ------- |
-| Quick access          | Nothing: links built from the entity registry                                       | —       |
-| Latest company orders | `POST order/query` (all wholesale orders, no pagination) + `wholesale/account` list | —       |
-| Needs attention       | Quotation requests, expiring quotations and failed workflow runs (below)            | —       |
-| Single numbers (×3)   | One of the Needs attention numbers each                                             | —       |
+| Widget                      | Reads                                                                               | Filters                                    |
+| --------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------ |
+| Quick access                | Nothing: links built from the entity registry                                       | —                                          |
+| Latest company orders       | `POST order/query` (all wholesale orders, no pagination) + `wholesale/account` list | —                                          |
+| Needs attention             | Quotation requests, expiring quotations and failed workflow runs (below)            | —                                          |
+| Single numbers (×3)         | One of the Needs attention numbers each                                             | —                                          |
+| Open quotation requests     | Quotation requests, newest first (`useDashboardQuotations`)                         | Channel / Market once the filter bar lands |
+| Quotations expiring soon    | Expiring quotations, soonest first (`useDashboardQuotations`)                       | Channel / Market once the filter bar lands |
+| Latest failed workflow runs | Failed runs, newest first (`useDashboardExecutions`)                                | —                                          |
+| Latest quotations           | The 10 last changed quotations (`useDashboardQuotations`)                           | Channel / Market once the filter bar lands |
 
 **Needs attention** counts what needs doing right now, so it ignores the period and Channel / Market. Its definitions live in `app/lib/dashboard-data.ts` (pure, tested) and every widget reads them through one shared fetch per source:
 
@@ -47,6 +51,8 @@ It is built in the long-lived `feat/dashboards` branch and merges into `next` on
 - **Failed workflow runs**: runs with status `Failed` that started in the last 24 hours, from `GET orchestrator/executions/logs` ([`useDashboardExecutions`](/composables/useDashboardExecutions.md)).
 
 Each number links to its list with the filter in the query (`?status=requested`, `?status=pending&expiring=7d`, `?status=failed&period=24h`), from `DASHBOARD_ATTENTION`. The quotations list reads `status` / `expiring` and the workflow runs list `status` once their link filters land; until then those links open the list unfiltered (the runs list already reads `period`).
+
+The **list widgets** read the same two fetches, so a board with Needs attention and every list makes one quotations request and one workflow runs request. Each list shows 10 rows (`DASHBOARD_LIST_LIMIT`) and a **View all** link to the same filtered list. Queues are [`DashboardQueue`](/components/dashboard/DashboardQueue.md)s; Latest quotations is a compact `TableView`.
 
 ## Known data gaps
 

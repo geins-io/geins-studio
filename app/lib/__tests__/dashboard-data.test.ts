@@ -6,9 +6,11 @@ import {
   DASHBOARD_ATTENTION_KEYS,
   attentionTileKey,
   calendarDaysUntil,
+  companyInitials,
   expiringQuotations,
   failedExecutions,
   quotationRequests,
+  recentQuotations,
 } from '../dashboard-data';
 
 // Local noon, so the local day is the same in every time zone the tests run in
@@ -157,5 +159,59 @@ describe('attention definitions', () => {
     expect(attentionTileKey('attention-expiring-quotations')).toBe('expiring');
     expect(attentionTileKey('attention-failed-runs')).toBe('failed_runs');
     expect(attentionTileKey('needs-attention')).toBeUndefined();
+  });
+});
+
+describe('recentQuotations', () => {
+  it('sorts by last change, newest first, falling back to creation', () => {
+    const result = recentQuotations([
+      { _id: 'a', createdAt: day(-5), modifiedAt: day(-1) },
+      { _id: 'b', createdAt: day(-2) },
+      { _id: 'c', createdAt: day(-9), modifiedAt: day(0) },
+    ]);
+    expect(result.map((q) => q._id)).toEqual(['c', 'a', 'b']);
+  });
+
+  it('keeps the newest `limit`', () => {
+    const quotations = Array.from({ length: 15 }, (_, i) => ({
+      _id: String(i),
+      createdAt: day(-i),
+    }));
+    expect(recentQuotations(quotations).map((q) => q._id)).toEqual([
+      '0',
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+      '8',
+      '9',
+    ]);
+    expect(recentQuotations(quotations, 3)).toHaveLength(3);
+  });
+
+  it('leaves the input as it was', () => {
+    const quotations = [
+      { _id: 'old', createdAt: day(-2) },
+      { _id: 'new', createdAt: day(0) },
+    ];
+    recentQuotations(quotations);
+    expect(quotations[0]!._id).toBe('old');
+  });
+});
+
+describe('companyInitials', () => {
+  it('takes the first letter of the first two words', () => {
+    expect(companyInitials('Nordic Retail AB')).toBe('NR');
+    expect(companyInitials('kontorsproffs')).toBe('K');
+    expect(companyInitials('Bygg & Bo')).toBe('BB');
+    expect(companyInitials('Åhléns  Varuhus')).toBe('ÅV');
+  });
+
+  it('falls back to ? when there are no letters', () => {
+    expect(companyInitials('')).toBe('?');
+    expect(companyInitials('123 456')).toBe('?');
   });
 });

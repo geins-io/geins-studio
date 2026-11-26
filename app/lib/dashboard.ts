@@ -85,6 +85,42 @@ export const DASHBOARD_WIDGETS: Record<
     size: { w: 4, h: 4, minW: 3, minH: 4 },
     variant: 'bare',
   },
+  'queue-quotation-requests': {
+    type: 'queue-quotation-requests',
+    titleKey: 'dashboards.widgets.queue_quotation_requests.title',
+    descriptionKey: 'dashboards.widgets.queue_quotation_requests.description',
+    group: 'lists',
+    icon: 'Inbox',
+    size: { w: 4, h: 8, minW: 3, minH: 6 },
+    variant: 'default',
+  },
+  'queue-expiring-quotations': {
+    type: 'queue-expiring-quotations',
+    titleKey: 'dashboards.widgets.queue_expiring_quotations.title',
+    descriptionKey: 'dashboards.widgets.queue_expiring_quotations.description',
+    group: 'lists',
+    icon: 'Clock',
+    size: { w: 4, h: 8, minW: 3, minH: 6 },
+    variant: 'default',
+  },
+  'queue-failed-runs': {
+    type: 'queue-failed-runs',
+    titleKey: 'dashboards.widgets.queue_failed_runs.title',
+    descriptionKey: 'dashboards.widgets.queue_failed_runs.description',
+    group: 'lists',
+    icon: 'Workflow',
+    size: { w: 4, h: 8, minW: 3, minH: 6 },
+    variant: 'default',
+  },
+  'list-recent-quotations': {
+    type: 'list-recent-quotations',
+    titleKey: 'dashboards.widgets.recent_quotations.title',
+    descriptionKey: 'dashboards.widgets.recent_quotations.description',
+    group: 'lists',
+    icon: 'FileText',
+    size: { w: 4, h: 10, minW: 3, minH: 6 },
+    variant: 'table',
+  },
 };
 
 export function isDashboardWidgetType(

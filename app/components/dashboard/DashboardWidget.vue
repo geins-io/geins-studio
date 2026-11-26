@@ -6,6 +6,7 @@ import {
   DASHBOARD_WIDGETS,
   pixelsToRows,
 } from '@/lib/dashboard';
+import type { DashboardListLink } from '@/lib/dashboard-data';
 
 /**
  * The frame every dashboard widget renders itself in: a card with a header
@@ -20,6 +21,8 @@ const props = defineProps<{
   description?: string;
   /** A count shown next to the title */
   badge?: number;
+  /** Where "View all" in the header leads; no link without it */
+  viewAll?: string | DashboardListLink;
 }>();
 
 const { t } = useI18n();
@@ -126,9 +129,18 @@ watch(fittedRows, (rows) => {
           </p>
         </div>
         <div
-          v-if="$slots.actions || editing"
+          v-if="$slots.actions || editing || viewAll"
           class="flex shrink-0 items-center gap-1"
         >
+          <!-- Hidden while editing: the header is the drag handle then -->
+          <NuxtLink
+            v-if="viewAll && !editing"
+            :to="viewAll"
+            class="text-link inline-flex items-center gap-1 text-xs font-medium whitespace-nowrap hover:underline"
+          >
+            {{ t('dashboards.view_all') }}
+            <LucideArrowUpRight class="size-3.5" aria-hidden="true" />
+          </NuxtLink>
           <slot name="actions" />
           <DashboardWidgetRemove
             v-if="editing"

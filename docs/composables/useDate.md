@@ -7,7 +7,7 @@ The `useDate` composable provides locale-aware date formatting utilities. It wra
 - **Locale-aware formatting** using the app's current i18n locale
 - **Consistent format** across tables, summaries, and date inputs (`dateStyle: 'long'`)
 - **Flexible options** via standard `Intl.DateTimeFormatOptions` overrides
-- **Relative formatting** ("in 12 days", "3 hours ago") via `formatRelativeDate`
+- **Relative formatting** ("in 12 days", "3 hours ago") via `formatRelativeDate`, and whole calendar days ("today", "tomorrow") via `formatRelativeDays`
 - **Safe handling** of empty, null, or invalid date values
 
 ## Usage
@@ -104,6 +104,20 @@ formatRelativeDate('2026-09-30T09:00:00Z', new Date('2026-09-30T12:00:00Z'));
 
 - **Returns**: Relative string, or `''` for nullish values, or the raw string for invalid dates
 
+### `formatRelativeDays`
+
+```ts
+formatRelativeDays(days: number): string
+```
+
+Formats a count of whole calendar days from today, `numeric: 'auto'`: 0 reads "today", 1 "tomorrow", 3 "in 3 days". For a date that names a day (an expiry date), where `formatRelativeDate` would say "in 8 hours" tonight. Count the days with `calendarDaysUntil` (`app/lib/dashboard-data.ts`).
+
+```ts
+const { formatRelativeDays } = useDate();
+
+formatRelativeDays(3); // → "in 3 days" (en) / "om 3 dagar" (sv)
+```
+
 ## Type Definitions
 
 ```ts
@@ -118,5 +132,6 @@ interface UseDateReturnType {
     value: string | Date | undefined | null,
     now?: Date,
   ) => string;
+  formatRelativeDays: (days: number) => string;
 }
 ```

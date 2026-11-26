@@ -869,7 +869,7 @@
     "shipping": "Frakt",
     "shipping_fee_description": "Lägg till en föreslagen fraktavgift",
     "vat": "Moms",
-    "total": "Totalt exkl. moms",
+    "total": "Totalt",
     "grand_total": "Totalt inkl. moms",
     "items_and_summary": "Artiklar & sammanfattning",
     "message_to_customer": "Meddelande till kund",
@@ -1019,6 +1019,22 @@
       },
       "attention_tile": {
         "description": "Siffran för sig, med en länk"
+      },
+      "queue_quotation_requests": {
+        "title": "Öppna offertförfrågningar",
+        "description": "Köpare som väntar på svar"
+      },
+      "queue_expiring_quotations": {
+        "title": "Offerter som snart går ut",
+        "description": "Offerter som går ut inom 7 dagar"
+      },
+      "queue_failed_runs": {
+        "title": "Senaste misslyckade arbetsflödeskörningar",
+        "description": "Arbetsflödeskörningar i Orkestrator som misslyckades"
+      },
+      "recent_quotations": {
+        "title": "Senaste offerter",
+        "description": "De senast uppdaterade offerterna"
       }
     },
     "attention": {
@@ -1039,6 +1055,8 @@
       },
       "error": "Kunde inte hämta siffran"
     },
+    "expires": "Går ut {when}",
+    "view_all": "Visa alla",
     "edit_hint": "Dra en widget i rubriken för att flytta den, dra i nedre högra hörnet för att ändra storleken och ta bort den med ✕.",
     "empty_title": "Bygg din översikt",
     "empty_description": "Lägg till widgetar för att hålla koll på det som är viktigt för dig, eller börja från standardöversikten.",

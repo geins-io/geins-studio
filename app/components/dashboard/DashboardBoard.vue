@@ -21,8 +21,12 @@ import type { Component } from 'vue';
 import {
   LazyDashboardWidgetAttentionTile,
   LazyDashboardWidgetCompanyOrders,
+  LazyDashboardWidgetExpiringQuotations,
+  LazyDashboardWidgetFailedRuns,
   LazyDashboardWidgetNeedsAttention,
   LazyDashboardWidgetQuickAccess,
+  LazyDashboardWidgetQuotationRequests,
+  LazyDashboardWidgetRecentQuotations,
 } from '#components';
 
 /**
@@ -67,6 +71,10 @@ const WIDGET_COMPONENTS: Record<DashboardWidgetType, Component> = {
   'attention-quotation-requests': LazyDashboardWidgetAttentionTile,
   'attention-expiring-quotations': LazyDashboardWidgetAttentionTile,
   'attention-failed-runs': LazyDashboardWidgetAttentionTile,
+  'queue-quotation-requests': LazyDashboardWidgetQuotationRequests,
+  'queue-expiring-quotations': LazyDashboardWidgetExpiringQuotations,
+  'queue-failed-runs': LazyDashboardWidgetFailedRuns,
+  'list-recent-quotations': LazyDashboardWidgetRecentQuotations,
 };
 
 const itemsById = computed(

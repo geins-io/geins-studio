@@ -40,11 +40,12 @@ defineProps<{ instance: DashboardWidgetInstance }>();
 
 ## Props
 
-| Prop          | Type                      | Meaning                                                                    |
-| ------------- | ------------------------- | -------------------------------------------------------------------------- |
-| `instance`    | `DashboardWidgetInstance` | The widget; its `type` picks the registry entry, its `i` is what ✕ removes |
-| `description` | `string`                  | Replaces the registry description, e.g. one per mode                       |
-| `badge`       | `number`                  | A count next to the title (`danger` badge)                                 |
+| Prop          | Type                          | Meaning                                                                                                  |
+| ------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `instance`    | `DashboardWidgetInstance`     | The widget; its `type` picks the registry entry, its `i` is what ✕ removes                               |
+| `description` | `string`                      | Replaces the registry description, e.g. one per mode                                                     |
+| `badge`       | `number`                      | A count next to the title (`danger` badge)                                                               |
+| `viewAll`     | `string \| DashboardListLink` | Shows **View all** at the header's right end, linking to the full list; hidden while the board is edited |
 
 ## Slots
 

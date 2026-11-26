@@ -28,6 +28,7 @@ const STATUS_VARIANTS: Record<StatusBadgeKnownStatus, StatusBadgeVariant> = {
   cancelled: 'danger',
   rejected: 'danger',
   unhealthy: 'danger',
+  failed: 'danger',
   inactive: 'neutral',
   refunded: 'neutral',
   revised: 'neutral',

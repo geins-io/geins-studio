@@ -9,6 +9,7 @@ interface UseDateReturnType {
     value: string | Date | undefined | null,
     now?: Date,
   ) => string;
+  formatRelativeDays: (days: number) => string;
 }
 
 const DAY_SECONDS = 86_400;
@@ -32,6 +33,7 @@ const RELATIVE_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
  * @returns {UseDateReturnType} - An object containing date formatting utilities
  * @property {function} formatDate - Formats a date value using the app locale (defaults to `dateStyle: 'long'`)
  * @property {function} formatRelativeDate - Formats a date relative to now ("in 12 days", "3 hours ago")
+ * @property {function} formatRelativeDays - Formats a count of calendar days from today ("today", "tomorrow", "in 3 days")
  */
 export const useDate = (): UseDateReturnType => {
   const locale = useCookieLocale();
@@ -66,5 +68,12 @@ export const useDate = (): UseDateReturnType => {
     }).format(Math.round(seconds / size), unit);
   };
 
-  return { formatDate, formatRelativeDate };
+  // Whole calendar days, so tonight reads "today", not "in 8 hours"
+  const formatRelativeDays = (days: number): string =>
+    new Intl.RelativeTimeFormat(locale.value, { numeric: 'auto' }).format(
+      days,
+      'day',
+    );
+
+  return { formatDate, formatRelativeDate, formatRelativeDays };
 };
