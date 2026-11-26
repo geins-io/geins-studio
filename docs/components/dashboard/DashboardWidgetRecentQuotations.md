@@ -8,7 +8,7 @@ The Latest quotations dashboard widget: the 10 most recently updated quotations 
 - The rows render in a [`TableView`](/components/table/TableView.md#compact-mode-a-list-inside-a-card) in `TableMode.Compact`, like [Latest company orders](/components/dashboard/DashboardWidgetCompanyOrders.md): columns from `getColumns`, the total ex VAT as `currency`, the status as `status` ([`StatusBadge`](/components/StatusBadge.md)). The company column gets its own two-line cell: the company name (a link to the quotation, plain text while the board is edited) over `{quotation number} · {age}`.
 - `TableView` brings the loading skeleton, the error state with **Retry** and the empty state ("No quotations").
 - **View all** in the header opens the quotations list.
-- Not filtered by Channel / Market yet: that comes with the filter bar.
+- Follows the dashboard's Channel and Market filters ([`useDashboardFilters`](/composables/useDashboardFilters.md)): it reads `useDashboardQuotations({ scoped: true })`.
 
 ## Props
 

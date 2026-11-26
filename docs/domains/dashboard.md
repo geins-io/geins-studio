@@ -23,6 +23,8 @@ It is built in the long-lived `feat/dashboards` branch and merges into `next` on
 
 **Empty board** — When every widget has been removed, the page shows the `Empty` state ("Build your dashboard") with **Add widget** (enters edit mode and opens the panel) and **Use the default dashboard** (`resetToDefault`), so a saved empty board is never a dead end. With no grid on the page, an empty board takes widgets from + only, not by dragging.
 
+**Filters** — The row under the tabs ([`DashboardFilterBar`](/components/dashboard/DashboardFilterBar.md)): the period (Today, Yesterday, This week, Last 7 days, This month, Last 30 days, YTD, Custom; weeks start on Monday), then **Channel** and **Market**, the list pages' filter buttons. Nothing checked is all; the market options follow the picked channels, and changing channels drops markets they don't have. [`useDashboardFilters`](/composables/useDashboardFilters.md) holds the state: the page creates it and every widget reads the same one. It also gives the dashboard's `currency`: the first picked market's, or with no market picked the default currency of the first channel in scope (decided 24 Nov 2026). Picked markets with different currencies use the first one's for now; that question is still open for Phase 3. Filters aren't saved: a reload starts at Today and all.
+
 **Grid** — 12 columns, 28px rows, 16px gaps (`grid-layout-plus`). Below 640px of board width the widgets stack one per row in reading order.
 
 **Fitted height** — A widget registered with `fit` (Quick access) has the height its content needs: the widget frame measures it and reports it in grid rows (`fitWidget`), and the user resizes only its width. The height follows the width and settings, so it isn't saved on its own.
@@ -33,16 +35,16 @@ It is built in the long-lived `feat/dashboards` branch and merges into `next` on
 
 ## Widgets and their data
 
-| Widget                      | Reads                                                                               | Filters                                    |
-| --------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------ |
-| Quick access                | Nothing: links built from the entity registry                                       | —                                          |
-| Latest company orders       | `POST order/query` (all wholesale orders, no pagination) + `wholesale/account` list | —                                          |
-| Needs attention             | Quotation requests, expiring quotations and failed workflow runs (below)            | —                                          |
-| Single numbers (×3)         | One of the Needs attention numbers each                                             | —                                          |
-| Open quotation requests     | Quotation requests, newest first (`useDashboardQuotations`)                         | Channel / Market once the filter bar lands |
-| Quotations expiring soon    | Expiring quotations, soonest first (`useDashboardQuotations`)                       | Channel / Market once the filter bar lands |
-| Latest failed workflow runs | Failed runs, newest first (`useDashboardExecutions`)                                | —                                          |
-| Latest quotations           | The 10 last changed quotations (`useDashboardQuotations`)                           | Channel / Market once the filter bar lands |
+| Widget                      | Reads                                                                               | Filters          |
+| --------------------------- | ----------------------------------------------------------------------------------- | ---------------- |
+| Quick access                | Nothing: links built from the entity registry                                       | —                |
+| Latest company orders       | `POST order/query` (all wholesale orders, no pagination) + `wholesale/account` list | Channel          |
+| Needs attention             | Quotation requests, expiring quotations and failed workflow runs (below)            | —                |
+| Single numbers (×3)         | One of the Needs attention numbers each                                             | —                |
+| Open quotation requests     | Quotation requests, newest first (`useDashboardQuotations`)                         | Channel / Market |
+| Quotations expiring soon    | Expiring quotations, soonest first (`useDashboardQuotations`)                       | Channel / Market |
+| Latest failed workflow runs | Failed runs, newest first (`useDashboardExecutions`)                                | —                |
+| Latest quotations           | The 10 last changed quotations (`useDashboardQuotations`)                           | Channel / Market |
 
 **Needs attention** counts what needs doing right now, so it ignores the period and Channel / Market. Its definitions live in `app/lib/dashboard-data.ts` (pure, tested) and every widget reads them through one shared fetch per source:
 

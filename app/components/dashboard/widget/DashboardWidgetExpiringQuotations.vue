@@ -16,7 +16,9 @@ defineProps<{
 }>();
 
 const { t } = useI18n();
-const { expiring, loading, error, refresh } = useDashboardQuotations();
+const { expiring, loading, error, refresh } = useDashboardQuotations({
+  scoped: true,
+});
 const { formatRelativeDays } = useDate();
 const { formatCurrency } = usePrice();
 

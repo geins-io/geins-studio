@@ -15,7 +15,9 @@ defineProps<{
   instance: DashboardWidgetInstance;
 }>();
 
-const { requests, loading, error, refresh } = useDashboardQuotations();
+const { requests, loading, error, refresh } = useDashboardQuotations({
+  scoped: true,
+});
 const { formatRelativeDate } = useDate();
 
 const items = computed(() =>

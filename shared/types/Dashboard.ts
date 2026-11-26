@@ -103,3 +103,29 @@ export interface DashboardQueueItem {
   /** Translated status text; see `StatusBadge` */
   statusLabel?: string;
 }
+
+/** A quick choice in the dashboard's period bar */
+export type DashboardPeriodPreset =
+  | 'today'
+  | 'yesterday'
+  | 'this_week'
+  | 'last_7_days'
+  | 'this_month'
+  | 'last_30_days'
+  | 'ytd';
+
+/**
+ * The period every widget reads: a preset or `custom`, as local dates. `from`
+ * is the start of its first day, `to` the end of its last (inclusive).
+ */
+export interface DashboardPeriod {
+  preset: DashboardPeriodPreset | 'custom';
+  from: Date;
+  to: Date;
+}
+
+/** The Channel and Market filter buttons, as list filters. Empty: all. */
+export interface DashboardScopeFilters {
+  channels?: string[];
+  markets?: string[];
+}

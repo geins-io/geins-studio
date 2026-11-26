@@ -25,6 +25,8 @@ const {
   updateWidgetConfig,
   fitWidget,
 } = useDashboard();
+// Created here, so the filter bar and every widget share one filter state
+useDashboardFilters();
 
 // A minute tick, so the greeting and date follow the day while the page stays open
 const { now } = useLiveClock(true, 60_000);
@@ -107,6 +109,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
       <ContentEditTabs v-model:current-tab="currentTab" :tabs="tabs" />
     </template>
   </ContentHeader>
+  <DashboardFilterBar />
   <!-- Moving and resizing need the grid: no hint on a stacked or empty board -->
   <Feedback v-if="editing && !stacked" type="info" class="mb-4">
     <template #description>{{ $t('dashboards.edit_hint') }}</template>

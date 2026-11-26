@@ -1,5 +1,6 @@
 import type { Quotation } from '#shared/types';
 import { withoutLinkedRevisionDrafts } from '#shared/utils/quotation';
+import { inDashboardScope } from '@/lib/dashboard';
 import { expiringQuotations, quotationRequests } from '@/lib/dashboard-data';
 
 interface UseDashboardQuotationsReturnType {
@@ -17,9 +18,13 @@ interface UseDashboardQuotationsReturnType {
  * one request (and one Retry). The list is the quotation list page's: request
  * drafts, revised versions and linked revision drafts left out.
  *
- * Always the whole account as it is now; the dashboard's period doesn't apply.
- * Expiring is counted from when the list was fetched.
+ * Always the account as it is now; the dashboard's period doesn't apply.
+ * Expiring is counted from when the list was fetched. With `scoped`, only
+ * quotations in the dashboard's picked channels and markets (the list
+ * widgets); without it, the whole account (Needs attention).
  *
+ * @param {object} [options]
+ * @param {boolean} [options.scoped] - Follow the dashboard's Channel and Market filters
  * @returns {UseDashboardQuotationsReturnType} - The quotations and what's derived from them
  * @property {ComputedRef<Quotation[]>} quotations - Every quotation the list page shows
  * @property {ComputedRef<Quotation[]>} requests - Buyers' requests waiting for an answer, newest first
@@ -28,8 +33,11 @@ interface UseDashboardQuotationsReturnType {
  * @property {ComputedRef<boolean>} error - Whether the fetch failed
  * @property {function} refresh - Fetches the list again
  */
-export const useDashboardQuotations = (): UseDashboardQuotationsReturnType => {
+export const useDashboardQuotations = (
+  options: { scoped?: boolean } = {},
+): UseDashboardQuotationsReturnType => {
   const { orderApi } = useGeinsRepository();
+  const filters = options.scoped ? useDashboardFilters() : null;
 
   // The widget shows a failed fetch itself, so no global error toast
   const { data, status, refresh } = useAsyncData(
@@ -51,7 +59,14 @@ export const useDashboardQuotations = (): UseDashboardQuotationsReturnType => {
     { dedupe: 'defer' },
   );
 
-  const quotations = computed(() => data.value?.items ?? []);
+  const quotations = computed(() => {
+    const items = data.value?.items ?? [];
+    if (!filters) return items;
+    const { channelIds, marketIds } = filters;
+    return items.filter((quotation) =>
+      inDashboardScope(quotation, channelIds.value, marketIds.value),
+    );
+  });
   const fetchedAt = computed(() => new Date(data.value?.fetchedAt ?? 0));
 
   return {

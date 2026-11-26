@@ -24,7 +24,9 @@ interface RecentQuotationRow extends Omit<EntityBase, '_type'> {
 }
 
 const { t } = useI18n();
-const { quotations, loading, error, refresh } = useDashboardQuotations();
+const { quotations, loading, error, refresh } = useDashboardQuotations({
+  scoped: true,
+});
 const { formatRelativeDate } = useDate();
 const { convertToPrice } = usePrice();
 const { getColumns } = useColumns<RecentQuotationRow>();
