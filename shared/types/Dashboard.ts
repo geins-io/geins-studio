@@ -16,7 +16,8 @@ export type DashboardWidgetType =
   | 'queue-quotation-requests'
   | 'queue-expiring-quotations'
   | 'queue-failed-runs'
-  | 'list-recent-quotations';
+  | 'list-recent-quotations'
+  | 'list-recent-assets';
 
 /** Groups in the Add widget panel, in display order. */
 export type DashboardWidgetGroup =

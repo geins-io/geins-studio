@@ -15,6 +15,7 @@ import {
   dashboardCellAt,
   dashboardStorageKey,
   defaultDashboardBoard,
+  findUserByRef,
   greetingPeriod,
   isDashboardWidgetType,
   nextDashboardWidgetId,
@@ -366,5 +367,23 @@ describe('saved boards', () => {
 
   it('keys storage by account and user', () => {
     expect(dashboardStorageKey('acme', 'u1')).toBe('geins-dashboard-acme-u1');
+  });
+});
+
+describe('findUserByRef', () => {
+  const users = [
+    { _id: 'u1', email: 'Maja@Example.com' },
+    { _id: 'u2', email: null },
+  ];
+
+  it('matches a user id or an email, ignoring case and spaces', () => {
+    expect(findUserByRef('u2', users)?._id).toBe('u2');
+    expect(findUserByRef(' maja@example.COM ', users)?._id).toBe('u1');
+  });
+
+  it('finds no one for an unknown or empty reference', () => {
+    expect(findUserByRef('someone@example.com', users)).toBeUndefined();
+    expect(findUserByRef('', users)).toBeUndefined();
+    expect(findUserByRef(null, users)).toBeUndefined();
   });
 });

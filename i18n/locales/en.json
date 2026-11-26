@@ -1036,6 +1036,11 @@
       "recent_quotations": {
         "title": "Latest quotations",
         "description": "The most recently updated quotations"
+      },
+      "recent_assets": {
+        "title": "Recently uploaded assets",
+        "description": "Files added to the asset library",
+        "added": "Added"
       }
     },
     "attention": {
