@@ -160,12 +160,21 @@ export function createDashboardBoard(
 
 /**
  * The board a user gets before they change anything. It grows as widgets
- * land; lists keep a third of the width, as in the prototype.
+ * land; queues and lists keep a third of the width, as in the prototype.
+ * Quick access sets its own height (`fit`), so it spans the full width: a
+ * refit then moves every widget below it alike instead of leaving a gap
+ * under it beside fixed-height neighbours.
  */
 export function defaultDashboardBoard(): DashboardBoard {
   return createDashboardBoard([
-    ['quick-access', 0, 0, 12, 4],
-    ['list-company-orders', 0, 4],
+    ['needs-attention', 0, 0],
+    ['quick-access', 0, 4, 12, 4],
+    ['queue-quotation-requests', 0, 8],
+    ['queue-expiring-quotations', 4, 8],
+    ['queue-failed-runs', 8, 8],
+    ['list-company-orders', 0, 16],
+    ['list-recent-quotations', 4, 16],
+    ['list-recent-assets', 8, 16],
   ]);
 }
 
