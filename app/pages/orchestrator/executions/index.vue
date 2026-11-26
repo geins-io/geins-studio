@@ -1,7 +1,18 @@
 <script setup lang="ts">
-import type { ExecutionLog, ColumnOptions, StringKeyOf } from '#shared/types';
+import type {
+  ExecutionLog,
+  ColumnOptions,
+  ListFilterChip,
+  StringKeyOf,
+} from '#shared/types';
 import { ENTITIES, entityListUrl } from '#shared/utils/entities';
 import { formatDuration, formatTimestamp } from '#shared/utils/time';
+import {
+  EXECUTION_LIST_QUERY_KEYS,
+  LIST_URL_PERIOD_MS,
+  matchesExecutionStatus,
+  parseExecutionListQuery,
+} from '@/lib/list-url-filters';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 
 export interface ExecutionListItem {
@@ -62,24 +73,18 @@ const workflowIdFilter = computed(() => {
   return typeof id === 'string' && id.length > 0 ? id : null;
 });
 
-// ─── Period filter (from ?period=1h|24h|7d|30d) ────────────────────
-const PERIOD_MS: Record<string, number> = {
-  '1h': 60 * 60 * 1000,
-  '24h': 24 * 60 * 60 * 1000,
-  '7d': 7 * 24 * 60 * 60 * 1000,
-  '30d': 30 * 24 * 60 * 60 * 1000,
-};
-
-const periodFilter = computed(() => {
-  const p = route.query.period;
-  return typeof p === 'string' && p in PERIOD_MS ? p : null;
-});
+// ─── Status + period filters (?status=failed&period=1h|24h|7d|30d) ──
+const urlFilters = computed(() => parseExecutionListQuery(route.query));
+const statusFilter = computed(() => urlFilters.value.statuses);
+const periodFilter = computed(() => urlFilters.value.period);
 
 const periodRange = computed(() => {
   if (!periodFilter.value) return null;
   const now = Date.now();
   return {
-    startedAfter: new Date(now - PERIOD_MS[periodFilter.value]!).toISOString(),
+    startedAfter: new Date(
+      now - LIST_URL_PERIOD_MS[periodFilter.value],
+    ).toISOString(),
     startedBefore: new Date(now).toISOString(),
   };
 });
@@ -115,6 +120,7 @@ type ActiveFilter =
   | { type: 'group'; label: string }
   | { type: 'name'; label: string }
   | { type: 'workflow'; label: string }
+  | { type: 'status'; label: string }
   | { type: 'period'; label: string };
 
 const activeFilters = computed<ActiveFilter[]>(() => {
@@ -135,6 +141,12 @@ const activeFilters = computed<ActiveFilter[]>(() => {
   if (nameFilter.value) {
     filters.push({ type: 'name', label: nameFilter.value });
   }
+  if (statusFilter.value.length) {
+    filters.push({
+      type: 'status',
+      label: statusFilter.value.map(statusBadgeLabel).join(', '),
+    });
+  }
   if (periodFilter.value) {
     filters.push({
       type: 'period',
@@ -149,8 +161,16 @@ const filterTypeLabels = computed<Record<ActiveFilter['type'], string>>(() => ({
   workflow: t('workflow'),
   group: t('group'),
   name: t('name'),
+  status: t('status'),
   period: t('executions.period'),
 }));
+
+const filterChips = computed<ListFilterChip<ActiveFilter['type']>[]>(() =>
+  activeFilters.value.map((f) => ({
+    ...f,
+    typeLabel: filterTypeLabels.value[f.type],
+  })),
+);
 
 const hasFilters = computed(() => activeFilters.value.length > 0);
 const filterLabel = computed(() =>
@@ -224,6 +244,11 @@ const dataList = computed(() => {
   } else if (nameFilter.value) {
     list = list.filter((item) => item.workflowName === nameFilter.value);
   }
+  if (statusFilter.value.length) {
+    list = list.filter((item) =>
+      matchesExecutionStatus(item.status, statusFilter.value),
+    );
+  }
   return list.map(applyLiveDuration);
 });
 
@@ -235,7 +260,8 @@ const FILTER_QUERY_KEY: Record<ActiveFilter['type'], string> = {
   workflow: 'id',
   group: 'group',
   name: 'name',
-  period: 'period',
+  status: EXECUTION_LIST_QUERY_KEYS.status,
+  period: EXECUTION_LIST_QUERY_KEYS.period,
 };
 
 const removeFilter = (type: ActiveFilter['type']) => {
@@ -389,41 +415,11 @@ const searchableFields: Array<keyof EntityList> = [
     :description="$t('executions.description')"
   />
 
-  <!-- Active Filter Banner -->
-  <div
-    v-if="hasFilters"
-    class="bg-muted/50 mb-4 flex items-center justify-between rounded-lg border px-4 py-2"
-  >
-    <div class="flex flex-wrap items-center gap-2 text-sm">
-      <LucideFilter class="text-muted-foreground h-4 w-4" />
-      <span class="text-muted-foreground">
-        {{ $t('executions.filtered_by') }}
-      </span>
-      <span
-        v-for="f in activeFilters"
-        :key="f.type"
-        class="bg-background inline-flex items-center gap-1 rounded-full border py-0.5 pr-1 pl-2 text-xs"
-      >
-        <span class="text-muted-foreground">
-          {{ filterTypeLabels[f.type] }}:
-        </span>
-        <span class="font-medium">{{ f.label }}</span>
-        <button
-          class="hover:bg-muted text-muted-foreground hover:text-foreground ml-0.5 rounded-full p-0.5"
-          :title="
-            $t('executions.remove_filter', { type: filterTypeLabels[f.type] })
-          "
-          @click="removeFilter(f.type)"
-        >
-          <LucideX class="h-3 w-3" />
-        </button>
-      </span>
-    </div>
-    <Button variant="ghost" size="sm" class="h-7 text-xs" @click="clearFilter">
-      <LucideX class="mr-1 h-3 w-3" />
-      {{ $t('executions.clear_filters') }}
-    </Button>
-  </div>
+  <ListFilterChips
+    :filters="filterChips"
+    @remove="removeFilter"
+    @clear="clearFilter"
+  />
 
   <NuxtErrorBoundary>
     <TableView
@@ -433,8 +429,10 @@ const searchableFields: Array<keyof EntityList> = [
       :data="dataList"
       :init-visibility-state="visibilityState"
       :searchable-fields="searchableFields"
+      :filtered="hasFilters"
       :error="fetchError"
       :on-retry="refresh"
+      @clear-filters="clearFilter"
     />
   </NuxtErrorBoundary>
 </template>

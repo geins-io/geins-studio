@@ -19,10 +19,7 @@ const badgeText = computed(() => {
     case false:
       return t('inactive');
     default:
-      return (
-        String(props.status).charAt(0).toUpperCase() +
-        String(props.status).slice(1).replace('-', ' ')
-      );
+      return statusBadgeLabel(props.status);
   }
 });
 </script>
