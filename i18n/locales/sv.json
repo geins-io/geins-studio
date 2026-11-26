@@ -1012,7 +1012,32 @@
       "company_orders": {
         "title": "Senaste företagsordrar",
         "description": "De senaste ordrarna från köpare kopplade till ett företag"
+      },
+      "needs_attention": {
+        "description": "Alla tre siffrorna i ett block",
+        "header_description": "Det som behöver göras just nu"
+      },
+      "attention_tile": {
+        "description": "Siffran för sig, med en länk"
       }
+    },
+    "attention": {
+      "requests": {
+        "label": "Offertförfrågningar",
+        "text": "Köpare väntar på svar",
+        "link": "Svara på förfrågningar"
+      },
+      "expiring": {
+        "label": "Offerter som går ut",
+        "text": "Inom de närmaste 7 dagarna",
+        "link": "Visa offerter"
+      },
+      "failed_runs": {
+        "label": "Misslyckade arbetsflödeskörningar",
+        "text": "Sedan i går, i Orkestrator",
+        "link": "Visa körningar"
+      },
+      "error": "Kunde inte hämta siffran"
     },
     "edit_hint": "Dra en widget i rubriken för att flytta den, dra i nedre högra hörnet för att ändra storleken och ta bort den med ✕.",
     "empty_title": "Bygg din översikt",

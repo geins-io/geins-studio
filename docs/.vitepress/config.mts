@@ -182,6 +182,18 @@ export default defineConfig({
                 text: 'useDashboardStorage',
                 link: '/composables/useDashboardStorage.md',
               },
+              {
+                text: 'useDashboardQuotations',
+                link: '/composables/useDashboardQuotations.md',
+              },
+              {
+                text: 'useDashboardExecutions',
+                link: '/composables/useDashboardExecutions.md',
+              },
+              {
+                text: 'useDashboardAttention',
+                link: '/composables/useDashboardAttention.md',
+              },
             ],
           },
           {
@@ -1042,6 +1054,18 @@ export default defineConfig({
               {
                 text: 'DashboardWidgetCompanyOrders',
                 link: '/components/dashboard/DashboardWidgetCompanyOrders.md',
+              },
+              {
+                text: 'DashboardWidgetNeedsAttention',
+                link: '/components/dashboard/DashboardWidgetNeedsAttention.md',
+              },
+              {
+                text: 'DashboardWidgetAttentionTile',
+                link: '/components/dashboard/DashboardWidgetAttentionTile.md',
+              },
+              {
+                text: 'DashboardAttentionCard',
+                link: '/components/dashboard/DashboardAttentionCard.md',
               },
             ],
           },

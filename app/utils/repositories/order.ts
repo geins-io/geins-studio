@@ -100,6 +100,7 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       async query(
         batchQuery: QuotationBatchQuery = { all: true },
         options?: QuotationApiOptions,
+        fetchOptions?: RepoFetchOptions,
       ): Promise<QuotationBatchQueryResult> {
         return await fetch<QuotationBatchQueryResult>(
           `${QUOTATION_ENDPOINT}/query`,
@@ -107,6 +108,7 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
             method: 'POST',
             body: batchQuery,
             query: buildQueryObject(options),
+            ...fetchOptions,
           },
         );
       },
@@ -117,8 +119,9 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       async list(
         batchQuery: QuotationBatchQuery = VISIBLE_QUOTATIONS_QUERY,
         options?: QuotationApiOptions,
+        fetchOptions?: RepoFetchOptions,
       ): Promise<QuotationBatchQueryResult> {
-        return await this.query(batchQuery, options);
+        return await this.query(batchQuery, options, fetchOptions);
       },
 
       /**

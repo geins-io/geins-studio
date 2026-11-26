@@ -4,7 +4,13 @@
  */
 
 /** Every widget the dashboard can show. A new widget adds its type here. */
-export type DashboardWidgetType = 'quick-access' | 'list-company-orders';
+export type DashboardWidgetType =
+  | 'quick-access'
+  | 'list-company-orders'
+  | 'needs-attention'
+  | 'attention-quotation-requests'
+  | 'attention-expiring-quotations'
+  | 'attention-failed-runs';
 
 /** Groups in the Add widget panel, in display order. */
 export type DashboardWidgetGroup =

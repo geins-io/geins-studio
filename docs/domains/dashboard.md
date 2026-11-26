@@ -37,6 +37,16 @@ It is built in the long-lived `feat/dashboards` branch and merges into `next` on
 | --------------------- | ----------------------------------------------------------------------------------- | ------- |
 | Quick access          | Nothing: links built from the entity registry                                       | —       |
 | Latest company orders | `POST order/query` (all wholesale orders, no pagination) + `wholesale/account` list | —       |
+| Needs attention       | Quotation requests, expiring quotations and failed workflow runs (below)            | —       |
+| Single numbers (×3)   | One of the Needs attention numbers each                                             | —       |
+
+**Needs attention** counts what needs doing right now, so it ignores the period and Channel / Market. Its definitions live in `app/lib/dashboard-data.ts` (pure, tested) and every widget reads them through one shared fetch per source:
+
+- **Quotation requests**: quotations with status `requested`. [`useDashboardQuotations`](/composables/useDashboardQuotations.md) fetches `orderApi.quotation.list()` (the list page's quotations: no request drafts, revised versions or linked revision drafts).
+- **Quotations expiring**: status `pending` with `validTo` on today's calendar day or up to 7 days ahead. A passed day or a missing `validTo` doesn't count.
+- **Failed workflow runs**: runs with status `Failed` that started in the last 24 hours, from `GET orchestrator/executions/logs` ([`useDashboardExecutions`](/composables/useDashboardExecutions.md)).
+
+Each number links to its list with the filter in the query (`?status=requested`, `?status=pending&expiring=7d`, `?status=failed&period=24h`), from `DASHBOARD_ATTENTION`. The quotations list reads `status` / `expiring` and the workflow runs list `status` once their link filters land; until then those links open the list unfiltered (the runs list already reads `period`).
 
 ## Known data gaps
 
