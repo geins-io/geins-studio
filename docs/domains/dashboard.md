@@ -17,6 +17,22 @@ It is built in the long-lived `feat/dashboards` branch and merges into `next` on
 
 **Board** — `items` (widget instances: `i`, `type`, optional `config`) plus `layout` (`i`, `x`, `y`, `w`, `h`). An instance id is `{type}__{n}`, so the same widget can be on a board twice with different settings. [`useDashboard`](/composables/useDashboard.md) holds the board; `defaultDashboardBoard()` is where a user starts.
 
+**Default board** — What a user sees until they save a board of their own: Needs attention across the top, Quick access the full width under it, then the three queues and the three lists, a third of the width each. Every column is filled from the top to one shared bottom, with no gaps or overlaps, and every widget is at least its minimum size. Quick access sets its own height (see Fitted height), so it spans the full width: a refit moves every widget below it alike. The prototype's charts (Company sales, with Quick access and Quotations by status beside it) arrive in project Phase 3, which grows the default again; a Quick access a third wide there needs another answer to its fitted height, and the default-board test that keeps fitted widgets full width changes with it. A user who saved a board keeps it; one who never changed anything gets each new default.
+
+```text
+y 0 ┌───────────────────────────────────────────────────────────┐
+    │ Needs attention                                 12×4      │
+y 4 ├───────────────────────────────────────────────────────────┤
+    │ Quick access (height fits its shortcuts)        12×4      │
+y 8 ├───────────────────┬───────────────────┬───────────────────┤
+    │ Open quotation    │ Quotations        │ Latest failed     │
+    │ requests      4×8 │ expiring soon 4×8 │ workflow runs 4×8 │
+y16 ├───────────────────┼───────────────────┼───────────────────┤
+    │ Latest company    │ Latest            │ Recently uploaded │
+    │ orders       4×10 │ quotations   4×10 │ assets       4×10 │
+y26 └───────────────────┴───────────────────┴───────────────────┘
+```
+
 **Saving** — Each user's board is kept in `localStorage`, per user and account (`geins-dashboard-{accountKey}-{userId}`), through [`useDashboardStorage`](/composables/useDashboardStorage.md) only. The saved shape is versioned (`version: 1`) and already holds a list of dashboards (`my-work` for now), so several dashboards and server-side saving (project Phase 5) change that one module. Done saves the layout; a widget's own settings save as soon as they change.
 
 **Adding widgets** — In edit mode, **Add widget** opens the [`DashboardAddWidgetPanel`](/components/dashboard/DashboardAddWidgetPanel.md): every registry widget, grouped (Needs attention, Charts, Lists, Shortcuts), searchable by title, with "N on board". **+** adds a widget at its default size on the left under every other widget; dragging a row onto the board drops it where the grid's placeholder shows. Either way the panel closes and the widget gets a new id, so the same widget can be added twice. Additions belong to the edit session: Cancel takes them back off, Done saves them.

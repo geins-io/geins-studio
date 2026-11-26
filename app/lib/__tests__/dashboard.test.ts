@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest';
-import type { DashboardLayoutItem } from '#shared/types';
+import type { DashboardBoard, DashboardLayoutItem } from '#shared/types';
 import {
   DASHBOARD_GRID_COLUMNS,
   DASHBOARD_GRID_GAP,
@@ -28,6 +28,9 @@ import {
   serializeDashboards,
   stackedOrder,
 } from '../dashboard';
+
+const quickAccessOf = (board: DashboardBoard) =>
+  board.items.find((item) => item.type === 'quick-access')!;
 
 const overlaps = (a: DashboardLayoutItem, b: DashboardLayoutItem) =>
   a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
@@ -64,6 +67,47 @@ describe('defaultDashboardBoard', () => {
         expect(overlaps(layout[a]!, layout[b]!)).toBe(false);
       }
     }
+  });
+
+  it('leaves no gaps: every column is filled from the top to one bottom', () => {
+    const bottom = dashboardBottom(board.layout);
+    for (let column = 0; column < DASHBOARD_GRID_COLUMNS; column++) {
+      const inColumn = stackedOrder(board.layout).filter(
+        (p) => p.x <= column && column < p.x + p.w,
+      );
+      let y = 0;
+      for (const position of inColumn) {
+        expect(position.y).toBe(y);
+        y += position.h;
+      }
+      expect(y).toBe(bottom);
+    }
+  });
+
+  // A fitted height that differs from the default would otherwise leave a
+  // gap under the widget, or push one column further down than its neighbours
+  it('gives widgets that fit their content the full width', () => {
+    for (const position of board.layout) {
+      const item = board.items.find((it) => it.i === position.i)!;
+      if (!DASHBOARD_WIDGETS[item.type].fit) continue;
+      expect(position).toMatchObject({ x: 0, w: DASHBOARD_GRID_COLUMNS });
+    }
+  });
+
+  it('stacks Needs attention, Quick access, the queues, then the lists', () => {
+    const types = stackedOrder(board.layout).map(
+      (position) => board.items.find((it) => it.i === position.i)!.type,
+    );
+    expect(types).toEqual([
+      'needs-attention',
+      'quick-access',
+      'queue-quotation-requests',
+      'queue-expiring-quotations',
+      'queue-failed-runs',
+      'list-company-orders',
+      'list-recent-quotations',
+      'list-recent-assets',
+    ]);
   });
 
   it('returns a fresh board each call', () => {
@@ -168,24 +212,25 @@ describe('quick access', () => {
 describe('cloneDashboardBoard', () => {
   it('copies deeply, configs included', () => {
     const board = defaultDashboardBoard();
-    board.items[0]!.config = { shortcuts: ['companies'] };
+    const quickAccess = quickAccessOf(board);
+    quickAccess.config = { shortcuts: ['companies'] };
     const copy = cloneDashboardBoard(board);
     expect(copy).toEqual(board);
     copy.layout[0]!.x = 5;
-    (copy.items[0]!.config!.shortcuts as string[]).push('price-lists');
+    (quickAccessOf(copy).config!.shortcuts as string[]).push('price-lists');
     expect(board.layout[0]!.x).toBe(0);
-    expect(board.items[0]!.config!.shortcuts).toEqual(['companies']);
+    expect(quickAccess.config!.shortcuts).toEqual(['companies']);
   });
 });
 
 describe('removeDashboardWidget', () => {
   it('drops the widget and its layout entry only', () => {
     const board = defaultDashboardBoard();
-    const [first, second] = board.items;
+    const [first, ...rest] = board.items;
     const next = removeDashboardWidget(board, first!.i);
-    expect(next.items).toEqual([second]);
-    expect(next.layout.map((l) => l.i)).toEqual([second!.i]);
-    expect(board.items).toHaveLength(2);
+    expect(next.items).toEqual(rest);
+    expect(next.layout.map((l) => l.i)).toEqual(rest.map((item) => item.i));
+    expect(board.items).toHaveLength(rest.length + 1);
   });
 });
 
@@ -202,7 +247,7 @@ describe('addDashboardWidget', () => {
     for (const position of board.layout) {
       expect(added.y).toBeGreaterThanOrEqual(position.y + position.h);
     }
-    expect(board.items).toHaveLength(2);
+    expect(board.items).toHaveLength(defaultDashboardBoard().items.length);
   });
 
   it('adds at the top of an empty board', () => {
@@ -289,7 +334,7 @@ describe('saved boards', () => {
 
   it('round-trips a board through serialize and parse', () => {
     const board = defaultDashboardBoard();
-    board.items[0]!.config = { shortcuts: ['companies'] };
+    quickAccessOf(board).config = { shortcuts: ['companies'] };
     expect(parseStoredDashboards(serializeDashboards(board))).toEqual(board);
   });
 

@@ -3,7 +3,7 @@ import { mockNuxtImport } from '@nuxt/test-utils/runtime';
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { computed, nextTick, reactive } from 'vue';
 import type { DashboardBoard } from '#shared/types';
-import { createDashboardBoard } from '@/lib/dashboard';
+import { createDashboardBoard, defaultDashboardBoard } from '@/lib/dashboard';
 import { useDashboard } from '../dashboard/useDashboard';
 
 const storage = vi.hoisted(() => ({
@@ -20,6 +20,12 @@ mockNuxtImport('useDashboardStorage', () => () => ({
   save: (board: DashboardBoard) =>
     storage.state!.saved.push(JSON.parse(JSON.stringify(board))),
 }));
+
+const defaultTypes = () =>
+  defaultDashboardBoard().items.map((item) => item.type);
+
+const quickAccessId = (items: DashboardBoard['items']) =>
+  items.find((item) => item.type === 'quick-access')!.i;
 
 const snapshotOf = (dashboard: ReturnType<typeof useDashboard>) =>
   JSON.parse(
@@ -92,7 +98,7 @@ describe('useDashboard adding widgets', () => {
 
     dashboard.startEdit();
     dashboard.addWidget('quick-access');
-    expect(dashboard.items.value).toHaveLength(3);
+    expect(dashboard.items.value).toHaveLength(before.items.length + 1);
     dashboard.cancelEdit();
 
     expect(snapshotOf(dashboard)).toEqual(before);
@@ -107,7 +113,7 @@ describe('useDashboard adding widgets', () => {
     dashboard.doneEdit();
 
     const saved = storage.state!.saved.at(-1)!;
-    expect(saved.items).toHaveLength(3);
+    expect(saved.items).toHaveLength(defaultTypes().length + 1);
     expect(saved.layout.at(-1)).toMatchObject({ x: 4, y: 0 });
   });
 
@@ -117,7 +123,7 @@ describe('useDashboard adding widgets', () => {
 
     expect(dashboard.editing.value).toBe(true);
     dashboard.cancelEdit();
-    expect(dashboard.items.value).toHaveLength(2);
+    expect(dashboard.items.value).toHaveLength(defaultTypes().length);
   });
 });
 
@@ -127,7 +133,7 @@ describe('useDashboard saved board', () => {
   it('shows the saved board once user and account are known', async () => {
     storage.state!.stored = saved;
     const dashboard = useDashboard();
-    expect(dashboard.items.value).toHaveLength(2);
+    expect(dashboard.items.value).toHaveLength(defaultTypes().length);
 
     storage.state!.key = 'geins-dashboard-acme-u1';
     await nextTick();
@@ -138,16 +144,15 @@ describe('useDashboard saved board', () => {
   it('starts from the default board when nothing is saved', () => {
     storage.state!.key = 'geins-dashboard-acme-u1';
     const dashboard = useDashboard();
-    expect(dashboard.items.value.map((item) => item.type)).toEqual([
-      'quick-access',
-      'list-company-orders',
-    ]);
+    expect(dashboard.items.value.map((item) => item.type)).toEqual(
+      defaultTypes(),
+    );
   });
 
   it('saves widget settings right away, and keeps them through cancel', () => {
     storage.state!.key = 'geins-dashboard-acme-u1';
     const dashboard = useDashboard();
-    const quickAccess = dashboard.items.value[0]!.i;
+    const quickAccess = quickAccessId(dashboard.items.value);
     const y = dashboard.layout.value[1]!.y;
 
     dashboard.startEdit();
@@ -157,13 +162,15 @@ describe('useDashboard saved board', () => {
     // Saved: the last saved layout with the new settings, not the edit
     const lastSave = storage.state!.saved.at(-1)!;
     expect(lastSave.layout[1]!.y).toBe(y);
-    expect(lastSave.items[0]!.config).toEqual({ shortcuts: ['companies'] });
+    expect(
+      lastSave.items.find((item) => item.i === quickAccess)!.config,
+    ).toEqual({ shortcuts: ['companies'] });
 
     dashboard.cancelEdit();
     expect(dashboard.layout.value[1]!.y).toBe(y);
-    expect(dashboard.items.value[0]!.config).toEqual({
-      shortcuts: ['companies'],
-    });
+    expect(
+      dashboard.items.value.find((item) => item.i === quickAccess)!.config,
+    ).toEqual({ shortcuts: ['companies'] });
   });
 
   it('saves nothing on done without a change', () => {
@@ -178,18 +185,21 @@ describe('useDashboard saved board', () => {
   it('fits a widget height without saving it, and keeps it through cancel', () => {
     storage.state!.key = 'geins-dashboard-acme-u1';
     const dashboard = useDashboard();
-    const quickAccess = dashboard.layout.value[0]!;
+    const id = quickAccessId(dashboard.items.value);
+    const heightOf = () =>
+      dashboard.layout.value.find((position) => position.i === id)!.h;
+    const h = heightOf();
     const before = dashboard.layout.value;
 
     dashboard.startEdit();
-    dashboard.fitWidget(quickAccess.i, quickAccess.h + 2);
+    dashboard.fitWidget(id, h + 2);
 
     // A new array, so the grid compacts the widgets below
     expect(dashboard.layout.value).not.toBe(before);
-    expect(dashboard.layout.value[0]!.h).toBe(quickAccess.h + 2);
+    expect(heightOf()).toBe(h + 2);
 
     dashboard.cancelEdit();
-    expect(dashboard.layout.value[0]!.h).toBe(quickAccess.h + 2);
+    expect(heightOf()).toBe(h + 2);
     expect(storage.state!.saved).toHaveLength(0);
   });
 
@@ -210,10 +220,11 @@ describe('useDashboard saved board', () => {
 
     dashboard.resetToDefault();
 
-    expect(dashboard.items.value.map((item) => item.type)).toEqual([
-      'quick-access',
-      'list-company-orders',
-    ]);
-    expect(storage.state!.saved.at(-1)!.items).toHaveLength(2);
+    expect(dashboard.items.value.map((item) => item.type)).toEqual(
+      defaultTypes(),
+    );
+    expect(storage.state!.saved.at(-1)!.items).toHaveLength(
+      defaultTypes().length,
+    );
   });
 });
