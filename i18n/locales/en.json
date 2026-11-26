@@ -153,6 +153,10 @@
   "this_month": "This month",
   "custom_range": "Custom range",
   "filter": "Filter | Filters",
+  "filtered_by": "Filtered by:",
+  "remove_filter": "Remove {type} filter",
+  "clear_filters": "Clear filters",
+  "within_period": "Within {period}",
   "clear": "Clear",
   "clear_all_entity": "Clear all @.lower:{entityKey}",
   "count_selected": "{count} selected",
@@ -630,9 +634,6 @@
     "older_execution": "Older execution of this workflow",
     "period": "Period",
     "period_last": "Last {period}",
-    "filtered_by": "Filtered by:",
-    "remove_filter": "Remove {type} filter",
-    "clear_filters": "Clear filters",
     "passed_from_parent": "Passed from parent workflow",
     "action_successful": "{action} successful",
     "copy_failed": "Copy failed",
@@ -1004,13 +1005,59 @@
     "widgets": {
       "quick_access": {
         "title": "Quick access",
-        "description": "Shortcuts to everyday tasks"
+        "description": "Shortcuts you choose yourself",
+        "choose": "Choose shortcuts",
+        "choose_description": "Choose the shortcuts to show.",
+        "empty": "No shortcuts chosen yet."
       },
       "company_orders": {
         "title": "Latest company orders",
         "description": "The most recent orders placed by buyers linked to a company"
+      },
+      "needs_attention": {
+        "description": "All three numbers in one block",
+        "header_description": "What needs doing right now"
+      },
+      "attention_tile": {
+        "description": "The number on its own, with a link"
+      },
+      "queue_quotation_requests": {
+        "title": "Open quotation requests",
+        "description": "Buyers waiting for an answer"
+      },
+      "queue_expiring_quotations": {
+        "title": "Quotations expiring soon",
+        "description": "Quotations that expire within 7 days"
+      },
+      "queue_failed_runs": {
+        "title": "Latest failed workflow runs",
+        "description": "Workflow runs in Orchestrator that failed"
+      },
+      "recent_quotations": {
+        "title": "Latest quotations",
+        "description": "The most recently updated quotations"
       }
     },
+    "attention": {
+      "requests": {
+        "label": "Quotation requests",
+        "text": "Buyers are waiting for an answer",
+        "link": "Answer requests"
+      },
+      "expiring": {
+        "label": "Quotations expiring",
+        "text": "Within the next 7 days",
+        "link": "View quotations"
+      },
+      "failed_runs": {
+        "label": "Failed workflow runs",
+        "text": "Since yesterday, in Orchestrator",
+        "link": "View runs"
+      },
+      "error": "Couldn't load the number"
+    },
+    "expires": "Expires {when}",
+    "view_all": "View all",
     "edit_hint": "Drag a widget by its header to move it, drag its bottom-right corner to resize it, and remove it with ✕.",
     "empty_title": "Build your dashboard",
     "empty_description": "Add widgets to keep an eye on what matters to you, or start from the default dashboard.",

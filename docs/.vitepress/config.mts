@@ -183,6 +183,18 @@ export default defineConfig({
                 link: '/composables/useDashboardStorage.md',
               },
               {
+                text: 'useDashboardQuotations',
+                link: '/composables/useDashboardQuotations.md',
+              },
+              {
+                text: 'useDashboardExecutions',
+                link: '/composables/useDashboardExecutions.md',
+              },
+              {
+                text: 'useDashboardAttention',
+                link: '/composables/useDashboardAttention.md',
+              },
+              {
                 text: 'useDashboardFilters',
                 link: '/composables/useDashboardFilters.md',
               },
@@ -578,6 +590,10 @@ export default defineConfig({
               {
                 text: 'ListFilterDateRange',
                 link: '/components/list/filter/ListFilterDateRange.md',
+              },
+              {
+                text: 'ListFilterChips',
+                link: '/components/list/filter/ListFilterChips.md',
               },
             ],
           },
@@ -1040,12 +1056,56 @@ export default defineConfig({
                 link: '/components/dashboard/DashboardWidgetRemove.md',
               },
               {
+                text: 'DashboardWidgetSettings',
+                link: '/components/dashboard/DashboardWidgetSettings.md',
+              },
+              {
                 text: 'DashboardWidgetQuickAccess',
                 link: '/components/dashboard/DashboardWidgetQuickAccess.md',
               },
               {
+                text: 'DashboardWidgetQuickAccessPicker',
+                link: '/components/dashboard/DashboardWidgetQuickAccessPicker.md',
+              },
+              {
                 text: 'DashboardWidgetCompanyOrders',
                 link: '/components/dashboard/DashboardWidgetCompanyOrders.md',
+              },
+              {
+                text: 'DashboardWidgetNeedsAttention',
+                link: '/components/dashboard/DashboardWidgetNeedsAttention.md',
+              },
+              {
+                text: 'DashboardWidgetAttentionTile',
+                link: '/components/dashboard/DashboardWidgetAttentionTile.md',
+              },
+              {
+                text: 'DashboardAttentionCard',
+                link: '/components/dashboard/DashboardAttentionCard.md',
+              },
+              {
+                text: 'DashboardWidgetQuotationRequests',
+                link: '/components/dashboard/DashboardWidgetQuotationRequests.md',
+              },
+              {
+                text: 'DashboardWidgetExpiringQuotations',
+                link: '/components/dashboard/DashboardWidgetExpiringQuotations.md',
+              },
+              {
+                text: 'DashboardWidgetFailedRuns',
+                link: '/components/dashboard/DashboardWidgetFailedRuns.md',
+              },
+              {
+                text: 'DashboardWidgetRecentQuotations',
+                link: '/components/dashboard/DashboardWidgetRecentQuotations.md',
+              },
+              {
+                text: 'DashboardQueue',
+                link: '/components/dashboard/DashboardQueue.md',
+              },
+              {
+                text: 'DashboardQueueRow',
+                link: '/components/dashboard/DashboardQueueRow.md',
               },
             ],
           },

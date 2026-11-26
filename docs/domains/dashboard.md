@@ -27,12 +27,34 @@ It is built in the long-lived `feat/dashboards` branch and merges into `next` on
 
 **Grid** — 12 columns, 28px rows, 16px gaps (`grid-layout-plus`). Below 640px of board width the widgets stack one per row in reading order.
 
+**Fitted height** — A widget registered with `fit` (Quick access) has the height its content needs: the widget frame measures it and reports it in grid rows (`fitWidget`), and the user resizes only its width. The height follows the width and settings, so it isn't saved on its own.
+
+**Widget settings** — A widget with settings has a sliders button in its header ([`DashboardWidgetSettings`](/components/dashboard/DashboardWidgetSettings.md)) that opens a narrow panel. Settings live in the instance's `config` and save as soon as the panel's Save is clicked, in or outside edit mode.
+
+**Quick access shortcuts** — `QUICK_ACCESS_SHORTCUTS`: create a company, companies, create a price list, price lists, quotations, asset library, upload assets, workflows, workflow runs (the Executions page, labelled "Executions" as in the navigation) and channels. URLs come from the entity registry; ids are saved in `config.shortcuts`, so they must stay stable. The default is the four links the start page had before the dashboard.
+
 ## Widgets and their data
 
-| Widget                | Reads                                                                               | Filters |
-| --------------------- | ----------------------------------------------------------------------------------- | ------- |
-| Quick access          | Nothing: links built from the entity registry                                       | —       |
-| Latest company orders | `POST order/query` (all wholesale orders, no pagination) + `wholesale/account` list | Channel |
+| Widget                      | Reads                                                                               | Filters          |
+| --------------------------- | ----------------------------------------------------------------------------------- | ---------------- |
+| Quick access                | Nothing: links built from the entity registry                                       | —                |
+| Latest company orders       | `POST order/query` (all wholesale orders, no pagination) + `wholesale/account` list | Channel          |
+| Needs attention             | Quotation requests, expiring quotations and failed workflow runs (below)            | —                |
+| Single numbers (×3)         | One of the Needs attention numbers each                                             | —                |
+| Open quotation requests     | Quotation requests, newest first (`useDashboardQuotations`)                         | Channel / Market |
+| Quotations expiring soon    | Expiring quotations, soonest first (`useDashboardQuotations`)                       | Channel / Market |
+| Latest failed workflow runs | Failed runs, newest first (`useDashboardExecutions`)                                | —                |
+| Latest quotations           | The 10 last changed quotations (`useDashboardQuotations`)                           | Channel / Market |
+
+**Needs attention** counts what needs doing right now, so it ignores the period and Channel / Market. Its definitions live in `app/lib/dashboard-data.ts` (pure, tested) and every widget reads them through one shared fetch per source:
+
+- **Quotation requests**: quotations with status `requested`. [`useDashboardQuotations`](/composables/useDashboardQuotations.md) fetches `orderApi.quotation.list()` (the list page's quotations: no request drafts, revised versions or linked revision drafts).
+- **Quotations expiring**: status `pending` with `validTo` on today's calendar day or up to 7 days ahead. A passed day or a missing `validTo` doesn't count.
+- **Failed workflow runs**: runs with status `Failed` that started in the last 24 hours, from `GET orchestrator/executions/logs` ([`useDashboardExecutions`](/composables/useDashboardExecutions.md)).
+
+Each number links to its list with the filter in the query (`?status=requested`, `?status=pending&expiring=7d`, `?status=failed&period=24h`), from `DASHBOARD_ATTENTION`. The quotations list reads `status` / `expiring` and the workflow runs list `status` once their link filters land; until then those links open the list unfiltered (the runs list already reads `period`).
+
+The **list widgets** read the same two fetches, so a board with Needs attention and every list makes one quotations request and one workflow runs request. Each list shows 10 rows (`DASHBOARD_LIST_LIMIT`) and a **View all** link to the same filtered list. Queues are [`DashboardQueue`](/components/dashboard/DashboardQueue.md)s; Latest quotations is a compact `TableView`.
 
 ## Known data gaps
 

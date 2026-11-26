@@ -22,6 +22,8 @@ const {
   removeWidget,
   addWidget,
   resetToDefault,
+  updateWidgetConfig,
+  fitWidget,
 } = useDashboard();
 // Created here, so the filter bar and every widget share one filter state
 useDashboardFilters();
@@ -149,6 +151,8 @@ breadcrumbsStore.setShowBreadcrumbs(false);
       :editing="editing"
       :drop-type="dropType"
       @remove="removeWidget"
+      @fit="fitWidget"
+      @update-config="updateWidgetConfig"
       @drop="onAddWidget"
     />
   </div>

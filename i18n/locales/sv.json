@@ -153,6 +153,10 @@
   "this_month": "Den här månaden",
   "custom_range": "Anpassat intervall",
   "filter": "Filter | Filter",
+  "filtered_by": "Filtrerat på:",
+  "remove_filter": "Ta bort filter för {type}",
+  "clear_filters": "Rensa filter",
+  "within_period": "Inom {period}",
   "clear": "Rensa",
   "clear_all_entity": "Rensa alla @.lower:{entityKey}",
   "count_selected": "{count} vald | {count} valda",
@@ -630,9 +634,6 @@
     "older_execution": "Äldre körning av detta arbetsflöde",
     "period": "Period",
     "period_last": "Senaste {period}",
-    "filtered_by": "Filtrerat på:",
-    "remove_filter": "Ta bort filter för {type}",
-    "clear_filters": "Rensa filter",
     "passed_from_parent": "Skickat från överordnat arbetsflöde",
     "action_successful": "{action} lyckades",
     "copy_failed": "Kopiering misslyckades",
@@ -869,7 +870,7 @@
     "shipping": "Frakt",
     "shipping_fee_description": "Lägg till en föreslagen fraktavgift",
     "vat": "Moms",
-    "total": "Totalt exkl. moms",
+    "total": "Totalt",
     "grand_total": "Totalt inkl. moms",
     "items_and_summary": "Artiklar & sammanfattning",
     "message_to_customer": "Meddelande till kund",
@@ -1004,13 +1005,59 @@
     "widgets": {
       "quick_access": {
         "title": "Snabbåtkomst",
-        "description": "Genvägar till vardagliga uppgifter"
+        "description": "Genvägar du väljer själv",
+        "choose": "Välj genvägar",
+        "choose_description": "Välj vilka genvägar som ska visas.",
+        "empty": "Inga genvägar valda än."
       },
       "company_orders": {
         "title": "Senaste företagsordrar",
         "description": "De senaste ordrarna från köpare kopplade till ett företag"
+      },
+      "needs_attention": {
+        "description": "Alla tre siffrorna i ett block",
+        "header_description": "Det som behöver göras just nu"
+      },
+      "attention_tile": {
+        "description": "Siffran för sig, med en länk"
+      },
+      "queue_quotation_requests": {
+        "title": "Öppna offertförfrågningar",
+        "description": "Köpare som väntar på svar"
+      },
+      "queue_expiring_quotations": {
+        "title": "Offerter som snart går ut",
+        "description": "Offerter som går ut inom 7 dagar"
+      },
+      "queue_failed_runs": {
+        "title": "Senaste misslyckade arbetsflödeskörningar",
+        "description": "Arbetsflödeskörningar i Orkestrator som misslyckades"
+      },
+      "recent_quotations": {
+        "title": "Senaste offerter",
+        "description": "De senast uppdaterade offerterna"
       }
     },
+    "attention": {
+      "requests": {
+        "label": "Offertförfrågningar",
+        "text": "Köpare väntar på svar",
+        "link": "Svara på förfrågningar"
+      },
+      "expiring": {
+        "label": "Offerter som går ut",
+        "text": "Inom de närmaste 7 dagarna",
+        "link": "Visa offerter"
+      },
+      "failed_runs": {
+        "label": "Misslyckade arbetsflödeskörningar",
+        "text": "Sedan i går, i Orkestrator",
+        "link": "Visa körningar"
+      },
+      "error": "Kunde inte hämta siffran"
+    },
+    "expires": "Går ut {when}",
+    "view_all": "Visa alla",
     "edit_hint": "Dra en widget i rubriken för att flytta den, dra i nedre högra hörnet för att ändra storleken och ta bort den med ✕.",
     "empty_title": "Bygg din översikt",
     "empty_description": "Lägg till widgetar för att hålla koll på det som är viktigt för dig, eller börja från standardöversikten.",

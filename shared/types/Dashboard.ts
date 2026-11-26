@@ -1,10 +1,22 @@
+import type { StatusBadgeStatus } from './Global';
+
 /**
  * Start dashboard: a board of widgets on a 12-column grid. These are UI state
  * kept per user in the browser, not API entities.
  */
 
 /** Every widget the dashboard can show. A new widget adds its type here. */
-export type DashboardWidgetType = 'quick-access' | 'list-company-orders';
+export type DashboardWidgetType =
+  | 'quick-access'
+  | 'list-company-orders'
+  | 'needs-attention'
+  | 'attention-quotation-requests'
+  | 'attention-expiring-quotations'
+  | 'attention-failed-runs'
+  | 'queue-quotation-requests'
+  | 'queue-expiring-quotations'
+  | 'queue-failed-runs'
+  | 'list-recent-quotations';
 
 /** Groups in the Add widget panel, in display order. */
 export type DashboardWidgetGroup =
@@ -44,6 +56,11 @@ export interface DashboardWidgetDefinition {
    * lets the content decide. Omitted: the grid height (rows × row height + gaps).
    */
   stackedHeight?: number | 'auto';
+  /**
+   * The height follows the content: the widget frame measures it and sets the
+   * grid height to the rows it needs, so the user resizes only the width.
+   */
+  fit?: boolean;
   /** Settings a new instance starts with */
   defaultConfig?: Record<string, unknown>;
 }
@@ -68,6 +85,23 @@ export interface DashboardLayoutItem {
 export interface DashboardBoard {
   items: DashboardWidgetInstance[];
   layout: DashboardLayoutItem[];
+}
+
+/**
+ * One row in a dashboard queue: a quotation or workflow run, with the link to
+ * it. `avatar` is a company name, shown as its initials.
+ */
+export interface DashboardQueueItem {
+  id: string;
+  to: string;
+  title: string;
+  meta: string;
+  /** Right of the title: an age, or when it expires */
+  aside?: string;
+  avatar?: string;
+  status?: StatusBadgeStatus;
+  /** Translated status text; see `StatusBadge` */
+  statusLabel?: string;
 }
 
 /** A quick choice in the dashboard's period bar */

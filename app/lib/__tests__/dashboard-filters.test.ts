@@ -9,6 +9,7 @@ import {
   DASHBOARD_PERIOD_PRESETS,
   dashboardCurrency,
   dashboardMarketsFor,
+  inDashboardScope,
   presetRange,
   pruneDashboardMarkets,
 } from '../dashboard';
@@ -186,5 +187,19 @@ describe('dashboardCurrency', () => {
 
   it('is undefined without channels', () => {
     expect(dashboardCurrency([], [], [])).toBeUndefined();
+  });
+});
+
+describe('inDashboardScope', () => {
+  const quotation = { channelId: 'b2b', marketId: 'se' };
+
+  it('lets everything through when nothing is picked', () => {
+    expect(inDashboardScope(quotation, [], [])).toBe(true);
+  });
+
+  it('checks the picked channels and markets together', () => {
+    expect(inDashboardScope(quotation, ['b2b'], ['se'])).toBe(true);
+    expect(inDashboardScope(quotation, ['web'], [])).toBe(false);
+    expect(inDashboardScope(quotation, ['b2b'], ['no'])).toBe(false);
   });
 });

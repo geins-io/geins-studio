@@ -1,12 +1,19 @@
 <script setup lang="ts">
+import { unrefElement, useResizeObserver } from '@vueuse/core';
 import type { DashboardWidgetInstance } from '#shared/types';
-import { DASHBOARD_BOARD_CONTEXT, DASHBOARD_WIDGETS } from '@/lib/dashboard';
+import {
+  DASHBOARD_BOARD_CONTEXT,
+  DASHBOARD_WIDGETS,
+  pixelsToRows,
+} from '@/lib/dashboard';
+import type { DashboardListLink } from '@/lib/dashboard-data';
 
 /**
  * The frame every dashboard widget renders itself in: a card with a header
  * (title, description, badge, actions) and a body laid out by the widget's
  * variant. Title, description and variant come from the widget registry.
  * While the board is edited, the header is the drag handle and ✕ removes it.
+ * A widget registered with `fit` reports the grid rows its content needs.
  */
 const props = defineProps<{
   instance: DashboardWidgetInstance;
@@ -14,6 +21,8 @@ const props = defineProps<{
   description?: string;
   /** A count shown next to the title */
   badge?: number;
+  /** Where "View all" in the header leads; no link without it */
+  viewAll?: string | DashboardListLink;
 }>();
 
 const { t } = useI18n();
@@ -26,15 +35,15 @@ const headerDescription = computed(
   () => props.description ?? t(definition.value.descriptionKey),
 );
 
-const bodyClass = computed(() => {
+const body = computed(() => {
   switch (definition.value.variant) {
     // The compact TableView scrolls itself, under its sticky header
     case 'table':
-      return 'min-h-0 flex-1';
+      return { base: 'min-h-0 flex-1', padding: '' };
     case 'flush':
-      return 'min-h-0 flex-1 px-4 py-3';
+      return { base: 'min-h-0 flex-1', padding: 'px-4 py-3' };
     default:
-      return 'flex-1 overflow-auto px-5 py-3';
+      return { base: 'flex-1 overflow-auto', padding: 'px-5 py-3' };
   }
 });
 
@@ -42,10 +51,45 @@ const bodyClass = computed(() => {
 const handleClass = computed(() =>
   editing.value ? 'dashboard-widget-handle cursor-move select-none' : '',
 );
+
+// Fitting: the body fills what the grid height leaves, and the content inside
+// it keeps its natural height, so card − body + content is the height needed.
+// One observer reads all three at once: separate ones would each see a half-
+// updated layout after a resize and report rows that then undo themselves.
+const fits = computed(
+  () => !!definition.value.fit && definition.value.variant !== 'bare',
+);
+const cardEl = useTemplateRef('card');
+const bodyEl = useTemplateRef<HTMLElement>('body');
+const contentEl = useTemplateRef<HTMLElement>('content');
+const neededHeight = ref(0);
+
+useResizeObserver(
+  () => (fits.value ? [bodyEl.value, contentEl.value] : []),
+  () => {
+    const card = unrefElement(cardEl);
+    if (!card || !bodyEl.value || !contentEl.value) return;
+    neededHeight.value =
+      card.getBoundingClientRect().height -
+      bodyEl.value.getBoundingClientRect().height +
+      contentEl.value.getBoundingClientRect().height;
+  },
+);
+
+const fittedRows = computed(() =>
+  neededHeight.value > 0
+    ? Math.max(definition.value.size.minH, pixelsToRows(neededHeight.value))
+    : null,
+);
+
+watch(fittedRows, (rows) => {
+  if (rows) board?.fit(props.instance.i, rows);
+});
 </script>
 
 <template>
   <Card
+    ref="card"
     :class="
       cn(
         'flex h-full flex-col overflow-hidden',
@@ -85,9 +129,18 @@ const handleClass = computed(() =>
           </p>
         </div>
         <div
-          v-if="$slots.actions || editing"
+          v-if="$slots.actions || editing || viewAll"
           class="flex shrink-0 items-center gap-1"
         >
+          <!-- Hidden while editing: the header is the drag handle then -->
+          <NuxtLink
+            v-if="viewAll && !editing"
+            :to="viewAll"
+            class="text-link inline-flex items-center gap-1 text-xs font-medium whitespace-nowrap hover:underline"
+          >
+            {{ t('dashboards.view_all') }}
+            <LucideArrowUpRight class="size-3.5" aria-hidden="true" />
+          </NuxtLink>
           <slot name="actions" />
           <DashboardWidgetRemove
             v-if="editing"
@@ -95,7 +148,12 @@ const handleClass = computed(() =>
           />
         </div>
       </div>
-      <div :class="bodyClass">
+      <div v-if="fits" ref="body" :class="body.base">
+        <div ref="content" :class="body.padding">
+          <slot />
+        </div>
+      </div>
+      <div v-else :class="cn(body.base, body.padding)">
         <slot />
       </div>
     </template>

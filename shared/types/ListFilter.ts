@@ -73,3 +73,13 @@ export interface ListFilterOptionsState {
   /** Retry after an error. */
   reload: () => Promise<void>;
 }
+
+/** One active filter shown as a removable chip (`ListFilterChips`). */
+export interface ListFilterChip<T extends string = string> {
+  /** Identifies the filter in `remove`. */
+  type: T;
+  /** Translated filter name, e.g. "Status". */
+  typeLabel: string;
+  /** Translated value, e.g. "Failed". */
+  label: string;
+}

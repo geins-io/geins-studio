@@ -19,16 +19,23 @@ import {
 } from '@/lib/dashboard';
 import type { Component } from 'vue';
 import {
+  LazyDashboardWidgetAttentionTile,
   LazyDashboardWidgetCompanyOrders,
+  LazyDashboardWidgetExpiringQuotations,
+  LazyDashboardWidgetFailedRuns,
+  LazyDashboardWidgetNeedsAttention,
   LazyDashboardWidgetQuickAccess,
+  LazyDashboardWidgetQuotationRequests,
+  LazyDashboardWidgetRecentQuotations,
 } from '#components';
 
 /**
  * The dashboard grid: 12 columns, widgets placed by `layout`. With `stacked`
  * (a narrow board) the widgets go one per row in reading order instead.
- * While `editing`, widgets drag by their header and resize from the corner,
- * and a widget dragged in from the Add widget panel (`dropType`) can be
- * dropped onto the grid (`drop`).
+ * While `editing`, widgets drag by their header and resize from the corner
+ * (a widget that fits its content resizes in width only), and a widget
+ * dragged in from the Add widget panel (`dropType`) can be dropped onto the
+ * grid (`drop`).
  */
 const props = defineProps<{
   items: DashboardWidgetInstance[];
@@ -40,6 +47,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   remove: [i: string];
+  fit: [i: string, h: number];
+  'update-config': [i: string, config: Record<string, unknown>];
   drop: [type: DashboardWidgetType, at: { x: number; y: number }];
 }>();
 
@@ -50,12 +59,22 @@ const layout = defineModel<DashboardLayoutItem[]>('layout', {
 provide(DASHBOARD_BOARD_CONTEXT, {
   editing: computed(() => props.editing),
   remove: (i) => emit('remove', i),
+  fit: (i, h) => emit('fit', i, h),
+  updateConfig: (i, config) => emit('update-config', i, config),
 });
 
 // Every widget type needs a component; the Record makes a missing one a type error.
 const WIDGET_COMPONENTS: Record<DashboardWidgetType, Component> = {
   'quick-access': LazyDashboardWidgetQuickAccess,
   'list-company-orders': LazyDashboardWidgetCompanyOrders,
+  'needs-attention': LazyDashboardWidgetNeedsAttention,
+  'attention-quotation-requests': LazyDashboardWidgetAttentionTile,
+  'attention-expiring-quotations': LazyDashboardWidgetAttentionTile,
+  'attention-failed-runs': LazyDashboardWidgetAttentionTile,
+  'queue-quotation-requests': LazyDashboardWidgetQuotationRequests,
+  'queue-expiring-quotations': LazyDashboardWidgetExpiringQuotations,
+  'queue-failed-runs': LazyDashboardWidgetFailedRuns,
+  'list-recent-quotations': LazyDashboardWidgetRecentQuotations,
 };
 
 const itemsById = computed(
@@ -65,9 +84,12 @@ const itemsById = computed(
 const placed = computed(() =>
   layout.value.flatMap((position) => {
     const item = itemsById.value.get(position.i);
-    return item
-      ? [{ position, item, size: DASHBOARD_WIDGETS[item.type].size }]
-      : [];
+    if (!item) return [];
+    const { size, fit } = DASHBOARD_WIDGETS[item.type];
+    // A fitted height is the only one, so the corner resizes the width only
+    const minH = fit ? position.h : size.minH;
+    const maxH = fit ? position.h : undefined;
+    return [{ position, item, minW: size.minW, minH, maxH }];
   }),
 );
 
@@ -210,15 +232,16 @@ watch(
     class="dashboard-grid -m-4"
   >
     <GridItem
-      v-for="{ position, item, size } in placed"
+      v-for="{ position, item, minW, minH, maxH } in placed"
       :key="position.i"
       :i="position.i"
       :x="position.x"
       :y="position.y"
       :w="position.w"
       :h="position.h"
-      :min-w="size.minW"
-      :min-h="size.minH"
+      :min-w="minW"
+      :min-h="minH"
+      :max-h="maxH"
       drag-allow-from=".dashboard-widget-handle"
     >
       <component :is="WIDGET_COMPONENTS[item.type]" :instance="item" />

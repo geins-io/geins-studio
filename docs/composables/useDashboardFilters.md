@@ -16,7 +16,7 @@ Nothing is saved: a reload starts at Today with every channel and market.
 - `channelIds` and `marketIds` are the picked ids; empty means all.
 - The markets on offer are the non-virtual markets of the channels in scope, each once (`dashboardMarketsFor`). `setChannelIds` drops picked markets the new channels don't have, and `setMarketIds` keeps only markets they have (`pruneDashboardMarkets`). Both write only when something changed.
 - When the account's channels change (another account), picks it doesn't have are dropped.
-- Orders carry a channel, no market: the channel filter applies to order widgets, the market filter to quotation widgets.
+- Orders carry a channel, no market: the channel filter applies to order widgets, and both apply to the quotation list widgets (`useDashboardQuotations({ scoped: true })`, `inDashboardScope`). Needs attention ignores them.
 
 ## Currency
 
