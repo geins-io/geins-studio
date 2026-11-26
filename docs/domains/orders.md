@@ -112,6 +112,8 @@ Editing them on a draft:
 
 **Buyer decision** — `customer.approvedAt` / `customer.rejectedAt` stay null until the buyer accepts or rejects. Once one is set, the sent-mode Customer card shows "Accepted {date}" or "Rejected {date}" under the buyer's name, via `quotationBuyerDecision()` (`shared/utils/quotation.ts`); if both are ever set, the later one wins. The changelog has the same events — this is the at-a-glance answer.
 
+**List link filters** — The quotations list opens filtered from its URL: `?status=` takes one or more `QuotationStatus` values, comma-separated (`?status=requested`), and `?expiring=7d` keeps quotations whose `validTo` is between now and 7 days ahead (the dashboard pairs it with `?status=pending`). Filtering is client-side over the loaded list; the active filters show as removable chips. Build these links with `quotationListLink()` from `app/lib/list-url-filters.ts` (see [link filters](../concepts/list-queries.md#link-filters)).
+
 ## API Shape Quirks
 
 **`validPaymentMethods`** — Response: `{ paymentId: number, name: string }`. Request: `{ paymentId: string }` (string, no `name`).
@@ -140,13 +142,14 @@ Editing them on a draft:
 
 ## Contracts (Cross-Domain Usage)
 
-| Type                         | Used By                   | Purpose                           |
-| ---------------------------- | ------------------------- | --------------------------------- |
-| `Quotation`, `QuotationList` | List/detail pages         | Core quotation display            |
-| `QuotationTotal`             | Price summary component   | Totals display and preview        |
-| `QuotationProductRow`        | Products tab table        | Flat row type for quotation items |
-| `StatusTransitionRequest`    | Status transition dialogs | Action payloads                   |
-| `Order`, `CustomerOrder`     | Customers                 | Company order history             |
+| Type                                                   | Used By                   | Purpose                                                       |
+| ------------------------------------------------------ | ------------------------- | ------------------------------------------------------------- |
+| `Quotation`, `QuotationList`                           | List/detail pages         | Core quotation display                                        |
+| `QuotationTotal`                                       | Price summary component   | Totals display and preview                                    |
+| `QuotationProductRow`                                  | Products tab table        | Flat row type for quotation items                             |
+| `StatusTransitionRequest`                              | Status transition dialogs | Action payloads                                               |
+| `Order`, `CustomerOrder`                               | Customers                 | Company order history                                         |
+| `quotationListLink()`, `matchesQuotationListFilters()` | Dashboard                 | Links to a filtered quotations list, and counts that match it |
 
 ## Dependencies
 

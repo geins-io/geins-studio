@@ -4,9 +4,15 @@ import type {
   QuotationList,
   QuotationBatchQueryResult,
   ColumnOptions,
+  ListFilterChip,
   StringKeyOf,
 } from '#shared/types';
-import { ENTITIES, entityNewUrl, entityEditUrl } from '#shared/utils/entities';
+import {
+  ENTITIES,
+  entityListUrl,
+  entityNewUrl,
+  entityEditUrl,
+} from '#shared/utils/entities';
 import {
   isQuotationDeletable,
   openRevisionDraft,
@@ -14,6 +20,11 @@ import {
   withoutLinkedRevisionDrafts,
 } from '#shared/utils/quotation';
 import { useToast } from '@/components/ui/toast/use-toast';
+import {
+  QUOTATION_LIST_QUERY_KEYS,
+  matchesQuotationListFilters,
+  parseQuotationListQuery,
+} from '@/lib/list-url-filters';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 import { NuxtLink } from '#components';
 
@@ -39,6 +50,47 @@ const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});
 
 const fetchError = ref(false);
+
+// FILTERS FROM THE URL (?status=requested, ?status=pending&expiring=7d)
+const route = useRoute();
+const urlFilters = computed(() => parseQuotationListQuery(route.query));
+
+type FilterType = keyof typeof QUOTATION_LIST_QUERY_KEYS;
+
+const filterChips = computed<ListFilterChip<FilterType>[]>(() => {
+  const { statuses, expiring } = urlFilters.value;
+  const chips: ListFilterChip<FilterType>[] = [];
+  if (statuses.length) {
+    chips.push({
+      type: 'status',
+      typeLabel: t('status'),
+      label: statuses.map(statusBadgeLabel).join(', '),
+    });
+  }
+  if (expiring) {
+    chips.push({
+      type: 'expiring',
+      typeLabel: t('expiration_date'),
+      label: t('within_period', { period: expiring }),
+    });
+  }
+  return chips;
+});
+const hasFilters = computed(() => filterChips.value.length > 0);
+
+const filteredList = computed(() => {
+  if (!hasFilters.value) return dataList.value;
+  const now = Date.now();
+  return dataList.value.filter((item) =>
+    matchesQuotationListFilters(item, urlFilters.value, now),
+  );
+});
+
+const removeFilter = (type: FilterType) => {
+  const { [QUOTATION_LIST_QUERY_KEYS[type]]: _, ...rest } = route.query;
+  navigateTo({ path: entityListUrl(entityKey), query: rest });
+};
+const clearFilter = () => navigateTo(entityListUrl(entityKey));
 
 // The revision number as the quotation number's suffix: "v 00", "v 03"
 const versionTag = (revision?: number) =>
@@ -288,17 +340,24 @@ const searchableFields: Array<keyof EntityList> = [
       </ButtonIcon>
     </ContentActionBar>
   </ContentHeader>
+  <ListFilterChips
+    :filters="filterChips"
+    @remove="removeFilter"
+    @clear="clearFilter"
+  />
   <NuxtErrorBoundary>
     <TableView
       :loading="loading"
       :entity-key="entityKey"
       :columns="columns"
-      :data="dataList"
+      :data="filteredList"
       :init-visibility-state="visibilityState"
       :columns-version="2"
       :searchable-fields="searchableFields"
+      :filtered="hasFilters"
       :error="fetchError"
       :on-retry="refresh"
+      @clear-filters="clearFilter"
     >
       <template #empty-actions>
         <ButtonIcon

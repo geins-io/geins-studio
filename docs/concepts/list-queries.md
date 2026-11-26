@@ -139,6 +139,26 @@ const listFilters = useListFilters<LibraryFilters>({
 
 The pinned popovers apply each change live. The sheet stages its edits until "Apply filters". Pins are saved per user and route. The working example is `app/pages/dev/server-table.vue`.
 
+## Link filters
+
+Some client-side lists read a few filters straight from the URL, so a link (the dashboard's Needs attention tiles, for one) opens them already filtered. They don't use `useListQuery`: the page parses `route.query`, filters the loaded rows and shows the active filters as removable chips with [`ListFilterChips`](/components/list/filter/ListFilterChips). Unknown values are dropped, never an error.
+
+The parsers, predicates and link builders are pure functions in `app/lib/list-url-filters.ts`. Build links with the builders rather than by hand, so the query names stay one contract:
+
+| List                                       | Query                                                                                         | Builder             | Parser / predicate                                       |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------- | ------------------- | -------------------------------------------------------- |
+| Quotations (`/orders/quotations`)          | `status` (comma-separated `QuotationStatus`), `expiring` (`validTo` within the window)        | `quotationListLink` | `parseQuotationListQuery`, `matchesQuotationListFilters` |
+| Workflow runs (`/orchestrator/executions`) | `status` (comma-separated execution status, any casing), `period` (started within the window) | `executionListLink` | `parseExecutionListQuery`, `matchesExecutionStatus`      |
+
+Windows (`period`, `expiring`) are `1h`, `24h`, `7d` or `30d` (`LIST_URL_PERIOD_MS`). `expiresWithin(validTo, period, now)` counts both ends of the window and never a date that has passed. The executions list also reads `id`, `group` and `name` from its workflow links.
+
+```ts
+quotationListLink({ statuses: ['pending'], expiring: '7d' });
+// → '/orders/quotations?status=pending&expiring=7d'
+executionListLink({ statuses: ['failed'], period: '24h' });
+// → '/orchestrator/executions?status=failed&period=24h'
+```
+
 ## Adapters
 
 | Repository | Adapter                                  | Filters             | Scope                                                                                    |

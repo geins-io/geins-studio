@@ -45,3 +45,8 @@ export function statusBadgeVariant(
   if (typeof status === 'boolean') return status ? 'positive' : 'neutral';
   return isKnownStatus(status) ? STATUS_VARIANTS[status] : 'neutral';
 }
+
+/** The text `StatusBadge` shows without a `label`: the status, first letter capitalized. */
+export function statusBadgeLabel(status: string): string {
+  return status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ');
+}

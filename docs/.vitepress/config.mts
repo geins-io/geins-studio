@@ -575,6 +575,10 @@ export default defineConfig({
                 text: 'ListFilterDateRange',
                 link: '/components/list/filter/ListFilterDateRange.md',
               },
+              {
+                text: 'ListFilterChips',
+                link: '/components/list/filter/ListFilterChips.md',
+              },
             ],
           },
           {
