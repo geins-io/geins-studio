@@ -186,6 +186,51 @@ export function cloneDashboardBoard(board: DashboardBoard): DashboardBoard {
   return JSON.parse(JSON.stringify(board));
 }
 
+const overlaps = (a: DashboardLayoutItem, b: DashboardLayoutItem) =>
+  a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
+/**
+ * The layout as the grid shows it: row by row, each widget moved up until it
+ * meets one above, then below any it overlaps. It's grid-layout-plus's vertical
+ * compaction, which the package doesn't export. Keeps the array order.
+ */
+export function compactDashboardLayout(
+  layout: DashboardLayoutItem[],
+): DashboardLayoutItem[] {
+  const placed: DashboardLayoutItem[] = [];
+  const sorted = [...layout].sort((a, b) => a.y - b.y || a.x - b.x);
+  for (const position of sorted) {
+    const next = { ...position };
+    while (next.y > 0 && !placed.some((p) => overlaps(p, next))) next.y--;
+    let hit: DashboardLayoutItem | undefined;
+    while ((hit = placed.find((p) => overlaps(p, next)))) {
+      next.y = hit.y + hit.h;
+    }
+    placed.push(next);
+  }
+  const byId = new Map(placed.map((position) => [position.i, position]));
+  return layout.map((position) => byId.get(position.i) ?? position);
+}
+
+/**
+ * Whether two boards save the same widgets, settings and places once
+ * compacted. The grid compacts on its own, so a widget fitting a new height
+ * moves the ones below it without that being a change.
+ */
+export function sameDashboardBoard(
+  a: DashboardBoard,
+  b: DashboardBoard,
+): boolean {
+  const saved = (board: DashboardBoard) =>
+    JSON.stringify(
+      serializeDashboards({
+        ...board,
+        layout: compactDashboardLayout(board.layout),
+      }),
+    );
+  return saved(a) === saved(b);
+}
+
 /** The board without widget `i`: its item and its layout entry */
 export function removeDashboardWidget(
   board: DashboardBoard,

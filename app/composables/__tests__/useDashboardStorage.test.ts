@@ -26,6 +26,7 @@ let store: Map<string, string>;
 const localStorageStub = {
   getItem: vi.fn((key: string) => store.get(key) ?? null),
   setItem: vi.fn((key: string, value: string) => void store.set(key, value)),
+  removeItem: vi.fn((key: string) => void store.delete(key)),
 };
 
 beforeEach(() => {
@@ -39,6 +40,10 @@ beforeEach(() => {
   localStorageStub.setItem.mockImplementation(
     (key: string, value: string) => void store.set(key, value),
   );
+  localStorageStub.removeItem.mockReset();
+  localStorageStub.removeItem.mockImplementation(
+    (key: string) => void store.delete(key),
+  );
   vi.stubGlobal('localStorage', localStorageStub);
 });
 
@@ -51,11 +56,13 @@ describe('useDashboardStorage', () => {
     expect(useDashboardStorage().storageKey.value).toBe(KEY);
 
     auth.accountKey!.value = undefined;
-    const { storageKey, load, save } = useDashboardStorage();
+    const { storageKey, load, save, clear } = useDashboardStorage();
     expect(storageKey.value).toBeNull();
     expect(load()).toBeNull();
     save(defaultDashboardBoard());
     expect(localStorageStub.setItem).not.toHaveBeenCalled();
+    clear();
+    expect(localStorageStub.removeItem).not.toHaveBeenCalled();
   });
 
   it('saves and loads a board', () => {
@@ -64,6 +71,17 @@ describe('useDashboardStorage', () => {
     save(board);
     expect(JSON.parse(store.get(KEY)!)).toEqual(serializeDashboards(board));
     expect(load()).toEqual(board);
+  });
+
+  it('clears the saved board, so nothing loads', () => {
+    store.set('geins-dashboard-acme-u2', 'another user');
+    const { load, save, clear } = useDashboardStorage();
+    save(defaultDashboardBoard());
+    clear();
+
+    expect(store.has(KEY)).toBe(false);
+    expect(store.has('geins-dashboard-acme-u2')).toBe(true);
+    expect(load()).toBeNull();
   });
 
   it('gives null for nothing saved, bad JSON or an unreadable board', () => {
@@ -85,10 +103,14 @@ describe('useDashboardStorage', () => {
     localStorageStub.setItem.mockImplementation(() => {
       throw new DOMException('full', 'QuotaExceededError');
     });
-    const { load, save } = useDashboardStorage();
+    localStorageStub.removeItem.mockImplementation(() => {
+      throw new DOMException('blocked', 'SecurityError');
+    });
+    const { load, save, clear } = useDashboardStorage();
 
     expect(load()).toBeNull();
     expect(() => save(defaultDashboardBoard())).not.toThrow();
-    expect(auth.warn).toHaveBeenCalledTimes(2);
+    expect(() => clear()).not.toThrow();
+    expect(auth.warn).toHaveBeenCalledTimes(3);
   });
 });

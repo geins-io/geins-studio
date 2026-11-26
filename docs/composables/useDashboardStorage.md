@@ -15,7 +15,8 @@ Where the start dashboard is kept: the browser's `localStorage`, one entry per u
   ```
 
 - **Reading** (`parseStoredDashboards`, Zod) makes a saved board safe to render: widgets the registry no longer knows are dropped with their layout entries, a widget needs exactly one layout entry, and sizes are clamped to the widget's minimum and the 12 columns. Another version or anything unreadable gives `null`, and the caller shows the default board.
-- **Never throws.** Blocked or full storage, and unreadable JSON, are logged with `useGeinsLog` and treated as "nothing saved".
+- **Clearing** (`clear`) removes the entry, so the next load gives `null` and the default board shows. [`useDashboard`](/composables/useDashboard.md) clears instead of saving a board that is the default, so the user keeps following the default as it grows.
+- **Never throws.** Blocked or full storage, and unreadable JSON, are logged with `useGeinsLog` and treated as "nothing saved"; a `clear` that fails is logged the same way.
 - Plain `localStorage` calls rather than `useLocalStorage`: the board is read once per user and account and written on save, so a reactive binding would add nothing.
 
 ## Returns
@@ -25,6 +26,7 @@ Where the start dashboard is kept: the browser's `localStorage`, one entry per u
 | `storageKey` | `ComputedRef<string \| null>`     | Key for the signed-in user and account; `null` until both are known |
 | `load`       | `() => DashboardBoard \| null`    | The saved board, or `null` when there's none or it can't be read    |
 | `save`       | `(board: DashboardBoard) => void` | Saves the board                                                     |
+| `clear`      | `() => void`                      | Removes the saved board, so the default shows                       |
 
 ## Changing the saved shape
 
