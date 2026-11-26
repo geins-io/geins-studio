@@ -23,6 +23,8 @@ It is built in the long-lived `feat/dashboards` branch and merges into `next` on
 
 **Empty board** — When every widget has been removed, the page shows the `Empty` state ("Build your dashboard") with **Add widget** (enters edit mode and opens the panel) and **Use the default dashboard** (`resetToDefault`), so a saved empty board is never a dead end. With no grid on the page, an empty board takes widgets from + only, not by dragging.
 
+**Filters** — The row under the tabs ([`DashboardFilterBar`](/components/dashboard/DashboardFilterBar.md)): the period (Today, Yesterday, This week, Last 7 days, This month, Last 30 days, YTD, Custom; weeks start on Monday), then **Channel** and **Market**, the list pages' filter buttons. Nothing checked is all; the market options follow the picked channels, and changing channels drops markets they don't have. [`useDashboardFilters`](/composables/useDashboardFilters.md) holds the state: the page creates it and every widget reads the same one. It also gives the dashboard's `currency`: the first picked market's, or with no market picked the default currency of the first channel in scope (decided 24 Nov 2026). Picked markets with different currencies use the first one's for now; that question is still open for Phase 3. Filters aren't saved: a reload starts at Today and all.
+
 **Grid** — 12 columns, 28px rows, 16px gaps (`grid-layout-plus`). Below 640px of board width the widgets stack one per row in reading order.
 
 ## Widgets and their data
@@ -30,7 +32,7 @@ It is built in the long-lived `feat/dashboards` branch and merges into `next` on
 | Widget                | Reads                                                                               | Filters |
 | --------------------- | ----------------------------------------------------------------------------------- | ------- |
 | Quick access          | Nothing: links built from the entity registry                                       | —       |
-| Latest company orders | `POST order/query` (all wholesale orders, no pagination) + `wholesale/account` list | —       |
+| Latest company orders | `POST order/query` (all wholesale orders, no pagination) + `wholesale/account` list | Channel |
 
 ## Known data gaps
 

@@ -1023,6 +1023,17 @@
       "charts": "Diagram",
       "lists": "Listor",
       "shortcuts": "Genvägar"
+    },
+    "period": {
+      "label": "Period",
+      "current": "Period: {period}",
+      "yesterday": "Igår",
+      "last_7_days": "Senaste 7 dagarna",
+      "last_30_days": "Senaste 30 dagarna",
+      "ytd": "Hittills i år",
+      "custom": "Anpassad",
+      "custom_range": "Anpassat intervall…",
+      "pick_range": "Välj start- och slutdatum"
     }
   },
   "changelog": {

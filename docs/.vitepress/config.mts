@@ -182,6 +182,10 @@ export default defineConfig({
                 text: 'useDashboardStorage',
                 link: '/composables/useDashboardStorage.md',
               },
+              {
+                text: 'useDashboardFilters',
+                link: '/composables/useDashboardFilters.md',
+              },
             ],
           },
           {
@@ -1018,6 +1022,14 @@ export default defineConfig({
               {
                 text: 'DashboardAddWidgetPanel',
                 link: '/components/dashboard/DashboardAddWidgetPanel.md',
+              },
+              {
+                text: 'DashboardFilterBar',
+                link: '/components/dashboard/DashboardFilterBar.md',
+              },
+              {
+                text: 'DashboardPeriodBar',
+                link: '/components/dashboard/DashboardPeriodBar.md',
               },
               {
                 text: 'DashboardWidget',

@@ -1023,6 +1023,17 @@
       "charts": "Charts",
       "lists": "Lists",
       "shortcuts": "Shortcuts"
+    },
+    "period": {
+      "label": "Period",
+      "current": "Period: {period}",
+      "yesterday": "Yesterday",
+      "last_7_days": "Last 7 days",
+      "last_30_days": "Last 30 days",
+      "ytd": "YTD",
+      "custom": "Custom",
+      "custom_range": "Custom range…",
+      "pick_range": "Pick a start and end date"
     }
   },
   "changelog": {

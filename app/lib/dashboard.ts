@@ -1,7 +1,10 @@
 import * as z from 'zod';
 import type {
+  ChannelListItem,
+  ChannelMarket,
   DashboardBoard,
   DashboardLayoutItem,
+  DashboardPeriodPreset,
   DashboardWidgetDefinition,
   DashboardWidgetGroup,
   DashboardWidgetInstance,
@@ -368,4 +371,134 @@ export function greetingPeriod(date: Date): DashboardGreetingPeriod {
   if (hour < 12) return 'morning';
   if (hour < 18) return 'afternoon';
   return 'evening';
+}
+
+// ── Filters ──────────────────────────────────────────────────────────────────
+
+/** The period bar's quick choices, in order; Custom comes after them */
+export const DASHBOARD_PERIOD_PRESETS: {
+  key: DashboardPeriodPreset;
+  labelKey: string;
+}[] = [
+  { key: 'today', labelKey: 'today' },
+  { key: 'yesterday', labelKey: 'dashboards.period.yesterday' },
+  { key: 'this_week', labelKey: 'this_week' },
+  { key: 'last_7_days', labelKey: 'dashboards.period.last_7_days' },
+  { key: 'this_month', labelKey: 'this_month' },
+  { key: 'last_30_days', labelKey: 'dashboards.period.last_30_days' },
+  { key: 'ytd', labelKey: 'dashboards.period.ytd' },
+];
+
+export function startOfDay(date: Date): Date {
+  const day = new Date(date);
+  day.setHours(0, 0, 0, 0);
+  return day;
+}
+
+export function endOfDay(date: Date): Date {
+  const day = new Date(date);
+  day.setHours(23, 59, 59, 999);
+  return day;
+}
+
+function addDays(date: Date, days: number): Date {
+  const day = new Date(date);
+  day.setDate(day.getDate() + days);
+  return day;
+}
+
+/**
+ * The days `preset` covers seen from `now`, in local time: `from` at the
+ * start of the first day, `to` at the end of the last, which is today for
+ * every preset but Yesterday. Weeks start on Monday.
+ */
+export function presetRange(
+  preset: DashboardPeriodPreset,
+  now: Date,
+): { from: Date; to: Date } {
+  const today = startOfDay(now);
+  const range = (from: Date, to = today) => ({ from, to: endOfDay(to) });
+  switch (preset) {
+    case 'yesterday': {
+      const yesterday = addDays(today, -1);
+      return range(yesterday, yesterday);
+    }
+    case 'this_week':
+      return range(addDays(today, -((today.getDay() + 6) % 7)));
+    case 'last_7_days':
+      return range(addDays(today, -6));
+    case 'this_month':
+      return range(new Date(today.getFullYear(), today.getMonth(), 1));
+    case 'last_30_days':
+      return range(addDays(today, -29));
+    case 'ytd':
+      return range(new Date(today.getFullYear(), 0, 1));
+    default:
+      return range(today);
+  }
+}
+
+/** The picked channels in account order, or every channel when none is picked */
+export function dashboardChannelsInScope(
+  channels: ChannelListItem[],
+  channelIds: readonly string[],
+): ChannelListItem[] {
+  return channelIds.length
+    ? channels.filter((channel) => channelIds.includes(channel._id))
+    : channels;
+}
+
+/**
+ * What the Market filter offers: the markets of the channels in scope, each
+ * once (channels share markets), without virtual markets.
+ */
+export function dashboardMarketsFor(
+  channels: ChannelListItem[],
+  channelIds: readonly string[],
+): ChannelMarket[] {
+  const seen = new Set<string>();
+  const markets: ChannelMarket[] = [];
+  for (const channel of dashboardChannelsInScope(channels, channelIds)) {
+    for (const market of channel.markets ?? []) {
+      if (market.virtual || seen.has(market._id)) continue;
+      seen.add(market._id);
+      markets.push(market);
+    }
+  }
+  return markets;
+}
+
+/** `marketIds` without the markets the channels in scope don't have */
+export function pruneDashboardMarkets(
+  channels: ChannelListItem[],
+  channelIds: readonly string[],
+  marketIds: readonly string[],
+): string[] {
+  const available = new Set(
+    dashboardMarketsFor(channels, channelIds).map((market) => market._id),
+  );
+  return marketIds.filter((id) => available.has(id));
+}
+
+/**
+ * The currency the dashboard shows money in: the first picked market's, in
+ * the Market filter's order (picked markets with different currencies are an
+ * open question), or with no market picked the default market's currency of
+ * the first channel in scope. `undefined` when there's no channel to ask.
+ */
+export function dashboardCurrency(
+  channels: ChannelListItem[],
+  channelIds: readonly string[],
+  marketIds: readonly string[],
+): string | undefined {
+  const picked = dashboardMarketsFor(channels, channelIds).find((market) =>
+    marketIds.includes(market._id),
+  );
+  if (picked) return picked.currency?._id;
+  const [channel] = dashboardChannelsInScope(channels, channelIds);
+  const markets = channel?.markets ?? [];
+  const market =
+    markets.find((m) => m._id === String(channel?.defaultMarket)) ??
+    markets.find((m) => !m.virtual);
+  return market?.currency?._id;
 }

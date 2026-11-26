@@ -42,11 +42,14 @@ const { formatDate } = useDate();
 const { convertToPrice } = usePrice();
 const { getColumns } = useColumns<CompanyOrderRow>();
 
+const { channelIds } = useDashboardFilters();
+
 // Its own fetch rather than `useCompanyOrders`: rows link to the company, and
-// that composable's list rows drop the company id.
+// that composable's list rows drop the company id. All wholesale orders are
+// kept, so the channel filter narrows them without a new fetch.
 const { data, status, refresh } = useAsyncData(
   'dashboard-company-orders',
-  async (): Promise<CompanyOrderRow[]> => {
+  async () => {
     const [companies, result] = await Promise.all([
       customerApi.company.list(),
       orderApi.query(
@@ -55,26 +58,32 @@ const { data, status, refresh } = useAsyncData(
         { suppressErrorToast: true },
       ),
     ]);
-    const allCompanies = Array.isArray(companies) ? companies : [];
     const orders = Array.isArray(result?.items) ? result.items : [];
-    return [...orders]
-      .sort(
+    return {
+      companies: Array.isArray(companies) ? companies : [],
+      orders: [...orders].sort(
         (a, b) =>
           new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime(),
-      )
-      .slice(0, ROW_LIMIT)
-      .map((order) => ({
-        _id: order._id,
-        company: getEntityNameById(order.wholesaleAccountId, allCompanies),
-        sum: convertToPrice(order.sumIncVat, order.currency),
-        status: order.status,
-        companyId: order.wholesaleAccountId,
-        meta: `#${order._id} · ${formatDate(order.dateCreated, { dateStyle: 'medium' })}`,
-      }));
+      ),
+    };
   },
 );
 
-const rows = computed(() => data.value ?? []);
+const rows = computed<CompanyOrderRow[]>(() => {
+  const { companies = [], orders = [] } = data.value ?? {};
+  const picked = channelIds.value;
+  return orders
+    .filter((order) => !picked.length || picked.includes(String(order.channel)))
+    .slice(0, ROW_LIMIT)
+    .map((order) => ({
+      _id: order._id,
+      company: getEntityNameById(order.wholesaleAccountId, companies),
+      sum: convertToPrice(order.sumIncVat, order.currency),
+      status: order.status,
+      companyId: order.wholesaleAccountId,
+      meta: `#${order._id} · ${formatDate(order.dateCreated, { dateStyle: 'medium' })}`,
+    }));
+});
 
 // Company over its order number and date, as in the prototype's list rows
 const companyCell = ({ row }: { row: Row<CompanyOrderRow> }) =>
