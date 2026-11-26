@@ -37,6 +37,7 @@ export const DASHBOARD_WIDGETS: Record<
     size: { w: 4, h: 4, minW: 3, minH: 4 },
     variant: 'default',
     stackedHeight: 'auto',
+    fit: true,
   },
   'list-company-orders': {
     type: 'list-company-orders',
@@ -276,12 +277,15 @@ export function parseStoredDashboards(raw: unknown): DashboardBoard | null {
 }
 
 /**
- * What a board gives the widgets inside it: whether it's being edited, and
- * how to take a widget off it.
+ * What a board gives the widgets inside it: whether it's being edited, how to
+ * take a widget off it, how a widget that fits its content reports the grid
+ * rows it needs, and how a widget stores its own settings.
  */
 export interface DashboardBoardContext {
   editing: Readonly<Ref<boolean>>;
   remove: (i: string) => void;
+  fit: (i: string, h: number) => void;
+  updateConfig: (i: string, config: Record<string, unknown>) => void;
 }
 
 export const DASHBOARD_BOARD_CONTEXT: InjectionKey<DashboardBoardContext> =
@@ -297,6 +301,16 @@ export function stackedOrder(
 /** Pixel height of `rows` grid rows, gaps between them included */
 export function rowsToPixels(rows: number): number {
   return rows * DASHBOARD_ROW_HEIGHT + (rows - 1) * DASHBOARD_GRID_GAP;
+}
+
+/**
+ * The fewest grid rows that hold `px` pixels, gaps included: the inverse of
+ * `rowsToPixels`. Sub-pixel measuring noise doesn't add a row.
+ */
+export function pixelsToRows(px: number): number {
+  const rows =
+    (px + DASHBOARD_GRID_GAP) / (DASHBOARD_ROW_HEIGHT + DASHBOARD_GRID_GAP);
+  return Math.max(1, Math.ceil(rows - 0.001));
 }
 
 /**
@@ -341,6 +355,46 @@ export const QUICK_ACCESS_SHORTCUTS: QuickAccessShortcut[] = [
     labelKey: 'price_list',
     labelCount: 2,
   },
+  {
+    id: 'quotations',
+    icon: 'FileText',
+    href: entityListUrl('quotation'),
+    labelKey: 'quotation',
+    labelCount: 2,
+  },
+  {
+    id: 'asset-library',
+    icon: 'Image',
+    href: entityListUrl('asset'),
+    labelKey: 'navigation.assets',
+  },
+  {
+    id: 'upload-assets',
+    icon: 'Upload',
+    href: `${entityListUrl('asset')}/upload`,
+    labelKey: 'asset_library.upload_assets',
+  },
+  {
+    id: 'workflows',
+    icon: 'Workflow',
+    href: entityListUrl('workflow'),
+    labelKey: 'workflow',
+    labelCount: 2,
+  },
+  {
+    id: 'workflow-runs',
+    icon: 'Activity',
+    href: entityListUrl('execution'),
+    labelKey: 'execution',
+    labelCount: 2,
+  },
+  {
+    id: 'channels',
+    icon: 'Store',
+    href: entityListUrl('channel'),
+    labelKey: 'channel',
+    labelCount: 2,
+  },
 ];
 
 /** The four shortcuts on the start page before the dashboard */
@@ -350,6 +404,22 @@ export const DEFAULT_QUICK_ACCESS_SHORTCUTS = [
   'new-price-list',
   'price-lists',
 ];
+
+/**
+ * The shortcut ids a Quick access widget shows, in catalog order. Ids the
+ * catalog no longer has are dropped; without a saved choice, the default.
+ */
+export function quickAccessShortcutIds(
+  config?: Record<string, unknown>,
+): string[] {
+  const saved = config?.shortcuts;
+  const chosen: unknown[] = Array.isArray(saved)
+    ? saved
+    : DEFAULT_QUICK_ACCESS_SHORTCUTS;
+  return QUICK_ACCESS_SHORTCUTS.filter((s) => chosen.includes(s.id)).map(
+    (s) => s.id,
+  );
+}
 
 /** Minimum width (px) of one Quick access column */
 export const QUICK_ACCESS_COLUMN_WIDTH = 190;

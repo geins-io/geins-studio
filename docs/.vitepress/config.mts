@@ -1028,8 +1028,16 @@ export default defineConfig({
                 link: '/components/dashboard/DashboardWidgetRemove.md',
               },
               {
+                text: 'DashboardWidgetSettings',
+                link: '/components/dashboard/DashboardWidgetSettings.md',
+              },
+              {
                 text: 'DashboardWidgetQuickAccess',
                 link: '/components/dashboard/DashboardWidgetQuickAccess.md',
+              },
+              {
+                text: 'DashboardWidgetQuickAccessPicker',
+                link: '/components/dashboard/DashboardWidgetQuickAccessPicker.md',
               },
               {
                 text: 'DashboardWidgetCompanyOrders',

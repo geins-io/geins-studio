@@ -19,7 +19,9 @@ import {
   isDashboardWidgetType,
   nextDashboardWidgetId,
   parseStoredDashboards,
+  pixelsToRows,
   quickAccessColumns,
+  quickAccessShortcutIds,
   removeDashboardWidget,
   rowsToPixels,
   serializeDashboards,
@@ -88,6 +90,20 @@ describe('rowsToPixels', () => {
   });
 });
 
+describe('pixelsToRows', () => {
+  it('gives the fewest rows that hold the height, gaps included', () => {
+    for (let rows = 1; rows <= 12; rows++) {
+      expect(pixelsToRows(rowsToPixels(rows))).toBe(rows);
+      expect(pixelsToRows(rowsToPixels(rows) + 1)).toBe(rows + 1);
+    }
+    expect(pixelsToRows(0)).toBe(1);
+  });
+
+  it('ignores sub-pixel measuring noise', () => {
+    expect(pixelsToRows(rowsToPixels(4) + 0.01)).toBe(4);
+  });
+});
+
 describe('greetingPeriod', () => {
   it('splits the day at noon and 18:00', () => {
     expect(greetingPeriod(new Date(2026, 10, 24, 0, 0))).toBe('morning');
@@ -119,6 +135,32 @@ describe('quick access', () => {
     expect(quickAccessColumns(400, 4)).toBe(2);
     expect(quickAccessColumns(2000, 4)).toBe(4);
     expect(quickAccessColumns(2000, 0)).toBe(1);
+  });
+
+  it('has unique shortcut ids', () => {
+    const ids = QUICK_ACCESS_SHORTCUTS.map((s) => s.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('shows the default without a saved choice', () => {
+    expect(quickAccessShortcutIds(undefined)).toEqual(
+      DEFAULT_QUICK_ACCESS_SHORTCUTS,
+    );
+    expect(quickAccessShortcutIds({ shortcuts: 'companies' })).toEqual(
+      DEFAULT_QUICK_ACCESS_SHORTCUTS,
+    );
+  });
+
+  it('drops unknown shortcut ids and keeps catalog order', () => {
+    expect(
+      quickAccessShortcutIds({
+        shortcuts: ['channels', 'gone', 7, 'companies'],
+      }),
+    ).toEqual(['companies', 'channels']);
+  });
+
+  it('keeps an empty choice empty', () => {
+    expect(quickAccessShortcutIds({ shortcuts: [] })).toEqual([]);
   });
 });
 

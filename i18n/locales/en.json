@@ -1004,7 +1004,10 @@
     "widgets": {
       "quick_access": {
         "title": "Quick access",
-        "description": "Shortcuts to everyday tasks"
+        "description": "Shortcuts you choose yourself",
+        "choose": "Choose shortcuts",
+        "choose_description": "Choose the shortcuts to show.",
+        "empty": "No shortcuts chosen yet."
       },
       "company_orders": {
         "title": "Latest company orders",
