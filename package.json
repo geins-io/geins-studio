@@ -78,6 +78,7 @@
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4.3.3",
     "tw-animate-css": "^1.3.5",
+    "undici": "^8.12.3",
     "vee-validate": "^4.15.1",
     "vue": "^3.5.46",
     "vue-router": "^5.5.2",
