@@ -2,7 +2,11 @@
 import { useElementSize } from '@vueuse/core';
 import type { DashboardWidgetType } from '#shared/types';
 import type { TabDescriptor } from '@/components/content/edit/ContentEditTabs.vue';
-import { DASHBOARD_STACK_BELOW, greetingPeriod } from '@/lib/dashboard';
+import {
+  DASHBOARD_STACK_BELOW,
+  DASHBOARD_TEMPLATES,
+  greetingPeriod,
+} from '@/lib/dashboard';
 
 definePageMeta({
   layout: 'default',
@@ -23,6 +27,7 @@ const {
   removeWidget,
   addWidget,
   resetToDefault,
+  applyTemplate,
   updateWidgetConfig,
   fitWidget,
 } = useDashboard();
@@ -135,17 +140,52 @@ breadcrumbsStore.setShowBreadcrumbs(false);
             {{ $t('dashboards.empty_description') }}
           </EmptyDescription>
         </EmptyHeader>
-        <EmptyContent class="flex-row flex-wrap justify-center gap-2">
-          <ButtonIcon icon="new" @click="openAddWidget">
-            {{ $t('add_entity', { entityKey: 'widget' }) }}
-          </ButtonIcon>
-          <ButtonIcon
-            icon="LayoutDashboard"
-            variant="secondary"
-            @click="resetToDefault"
-          >
-            {{ $t('dashboards.use_default') }}
-          </ButtonIcon>
+        <EmptyContent class="max-w-md gap-8">
+          <div class="flex flex-wrap justify-center gap-2">
+            <ButtonIcon icon="new" @click="openAddWidget">
+              {{ $t('add_entity', { entityKey: 'widget' }) }}
+            </ButtonIcon>
+            <ButtonIcon
+              icon="LayoutDashboard"
+              variant="secondary"
+              @click="resetToDefault"
+            >
+              {{ $t('dashboards.use_default') }}
+            </ButtonIcon>
+          </div>
+          <div class="w-full">
+            <p
+              class="text-muted-foreground mb-2 text-xs font-medium tracking-wider uppercase"
+            >
+              {{ $t('dashboards.templates.title') }}
+            </p>
+            <ItemGroup class="gap-2">
+              <div
+                v-for="template in DASHBOARD_TEMPLATES"
+                :key="template.id"
+                role="listitem"
+              >
+                <Item
+                  as="button"
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  class="hover:bg-accent/50 w-full cursor-pointer text-left"
+                  @click="applyTemplate(template)"
+                >
+                  <ItemContent>
+                    <ItemTitle>{{ $t(template.titleKey) }}</ItemTitle>
+                    <ItemDescription>
+                      {{ $t(template.descriptionKey) }}
+                    </ItemDescription>
+                  </ItemContent>
+                  <ItemActions>
+                    <LucideArrowUpRight class="text-muted-foreground size-4" />
+                  </ItemActions>
+                </Item>
+              </div>
+            </ItemGroup>
+          </div>
         </EmptyContent>
       </Empty>
     </CardContent>

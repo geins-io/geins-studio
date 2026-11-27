@@ -1126,8 +1126,19 @@
     "view_all": "View all",
     "edit_hint": "Drag a widget by its header to move it, drag its bottom-right corner to resize it, and remove it with ✕. Reset to default brings back the default dashboard, and Cancel undoes it.",
     "empty_title": "Build your dashboard",
-    "empty_description": "Add widgets to keep an eye on what matters to you, or start from the default dashboard.",
+    "empty_description": "Add widgets to keep an eye on what matters to you, or start from the default dashboard or a template.",
     "use_default": "Use the default dashboard",
+    "templates": {
+      "title": "Start from a template",
+      "sales": {
+        "title": "Quotations and orders",
+        "description": "Quotation requests, pending quotations, company orders"
+      },
+      "admin": {
+        "title": "Administration",
+        "description": "Companies, price lists, workflows, assets"
+      }
+    },
     "add_widget_hint": "Drag a widget onto the dashboard, or click + to add it at the bottom.",
     "add_at_bottom": "Add at the bottom",
     "on_board": "{count} on board",

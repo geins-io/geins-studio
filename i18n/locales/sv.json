@@ -1126,8 +1126,19 @@
     "view_all": "Visa alla",
     "edit_hint": "Dra en widget i rubriken för att flytta den, dra i nedre högra hörnet för att ändra storleken och ta bort den med ✕. Återställ till standard tar tillbaka standardöversikten och Avbryt ångrar det.",
     "empty_title": "Bygg din översikt",
-    "empty_description": "Lägg till widgetar för att hålla koll på det som är viktigt för dig, eller börja från standardöversikten.",
+    "empty_description": "Lägg till widgetar för att hålla koll på det som är viktigt för dig, eller börja från standardöversikten eller en mall.",
     "use_default": "Använd standardöversikten",
+    "templates": {
+      "title": "Börja från en mall",
+      "sales": {
+        "title": "Offerter och ordrar",
+        "description": "Offertförfrågningar, väntande offerter, företagsordrar"
+      },
+      "admin": {
+        "title": "Administration",
+        "description": "Företag, prislistor, arbetsflöden, filer"
+      }
+    },
     "add_widget_hint": "Dra en widget till översikten, eller klicka på + för att lägga till den längst ned.",
     "add_at_bottom": "Lägg till längst ned",
     "on_board": "{count} på översikten",

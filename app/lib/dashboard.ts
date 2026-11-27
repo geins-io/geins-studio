@@ -5,6 +5,7 @@ import type {
   DashboardBoard,
   DashboardLayoutItem,
   DashboardPeriodPreset,
+  DashboardTemplate,
   DashboardWidgetDefinition,
   DashboardWidgetGroup,
   DashboardWidgetInstance,
@@ -232,6 +233,56 @@ export function defaultDashboardBoard(): DashboardBoard {
     ['list-recent-assets', 8, 17],
   ]);
 }
+
+/**
+ * A board of `types` in order, left to right at their default sizes, wrapping
+ * to a new row under the tallest in the row when the next doesn't fit, then
+ * compacted, so what's saved is what the grid shows.
+ */
+export function packDashboardBoard(
+  types: DashboardWidgetType[],
+): DashboardBoard {
+  let x = 0;
+  let y = 0;
+  let rowHeight = 0;
+  const board = createDashboardBoard(
+    types.map((type) => {
+      const { w, h } = DASHBOARD_WIDGETS[type].size;
+      if (x + w > DASHBOARD_GRID_COLUMNS) {
+        x = 0;
+        y += rowHeight;
+        rowHeight = 0;
+      }
+      const entry: [DashboardWidgetType, number, number] = [type, x, y];
+      x += w;
+      rowHeight = Math.max(rowHeight, h);
+      return entry;
+    }),
+  );
+  return { ...board, layout: compactDashboardLayout(board.layout) };
+}
+
+/** The boards the empty dashboard offers to start from, as in the prototype */
+export const DASHBOARD_TEMPLATES: DashboardTemplate[] = [
+  {
+    id: 'sales',
+    titleKey: 'dashboards.templates.sales.title',
+    descriptionKey: 'dashboards.templates.sales.description',
+    types: [
+      'needs-attention',
+      'queue-quotation-requests',
+      'queue-expiring-quotations',
+      'list-recent-quotations',
+      'list-company-orders',
+    ],
+  },
+  {
+    id: 'admin',
+    titleKey: 'dashboards.templates.admin.title',
+    descriptionKey: 'dashboards.templates.admin.description',
+    types: ['quick-access', 'queue-failed-runs', 'list-recent-assets'],
+  },
+];
 
 /**
  * A deep copy of plain board data. The grid moves layout items in place while
