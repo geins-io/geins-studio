@@ -16,6 +16,7 @@ const {
   items,
   layout,
   editing,
+  isDefault,
   startEdit,
   cancelEdit,
   doneEdit,
@@ -89,6 +90,14 @@ breadcrumbsStore.setShowBreadcrumbs(false);
   <ContentHeader :title="greeting" :description="today">
     <div class="flex items-start gap-2">
       <template v-if="editing">
+        <ButtonIcon
+          icon="RotateCcw"
+          variant="secondary"
+          :disabled="isDefault"
+          @click="resetToDefault"
+        >
+          {{ $t('reset_to_default') }}
+        </ButtonIcon>
         <ButtonIcon icon="new" variant="secondary" @click="addOpen = true">
           {{ $t('add_entity', { entityKey: 'widget' }) }}
         </ButtonIcon>

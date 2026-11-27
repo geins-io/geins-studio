@@ -9,6 +9,7 @@ interface UseDashboardStorageReturnType {
   storageKey: ComputedRef<string | null>;
   load: () => DashboardBoard | null;
   save: (board: DashboardBoard) => void;
+  clear: () => void;
 }
 
 /**
@@ -18,10 +19,11 @@ interface UseDashboardStorageReturnType {
  * full, and saved data that can't be read, never throw: `load` gives `null`
  * and the caller shows the default board.
  *
- * @returns {UseDashboardStorageReturnType} - The storage key and load/save
+ * @returns {UseDashboardStorageReturnType} - The storage key and load/save/clear
  * @property {ComputedRef<string | null>} storageKey - Key for the signed-in user and account; `null` until both are known
  * @property {function} load - The saved board, or `null` when there's none or it can't be read
  * @property {function} save - Saves the board
+ * @property {function} clear - Removes the saved board, so the default shows
  */
 export const useDashboardStorage = (): UseDashboardStorageReturnType => {
   const { geinsLogWarn } = useGeinsLog(
@@ -65,5 +67,17 @@ export const useDashboardStorage = (): UseDashboardStorageReturnType => {
     }
   };
 
-  return { storageKey, load, save };
+  const clear = () => {
+    if (!storageKey.value) {
+      geinsLogWarn('no user or account yet, saved dashboard not cleared');
+      return;
+    }
+    try {
+      localStorage.removeItem(storageKey.value);
+    } catch (error) {
+      geinsLogWarn('could not clear saved dashboard', error);
+    }
+  };
+
+  return { storageKey, load, save, clear };
 };

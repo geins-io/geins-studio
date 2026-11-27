@@ -10,6 +10,7 @@ import {
   QUICK_ACCESS_SHORTCUTS,
   addDashboardWidget,
   cloneDashboardBoard,
+  compactDashboardLayout,
   createDashboardBoard,
   dashboardBottom,
   dashboardCellAt,
@@ -25,6 +26,7 @@ import {
   quickAccessShortcutIds,
   removeDashboardWidget,
   rowsToPixels,
+  sameDashboardBoard,
   serializeDashboards,
   stackedOrder,
 } from '../dashboard';
@@ -220,6 +222,65 @@ describe('cloneDashboardBoard', () => {
     (quickAccessOf(copy).config!.shortcuts as string[]).push('price-lists');
     expect(board.layout[0]!.x).toBe(0);
     expect(quickAccess.config!.shortcuts).toEqual(['companies']);
+  });
+});
+
+describe('compactDashboardLayout', () => {
+  const at = (i: string, x: number, y: number, w: number, h: number) => ({
+    i,
+    x,
+    y,
+    w,
+    h,
+  });
+
+  it('leaves the default board as it is', () => {
+    const { layout } = defaultDashboardBoard();
+    expect(compactDashboardLayout(layout)).toEqual(layout);
+  });
+
+  it('moves widgets up into gaps, keeping the array order', () => {
+    const layout = [
+      at('b', 0, 9, 6, 2),
+      at('a', 0, 3, 6, 2),
+      at('c', 6, 5, 6, 3),
+    ];
+    expect(compactDashboardLayout(layout)).toEqual([
+      at('b', 0, 2, 6, 2),
+      at('a', 0, 0, 6, 2),
+      at('c', 6, 0, 6, 3),
+    ]);
+    expect(layout[0]!.y).toBe(9);
+  });
+
+  it('pushes a widget below the taller one it overlaps', () => {
+    const layout = [at('top', 0, 0, 12, 5), at('left', 0, 4, 4, 2)];
+    expect(compactDashboardLayout(layout)[1]).toEqual(at('left', 0, 5, 4, 2));
+  });
+});
+
+describe('sameDashboardBoard', () => {
+  it('sees the same board through compaction', () => {
+    const board = defaultDashboardBoard();
+    const moved = cloneDashboardBoard(board);
+    for (const position of moved.layout) position.y += 2;
+    expect(sameDashboardBoard(board, moved)).toBe(true);
+  });
+
+  it('tells a moved widget, another size or other settings apart', () => {
+    const board = defaultDashboardBoard();
+
+    const swapped = cloneDashboardBoard(board);
+    swapped.layout[0]!.y = 40;
+    expect(sameDashboardBoard(board, swapped)).toBe(false);
+
+    const resized = cloneDashboardBoard(board);
+    resized.layout.at(-1)!.w -= 1;
+    expect(sameDashboardBoard(board, resized)).toBe(false);
+
+    const configured = cloneDashboardBoard(board);
+    quickAccessOf(configured).config = { shortcuts: ['companies'] };
+    expect(sameDashboardBoard(board, configured)).toBe(false);
   });
 });
 

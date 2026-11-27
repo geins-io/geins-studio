@@ -11,6 +11,7 @@ const storage = vi.hoisted(() => ({
     key: string | null;
     stored: DashboardBoard | null;
     saved: DashboardBoard[];
+    cleared: number;
   },
 }));
 
@@ -19,6 +20,9 @@ mockNuxtImport('useDashboardStorage', () => () => ({
   load: () => storage.state!.stored,
   save: (board: DashboardBoard) =>
     storage.state!.saved.push(JSON.parse(JSON.stringify(board))),
+  clear: () => {
+    storage.state!.cleared++;
+  },
 }));
 
 const defaultTypes = () =>
@@ -36,7 +40,7 @@ const snapshotOf = (dashboard: ReturnType<typeof useDashboard>) =>
   );
 
 beforeEach(() => {
-  storage.state = reactive({ key: null, stored: null, saved: [] });
+  storage.state = reactive({ key: null, stored: null, saved: [], cleared: 0 });
 });
 
 describe('useDashboard edit session', () => {
@@ -175,11 +179,13 @@ describe('useDashboard saved board', () => {
 
   it('saves nothing on done without a change', () => {
     storage.state!.key = 'geins-dashboard-acme-u1';
+    storage.state!.stored = saved;
     const dashboard = useDashboard();
     dashboard.startEdit();
     dashboard.doneEdit();
 
     expect(storage.state!.saved).toHaveLength(0);
+    expect(storage.state!.cleared).toBe(0);
   });
 
   it('fits a widget height without saving it, and keeps it through cancel', () => {
@@ -211,9 +217,16 @@ describe('useDashboard saved board', () => {
     dashboard.fitWidget(i, h);
     expect(dashboard.layout.value).toBe(before);
   });
+});
 
-  it('puts the default board back and saves it', () => {
-    storage.state!.key = 'geins-dashboard-acme-u1';
+describe('useDashboard default board', () => {
+  const KEY = 'geins-dashboard-acme-u1';
+  // An old saved board: one widget, with its own settings
+  const saved = createDashboardBoard([['quick-access', 0, 0, 6, 4]]);
+  saved.items[0]!.config = { shortcuts: ['companies'] };
+
+  it('puts the default board back on the empty board and clears the saved one', () => {
+    storage.state!.key = KEY;
     storage.state!.stored = { items: [], layout: [] };
     const dashboard = useDashboard();
     expect(dashboard.items.value).toHaveLength(0);
@@ -223,8 +236,85 @@ describe('useDashboard saved board', () => {
     expect(dashboard.items.value.map((item) => item.type)).toEqual(
       defaultTypes(),
     );
-    expect(storage.state!.saved.at(-1)!.items).toHaveLength(
-      defaultTypes().length,
+    expect(dashboard.isDefault.value).toBe(true);
+    expect(storage.state!.cleared).toBe(1);
+    expect(storage.state!.saved).toHaveLength(0);
+  });
+
+  it('brings the old board and its settings back on cancel after a reset', async () => {
+    storage.state!.stored = saved;
+    const dashboard = useDashboard();
+    storage.state!.key = KEY;
+    await nextTick();
+    expect(dashboard.isDefault.value).toBe(false);
+
+    dashboard.startEdit();
+    dashboard.resetToDefault();
+
+    expect(dashboard.editing.value).toBe(true);
+    expect(dashboard.isDefault.value).toBe(true);
+
+    dashboard.cancelEdit();
+
+    expect(snapshotOf(dashboard)).toEqual(saved);
+    expect(storage.state!.saved).toHaveLength(0);
+    expect(storage.state!.cleared).toBe(0);
+  });
+
+  it('clears the saved board on done after a reset', async () => {
+    storage.state!.stored = saved;
+    const dashboard = useDashboard();
+    storage.state!.key = KEY;
+    await nextTick();
+
+    dashboard.startEdit();
+    dashboard.resetToDefault();
+    dashboard.doneEdit();
+
+    expect(dashboard.editing.value).toBe(false);
+    expect(dashboard.items.value.map((item) => item.type)).toEqual(
+      defaultTypes(),
     );
+    expect(storage.state!.cleared).toBe(1);
+    expect(storage.state!.saved).toHaveLength(0);
+  });
+
+  it('clears instead of saving on done with a board edited back to the default', () => {
+    storage.state!.key = KEY;
+    const dashboard = useDashboard();
+    const y = dashboard.layout.value[0]!.y;
+
+    dashboard.startEdit();
+    dashboard.layout.value[0]!.y = y + 30;
+    expect(dashboard.isDefault.value).toBe(false);
+    dashboard.doneEdit();
+    expect(storage.state!.saved).toHaveLength(1);
+
+    dashboard.startEdit();
+    dashboard.layout.value[0]!.y = y;
+    dashboard.doneEdit();
+
+    expect(storage.state!.saved).toHaveLength(1);
+    expect(storage.state!.cleared).toBe(1);
+  });
+
+  it('still sees the default when a fitted height moves the widgets below', () => {
+    storage.state!.key = KEY;
+    const dashboard = useDashboard();
+    const id = quickAccessId(dashboard.items.value);
+    const { y, h } = dashboard.layout.value.find((p) => p.i === id)!;
+
+    dashboard.fitWidget(id, h + 1);
+    // What the grid does with the taller widget
+    for (const position of dashboard.layout.value) {
+      if (position.y >= y + h) position.y += 1;
+    }
+
+    expect(dashboard.isDefault.value).toBe(true);
+    dashboard.startEdit();
+    dashboard.resetToDefault();
+    dashboard.doneEdit();
+    expect(storage.state!.saved).toHaveLength(0);
+    expect(storage.state!.cleared).toBe(1);
   });
 });
