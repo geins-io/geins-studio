@@ -64,6 +64,10 @@ export const DASHBOARD_WIDGETS: Record<
         disabledReasonKey: 'dashboards.sales.revenue_unavailable',
       },
     ],
+    info: {
+      titleKey: 'dashboards.sales.info.title',
+      descriptionKey: 'dashboards.sales.info.description',
+    },
   },
   'list-company-orders': {
     type: 'list-company-orders',

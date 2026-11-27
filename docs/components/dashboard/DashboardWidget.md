@@ -1,12 +1,16 @@
 # `DashboardWidget`
 
-The frame every dashboard widget renders itself in: a card with a header (title, description, optional badge, mode toggle, actions) and a body. Title, description, modes and variant come from the widget registry (`DASHBOARD_WIDGETS` in `app/lib/dashboard.ts`), looked up by the instance's `type`.
+The frame every dashboard widget renders itself in: a card with a header (title, description, optional badge, mode toggle, info button, actions) and a body. Title, description, modes, info and variant come from the widget registry (`DASHBOARD_WIDGETS` in `app/lib/dashboard.ts`), looked up by the instance's `type`.
 
 ## Header modes
 
 A widget registered with `modes` (`DashboardWidgetMode[]`: `key`, `labelKey`, `descriptionKey`, optional `disabledReasonKey`) gets a [`DashboardToggle`](/components/dashboard/DashboardToggle.md) in its header, before the `actions` slot, e.g. Company sales' **Demand / Revenue**. The header description follows the picked mode (`descriptionKey`) unless the widget passes `description`. A mode with `disabledReasonKey` is shown but can't be picked; its tooltip gives the reason.
 
 The pick is saved in the instance's `config.mode` through the board's `updateConfig`, so the same widget can sit on the board twice in different modes. The widget reads it with `dashboardWidgetMode(instance)`: the saved mode while it exists and is enabled, else the first enabled one.
+
+## Info panel
+
+A widget registered with `info` (`DashboardWidgetInfo`: `titleKey`, `descriptionKey`) gets an ⓘ icon button in its header, after the mode toggle, with the title as tooltip and accessible name. It opens a narrow [`PanelEdit`](/components/panel/PanelEdit.md) with that title and description, the widget's `info` slot as content and a single **Close**, e.g. Company sales' [Demand and revenue](/components/dashboard/DashboardSalesInfo.md). It works in and outside edit mode.
 
 ## Editing
 
@@ -61,3 +65,4 @@ defineProps<{ instance: DashboardWidgetInstance }>();
 | --------- | --------------------------------------- |
 | default   | The widget body                         |
 | `actions` | Right side of the header (icon buttons) |
+| `info`    | The info panel's content (with `info`)  |

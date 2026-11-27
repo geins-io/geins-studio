@@ -1088,6 +1088,10 @@ export default defineConfig({
                 link: '/components/dashboard/DashboardWidgetCompanySales.md',
               },
               {
+                text: 'DashboardSalesInfo',
+                link: '/components/dashboard/DashboardSalesInfo.md',
+              },
+              {
                 text: 'DashboardWidgetNeedsAttention',
                 link: '/components/dashboard/DashboardWidgetNeedsAttention.md',
               },

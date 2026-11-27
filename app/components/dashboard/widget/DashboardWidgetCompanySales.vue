@@ -5,26 +5,34 @@ import type {
   DashboardChartSeries,
   DashboardWidgetInstance,
 } from '#shared/types';
-import { DASHBOARD_BOARD_CONTEXT } from '@/lib/dashboard';
+import {
+  DASHBOARD_BOARD_CONTEXT,
+  dashboardChannelsInScope,
+} from '@/lib/dashboard';
 import {
   bucketSales,
   filterSalesOrders,
   previousSalesRange,
   salesBuckets,
   salesChange,
+  salesChannelColor,
+  salesChannelIds,
   salesChartKind,
   salesGranularity,
   salesRange,
+  salesSplit,
   salesTotals,
   type SalesChartKind,
   type SalesGranularity,
+  type SalesSplit,
 } from '@/lib/dashboard-sales';
 import { LucideChartColumn, LucideChartSpline } from '#components';
 
 /**
  * Company sales: Demand (orders by the day they were placed) over the
  * dashboard's period, in its channels and currency. Key numbers with the
- * change against the period before, then a line or bar chart.
+ * change against the period before, then a line or bar chart of the total
+ * or split by channel. The header's info button explains Demand and Revenue.
  */
 const props = defineProps<{
   instance: DashboardWidgetInstance;
@@ -34,6 +42,7 @@ const { t, locale } = useI18n();
 const { formatDate } = useDate();
 const { formatCurrency } = usePrice();
 const board = inject(DASHBOARD_BOARD_CONTEXT, null);
+const { channels } = storeToRefs(useAccountStore());
 
 const { period, channelIds, currency } = useDashboardFilters();
 const { orders, loading, error, refresh } = useDashboardCompanyOrders();
@@ -43,16 +52,28 @@ const { orders, loading, error, refresh } = useDashboardCompanyOrders();
 const { now: clock } = useLiveClock(true, 60_000);
 const now = computed(() => new Date(clock.value));
 
+const saveConfig = (change: Record<string, unknown>) =>
+  board?.updateConfig(props.instance.i, {
+    ...props.instance.config,
+    ...change,
+  });
+
 const kind = computed({
   get: () => salesChartKind(props.instance.config),
   set: (value: SalesChartKind) => {
-    if (value === kind.value) return;
-    board?.updateConfig(props.instance.i, {
-      ...props.instance.config,
-      kind: value,
-    });
+    if (value !== kind.value) saveConfig({ kind: value });
   },
 });
+const split = computed({
+  get: () => salesSplit(props.instance.config),
+  set: (value: SalesSplit) => {
+    if (value !== split.value) saveConfig({ split: value });
+  },
+});
+const splitOptions = computed(() => [
+  { value: 'total', label: t('dashboards.sales.total') },
+  { value: 'channel', label: t('dashboards.sales.by_channel') },
+]);
 const kindOptions = computed(() => [
   {
     value: 'line',
@@ -120,8 +141,8 @@ const toneOf = (change: number | null): Tone =>
   !change ? 'flat' : change > 0 ? 'up' : 'down';
 
 const kpis = computed(() => {
-  const now = totals.value;
-  const then = previousTotals.value;
+  const cur = totals.value;
+  const prev = previousTotals.value;
   const vs = t(`dashboards.sales.vs.${previous.value.comparison}`);
   const relative = (a: number, b: number) => {
     const change = salesChange(a, b);
@@ -130,30 +151,30 @@ const kpis = computed(() => {
       tone: toneOf(change),
     };
   };
-  const difference = now.companies - then.companies;
+  const difference = cur.companies - prev.companies;
   return [
     {
       key: 'orders',
       label: t('order', 2),
-      value: String(now.orders),
-      ...relative(now.orders, then.orders),
+      value: String(cur.orders),
+      ...relative(cur.orders, prev.orders),
     },
     {
       key: 'order_value',
       label: t('dashboards.sales.order_value'),
-      value: money(now.value),
-      ...relative(now.value, then.value),
+      value: money(cur.value),
+      ...relative(cur.value, prev.value),
     },
     {
       key: 'average_order_value',
       label: t('dashboards.sales.average_order_value'),
-      value: money(now.average),
-      ...relative(now.average, then.average),
+      value: money(cur.average),
+      ...relative(cur.average, prev.average),
     },
     {
       key: 'companies_ordering',
       label: t('dashboards.sales.companies_ordering'),
-      value: String(now.companies),
+      value: String(cur.companies),
       delta: signed.value.format(difference),
       tone: toneOf(difference),
     },
@@ -168,13 +189,40 @@ const TONE_CLASS: Record<Tone, string> = {
 
 // ── Chart ───────────────────────────────────────────────────────────────────
 
-const series = computed<DashboardChartSeries[]>(() => [
-  {
-    key: 'value',
-    label: t('dashboards.sales.order_value'),
-    color: 'var(--tone-success)',
-  },
-]);
+// By channel: the channels in scope in account order, then any other channel
+// an order is in, so the parts add up to the total
+const channelSeries = computed(() => {
+  const scope = dashboardChannelsInScope(channels.value, channelIds.value);
+  const names = new Map(
+    scope.map((channel) => [channel._id, channel.name || channel.identifier]),
+  );
+  return salesChannelIds(
+    current.value,
+    scope.map((channel) => channel._id),
+  ).map((id, index) => ({
+    id,
+    // Index keys: they name the chart's CSS variables, which an id might not suit
+    key: `channel_${index}`,
+    label: names.get(id) ?? id,
+    color: salesChannelColor(index),
+  }));
+});
+
+const series = computed<DashboardChartSeries[]>(() =>
+  split.value === 'channel'
+    ? channelSeries.value.map(({ key, label, color }) => ({
+        key,
+        label,
+        color,
+      }))
+    : [
+        {
+          key: 'value',
+          label: t('dashboards.sales.order_value'),
+          color: 'var(--tone-success)',
+        },
+      ],
+);
 
 const points = computed<DashboardChartPoint[]>(() => {
   const buckets = salesBuckets(range.value, granularity.value);
@@ -184,10 +232,15 @@ const points = computed<DashboardChartPoint[]>(() => {
     granularity.value === 'month' && crossesYears
       ? { month: 'short', year: '2-digit' }
       : TICK_FORMAT[granularity.value];
+  const byChannel = split.value === 'channel';
   return bucketSales(current.value, buckets).map((point) => ({
     label: formatDate(point.start, tick),
     title: formatDate(point.start, TITLE_FORMAT[granularity.value]),
-    values: { value: point.value },
+    values: byChannel
+      ? Object.fromEntries(
+          channelSeries.value.map((s) => [s.key, point.channels[s.id] ?? 0]),
+        )
+      : { value: point.value },
   }));
 });
 
@@ -273,12 +326,35 @@ const narrow = computed(() => width.value > 0 && width.value < NARROW_BELOW);
           </dl>
           <div class="flex shrink-0 items-center justify-end gap-2">
             <DashboardToggle
+              v-model="split"
+              :options="splitOptions"
+              :label="$t('dashboards.sales.split')"
+            />
+            <DashboardToggle
               v-model="kind"
               :options="kindOptions"
               :label="$t('dashboards.sales.chart_type')"
             />
           </div>
         </div>
+        <ul
+          v-if="split === 'channel' && !loading"
+          class="mt-1 mb-4 flex shrink-0 flex-wrap items-center gap-x-5 gap-y-1 border-t px-1 pt-3"
+          :aria-label="$t('channel', 2)"
+        >
+          <li
+            v-for="channel in channelSeries"
+            :key="channel.key"
+            class="text-muted-foreground inline-flex items-center gap-1.5 text-xs"
+          >
+            <span
+              class="size-2.5 shrink-0 rounded-full"
+              :style="{ backgroundColor: channel.color }"
+              aria-hidden="true"
+            />
+            {{ channel.label }}
+          </li>
+        </ul>
         <div class="min-h-0 flex-1">
           <Skeleton v-if="loading" class="size-full" />
           <Empty v-else-if="!current.length" class="h-full gap-4 p-2 md:p-2">
@@ -305,5 +381,8 @@ const narrow = computed(() => width.value > 0 && width.value < NARROW_BELOW);
         </div>
       </template>
     </div>
+    <template #info>
+      <DashboardSalesInfo />
+    </template>
   </DashboardWidget>
 </template>

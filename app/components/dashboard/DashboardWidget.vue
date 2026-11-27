@@ -15,9 +15,10 @@ import type { DashboardListLink } from '@/lib/dashboard-data';
 
 /**
  * The frame every dashboard widget renders itself in: a card with a header
- * (title, description, badge, mode toggle, actions) and a body laid out by
- * the widget's variant. Title, description, modes and variant come from the
- * widget registry; a picked mode is saved in the instance's `config.mode`.
+ * (title, description, badge, mode toggle, info, actions) and a body laid out
+ * by the widget's variant. Title, description, modes, info and variant come
+ * from the widget registry; a picked mode is saved in the instance's
+ * `config.mode`, and the info panel's content is the `info` slot.
  * While the board is edited, the header is the drag handle and ✕ removes it.
  * A widget registered with `fit` reports the grid rows its content needs.
  */
@@ -62,6 +63,8 @@ const modeDescriptionKey = computed(
     definition.value.modes?.find((option) => option.key === mode.value)
       ?.descriptionKey,
 );
+
+const infoOpen = ref(false);
 
 const headerDescription = computed(
   () =>
@@ -185,7 +188,13 @@ watch(fittedRows, (rows) => {
           </p>
         </div>
         <div
-          v-if="$slots.actions || editing || viewAll || modeOptions.length"
+          v-if="
+            $slots.actions ||
+            editing ||
+            viewAll ||
+            modeOptions.length ||
+            definition.info
+          "
           class="flex shrink-0 items-center gap-1"
         >
           <!-- Hidden while editing: the header is the drag handle then -->
@@ -203,6 +212,22 @@ watch(fittedRows, (rows) => {
             :options="modeOptions"
             :label="t(definition.titleKey)"
           />
+          <TooltipProvider v-if="definition.info" :delay-duration="100">
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="text-muted-foreground size-7"
+                  :aria-label="t(definition.info.titleKey)"
+                  @click="infoOpen = true"
+                >
+                  <LucideInfo class="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{{ t(definition.info.titleKey) }}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <slot name="actions" />
           <DashboardWidgetRemove
             v-if="editing"
@@ -221,6 +246,21 @@ watch(fittedRows, (rows) => {
       <div v-else :class="cn(body.base, body.padding)">
         <slot />
       </div>
+      <PanelEdit
+        v-if="definition.info"
+        v-model:open="infoOpen"
+        width="narrow"
+        :title="t(definition.info.titleKey)"
+        :description="t(definition.info.descriptionKey)"
+      >
+        <slot name="info" />
+        <template #footer>
+          <span />
+          <Button variant="outline" @click="infoOpen = false">
+            {{ t('close') }}
+          </Button>
+        </template>
+      </PanelEdit>
     </template>
   </Card>
 </template>

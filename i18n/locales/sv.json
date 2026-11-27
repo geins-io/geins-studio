@@ -1059,6 +1059,9 @@
       "chart_type": "Diagramtyp",
       "line": "Linje",
       "bars": "Staplar",
+      "split": "Uppdelning",
+      "total": "Totalt",
+      "by_channel": "Per kanal",
       "empty_description": "Inga företagsordrar lades under den här perioden.",
       "vs": {
         "yesterday_at_this_time": "jmf. med i går vid samma tid",
@@ -1069,6 +1072,28 @@
         "previous_7_days": "jmf. med föregående 7 dagar",
         "previous_30_days": "jmf. med föregående 30 dagar",
         "previous_period": "jmf. med föregående period"
+      },
+      "info": {
+        "title": "Efterfrågan och intäkter",
+        "description": "Två sätt att räkna samma företagsordrar.",
+        "demand": {
+          "lead": "Det kunderna ville köpa.",
+          "placed": "Räknas på datumet då ordern lades.",
+          "cancelled": "Makulerade ordrar och produkter räknas med.",
+          "use": "Använd det för att följa intresse och köpbeteende."
+        },
+        "revenue": {
+          "lead": "Det som faktiskt levererades.",
+          "delivered": "Räknas på leveransdatumet, oavsett när ordern lades.",
+          "only_delivered": "Bara levererade ordrar räknas med.",
+          "use": "Använd det för att följa vad ni faktiskt sålt."
+        },
+        "example": "En order som läggs den 28 november och levereras den 2 december räknas i efterfrågan för november och i intäkter för december.",
+        "numbers": "Siffrorna",
+        "order_value": "Exklusive moms och avgifter, inklusive rabatter.",
+        "revenue_value": "Ordervärdet för levererade ordrar.",
+        "refunds": "Återbetalningar",
+        "refunds_value": "Belopp som betalats tillbaka på ordrar, räknade på datumet för ordern de hör till."
       }
     },
     "attention": {

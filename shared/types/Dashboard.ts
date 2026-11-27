@@ -49,6 +49,17 @@ export interface DashboardWidgetMode {
   disabledReasonKey?: string;
 }
 
+/**
+ * An explanation behind an info button in the widget header, opened in a
+ * narrow panel. The widget gives the panel's content in its `info` slot.
+ */
+export interface DashboardWidgetInfo {
+  /** i18n key of the panel title, also the button's tooltip */
+  titleKey: string;
+  /** i18n key of the panel description */
+  descriptionKey: string;
+}
+
 /** A size in grid units: columns (of 12) and rows. */
 export interface DashboardWidgetSize {
   w: number;
@@ -82,6 +93,8 @@ export interface DashboardWidgetDefinition {
   defaultConfig?: Record<string, unknown>;
   /** Views picked in the header, e.g. Demand / Revenue */
   modes?: DashboardWidgetMode[];
+  /** An info button in the header, e.g. what Demand and Revenue count */
+  info?: DashboardWidgetInfo;
 }
 
 /** One widget placed on a board. `i` is unique on the board, `{type}__{n}`. */

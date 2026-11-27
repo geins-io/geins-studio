@@ -1059,6 +1059,9 @@
       "chart_type": "Chart type",
       "line": "Line",
       "bars": "Bars",
+      "split": "Split",
+      "total": "Total",
+      "by_channel": "By channel",
       "empty_description": "No company orders were placed in this period.",
       "vs": {
         "yesterday_at_this_time": "vs. yesterday at this time",
@@ -1069,6 +1072,28 @@
         "previous_7_days": "vs. previous 7 days",
         "previous_30_days": "vs. previous 30 days",
         "previous_period": "vs. previous period"
+      },
+      "info": {
+        "title": "Demand and revenue",
+        "description": "Two ways to count the same company orders.",
+        "demand": {
+          "lead": "What customers wanted to buy.",
+          "placed": "Counted on the date the order was placed.",
+          "cancelled": "Cancelled orders and products are included.",
+          "use": "Use it to follow interest and buying behaviour."
+        },
+        "revenue": {
+          "lead": "What was actually delivered.",
+          "delivered": "Counted on the delivery date, whenever the order was placed.",
+          "only_delivered": "Only delivered orders are included.",
+          "use": "Use it to follow what you actually sold."
+        },
+        "example": "An order placed on 28 November and delivered on 2 December counts in demand for November and in revenue for December.",
+        "numbers": "The numbers",
+        "order_value": "Excluding tax and fees, including discounts.",
+        "revenue_value": "The order value of delivered orders.",
+        "refunds": "Refunds",
+        "refunds_value": "Amounts paid back on orders, counted on the date of the order they belong to."
       }
     },
     "attention": {
