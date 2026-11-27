@@ -262,11 +262,15 @@ export default defineNuxtPlugin(() => {
    * Uses the GeinsApiFetch interface which avoids Nitro's complex
    * route type resolution that causes excessive TypeScript stack depth.
    * The explicit `<unknown>` matters too: it switches off Nuxt's route
-   * inference for `request`, which overflows on a plain `string`.
+   * inference for `request`, which overflows on a plain `string`. Nuxt's
+   * typed `$fetch` then answers `unknown` (the `/api/**` proxy declares no
+   * response), so the caller's `T` is asserted here.
    * All auth interceptors from the underlying $fetch instance are preserved.
    */
-  const geinsApi: GeinsApiFetch = (request, options) =>
-    geinsApiFetchInstance<unknown>(request, options);
+  const geinsApi: GeinsApiFetch = <T>(
+    request: string,
+    options?: Record<string, unknown>,
+  ) => geinsApiFetchInstance<unknown>(request, options) as Promise<T>;
 
   return {
     provide: {
