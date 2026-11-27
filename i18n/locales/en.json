@@ -1010,6 +1010,10 @@
         "choose_description": "Choose the shortcuts to show.",
         "empty": "No shortcuts chosen yet."
       },
+      "company_sales": {
+        "title": "Company sales",
+        "description": "Demand or revenue over time, from company orders"
+      },
       "company_orders": {
         "title": "Latest company orders",
         "description": "The most recent orders placed by buyers linked to a company"
@@ -1049,6 +1053,55 @@
         "win_rate": "Win rate",
         "win_rate_note": "Accepted of all answered",
         "expired_rate": "Expired without answer"
+      }
+    },
+    "sales": {
+      "demand": "Demand",
+      "revenue": "Revenue",
+      "demand_description": "Demand: by order date, cancelled orders included",
+      "revenue_description": "Revenue: by delivery date",
+      "revenue_unavailable": "Revenue needs delivery dates on orders, which Studio doesn’t have yet",
+      "order_value": "Order value",
+      "average_order_value": "Average order value",
+      "companies_ordering": "Companies ordering",
+      "chart_type": "Chart type",
+      "line": "Line",
+      "bars": "Bars",
+      "split": "Split",
+      "total": "Total",
+      "by_channel": "By channel",
+      "empty_description": "No company orders were placed in this period.",
+      "vs": {
+        "yesterday_at_this_time": "vs. yesterday at this time",
+        "day_before": "vs. the day before",
+        "last_week_at_this_time": "vs. last week at this time",
+        "last_month_at_this_time": "vs. last month at this time",
+        "last_year_at_this_time": "vs. last year at this time",
+        "previous_7_days": "vs. previous 7 days",
+        "previous_30_days": "vs. previous 30 days",
+        "previous_period": "vs. previous period"
+      },
+      "info": {
+        "title": "Demand and revenue",
+        "description": "Two ways to count the same company orders.",
+        "demand": {
+          "lead": "What customers wanted to buy.",
+          "placed": "Counted on the date the order was placed.",
+          "cancelled": "Cancelled orders and products are included.",
+          "use": "Use it to follow interest and buying behaviour."
+        },
+        "revenue": {
+          "lead": "What was actually delivered.",
+          "delivered": "Counted on the delivery date, whenever the order was placed.",
+          "only_delivered": "Only delivered orders are included.",
+          "use": "Use it to follow what you actually sold."
+        },
+        "example": "An order placed on 28 November and delivered on 2 December counts in demand for November and in revenue for December.",
+        "numbers": "The numbers",
+        "order_value": "Excluding tax and fees, including discounts.",
+        "revenue_value": "The order value of delivered orders.",
+        "refunds": "Refunds",
+        "refunds_value": "Amounts paid back on orders, counted on the date of the order they belong to."
       }
     },
     "attention": {

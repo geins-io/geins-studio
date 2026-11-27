@@ -1,4 +1,5 @@
 import type { StatusBadgeStatus } from './Global';
+import type { Component } from 'vue';
 
 /**
  * Start dashboard: a board of widgets on a 12-column grid. These are UI state
@@ -9,6 +10,7 @@ import type { StatusBadgeStatus } from './Global';
 export type DashboardWidgetType =
   | 'quick-access'
   | 'list-company-orders'
+  | 'chart-company-orders'
   | 'needs-attention'
   | 'attention-quotation-requests'
   | 'attention-expiring-quotations'
@@ -33,6 +35,31 @@ export type DashboardWidgetGroup =
  * drops the header (a single number tile).
  */
 export type DashboardWidgetVariant = 'default' | 'flush' | 'table' | 'bare';
+
+/**
+ * A view of a widget picked in its header (e.g. Demand / Revenue). The pick is
+ * saved in the instance's `config.mode`; the first enabled mode is the default.
+ */
+export interface DashboardWidgetMode {
+  key: string;
+  /** i18n key of the toggle label */
+  labelKey: string;
+  /** i18n key of the header description while this mode is on */
+  descriptionKey: string;
+  /** Shown but not selectable; the i18n key of the tooltip saying why */
+  disabledReasonKey?: string;
+}
+
+/**
+ * An explanation behind an info button in the widget header, opened in a
+ * narrow panel. The widget gives the panel's content in its `info` slot.
+ */
+export interface DashboardWidgetInfo {
+  /** i18n key of the panel title, also the button's tooltip */
+  titleKey: string;
+  /** i18n key of the panel description */
+  descriptionKey: string;
+}
 
 /** A size in grid units: columns (of 12) and rows. */
 export interface DashboardWidgetSize {
@@ -65,6 +92,10 @@ export interface DashboardWidgetDefinition {
   fit?: boolean;
   /** Settings a new instance starts with */
   defaultConfig?: Record<string, unknown>;
+  /** Views picked in the header, e.g. Demand / Revenue */
+  modes?: DashboardWidgetMode[];
+  /** An info button in the header, e.g. what Demand and Revenue count */
+  info?: DashboardWidgetInfo;
 }
 
 /** One widget placed on a board. `i` is unique on the board, `{type}__{n}`. */
@@ -130,4 +161,30 @@ export interface DashboardPeriod {
 export interface DashboardScopeFilters {
   channels?: string[];
   markets?: string[];
+}
+
+/** One choice in a dashboard segmented toggle (`DashboardToggle`) */
+export interface DashboardToggleOption {
+  value: string;
+  /** Button text, or the tooltip and accessible name of an icon button */
+  label: string;
+  /** Shows the icon instead of the label */
+  icon?: Component;
+  /** Shown but not selectable; the tooltip says why */
+  disabledReason?: string;
+}
+
+/** One step on a dashboard chart's x axis: tick label, tooltip title, a value per series */
+export interface DashboardChartPoint {
+  label: string;
+  title: string;
+  values: Record<string, number>;
+}
+
+/** One line on a dashboard chart, or one part of its stacked bars */
+export interface DashboardChartSeries {
+  key: string;
+  label: string;
+  /** A CSS colour from the theme's tokens (`var(--tone-…)`), never a raw hex */
+  color: string;
 }

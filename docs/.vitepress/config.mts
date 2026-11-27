@@ -198,6 +198,10 @@ export default defineConfig({
                 text: 'useDashboardFilters',
                 link: '/composables/useDashboardFilters.md',
               },
+              {
+                text: 'useDashboardCompanyOrders',
+                link: '/composables/useDashboardCompanyOrders.md',
+              },
             ],
           },
           {
@@ -1056,6 +1060,14 @@ export default defineConfig({
                 link: '/components/dashboard/DashboardWidgetRemove.md',
               },
               {
+                text: 'DashboardToggle',
+                link: '/components/dashboard/DashboardToggle.md',
+              },
+              {
+                text: 'DashboardChart',
+                link: '/components/dashboard/DashboardChart.md',
+              },
+              {
                 text: 'DashboardWidgetSettings',
                 link: '/components/dashboard/DashboardWidgetSettings.md',
               },
@@ -1070,6 +1082,14 @@ export default defineConfig({
               {
                 text: 'DashboardWidgetCompanyOrders',
                 link: '/components/dashboard/DashboardWidgetCompanyOrders.md',
+              },
+              {
+                text: 'DashboardWidgetCompanySales',
+                link: '/components/dashboard/DashboardWidgetCompanySales.md',
+              },
+              {
+                text: 'DashboardSalesInfo',
+                link: '/components/dashboard/DashboardSalesInfo.md',
               },
               {
                 text: 'DashboardWidgetNeedsAttention',

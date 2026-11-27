@@ -21,6 +21,7 @@ import type { Component } from 'vue';
 import {
   LazyDashboardWidgetAttentionTile,
   LazyDashboardWidgetCompanyOrders,
+  LazyDashboardWidgetCompanySales,
   LazyDashboardWidgetExpiringQuotations,
   LazyDashboardWidgetFailedRuns,
   LazyDashboardWidgetNeedsAttention,
@@ -69,6 +70,7 @@ provide(DASHBOARD_BOARD_CONTEXT, {
 const WIDGET_COMPONENTS: Record<DashboardWidgetType, Component> = {
   'quick-access': LazyDashboardWidgetQuickAccess,
   'list-company-orders': LazyDashboardWidgetCompanyOrders,
+  'chart-company-orders': LazyDashboardWidgetCompanySales,
   'needs-attention': LazyDashboardWidgetNeedsAttention,
   'attention-quotation-requests': LazyDashboardWidgetAttentionTile,
   'attention-expiring-quotations': LazyDashboardWidgetAttentionTile,

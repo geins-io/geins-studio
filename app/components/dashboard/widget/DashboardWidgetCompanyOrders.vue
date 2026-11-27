@@ -2,11 +2,10 @@
 import type {
   DashboardWidgetInstance,
   EntityBase,
-  OrderBatchQuery,
   OrderStatus,
   Price,
 } from '#shared/types';
-import { SelectorCondition, TableMode } from '#shared/types';
+import { TableMode } from '#shared/types';
 import { entityEditUrl } from '#shared/utils/entities';
 import type { Row } from '@tanstack/vue-table';
 import { LucidePackage, NuxtLink } from '#components';
@@ -25,54 +24,41 @@ interface CompanyOrderRow extends Omit<EntityBase, '_type'> {
 
 const ROW_LIMIT = 10;
 
-const WHOLESALE_ORDERS: OrderBatchQuery = {
-  include: [
-    {
-      selections: [
-        { condition: SelectorCondition.And, orderTypes: ['wholesale'] },
-      ],
-    },
-  ],
-};
-
 const { t } = useI18n();
-const { customerApi, orderApi } = useGeinsRepository();
-const { batchQueryNoPagination } = useBatchQuery();
+const { customerApi } = useGeinsRepository();
 const { formatDate } = useDate();
 const { convertToPrice } = usePrice();
 const { getColumns } = useColumns<CompanyOrderRow>();
 
 const { channelIds } = useDashboardFilters();
 
-// Its own fetch rather than `useCompanyOrders`: rows link to the company, and
-// that composable's list rows drop the company id. All wholesale orders are
-// kept, so the channel filter narrows them without a new fetch.
-const { data, status, refresh } = useAsyncData(
-  'dashboard-company-orders',
+// Orders come from the dashboard's shared fetch (Company sales reads it too).
+// Not `useCompanyOrders`: rows link to the company, and that composable's
+// list rows drop the company id. The channel filter narrows the list without
+// a new fetch.
+const ordersFetch = useDashboardCompanyOrders();
+const companiesFetch = useAsyncData(
+  'dashboard-companies',
   async () => {
-    const [companies, result] = await Promise.all([
-      customerApi.company.list(),
-      orderApi.query(
-        { ...WHOLESALE_ORDERS, ...batchQueryNoPagination.value },
-        undefined,
-        { suppressErrorToast: true },
-      ),
-    ]);
-    const orders = Array.isArray(result?.items) ? result.items : [];
-    return {
-      companies: Array.isArray(companies) ? companies : [],
-      orders: [...orders].sort(
-        (a, b) =>
-          new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime(),
-      ),
-    };
+    const companies = await customerApi.company.list();
+    return Array.isArray(companies) ? companies : [];
   },
+  { dedupe: 'defer' },
 );
 
+const loading = computed(
+  () => ordersFetch.loading.value || companiesFetch.status.value === 'pending',
+);
+const error = computed(
+  () => ordersFetch.error.value || companiesFetch.status.value === 'error',
+);
+const retry = () =>
+  Promise.all([ordersFetch.refresh(), companiesFetch.refresh()]);
+
 const rows = computed<CompanyOrderRow[]>(() => {
-  const { companies = [], orders = [] } = data.value ?? {};
+  const companies = companiesFetch.data.value ?? [];
   const picked = channelIds.value;
-  return orders
+  return ordersFetch.orders.value
     .filter((order) => !picked.length || picked.includes(String(order.channel)))
     .slice(0, ROW_LIMIT)
     .map((order) => ({
@@ -125,9 +111,9 @@ const columns = computed(() =>
       :data="rows"
       entity-key="order"
       :mode="TableMode.Compact"
-      :loading="status === 'pending'"
-      :error="status === 'error'"
-      :on-retry="refresh"
+      :loading="loading"
+      :error="error"
+      :on-retry="retry"
       :empty-icon="LucidePackage"
     />
   </DashboardWidget>
