@@ -88,6 +88,15 @@ export interface DashboardBoard {
   layout: DashboardLayoutItem[];
 }
 
+/** A ready-made board the empty dashboard offers: its widgets, packed in order */
+export interface DashboardTemplate {
+  id: string;
+  /** i18n keys of the template's name and the short line under it */
+  titleKey: string;
+  descriptionKey: string;
+  types: DashboardWidgetType[];
+}
+
 /**
  * One row in a dashboard queue: a quotation or workflow run, with the link to
  * it. `avatar` is a company name, shown as its initials.

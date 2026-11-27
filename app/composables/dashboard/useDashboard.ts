@@ -1,6 +1,7 @@
 import type {
   DashboardBoard,
   DashboardLayoutItem,
+  DashboardTemplate,
   DashboardWidgetInstance,
   DashboardWidgetType,
 } from '#shared/types';
@@ -8,6 +9,7 @@ import {
   addDashboardWidget,
   cloneDashboardBoard,
   defaultDashboardBoard,
+  packDashboardBoard,
   removeDashboardWidget,
   sameDashboardBoard,
 } from '@/lib/dashboard';
@@ -23,6 +25,7 @@ interface UseDashboardReturnType {
   removeWidget: (i: string) => void;
   addWidget: (type: DashboardWidgetType, at?: { x: number; y: number }) => void;
   resetToDefault: () => void;
+  applyTemplate: (template: DashboardTemplate) => void;
   updateWidgetConfig: (i: string, config: Record<string, unknown>) => void;
   fitWidget: (i: string, h: number) => void;
 }
@@ -47,6 +50,7 @@ interface UseDashboardReturnType {
  * @property {function} removeWidget - Takes a widget and its layout entry off the board
  * @property {function} addWidget - Puts a new widget on the board, at a cell or at the bottom, as part of the edit session
  * @property {function} resetToDefault - Puts the default board back: inside the edit session while editing, else clearing the saved board
+ * @property {function} applyTemplate - Replaces the board with a template's: inside the edit session while editing, else saving it
  * @property {function} updateWidgetConfig - Sets a widget's own settings and saves them right away
  * @property {function} fitWidget - Sets the height (grid rows) a widget that fits its content needs
  */
@@ -133,6 +137,13 @@ export const useDashboard = (): UseDashboardReturnType => {
     if (!editing.value) storage.clear();
   };
 
+  // Unlike the default, a template is the user's own choice, so it's saved:
+  // right away outside an edit session, by Done inside one
+  const applyTemplate = (template: DashboardTemplate) => {
+    apply(packDashboardBoard(template.types));
+    if (!editing.value) storage.save(current());
+  };
+
   const removeWidget = (i: string) => {
     apply(removeDashboardWidget(current(), i));
   };
@@ -183,6 +194,7 @@ export const useDashboard = (): UseDashboardReturnType => {
     removeWidget,
     addWidget,
     resetToDefault,
+    applyTemplate,
     updateWidgetConfig,
     fitWidget,
   };

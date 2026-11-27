@@ -6,6 +6,8 @@ Editing starts from a deep copy of the board (`cloneDashboardBoard`), because th
 
 `resetToDefault` during an edit is one more change in the session: the default board replaces the current one, Cancel brings the old board back (settings included) and Done keeps the default. The page's **Reset to default** button calls it and is disabled while `isDefault`.
 
+`applyTemplate(template)` replaces the board with a template's (`packDashboardBoard(template.types)`, see [Templates](/domains/dashboard.md)); the empty board's **Start from a template** rows call it. During an edit it's one more change in the session, like `resetToDefault`.
+
 ## Adding widgets
 
 `addWidget(type, at?)` puts a new `type` widget on the board at its registry default size (`addDashboardWidget` in `app/lib/dashboard.ts`):
@@ -23,6 +25,7 @@ The board is saved per user and account through [`useDashboardStorage`](/composa
 - **Done** saves the board, but only if it changed, and never a default board: when `isDefault`, it clears the saved board instead (`storage.clear()`), so the user follows the default as it grows. Done without a change saves nothing. Cancel and leaving the page save nothing.
 - `isDefault` compares the board with `defaultDashboardBoard()` as the page draws it: with the fitted heights put in, and both compacted the way the grid compacts them (`sameDashboardBoard` / `compactDashboardLayout` in `app/lib/dashboard.ts`). Without that, a Quick access fitted taller than its default moves every widget below it a row down, and the board would never count as the default.
 - `resetToDefault` outside an edit (the empty board's "Use the default dashboard") replaces the board with the default one and clears the saved board right away.
+- `applyTemplate` outside an edit saves the template's board right away: unlike the default, it's the user's own choice. During an edit, Done saves it.
 - `fitWidget` sets the height a widget that fits its content needs (see [`DashboardWidget`](/components/dashboard/DashboardWidget.md#fitting-the-content)). It isn't saved on its own: the height follows the widget's width and settings, and saving it would turn a user who never changed anything into one with a saved board. It's remembered per widget and put back over any board that replaces the current one (Cancel, a loaded board, the default), and it replaces the `layout` array so the grid compacts the widgets below.
 - `updateWidgetConfig` sets one widget's own settings (`items[].config`, e.g. Quick access shortcuts) and saves right away, apart from the layout edit session: during one, the copy Cancel restores takes the new settings too, and what's saved is the last saved layout with them. It saves the whole board, so changing a setting gives the user a saved board until server-side saving (Phase 5).
 
@@ -40,6 +43,7 @@ const {
   removeWidget,
   addWidget,
   resetToDefault,
+  applyTemplate,
   updateWidgetConfig,
   fitWidget,
 } = useDashboard();
@@ -59,6 +63,7 @@ const {
 | `removeWidget`       | `(i: string) => void`                                                | Takes a widget and its layout entry off the board                             |
 | `addWidget`          | `(type: DashboardWidgetType, at?: { x: number; y: number }) => void` | Puts a new widget at a cell, or at the bottom, in the edit session            |
 | `resetToDefault`     | `() => void`                                                         | Puts the default board back: in the edit session, or clearing the saved board |
+| `applyTemplate`      | `(template: DashboardTemplate) => void`                              | Replaces the board with a template's: in the edit session, or saving it       |
 | `updateWidgetConfig` | `(i: string, config: Record<string, unknown>) => void`               | Sets a widget's own settings and saves them right away                        |
 | `fitWidget`          | `(i: string, h: number) => void`                                     | Sets the grid rows a content-fitted widget needs (not saved)                  |
 
