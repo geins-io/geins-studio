@@ -1010,6 +1010,10 @@
         "choose_description": "Choose the shortcuts to show.",
         "empty": "No shortcuts chosen yet."
       },
+      "company_sales": {
+        "title": "Company sales",
+        "description": "Demand or revenue over time, from company orders"
+      },
       "company_orders": {
         "title": "Latest company orders",
         "description": "The most recent orders placed by buyers linked to a company"
@@ -1041,6 +1045,30 @@
         "title": "Recently uploaded assets",
         "description": "Files added to the asset library",
         "added": "Added"
+      }
+    },
+    "sales": {
+      "demand": "Demand",
+      "revenue": "Revenue",
+      "demand_description": "Demand: by order date, cancelled orders included",
+      "revenue_description": "Revenue: by delivery date",
+      "revenue_unavailable": "Revenue needs delivery dates on orders, which Studio doesn’t have yet",
+      "order_value": "Order value",
+      "average_order_value": "Average order value",
+      "companies_ordering": "Companies ordering",
+      "chart_type": "Chart type",
+      "line": "Line",
+      "bars": "Bars",
+      "empty_description": "No company orders were placed in this period.",
+      "vs": {
+        "yesterday_at_this_time": "vs. yesterday at this time",
+        "day_before": "vs. the day before",
+        "last_week_at_this_time": "vs. last week at this time",
+        "last_month_at_this_time": "vs. last month at this time",
+        "last_year_at_this_time": "vs. last year at this time",
+        "previous_7_days": "vs. previous 7 days",
+        "previous_30_days": "vs. previous 30 days",
+        "previous_period": "vs. previous period"
       }
     },
     "attention": {

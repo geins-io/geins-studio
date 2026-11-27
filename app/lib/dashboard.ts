@@ -42,6 +42,29 @@ export const DASHBOARD_WIDGETS: Record<
     stackedHeight: 'auto',
     fit: true,
   },
+  'chart-company-orders': {
+    type: 'chart-company-orders',
+    titleKey: 'dashboards.widgets.company_sales.title',
+    descriptionKey: 'dashboards.widgets.company_sales.description',
+    group: 'charts',
+    icon: 'ChartColumn',
+    size: { w: 8, h: 10, minW: 4, minH: 10 },
+    variant: 'flush',
+    stackedHeight: 540,
+    modes: [
+      {
+        key: 'demand',
+        labelKey: 'dashboards.sales.demand',
+        descriptionKey: 'dashboards.sales.demand_description',
+      },
+      {
+        key: 'revenue',
+        labelKey: 'dashboards.sales.revenue',
+        descriptionKey: 'dashboards.sales.revenue_description',
+        disabledReasonKey: 'dashboards.sales.revenue_unavailable',
+      },
+    ],
+  },
   'list-company-orders': {
     type: 'list-company-orders',
     titleKey: 'dashboards.widgets.company_orders.title',
@@ -137,6 +160,21 @@ export const DASHBOARD_WIDGETS: Record<
     variant: 'table',
   },
 };
+
+/**
+ * The header mode a widget instance shows: its saved `config.mode` while that
+ * mode exists and is enabled, else the first enabled one. `undefined` for a
+ * widget without modes.
+ */
+export function dashboardWidgetMode(
+  instance: DashboardWidgetInstance,
+): string | undefined {
+  const enabled = (DASHBOARD_WIDGETS[instance.type].modes ?? []).filter(
+    (mode) => !mode.disabledReasonKey,
+  );
+  const saved = instance.config?.mode;
+  return (enabled.find((mode) => mode.key === saved) ?? enabled[0])?.key;
+}
 
 export function isDashboardWidgetType(
   type: unknown,
