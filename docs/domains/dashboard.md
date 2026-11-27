@@ -66,6 +66,7 @@ y27 └───────────────────┴────�
 | Quotations expiring soon    | Expiring quotations, soonest first (`useDashboardQuotations`)                                                    | Channel / Market                     |
 | Latest failed workflow runs | Failed runs, newest first (`useDashboardExecutions`)                                                             | —                                    |
 | Latest quotations           | The 10 last changed quotations (`useDashboardQuotations`)                                                        | Channel / Market                     |
+| Quotations by status        | Every sent quotation by its current status, and two rates (`useDashboardQuotations`)                             | Channel / Market                     |
 | Recently uploaded assets    | `POST media/assets/query` (10 newest live assets by `createdAt`) + `user` list (uploader names)                  | —                                    |
 
 **Needs attention** counts what needs doing right now, so it ignores the period and Channel / Market. Its definitions live in `app/lib/dashboard-data.ts` (pure, tested) and every widget reads them through one shared fetch per source:
@@ -77,6 +78,16 @@ y27 └───────────────────┴────�
 Each number links to its list with the filter in the query (`?status=requested`, `?status=pending&expiring=7d`, `?status=failed&period=24h`), from `DASHBOARD_ATTENTION`. The quotations list reads `status` / `expiring` and the workflow runs list `status` once their link filters land; until then those links open the list unfiltered (the runs list already reads `period`).
 
 The **list widgets** read the same two fetches, so a board with Needs attention and every list makes one quotations request and one workflow runs request. Each list shows 10 rows (`DASHBOARD_LIST_LIMIT`) and a **View all** link to the same filtered list. Queues are [`DashboardQueue`](/components/dashboard/DashboardQueue.md)s; Latest quotations is a compact `TableView`.
+
+**Quotations by status** ([`DashboardWidgetQuotationStatus`](/components/dashboard/DashboardWidgetQuotationStatus.md)) reads the same quotations fetch and shows the current status of every sent quotation, so it ignores the period and follows Channel / Market like the lists. The counting lives in `quotationStatusSummary` (`app/lib/dashboard-data.ts`, pure, tested):
+
+- **Sent**: everything but `draft` and `requestDraft`; a buyer's released request (`requested`) counts. Statuses no slice counts (a `revised` version, or one the API adds later) are left out too; `SLICE_BY_STATUS` is a `Record<QuotationStatus, …>`, so a new status fails typecheck until it gets a place.
+- **Slices**: Requested, Pending, Accepted (`accepted`, `confirmed` and `finalized`), Expired, Rejected, and Canceled only when there are any. A legend row links to the quotations list filtered by its statuses.
+- **Win rate** = accepted ÷ (accepted + rejected): accepted of all answered.
+- **Expired without answer** = expired ÷ all sent (the ring's total).
+- Either rate shows "–" when there's nothing to divide by. "Answered within 24h" from the prototype waits for answer times (see Known data gaps).
+
+Charts use shadcn-vue **Chart** (`app/components/ui/chart/`, Unovis underneath: `@unovis/vue` + `@unovis/ts`). The CLI's output needed two fixes in this repo: its `cn` import pointed at an unrelated npm package `cn` (now `@/utils/index`, and that package removed), and it didn't install Unovis. Colours come from the status tone tokens (`--tone-*`) through the chart's `ChartConfig`, never raw hex.
 
 ## Company sales
 

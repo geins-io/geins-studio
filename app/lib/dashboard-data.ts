@@ -2,6 +2,7 @@ import type {
   DashboardWidgetType,
   ExecutionLog,
   Quotation,
+  QuotationStatus,
 } from '#shared/types';
 import { calendarDay, localDay } from '#shared/utils/calendar-day';
 import { entityListUrl } from '#shared/utils/entities';
@@ -189,6 +190,117 @@ export function recentQuotations<T extends RecentFields>(
   return [...quotations]
     .sort((a, b) => time(changedAt(b)) - time(changedAt(a)))
     .slice(0, limit);
+}
+
+// ── Quotations by status ─────────────────────────────────────────────────────
+
+export type QuotationStatusSliceKey =
+  | 'requested'
+  | 'pending'
+  | 'accepted'
+  | 'expired'
+  | 'rejected'
+  | 'canceled';
+
+/**
+ * One slice of Quotations by status: the quotation statuses it counts and the
+ * tone their badges have. `faded` tells it apart from the slice before it in
+ * the same tone; an `optional` slice shows only when it has quotations.
+ */
+export interface QuotationStatusSliceDefinition {
+  key: QuotationStatusSliceKey;
+  statuses: QuotationStatus[];
+  tone: 'info' | 'success' | 'warning' | 'danger';
+  faded?: boolean;
+  optional?: boolean;
+}
+
+/**
+ * The slice each quotation status counts in; `null` for one that isn't sent
+ * yet or isn't counted. A `Record` so a new status fails typecheck until it
+ * gets a place here.
+ */
+const SLICE_BY_STATUS: Record<QuotationStatus, QuotationStatusSliceKey | null> =
+  {
+    requestDraft: null,
+    draft: null,
+    revised: null,
+    requested: 'requested',
+    pending: 'pending',
+    accepted: 'accepted',
+    confirmed: 'accepted',
+    finalized: 'accepted',
+    expired: 'expired',
+    rejected: 'rejected',
+    canceled: 'canceled',
+  };
+
+const statusesIn = (key: QuotationStatusSliceKey) =>
+  (Object.keys(SLICE_BY_STATUS) as QuotationStatus[]).filter(
+    (status) => SLICE_BY_STATUS[status] === key,
+  );
+
+/** The slices in the order the ring and its legend show them */
+export const QUOTATION_STATUS_SLICES: QuotationStatusSliceDefinition[] = (
+  [
+    { key: 'requested', tone: 'info' },
+    { key: 'pending', tone: 'info', faded: true },
+    { key: 'accepted', tone: 'success' },
+    { key: 'expired', tone: 'warning' },
+    { key: 'rejected', tone: 'danger' },
+    { key: 'canceled', tone: 'danger', faded: true, optional: true },
+  ] satisfies Omit<QuotationStatusSliceDefinition, 'statuses'>[]
+).map((slice) => ({ ...slice, statuses: statusesIn(slice.key) }));
+
+export interface QuotationStatusSlice extends QuotationStatusSliceDefinition {
+  count: number;
+  /** Share of all counted quotations, 0–1 */
+  share: number;
+}
+
+export interface QuotationStatusSummary {
+  slices: QuotationStatusSlice[];
+  /** Every sent quotation: the whole ring */
+  total: number;
+  /** Accepted ÷ (accepted + rejected), 0–1; `null` with nothing answered */
+  winRate: number | null;
+  /** Expired ÷ every sent quotation, 0–1; `null` with none */
+  expiredRate: number | null;
+}
+
+const ratio = (part: number, whole: number) => (whole ? part / whole : null);
+
+/**
+ * The current status of every sent quotation, by slice, and the rates worked
+ * out from it. Drafts and request drafts aren't sent yet, so they're left out,
+ * as is any status no slice counts (a revised version).
+ */
+export function quotationStatusSummary(
+  quotations: Pick<Quotation, 'status'>[],
+): QuotationStatusSummary {
+  const counts = new Map<QuotationStatusSliceKey, number>();
+  for (const { status } of quotations) {
+    // The API can send a status the type doesn't know yet
+    const key = Object.hasOwn(SLICE_BY_STATUS, status)
+      ? SLICE_BY_STATUS[status]
+      : null;
+    if (key) counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const count = (key: QuotationStatusSliceKey) => counts.get(key) ?? 0;
+  const total = [...counts.values()].reduce((sum, n) => sum + n, 0);
+
+  return {
+    slices: QUOTATION_STATUS_SLICES.filter(
+      (slice) => !slice.optional || count(slice.key) > 0,
+    ).map((slice) => ({
+      ...slice,
+      count: count(slice.key),
+      share: ratio(count(slice.key), total) ?? 0,
+    })),
+    total,
+    winRate: ratio(count('accepted'), count('accepted') + count('rejected')),
+    expiredRate: ratio(count('expired'), total),
+  };
 }
 
 /** A company's initials for its avatar: the first letter of its first two words */

@@ -27,6 +27,7 @@ import {
   LazyDashboardWidgetNeedsAttention,
   LazyDashboardWidgetQuickAccess,
   LazyDashboardWidgetQuotationRequests,
+  LazyDashboardWidgetQuotationStatus,
   LazyDashboardWidgetRecentAssets,
   LazyDashboardWidgetRecentQuotations,
 } from '#components';
@@ -79,6 +80,7 @@ const WIDGET_COMPONENTS: Record<DashboardWidgetType, Component> = {
   'queue-failed-runs': LazyDashboardWidgetFailedRuns,
   'list-recent-quotations': LazyDashboardWidgetRecentQuotations,
   'list-recent-assets': LazyDashboardWidgetRecentAssets,
+  'chart-quotation-status': LazyDashboardWidgetQuotationStatus,
 };
 
 const itemsById = computed(

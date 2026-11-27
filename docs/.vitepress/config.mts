@@ -1131,6 +1131,10 @@ export default defineConfig({
                 text: 'DashboardWidgetRecentAssets',
                 link: '/components/dashboard/DashboardWidgetRecentAssets.md',
               },
+              {
+                text: 'DashboardWidgetQuotationStatus',
+                link: '/components/dashboard/DashboardWidgetQuotationStatus.md',
+              },
             ],
           },
           {

@@ -164,6 +164,16 @@ export const DASHBOARD_WIDGETS: Record<
     size: { w: 4, h: 10, minW: 3, minH: 6 },
     variant: 'table',
   },
+  'chart-quotation-status': {
+    type: 'chart-quotation-status',
+    titleKey: 'dashboards.widgets.quotation_status.title',
+    descriptionKey: 'dashboards.widgets.quotation_status.description',
+    group: 'charts',
+    icon: 'ListChecks',
+    size: { w: 4, h: 10, minW: 3, minH: 8 },
+    variant: 'default',
+    stackedHeight: 370,
+  },
 };
 
 /**

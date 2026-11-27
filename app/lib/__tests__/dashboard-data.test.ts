@@ -4,12 +4,14 @@ import type { QuotationStatus } from '#shared/types';
 import {
   DASHBOARD_ATTENTION,
   DASHBOARD_ATTENTION_KEYS,
+  QUOTATION_STATUS_SLICES,
   attentionTileKey,
   calendarDaysUntil,
   companyInitials,
   expiringQuotations,
   failedExecutions,
   quotationRequests,
+  quotationStatusSummary,
   recentQuotations,
 } from '../dashboard-data';
 
@@ -199,6 +201,120 @@ describe('recentQuotations', () => {
     ];
     recentQuotations(quotations);
     expect(quotations[0]!._id).toBe('old');
+  });
+});
+
+describe('quotationStatusSummary', () => {
+  const quotations = (...statuses: QuotationStatus[]) =>
+    statuses.map((status) => ({ status }));
+  const counts = (statuses: QuotationStatus[]) =>
+    Object.fromEntries(
+      quotationStatusSummary(quotations(...statuses)).slices.map((s) => [
+        s.key,
+        s.count,
+      ]),
+    );
+
+  it('counts accepted, confirmed and finalized as accepted', () => {
+    expect(
+      counts(['accepted', 'confirmed', 'finalized', 'pending', 'requested']),
+    ).toEqual({
+      requested: 1,
+      pending: 1,
+      accepted: 3,
+      expired: 0,
+      rejected: 0,
+    });
+  });
+
+  it('leaves out quotations not sent yet and statuses no slice counts', () => {
+    const summary = quotationStatusSummary(
+      quotations('draft', 'requestDraft', 'revised', 'pending', 'expired'),
+    );
+    expect(summary.total).toBe(2);
+    expect(summary.slices.map((s) => s.count)).toEqual([0, 1, 0, 1, 0]);
+  });
+
+  it('links each slice to the statuses it counts', () => {
+    expect(
+      Object.fromEntries(
+        QUOTATION_STATUS_SLICES.map((s) => [s.key, s.statuses]),
+      ),
+    ).toEqual({
+      requested: ['requested'],
+      pending: ['pending'],
+      accepted: ['accepted', 'confirmed', 'finalized'],
+      expired: ['expired'],
+      rejected: ['rejected'],
+      canceled: ['canceled'],
+    });
+  });
+
+  it("leaves out a status it doesn't know", () => {
+    // As the API sends it: untyped JSON
+    const payload = JSON.parse(
+      '[{ "status": "archived" }, { "status": "constructor" }]',
+    );
+    expect(quotationStatusSummary(payload).total).toBe(0);
+  });
+
+  it('shows canceled only when there are any', () => {
+    const keys = (statuses: QuotationStatus[]) =>
+      quotationStatusSummary(quotations(...statuses)).slices.map((s) => s.key);
+    expect(keys(['pending'])).toEqual([
+      'requested',
+      'pending',
+      'accepted',
+      'expired',
+      'rejected',
+    ]);
+    expect(keys(['pending', 'canceled'])).toEqual([
+      'requested',
+      'pending',
+      'accepted',
+      'expired',
+      'rejected',
+      'canceled',
+    ]);
+  });
+
+  it('gives each slice its share of every sent quotation', () => {
+    const { slices } = quotationStatusSummary(
+      quotations('pending', 'pending', 'pending', 'accepted'),
+    );
+    const share = (key: string) => slices.find((s) => s.key === key)?.share;
+    expect(share('pending')).toBe(0.75);
+    expect(share('accepted')).toBe(0.25);
+    expect(share('rejected')).toBe(0);
+  });
+
+  it('works out the win rate from answered quotations only', () => {
+    const { winRate } = quotationStatusSummary(
+      quotations('accepted', 'finalized', 'confirmed', 'rejected', 'pending'),
+    );
+    expect(winRate).toBe(0.75);
+  });
+
+  it('works out expired without answer of every sent quotation', () => {
+    const { expiredRate } = quotationStatusSummary(
+      quotations('expired', 'requested', 'pending', 'accepted', 'draft'),
+    );
+    expect(expiredRate).toBe(0.25);
+  });
+
+  it('has no rate when there is nothing to divide by', () => {
+    expect(quotationStatusSummary([])).toMatchObject({
+      total: 0,
+      winRate: null,
+      expiredRate: null,
+    });
+    expect(
+      quotationStatusSummary(quotations('pending', 'expired')).winRate,
+    ).toBeNull();
+    expect(quotationStatusSummary(quotations('draft')).expiredRate).toBeNull();
+    expect(quotationStatusSummary([]).slices.every((s) => s.share === 0)).toBe(
+      true,
+    );
   });
 });
 
