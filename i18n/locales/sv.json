@@ -1041,6 +1041,14 @@
         "title": "Senast uppladdade filer",
         "description": "Filer som lagts till i mediebiblioteket",
         "added": "Tillagd"
+      },
+      "quotation_status": {
+        "title": "Offerter per status",
+        "description": "Alla offerter efter nuvarande status",
+        "total": "@.lower:quotation",
+        "win_rate": "Vinstandel",
+        "win_rate_note": "Accepterade av alla besvarade",
+        "expired_rate": "Utgångna utan svar"
       }
     },
     "attention": {

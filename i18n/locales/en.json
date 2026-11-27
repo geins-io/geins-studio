@@ -1041,6 +1041,14 @@
         "title": "Recently uploaded assets",
         "description": "Files added to the asset library",
         "added": "Added"
+      },
+      "quotation_status": {
+        "title": "Quotations by status",
+        "description": "All quotations by their current status",
+        "total": "@.lower:quotation",
+        "win_rate": "Win rate",
+        "win_rate_note": "Accepted of all answered",
+        "expired_rate": "Expired without answer"
       }
     },
     "attention": {

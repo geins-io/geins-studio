@@ -58,6 +58,14 @@ export default createConfigForNuxt()
     },
   })
   .append({
+    // shadcn CLI output, kept as upstream writes it (the chart helpers type
+    // Unovis payloads as `any`)
+    files: ['app/components/ui/**'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  })
+  .append({
     files: ['shared/**/*.ts'],
     rules: {
       'no-restricted-imports': [
