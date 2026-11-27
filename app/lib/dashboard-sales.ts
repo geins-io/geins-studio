@@ -24,6 +24,32 @@ export function salesChartKind(
   return config?.kind === 'bar' ? 'bar' : 'line';
 }
 
+export type SalesSplit = 'total' | 'channel';
+
+/** Whether a Company sales widget splits by channel, saved in its `config.split` */
+export function salesSplit(config?: Record<string, unknown>): SalesSplit {
+  return config?.split === 'channel' ? 'channel' : 'total';
+}
+
+/**
+ * Channel colours for a split chart, in order: status tones that stay apart
+ * for five or so channels, then the rest of the palette. Theme tokens only.
+ */
+export const SALES_CHANNEL_COLORS = [
+  'var(--tone-success)',
+  'var(--tone-info)',
+  'var(--tone-warning)',
+  'var(--tone-purple)',
+  'var(--tone-pink)',
+  'var(--tone-indigo)',
+  'var(--tone-teal)',
+  'var(--tone-slate)',
+];
+
+export function salesChannelColor(index: number): string {
+  return SALES_CHANNEL_COLORS[index % SALES_CHANNEL_COLORS.length]!;
+}
+
 /** A custom period longer than this many days is shown per month */
 export const SALES_MONTHS_AFTER_DAYS = 92;
 
@@ -168,11 +194,15 @@ export function filterSalesOrders<T extends SalesOrder>(
   });
 }
 
-/** One step's Demand: the number of orders and their value ex. VAT */
+/**
+ * One step's Demand: the number of orders and their value ex. VAT, in total
+ * and per channel id (the parts add up to `value`).
+ */
 export interface SalesPoint {
   start: Date;
   orders: number;
   value: number;
+  channels: Record<string, number>;
 }
 
 /** Index of the bucket `time` falls in, or -1 outside them all */
@@ -194,19 +224,43 @@ export function bucketSales(
   orders: readonly SalesOrder[],
   buckets: SalesBucket[],
 ): SalesPoint[] {
-  const points = buckets.map((bucket) => ({
+  const points: SalesPoint[] = buckets.map((bucket) => ({
     start: bucket.start,
     orders: 0,
     value: 0,
+    channels: {},
   }));
   for (const order of orders) {
     const index = bucketIndex(buckets, new Date(order.dateCreated).getTime());
     const point = points[index];
     if (!point) continue;
+    const value = order.sumExVat || 0;
+    const channel = String(order.channel);
     point.orders++;
-    point.value += order.sumExVat || 0;
+    point.value += value;
+    point.channels[channel] = (point.channels[channel] ?? 0) + value;
   }
   return points;
+}
+
+/**
+ * The channels a split chart shows, in order: the channels in scope (even
+ * without orders), then any other channel an order is in, e.g. one no longer
+ * on the account, so the parts always add up to the total.
+ */
+export function salesChannelIds(
+  orders: readonly SalesOrder[],
+  scopeIds: readonly string[],
+): string[] {
+  const ids = [...scopeIds];
+  const known = new Set(ids);
+  for (const order of orders) {
+    const id = String(order.channel);
+    if (known.has(id)) continue;
+    known.add(id);
+    ids.push(id);
+  }
+  return ids;
 }
 
 /** The key numbers: orders, order value, average order value, companies ordering */

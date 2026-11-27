@@ -13,7 +13,7 @@ It is built in the long-lived `feat/dashboards` branch and merges into `next` on
 
 ## Key concepts
 
-**Widget registry** — `DASHBOARD_WIDGETS` (`app/lib/dashboard.ts`) holds one definition per `DashboardWidgetType`: title and description i18n keys, group (for the Add widget panel), Lucide icon, default and minimum size in grid units, body variant, stacked height. A widget can also have header `modes` (e.g. Demand / Revenue): a toggle in its header, the description per mode, the pick saved in its `config.mode`; a mode can be shown disabled with a reason. A widget is a component in `app/components/dashboard/widget/` that renders its own [`DashboardWidget`](/components/dashboard/DashboardWidget.md) frame; [`DashboardBoard`](/components/dashboard/DashboardBoard.md) maps types to components.
+**Widget registry** — `DASHBOARD_WIDGETS` (`app/lib/dashboard.ts`) holds one definition per `DashboardWidgetType`: title and description i18n keys, group (for the Add widget panel), Lucide icon, default and minimum size in grid units, body variant, stacked height. A widget can also have header `modes` (e.g. Demand / Revenue): a toggle in its header, the description per mode, the pick saved in its `config.mode`; a mode can be shown disabled with a reason. And it can have an `info` explanation: an ⓘ button in its header opening a narrow panel with the widget's `info` slot. A widget is a component in `app/components/dashboard/widget/` that renders its own [`DashboardWidget`](/components/dashboard/DashboardWidget.md) frame; [`DashboardBoard`](/components/dashboard/DashboardBoard.md) maps types to components.
 
 **Board** — `items` (widget instances: `i`, `type`, optional `config`) plus `layout` (`i`, `x`, `y`, `w`, `h`). An instance id is `{type}__{n}`, so the same widget can be on a board twice with different settings. [`useDashboard`](/composables/useDashboard.md) holds the board; `defaultDashboardBoard()` is where a user starts.
 
@@ -84,6 +84,8 @@ The Company sales chart shows **Demand**: company orders counted on the day they
 - **Steps**: per hour for one day (Today, Yesterday, a one-day custom period), per month for YTD and for custom periods over 92 days, per day otherwise. A period that's still running stops at the current hour or day; there are no empty steps in the future.
 - **Key numbers**: Orders (count), Order value (sum of `sumExVat`: ex. VAT, after discounts), Average order value (value ÷ orders), Companies ordering (distinct `wholesaleAccountId`).
 - **Compared with**: Today with yesterday at this time; This week, This month and YTD with the week, month or year before up to the same point ("at this time"; a shorter month stops at its last day); Yesterday with the day before; Last 7 / 30 days and Custom with the same number of days right before, cut at this time while the period is still running. The change is a percentage, Companies ordering a difference; nothing to compare with shows `—`.
+- **By channel**: the same Order value split by each order's real `channel`, the parts adding up to the total. It shows the channels in scope (the picked ones, else all, even those without orders) and any other channel an order is in, e.g. one no longer on the account.
+- **Demand and revenue**: the widget's ⓘ explains both, with an example and what Order value, Revenue and Refunds mean.
 
 No refunds, cost or margin (see below).
 

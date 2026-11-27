@@ -3,13 +3,17 @@ import { describe, it, expect } from 'vitest';
 import type { DashboardPeriod, DashboardPeriodPreset } from '#shared/types';
 import { presetRange } from '../dashboard';
 import {
+  SALES_CHANNEL_COLORS,
   bucketSales,
   filterSalesOrders,
+  salesChannelColor,
+  salesChannelIds,
   previousSalesRange,
   salesBuckets,
   salesChange,
   salesGranularity,
   salesRange,
+  salesSplit,
   salesTotals,
   type SalesOrder,
 } from '../dashboard-sales';
@@ -346,5 +350,62 @@ describe('salesChange', () => {
   it('is null without a previous value', () => {
     expect(salesChange(5, 0)).toBeNull();
     expect(salesChange(0, 0)).toBeNull();
+  });
+});
+
+describe('splitting by channel', () => {
+  const buckets = salesBuckets(salesRange(preset('this_week'), NOW), 'day');
+  const orders = [
+    order(new Date(2026, 10, 23, 9), { channel: '1', sumExVat: 100 }),
+    order(new Date(2026, 10, 23, 10), { channel: '2', sumExVat: 50 }),
+    order(new Date(2026, 10, 23, 11), { channel: '1', sumExVat: 25 }),
+    order(new Date(2026, 10, 25, 8), { channel: '2', sumExVat: 70 }),
+  ];
+
+  it('sums each step per channel, adding up to the total', () => {
+    const points = bucketSales(orders, buckets);
+    expect(points[0]!.channels).toEqual({ '1': 125, '2': 50 });
+    expect(points[1]!.channels).toEqual({});
+    expect(points[2]!.channels).toEqual({ '2': 70 });
+    for (const point of points) {
+      const parts = Object.values(point.channels).reduce((n, v) => n + v, 0);
+      expect(parts).toBe(point.value);
+    }
+  });
+
+  it('keeps the channels in scope, with or without orders, in their order', () => {
+    expect(salesChannelIds(orders, ['3', '2', '1'])).toEqual(['3', '2', '1']);
+  });
+
+  it('adds channels an order is in that the scope does not list', () => {
+    // All channels picked: an order in a channel the account no longer has
+    const withGone = [...orders, order(NOW, { channel: '9' })];
+    expect(salesChannelIds(withGone, ['1', '2'])).toEqual(['1', '2', '9']);
+  });
+
+  it('splits only the picked channels once the orders are filtered', () => {
+    const picked = filterSalesOrders(orders, {
+      ...salesRange(preset('this_week'), NOW),
+      channelIds: ['2'],
+      currency: 'SEK',
+    });
+    const points = bucketSales(picked, buckets);
+    expect(salesChannelIds(picked, ['2'])).toEqual(['2']);
+    expect(points.map((p) => p.channels['2'] ?? 0)).toEqual([50, 0, 70]);
+    expect(points.every((p) => !('1' in p.channels))).toBe(true);
+  });
+
+  it('cycles the channel colours', () => {
+    expect(salesChannelColor(0)).toBe('var(--tone-success)');
+    expect(salesChannelColor(SALES_CHANNEL_COLORS.length)).toBe(
+      salesChannelColor(0),
+    );
+    expect(new Set(SALES_CHANNEL_COLORS.slice(0, 5)).size).toBe(5);
+  });
+
+  it('reads the saved split, total by default', () => {
+    expect(salesSplit()).toBe('total');
+    expect(salesSplit({ split: 'channel' })).toBe('channel');
+    expect(salesSplit({ split: 'market' })).toBe('total');
   });
 });
