@@ -1,10 +1,15 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest';
-import type { DashboardBoard, DashboardLayoutItem } from '#shared/types';
+import type {
+  DashboardBoard,
+  DashboardLayoutItem,
+  DashboardWidgetType,
+} from '#shared/types';
 import {
   DASHBOARD_GRID_COLUMNS,
   DASHBOARD_GRID_GAP,
   DASHBOARD_ROW_HEIGHT,
+  DASHBOARD_TEMPLATES,
   DASHBOARD_WIDGETS,
   DEFAULT_QUICK_ACCESS_SHORTCUTS,
   QUICK_ACCESS_SHORTCUTS,
@@ -21,6 +26,7 @@ import {
   greetingPeriod,
   isDashboardWidgetType,
   nextDashboardWidgetId,
+  packDashboardBoard,
   parseStoredDashboards,
   pixelsToRows,
   quickAccessColumns,
@@ -116,6 +122,122 @@ describe('defaultDashboardBoard', () => {
   it('returns a fresh board each call', () => {
     expect(defaultDashboardBoard()).not.toBe(board);
     expect(defaultDashboardBoard().layout[0]).not.toBe(board.layout[0]);
+  });
+});
+
+describe('packDashboardBoard', () => {
+  const positionsOf = (board: DashboardBoard) =>
+    board.layout.map(({ x, y, w, h }) => [x, y, w, h]);
+
+  it('places widgets left to right at their default sizes, wrapping when the next doesn’t fit', () => {
+    const board = packDashboardBoard([
+      'queue-quotation-requests',
+      'queue-expiring-quotations',
+      'queue-failed-runs',
+      'list-recent-assets',
+    ]);
+    expect(positionsOf(board)).toEqual([
+      [0, 0, 4, 8],
+      [4, 0, 4, 8],
+      [8, 0, 4, 8],
+      [0, 8, 4, 10],
+    ]);
+  });
+
+  it('wraps under the tallest widget in the row, then compacts as the grid does', () => {
+    const board = packDashboardBoard([
+      'needs-attention',
+      'queue-quotation-requests',
+      'list-recent-quotations',
+      'queue-failed-runs',
+      'list-recent-assets',
+    ]);
+    // The row under Needs attention is 10 tall; the next widget moves up
+    // under the 8-tall queue above it
+    expect(positionsOf(board)).toEqual([
+      [0, 0, 12, 5],
+      [0, 5, 4, 8],
+      [4, 5, 4, 10],
+      [8, 5, 4, 8],
+      [0, 13, 4, 10],
+    ]);
+  });
+
+  it('gives the same widget twice its own id', () => {
+    const board = packDashboardBoard(['quick-access', 'quick-access']);
+    expect(board.items).toEqual([
+      { i: 'quick-access__0', type: 'quick-access' },
+      { i: 'quick-access__1', type: 'quick-access' },
+    ]);
+    expect(board.layout.map((position) => position.i)).toEqual([
+      'quick-access__0',
+      'quick-access__1',
+    ]);
+  });
+
+  it('keeps every board inside the grid, without overlaps or shared ids', () => {
+    const types = Object.keys(DASHBOARD_WIDGETS) as DashboardWidgetType[];
+    const boards = [
+      packDashboardBoard(types),
+      packDashboardBoard([...types].reverse()),
+      ...DASHBOARD_TEMPLATES.map((template) =>
+        packDashboardBoard(template.types),
+      ),
+    ];
+    for (const { items, layout } of boards) {
+      const ids = items.map((item) => item.i);
+      expect(new Set(ids).size).toBe(ids.length);
+      expect(layout.map((position) => position.i)).toEqual(ids);
+      for (const position of layout) {
+        expect(position.x).toBeGreaterThanOrEqual(0);
+        expect(position.x + position.w).toBeLessThanOrEqual(
+          DASHBOARD_GRID_COLUMNS,
+        );
+      }
+      for (let a = 0; a < layout.length; a++) {
+        for (let b = a + 1; b < layout.length; b++) {
+          expect(overlaps(layout[a]!, layout[b]!)).toBe(false);
+        }
+      }
+    }
+  });
+
+  it('is empty without widgets', () => {
+    expect(packDashboardBoard([])).toEqual({ items: [], layout: [] });
+  });
+});
+
+describe('DASHBOARD_TEMPLATES', () => {
+  it('has unique ids and only widgets the registry knows', () => {
+    const ids = DASHBOARD_TEMPLATES.map((template) => template.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const template of DASHBOARD_TEMPLATES) {
+      expect(template.types.length).toBeGreaterThan(0);
+      expect(template.types.every(isDashboardWidgetType)).toBe(true);
+    }
+  });
+
+  it('puts the administration widgets side by side, as in the prototype', () => {
+    const admin = DASHBOARD_TEMPLATES.find((t) => t.id === 'admin')!;
+    const board = packDashboardBoard(admin.types);
+    expect(board.layout.map(({ i, x, y }) => [i.split('__')[0], x, y])).toEqual(
+      [
+        ['quick-access', 0, 0],
+        ['queue-failed-runs', 4, 0],
+        ['list-recent-assets', 8, 0],
+      ],
+    );
+  });
+
+  it('starts the quotations and orders template with Needs attention across the top', () => {
+    const sales = DASHBOARD_TEMPLATES.find((t) => t.id === 'sales')!;
+    const [first] = packDashboardBoard(sales.types).layout;
+    expect(first).toMatchObject({
+      i: 'needs-attention__0',
+      x: 0,
+      y: 0,
+      w: DASHBOARD_GRID_COLUMNS,
+    });
   });
 });
 

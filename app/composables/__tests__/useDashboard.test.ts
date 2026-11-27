@@ -3,7 +3,12 @@ import { mockNuxtImport } from '@nuxt/test-utils/runtime';
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { computed, nextTick, reactive } from 'vue';
 import type { DashboardBoard } from '#shared/types';
-import { createDashboardBoard, defaultDashboardBoard } from '@/lib/dashboard';
+import {
+  DASHBOARD_TEMPLATES,
+  createDashboardBoard,
+  defaultDashboardBoard,
+  packDashboardBoard,
+} from '@/lib/dashboard';
 import { useDashboard } from '../dashboard/useDashboard';
 
 const storage = vi.hoisted(() => ({
@@ -316,5 +321,65 @@ describe('useDashboard default board', () => {
     dashboard.doneEdit();
     expect(storage.state!.saved).toHaveLength(0);
     expect(storage.state!.cleared).toBe(1);
+  });
+});
+
+describe('useDashboard templates', () => {
+  const KEY = 'geins-dashboard-acme-u1';
+  const admin = DASHBOARD_TEMPLATES.find((t) => t.id === 'admin')!;
+
+  it('fills the empty board with a template and saves it', () => {
+    storage.state!.key = KEY;
+    storage.state!.stored = { items: [], layout: [] };
+    const dashboard = useDashboard();
+
+    dashboard.applyTemplate(admin);
+
+    const board = packDashboardBoard(admin.types);
+    expect(snapshotOf(dashboard)).toEqual(board);
+    expect(dashboard.editing.value).toBe(false);
+    expect(dashboard.isDefault.value).toBe(false);
+    expect(storage.state!.saved).toEqual([board]);
+    expect(storage.state!.cleared).toBe(0);
+  });
+
+  it('loads the saved template board again after a reload', () => {
+    storage.state!.key = KEY;
+    storage.state!.stored = { items: [], layout: [] };
+    useDashboard().applyTemplate(admin);
+
+    storage.state!.stored = storage.state!.saved.at(-1)!;
+    const reloaded = useDashboard();
+
+    expect(snapshotOf(reloaded)).toEqual(packDashboardBoard(admin.types));
+  });
+
+  it('applies a template inside the edit session: cancel takes it back', () => {
+    storage.state!.key = KEY;
+    storage.state!.stored = { items: [], layout: [] };
+    const dashboard = useDashboard();
+
+    dashboard.startEdit();
+    dashboard.applyTemplate(admin);
+    expect(dashboard.items.value).toHaveLength(admin.types.length);
+    expect(storage.state!.saved).toHaveLength(0);
+
+    dashboard.cancelEdit();
+
+    expect(dashboard.items.value).toHaveLength(0);
+    expect(storage.state!.saved).toHaveLength(0);
+  });
+
+  it('saves a template applied inside the edit session on done', () => {
+    storage.state!.key = KEY;
+    storage.state!.stored = { items: [], layout: [] };
+    const dashboard = useDashboard();
+
+    dashboard.startEdit();
+    dashboard.applyTemplate(admin);
+    dashboard.doneEdit();
+
+    expect(storage.state!.saved).toEqual([packDashboardBoard(admin.types)]);
+    expect(storage.state!.cleared).toBe(0);
   });
 });
