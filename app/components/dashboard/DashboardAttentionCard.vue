@@ -90,7 +90,7 @@ const linked = computed(() => !props.entry.error && !board?.editing.value);
         </ButtonIcon>
         <span
           v-else
-          class="text-link inline-flex items-center gap-1 text-sm font-medium whitespace-nowrap"
+          class="text-link inline-flex items-center gap-1 text-sm font-semibold whitespace-nowrap"
         >
           {{ texts.link }}
           <LucideArrowUpRight
@@ -142,7 +142,7 @@ const linked = computed(() => !props.entry.error && !board?.editing.value);
       </ButtonIcon>
       <span
         v-else
-        class="text-link hidden items-center gap-1 text-sm font-medium whitespace-nowrap sm:inline-flex"
+        class="text-link hidden items-center gap-1 text-sm font-semibold whitespace-nowrap sm:inline-flex"
       >
         {{ texts.link }}
         <LucideArrowUpRight

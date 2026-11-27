@@ -61,20 +61,22 @@ function save() {
         <DashboardWidgetQuickAccessPicker v-model="draft" />
       </DashboardWidgetSettings>
     </template>
-    <p v-if="!shortcuts.length" class="text-muted-foreground text-sm">
+    <p v-if="!shortcuts.length" class="text-muted-foreground my-auto text-sm">
       {{ t('dashboards.widgets.quick_access.empty') }}
     </p>
+    <!-- The rows share the height left under the whole grid rows, so the
+         space above and below the tiles stays even -->
     <div
       v-else
       ref="grid"
-      class="grid gap-2"
+      class="grid grow auto-rows-[minmax(38px,1fr)] gap-2"
       :style="{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }"
     >
       <NuxtLink
         v-for="shortcut in shortcuts"
         :key="shortcut.id"
         :to="shortcut.href"
-        class="bg-background hover:border-foreground/30 flex h-[38px] min-w-0 items-center gap-2 rounded-md border px-3 transition-colors"
+        class="bg-background hover:border-foreground/30 flex min-w-0 items-center gap-2 rounded-md border px-3 transition-colors"
       >
         <component
           :is="shortcut.iconComponent"

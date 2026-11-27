@@ -16,8 +16,9 @@ const { entries, total } = useDashboardAttention(DASHBOARD_ATTENTION_KEYS);
     :description="t('dashboards.widgets.needs_attention.header_description')"
     :badge="total"
   >
+    <!-- The rows share the height left under the whole grid rows -->
     <div
-      class="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] content-start gap-3"
+      class="grid grow auto-rows-fr grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-3"
     >
       <DashboardAttentionCard
         v-for="entry in entries"
