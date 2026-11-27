@@ -13,7 +13,7 @@ It is built in the long-lived `feat/dashboards` branch and merges into `next` on
 
 ## Key concepts
 
-**Widget registry** — `DASHBOARD_WIDGETS` (`app/lib/dashboard.ts`) holds one definition per `DashboardWidgetType`: title and description i18n keys, group (for the Add widget panel), Lucide icon, default and minimum size in grid units, body variant, stacked height. A widget is a component in `app/components/dashboard/widget/` that renders its own [`DashboardWidget`](/components/dashboard/DashboardWidget.md) frame; [`DashboardBoard`](/components/dashboard/DashboardBoard.md) maps types to components.
+**Widget registry** — `DASHBOARD_WIDGETS` (`app/lib/dashboard.ts`) holds one definition per `DashboardWidgetType`: title and description i18n keys, group (for the Add widget panel), Lucide icon, default and minimum size in grid units, body variant, stacked height. A widget can also have header `modes` (e.g. Demand / Revenue): a toggle in its header, the description per mode, the pick saved in its `config.mode`; a mode can be shown disabled with a reason. A widget is a component in `app/components/dashboard/widget/` that renders its own [`DashboardWidget`](/components/dashboard/DashboardWidget.md) frame; [`DashboardBoard`](/components/dashboard/DashboardBoard.md) maps types to components.
 
 **Board** — `items` (widget instances: `i`, `type`, optional `config`) plus `layout` (`i`, `x`, `y`, `w`, `h`). An instance id is `{type}__{n}`, so the same widget can be on a board twice with different settings. [`useDashboard`](/composables/useDashboard.md) holds the board; `defaultDashboardBoard()` is where a user starts.
 
@@ -53,17 +53,18 @@ y27 └───────────────────┴────�
 
 ## Widgets and their data
 
-| Widget                      | Reads                                                                                           | Filters          |
-| --------------------------- | ----------------------------------------------------------------------------------------------- | ---------------- |
-| Quick access                | Nothing: links built from the entity registry                                                   | —                |
-| Latest company orders       | `POST order/query` (all wholesale orders, no pagination) + `wholesale/account` list             | Channel          |
-| Needs attention             | Quotation requests, expiring quotations and failed workflow runs (below)                        | —                |
-| Single numbers (×3)         | One of the Needs attention numbers each                                                         | —                |
-| Open quotation requests     | Quotation requests, newest first (`useDashboardQuotations`)                                     | Channel / Market |
-| Quotations expiring soon    | Expiring quotations, soonest first (`useDashboardQuotations`)                                   | Channel / Market |
-| Latest failed workflow runs | Failed runs, newest first (`useDashboardExecutions`)                                            | —                |
-| Latest quotations           | The 10 last changed quotations (`useDashboardQuotations`)                                       | Channel / Market |
-| Recently uploaded assets    | `POST media/assets/query` (10 newest live assets by `createdAt`) + `user` list (uploader names) | —                |
+| Widget                      | Reads                                                                                                            | Filters                              |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| Quick access                | Nothing: links built from the entity registry                                                                    | —                                    |
+| Company sales               | All wholesale orders (`useDashboardCompanyOrders`), totalled in the browser (below)                              | Period / Channel / Market (currency) |
+| Latest company orders       | All wholesale orders (`useDashboardCompanyOrders`: `POST order/query`, no pagination) + `wholesale/account` list | Channel                              |
+| Needs attention             | Quotation requests, expiring quotations and failed workflow runs (below)                                         | —                                    |
+| Single numbers (×3)         | One of the Needs attention numbers each                                                                          | —                                    |
+| Open quotation requests     | Quotation requests, newest first (`useDashboardQuotations`)                                                      | Channel / Market                     |
+| Quotations expiring soon    | Expiring quotations, soonest first (`useDashboardQuotations`)                                                    | Channel / Market                     |
+| Latest failed workflow runs | Failed runs, newest first (`useDashboardExecutions`)                                                             | —                                    |
+| Latest quotations           | The 10 last changed quotations (`useDashboardQuotations`)                                                        | Channel / Market                     |
+| Recently uploaded assets    | `POST media/assets/query` (10 newest live assets by `createdAt`) + `user` list (uploader names)                  | —                                    |
 
 **Needs attention** counts what needs doing right now, so it ignores the period and Channel / Market. Its definitions live in `app/lib/dashboard-data.ts` (pure, tested) and every widget reads them through one shared fetch per source:
 
@@ -74,6 +75,17 @@ y27 └───────────────────┴────�
 Each number links to its list with the filter in the query (`?status=requested`, `?status=pending&expiring=7d`, `?status=failed&period=24h`), from `DASHBOARD_ATTENTION`. The quotations list reads `status` / `expiring` and the workflow runs list `status` once their link filters land; until then those links open the list unfiltered (the runs list already reads `period`).
 
 The **list widgets** read the same two fetches, so a board with Needs attention and every list makes one quotations request and one workflow runs request. Each list shows 10 rows (`DASHBOARD_LIST_LIMIT`) and a **View all** link to the same filtered list. Queues are [`DashboardQueue`](/components/dashboard/DashboardQueue.md)s; Latest quotations is a compact `TableView`.
+
+## Company sales
+
+The Company sales chart shows **Demand**: company orders counted on the day they were placed (`dateCreated`, local time), whatever their status, so cancelled orders count too. **Revenue** (by delivery date) is in the header toggle but disabled until orders have delivery dates (Phase 4). Its definitions live in `app/lib/dashboard-sales.ts` (pure, tested), over the one shared order fetch ([`useDashboardCompanyOrders`](/composables/useDashboardCompanyOrders.md)) that Latest company orders reads too:
+
+- **Which orders**: wholesale orders placed in the period up to now, in the picked channels (an order's `channel`), and in the dashboard currency. Orders have no market, so the Market filter only picks the currency; orders in other currencies are left out, since sums can't mix them.
+- **Steps**: per hour for one day (Today, Yesterday, a one-day custom period), per month for YTD and for custom periods over 92 days, per day otherwise. A period that's still running stops at the current hour or day; there are no empty steps in the future.
+- **Key numbers**: Orders (count), Order value (sum of `sumExVat`: ex. VAT, after discounts), Average order value (value ÷ orders), Companies ordering (distinct `wholesaleAccountId`).
+- **Compared with**: Today with yesterday at this time; This week, This month and YTD with the week, month or year before up to the same point ("at this time"; a shorter month stops at its last day); Yesterday with the day before; Last 7 / 30 days and Custom with the same number of days right before, cut at this time while the period is still running. The change is a percentage, Companies ordering a difference; nothing to compare with shows `—`.
+
+No refunds, cost or margin (see below).
 
 ## Known data gaps
 

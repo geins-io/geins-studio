@@ -1010,6 +1010,10 @@
         "choose_description": "Välj vilka genvägar som ska visas.",
         "empty": "Inga genvägar valda än."
       },
+      "company_sales": {
+        "title": "Företagsförsäljning",
+        "description": "Efterfrågan eller intäkter över tid, från företagsordrar"
+      },
       "company_orders": {
         "title": "Senaste företagsordrar",
         "description": "De senaste ordrarna från köpare kopplade till ett företag"
@@ -1041,6 +1045,30 @@
         "title": "Senast uppladdade filer",
         "description": "Filer som lagts till i mediebiblioteket",
         "added": "Tillagd"
+      }
+    },
+    "sales": {
+      "demand": "Efterfrågan",
+      "revenue": "Intäkter",
+      "demand_description": "Efterfrågan: per orderdatum, inklusive makulerade ordrar",
+      "revenue_description": "Intäkter: per leveransdatum",
+      "revenue_unavailable": "Intäkter kräver leveransdatum på ordrar, som Studio inte har ännu",
+      "order_value": "Ordervärde",
+      "average_order_value": "Genomsnittligt ordervärde",
+      "companies_ordering": "Beställande företag",
+      "chart_type": "Diagramtyp",
+      "line": "Linje",
+      "bars": "Staplar",
+      "empty_description": "Inga företagsordrar lades under den här perioden.",
+      "vs": {
+        "yesterday_at_this_time": "jmf. med i går vid samma tid",
+        "day_before": "jmf. med dagen innan",
+        "last_week_at_this_time": "jmf. med förra veckan vid samma tid",
+        "last_month_at_this_time": "jmf. med förra månaden vid samma tid",
+        "last_year_at_this_time": "jmf. med förra året vid samma tid",
+        "previous_7_days": "jmf. med föregående 7 dagar",
+        "previous_30_days": "jmf. med föregående 30 dagar",
+        "previous_period": "jmf. med föregående period"
       }
     },
     "attention": {

@@ -8,14 +8,16 @@ import type { DashboardWidgetInstance } from '#shared/types';
 import {
   DASHBOARD_BOARD_CONTEXT,
   DASHBOARD_WIDGETS,
+  dashboardWidgetMode,
   pixelsToRows,
 } from '@/lib/dashboard';
 import type { DashboardListLink } from '@/lib/dashboard-data';
 
 /**
  * The frame every dashboard widget renders itself in: a card with a header
- * (title, description, badge, actions) and a body laid out by the widget's
- * variant. Title, description and variant come from the widget registry.
+ * (title, description, badge, mode toggle, actions) and a body laid out by
+ * the widget's variant. Title, description, modes and variant come from the
+ * widget registry; a picked mode is saved in the instance's `config.mode`.
  * While the board is edited, the header is the drag handle and ✕ removes it.
  * A widget registered with `fit` reports the grid rows its content needs.
  */
@@ -35,8 +37,36 @@ const board = inject(DASHBOARD_BOARD_CONTEXT, null);
 const editing = computed(() => board?.editing.value ?? false);
 
 const definition = computed(() => DASHBOARD_WIDGETS[props.instance.type]);
+
+const mode = computed({
+  get: () => dashboardWidgetMode(props.instance) ?? '',
+  set: (key: string) => {
+    if (key === mode.value) return;
+    board?.updateConfig(props.instance.i, {
+      ...props.instance.config,
+      mode: key,
+    });
+  },
+});
+const modeOptions = computed(() =>
+  (definition.value.modes ?? []).map((option) => ({
+    value: option.key,
+    label: t(option.labelKey),
+    disabledReason: option.disabledReasonKey
+      ? t(option.disabledReasonKey)
+      : undefined,
+  })),
+);
+const modeDescriptionKey = computed(
+  () =>
+    definition.value.modes?.find((option) => option.key === mode.value)
+      ?.descriptionKey,
+);
+
 const headerDescription = computed(
-  () => props.description ?? t(definition.value.descriptionKey),
+  () =>
+    props.description ??
+    t(modeDescriptionKey.value ?? definition.value.descriptionKey),
 );
 
 const body = computed(() => {
@@ -155,7 +185,7 @@ watch(fittedRows, (rows) => {
           </p>
         </div>
         <div
-          v-if="$slots.actions || editing || viewAll"
+          v-if="$slots.actions || editing || viewAll || modeOptions.length"
           class="flex shrink-0 items-center gap-1"
         >
           <!-- Hidden while editing: the header is the drag handle then -->
@@ -167,6 +197,12 @@ watch(fittedRows, (rows) => {
             {{ t('dashboards.view_all') }}
             <LucideArrowUpRight class="size-3.5" aria-hidden="true" />
           </NuxtLink>
+          <DashboardToggle
+            v-if="modeOptions.length"
+            v-model="mode"
+            :options="modeOptions"
+            :label="t(definition.titleKey)"
+          />
           <slot name="actions" />
           <DashboardWidgetRemove
             v-if="editing"

@@ -15,6 +15,7 @@ import {
   dashboardBottom,
   dashboardCellAt,
   dashboardStorageKey,
+  dashboardWidgetMode,
   defaultDashboardBoard,
   findUserByRef,
   greetingPeriod,
@@ -491,5 +492,28 @@ describe('findUserByRef', () => {
     expect(findUserByRef('someone@example.com', users)).toBeUndefined();
     expect(findUserByRef('', users)).toBeUndefined();
     expect(findUserByRef(null, users)).toBeUndefined();
+  });
+});
+
+describe('dashboardWidgetMode', () => {
+  const sales = (config?: Record<string, unknown>) => ({
+    i: 'chart-company-orders__0',
+    type: 'chart-company-orders' as const,
+    config,
+  });
+
+  it('is the first enabled mode without a saved one', () => {
+    expect(dashboardWidgetMode(sales())).toBe('demand');
+  });
+
+  it('ignores a saved mode that is disabled or unknown', () => {
+    expect(dashboardWidgetMode(sales({ mode: 'revenue' }))).toBe('demand');
+    expect(dashboardWidgetMode(sales({ mode: 'margin' }))).toBe('demand');
+  });
+
+  it('is undefined for a widget without modes', () => {
+    expect(
+      dashboardWidgetMode({ i: 'quick-access__0', type: 'quick-access' }),
+    ).toBeUndefined();
   });
 });

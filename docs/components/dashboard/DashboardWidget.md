@@ -1,6 +1,12 @@
 # `DashboardWidget`
 
-The frame every dashboard widget renders itself in: a card with a header (title, description, optional badge, actions) and a body. Title, description and variant come from the widget registry (`DASHBOARD_WIDGETS` in `app/lib/dashboard.ts`), looked up by the instance's `type`.
+The frame every dashboard widget renders itself in: a card with a header (title, description, optional badge, mode toggle, actions) and a body. Title, description, modes and variant come from the widget registry (`DASHBOARD_WIDGETS` in `app/lib/dashboard.ts`), looked up by the instance's `type`.
+
+## Header modes
+
+A widget registered with `modes` (`DashboardWidgetMode[]`: `key`, `labelKey`, `descriptionKey`, optional `disabledReasonKey`) gets a [`DashboardToggle`](/components/dashboard/DashboardToggle.md) in its header, before the `actions` slot, e.g. Company sales' **Demand / Revenue**. The header description follows the picked mode (`descriptionKey`) unless the widget passes `description`. A mode with `disabledReasonKey` is shown but can't be picked; its tooltip gives the reason.
+
+The pick is saved in the instance's `config.mode` through the board's `updateConfig`, so the same widget can sit on the board twice in different modes. The widget reads it with `dashboardWidgetMode(instance)`: the saved mode while it exists and is enabled, else the first enabled one.
 
 ## Editing
 
