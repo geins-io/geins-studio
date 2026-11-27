@@ -17,23 +17,23 @@ It is built in the long-lived `feat/dashboards` branch and merges into `next` on
 
 **Board** — `items` (widget instances: `i`, `type`, optional `config`) plus `layout` (`i`, `x`, `y`, `w`, `h`). An instance id is `{type}__{n}`, so the same widget can be on a board twice with different settings. [`useDashboard`](/composables/useDashboard.md) holds the board; `defaultDashboardBoard()` is where a user starts.
 
-**Default board** — What a user sees until they save a board of their own: Needs attention across the top, Quick access the full width under it, then the three queues and the three lists, a third of the width each. Every column is filled from the top to one shared bottom, with no gaps or overlaps, and every widget is at least its minimum size. Quick access sets its own height (see Fitted height), so it spans the full width: a refit moves every widget below it alike. The prototype's charts (Company sales, with Quick access and Quotations by status beside it) arrive in project Phase 3, which grows the default again; a Quick access a third wide there needs another answer to its fitted height, and the default-board test that keeps fitted widgets full width changes with it. A user who saved a board keeps it; one who never changed anything, or whose board is the default again, gets each new default.
+**Default board** — What a user sees until they save a board of their own: Needs attention across the top, Quick access the full width under it, then the three queues and the three lists, a third of the width each. Every column is filled from the top to one shared bottom, with no gaps or overlaps, and every widget is at least its minimum size. Needs attention and Quick access set their own height (see Fitted height), so they span the full width: a refit moves every widget below them alike. The prototype's charts (Company sales, with Quick access and Quotations by status beside it) arrive in project Phase 3, which grows the default again; a Quick access a third wide there needs another answer to its fitted height, and the default-board test that keeps fitted widgets full width changes with it. A user who saved a board keeps it; one who never changed anything, or whose board is the default again, gets each new default.
 
 ```text
 y 0 ┌───────────────────────────────────────────────────────────┐
-    │ Needs attention                                 12×4      │
-y 4 ├───────────────────────────────────────────────────────────┤
+    │ Needs attention (height fits its cards)         12×5      │
+y 5 ├───────────────────────────────────────────────────────────┤
     │ Quick access (height fits its shortcuts)        12×4      │
-y 8 ├───────────────────┬───────────────────┬───────────────────┤
+y 9 ├───────────────────┬───────────────────┬───────────────────┤
     │ Open quotation    │ Quotations        │ Latest failed     │
     │ requests      4×8 │ expiring soon 4×8 │ workflow runs 4×8 │
-y16 ├───────────────────┼───────────────────┼───────────────────┤
+y17 ├───────────────────┼───────────────────┼───────────────────┤
     │ Latest company    │ Latest            │ Recently uploaded │
     │ orders       4×10 │ quotations   4×10 │ assets       4×10 │
-y26 └───────────────────┴───────────────────┴───────────────────┘
+y27 └───────────────────┴───────────────────┴───────────────────┘
 ```
 
-**Saving** — Each user's board is kept in `localStorage`, per user and account (`geins-dashboard-{accountKey}-{userId}`), through [`useDashboardStorage`](/composables/useDashboardStorage.md) only. The saved shape is versioned (`version: 1`) and already holds a list of dashboards (`my-work` for now), so several dashboards and server-side saving (project Phase 5) change that one module. Done saves the board if it changed, but a board that is the default again clears the saved one instead, so the user follows the default as it grows. "The default" means the same widgets, settings and places once compacted, with the current fitted heights (`sameDashboardBoard`): a Quick access fitting a taller height moves the widgets below it, and that isn't a change. A widget's own settings save the whole board as soon as they change, even a board that is otherwise the default: a known limit until server-side saving (Phase 5).
+**Saving** — Each user's board is kept in `localStorage`, per user and account (`geins-dashboard-{accountKey}-{userId}`), through [`useDashboardStorage`](/composables/useDashboardStorage.md) only. The saved shape is versioned (`version: 1`) and already holds a list of dashboards (`my-work` for now), so several dashboards and server-side saving (project Phase 5) change that one module. Done saves the board if it changed, but a board that is the default again clears the saved one instead, so the user follows the default as it grows. "The default" means the same widgets, settings and places once compacted, with the current fitted heights (`sameDashboardBoard`): a fitted widget (Needs attention, Quick access) taking a taller height moves the widgets below it, and that isn't a change. A widget's own settings save the whole board as soon as they change, even a board that is otherwise the default: a known limit until server-side saving (Phase 5).
 
 **Reset to default** — In edit mode, **Reset to default** (before Add widget, regular colour: it's undoable) puts the default board back inside the edit session. Cancel brings the old board back exactly, widget settings included; Done keeps the default and clears the saved board. No confirm dialog, since Cancel undoes it, and it's disabled while the board already is the default. The prototype has no reset; it's how a user on an old saved board gets the growing default back.
 
@@ -45,7 +45,7 @@ y26 └───────────────────┴────�
 
 **Grid** — 12 columns, 28px rows, 16px gaps (`grid-layout-plus`). Below 640px of board width the widgets stack one per row in reading order.
 
-**Fitted height** — A widget registered with `fit` (Quick access) has the height its content needs: the widget frame measures it and reports it in grid rows (`fitWidget`), and the user resizes only its width. The height follows the width and settings, so it isn't saved on its own.
+**Fitted height** — A widget registered with `fit` (Needs attention, Quick access) has the height its content needs: the widget frame measures the content at its natural height and reports it in grid rows (`fitWidget`), and the user resizes only its width. The height follows the width and settings, so it isn't saved on its own. Whole rows leave up to a row's height over; the widget's rows of tiles or cards share it, so the space above and below them stays even.
 
 **Widget settings** — A widget with settings has a sliders button in its header ([`DashboardWidgetSettings`](/components/dashboard/DashboardWidgetSettings.md)) that opens a narrow panel. Settings live in the instance's `config` and save as soon as the panel's Save is clicked, in or outside edit mode.
 

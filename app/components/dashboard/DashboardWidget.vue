@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { unrefElement, useResizeObserver } from '@vueuse/core';
+import {
+  unrefElement,
+  useMutationObserver,
+  useResizeObserver,
+} from '@vueuse/core';
 import type { DashboardWidgetInstance } from '#shared/types';
 import {
   DASHBOARD_BOARD_CONTEXT,
@@ -52,10 +56,9 @@ const handleClass = computed(() =>
   editing.value ? 'dashboard-widget-handle cursor-move select-none' : '',
 );
 
-// Fitting: the body fills what the grid height leaves, and the content inside
-// it keeps its natural height, so card − body + content is the height needed.
-// One observer reads all three at once: separate ones would each see a half-
-// updated layout after a resize and report rows that then undo themselves.
+// Fitting reads card − body + content with the content's fill switched off:
+// measured filled, it would always ask for the rows it already has. One read
+// covers all three, or each would see a half-updated layout after a resize.
 const fits = computed(
   () => !!definition.value.fit && definition.value.variant !== 'bare',
 );
@@ -64,15 +67,38 @@ const bodyEl = useTemplateRef<HTMLElement>('body');
 const contentEl = useTemplateRef<HTMLElement>('content');
 const neededHeight = ref(0);
 
+function measure() {
+  const card = unrefElement(cardEl);
+  const bodyBox = bodyEl.value;
+  const content = contentEl.value;
+  if (!card || !bodyBox || !content) return;
+  content.style.flexGrow = '0';
+  neededHeight.value =
+    card.getBoundingClientRect().height -
+    bodyBox.getBoundingClientRect().height +
+    content.getBoundingClientRect().height;
+  content.style.flexGrow = '';
+}
+
 useResizeObserver(
   () => (fits.value ? [bodyEl.value, contentEl.value] : []),
-  () => {
-    const card = unrefElement(cardEl);
-    if (!card || !bodyEl.value || !contentEl.value) return;
-    neededHeight.value =
-      card.getBoundingClientRect().height -
-      bodyEl.value.getBoundingClientRect().height +
-      contentEl.value.getBoundingClientRect().height;
+  measure,
+);
+// Filled, the content keeps its size when what's in it shrinks (fewer
+// shortcuts, fewer columns), which the resize observer can't see. Measuring's
+// own style toggle on the content doesn't count.
+useMutationObserver(
+  () => (fits.value ? contentEl.value : null),
+  (records) => {
+    const own = (record: MutationRecord) =>
+      record.type === 'attributes' && record.target === contentEl.value;
+    if (records.some((record) => !own(record))) measure();
+  },
+  {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['style'],
   },
 );
 
@@ -117,7 +143,7 @@ watch(fittedRows, (rows) => {
         />
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2">
-            <h2 class="truncate text-sm font-medium">
+            <h2 class="truncate text-sm font-semibold">
               {{ t(definition.titleKey) }}
             </h2>
             <Badge v-if="badge != null" variant="danger">
@@ -136,7 +162,7 @@ watch(fittedRows, (rows) => {
           <NuxtLink
             v-if="viewAll && !editing"
             :to="viewAll"
-            class="text-link inline-flex items-center gap-1 text-xs font-medium whitespace-nowrap hover:underline"
+            class="text-link inline-flex items-center gap-1 text-xs font-semibold whitespace-nowrap hover:underline"
           >
             {{ t('dashboards.view_all') }}
             <LucideArrowUpRight class="size-3.5" aria-hidden="true" />
@@ -148,8 +174,11 @@ watch(fittedRows, (rows) => {
           />
         </div>
       </div>
-      <div v-if="fits" ref="body" :class="body.base">
-        <div ref="content" :class="body.padding">
+      <div v-if="fits" ref="body" :class="cn(body.base, 'flex flex-col')">
+        <div
+          ref="content"
+          :class="cn('flex shrink-0 grow flex-col', body.padding)"
+        >
           <slot />
         </div>
       </div>

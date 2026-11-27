@@ -19,7 +19,9 @@ The registry's `variant` decides the body:
 
 ## Fitting the content
 
-A widget registered with `fit: true` sizes its height to its content: its body holds the content at its natural height, and one `ResizeObserver` over body and content reads card, body and content together (card − body + content is the height needed). That height in grid rows (`pixelsToRows`, at least the registry `minH`) goes to the board's `fit(i, h)` whenever it changes, e.g. when the width changes the number of columns or the settings change what's shown. Works for the `default` and `flush` variants.
+A widget registered with `fit: true` sizes its height to its content. Its content fills the body (a flex column), so the content's root can take `grow` and share out what's left under the whole grid rows: Quick access and Needs attention give their rows `1fr`, so the space above and below the tiles stays even instead of collecting at the bottom.
+
+The rows needed come from the content at its **natural** height: `measure` switches the fill off (`flex-grow: 0`) for one synchronous read, never painted, and reads card, body and content together (card − body + content is the height needed). Measured filled, the content would always ask for the rows it already has. That height in grid rows (`pixelsToRows`, at least the registry `minH`) goes to the board's `fit(i, h)` whenever it changes. A `ResizeObserver` over body and content re-measures on resizes (e.g. the width changes the number of columns), and a `MutationObserver` on the content when its elements or their inline styles change (e.g. fewer shortcuts, or fewer Quick access columns), which a filled content doesn't resize for. It ignores `measure`'s own style toggle on the content. Works for the `default` and `flush` variants.
 
 ## Usage
 

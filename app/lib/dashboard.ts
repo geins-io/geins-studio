@@ -57,9 +57,12 @@ export const DASHBOARD_WIDGETS: Record<
     descriptionKey: 'dashboards.widgets.needs_attention.description',
     group: 'needs_attention',
     icon: 'CircleAlert',
-    size: { w: 12, h: 4, minW: 4, minH: 4 },
+    // h is the fitted height with the cards in one row, so the default
+    // board doesn't move down a row as soon as it renders
+    size: { w: 12, h: 5, minW: 4, minH: 4 },
     variant: 'default',
-    stackedHeight: 330,
+    stackedHeight: 'auto',
+    fit: true,
   },
   'attention-quotation-requests': {
     type: 'attention-quotation-requests',
@@ -161,20 +164,20 @@ export function createDashboardBoard(
 /**
  * The board a user gets before they change anything. It grows as widgets
  * land; queues and lists keep a third of the width, as in the prototype.
- * Quick access sets its own height (`fit`), so it spans the full width: a
- * refit then moves every widget below it alike instead of leaving a gap
- * under it beside fixed-height neighbours.
+ * Needs attention and Quick access set their own height (`fit`), so they
+ * span the full width: a refit then moves every widget below them alike
+ * instead of leaving a gap beside fixed-height neighbours.
  */
 export function defaultDashboardBoard(): DashboardBoard {
   return createDashboardBoard([
     ['needs-attention', 0, 0],
-    ['quick-access', 0, 4, 12, 4],
-    ['queue-quotation-requests', 0, 8],
-    ['queue-expiring-quotations', 4, 8],
-    ['queue-failed-runs', 8, 8],
-    ['list-company-orders', 0, 16],
-    ['list-recent-quotations', 4, 16],
-    ['list-recent-assets', 8, 16],
+    ['quick-access', 0, 5, 12, 4],
+    ['queue-quotation-requests', 0, 9],
+    ['queue-expiring-quotations', 4, 9],
+    ['queue-failed-runs', 8, 9],
+    ['list-company-orders', 0, 17],
+    ['list-recent-quotations', 4, 17],
+    ['list-recent-assets', 8, 17],
   ]);
 }
 
